@@ -63,4 +63,42 @@ suffix:
     *qdi    Vqdi (2×int64_t)
     *qdf    Vqdf (2×double)
 
-The vector types are 
+Since ungop is essentially an expansive extension to the
+C standard library, the most important consideration was 
+how names were chosen. We wanted:
+
+## Uniqueness
+None of the names may conflict with any symbol defined or
+reserved by the C23 standard or any of its standard annexes,
+any version of POSIX/XSI, Microsoft's "Win32" and own C 
+library (msvcrt), Google's "bionic", "glibc", or Apple's 
+standard library. They also shouldn't be English words that
+might conflict with commonly used variable or function names.
+E.g. the name of "releasing atomic bitwise NOT" is "inve",
+not "note".
+
+## Readability
+
+Compare:
+
+    atomic_compare_exchange_strong_explicit(
+        a, b, c,
+        memory_order_seq_cst,
+        memory_order_seq_cst
+    )
+
+from C11's <stdatomic.h> to our equivalent 
+
+    xeqt(a, b, c)
+
+or from C23's <stdbit.h>
+
+    stdc_leading_zerosull
+
+with 
+
+    cszrlu
+
+Ok, perhaps the latter isn't *too* difficult to recognize
+or remember, but for such an important and common operation,
+its bulkiness is not insignificant.
