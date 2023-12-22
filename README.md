@@ -102,3 +102,25 @@ with
 Ok, perhaps the latter isn't *too* difficult to recognize
 or remember, but for such an important and common operation,
 its bulkiness is not insignificant.
+
+    
+    
+## Memorability
+Although autofill and IDE tooltips are obviously useful, it 
+is objectively more efficient if programmers aren't
+distracted by the need to look up the name of an operation.
+As the previous mentioned list of types implies, there are
+literally thousands of unique operation names. However,
+there are less than 300 actual operations and the type 
+specific variants follow a highly consistent and very easy
+to learn naming scheme.
+
+Each generic operation name begins with a three letter 
+prefix, followed by a single letter variant identifier. The
+"type specific" operation names use a suffix that is always
+based on the type of the first operand (parameter). There's
+no need to worry about which `sunnadi` parameter is the 
+destination address and which is the source; the suffix -
+"adi" - means it applies to `int64_t *`, which must be the
+destination, since `sunnadi` means "store unaligned int64_t
+value".
