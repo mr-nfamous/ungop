@@ -239,6 +239,7 @@ operations may be available in the reference implementation:
     suffix  type
 
     dyu     (64 × bool)
+    
     dbu     (8 × uint8_t)
     dbi     (8 × int8_t)
     dbc     (8 × char)
@@ -261,6 +262,7 @@ operations may be available in the reference implementation:
     suffix  type
 
     qyu     (128 × bool)
+    
     qbu     (16 × uint8_t)
     qbi     (16 × int8_t)
     qbc     (16 × char)
@@ -459,7 +461,7 @@ combination of prefix+variant+typemod:
     *   d   - source is 64 bit vector
     *   abc - char * operand
 
-    INLINE(Vdwf,dupdwf) (float const *src);
+    INLINE(Vqwf,dupqwf) (float const *src);
     *   dup - DUPlicate
     *   q   - quadword (128 bit) result
     *   acwf- float const * operand 
