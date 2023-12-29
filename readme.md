@@ -1,29 +1,29 @@
 
 # HISTORY
 
-...
-|
-+-- V15:
-|   *   Renamed 'ldn' to 'lun'
-|   *   Renamed 'stn' to 'sun'
-|
-+-- V16:
-|   *   Renamed 'vxt' to 'get'
-|   *   Renamed 'vst' to 'set'
-|
-+-- V17:
-|   *   Renamed neq to cne
-|   *   Deleted nlt
-|   *   Deleted nle
-|   *   Deleted ngt
-|   *   Deleted nge
-|
-+-- V18:
-|   *   Merged multiple sources into singular the "ungop.h"
-|
-+-- V19:
-|   *   Renamed invt to invs
-|   *   Deleted several kilobytes worth of trailing spaces
+    ...
+    |
+    +-- V15:
+    |   *   Renamed 'ldn' to 'lun'
+    |   *   Renamed 'stn' to 'sun'
+    |
+    +-- V16:
+    |   *   Renamed 'vxt' to 'get'
+    |   *   Renamed 'vst' to 'set'
+    |
+    +-- V17:
+    |   *   Renamed neq to cne
+    |   *   Deleted nlt
+    |   *   Deleted nle
+    |   *   Deleted ngt
+    |   *   Deleted nge
+    |
+    +-- V18:
+    |   *   Merged multiple sources into singular the "ungop.h"
+    |
+    +-- V19:
+    |   *   Renamed invt to invs
+    |   *   Deleted several kilobytes worth of trailing spaces
 
 NOTE: the version number is completely arbitrary at this
 point.
