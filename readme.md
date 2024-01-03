@@ -31,26 +31,26 @@ point.
 # ABOUT
 
 ungop - pronounced "ungop" - is the specification of a set
-of generic low level operations intended to standardize and 
-replace the use of implementation defined "intrinsic" 
+of generic low level operations intended to standardize and
+replace the use of implementation defined "intrinsic"
 functions. It includes a C reference implementation in which
-each operation is defined as a macro that uses its first 
+each operation is defined as a macro that uses its first
 parameter with the C11 _Generic operator to select a function
 designator representing the type specific operation.
 
-As what's effectively a major extension to the C11 standard 
+As what's effectively a major extension to the C11 standard
 library, the most important thing we had to consider was C
-namespace compatibility. None of the operation names may 
+namespace compatibility. None of the operation names may
 conflict with any symbol defined or reserved by C11 nor any
 any of its standard annexes; any version of POSIX/XSI;
-Microsoft's "Win32" and own C library (msvcrt); Google's 
+Microsoft's "Win32" and own C library (msvcrt); Google's
 C library "bionic"; "glibc"; nor Apple's standard library.
-They also shouldn't be English words that might conflict 
-with commonly used variables. Coincidentally, none of the 
+They also shouldn't be English words that might conflict
+with commonly used variables. Coincidentally, none of the
 names should activate reasonable profanity filters.
 
 There are two possible methods to meet those requirements.
-The first, chosen by the C standard, is to obfuscate by 
+The first, chosen by the C standard, is to obfuscate by
 encumbrance. For example:
 
     atomic_compare_exchange_strong_explicit
@@ -64,8 +64,8 @@ consistent memory order:
 The latter is superficially nonsensical and almost certainly
 not going to conflict with existing projects. However, the
 formula used to generate that name is so simple it shouldn't
-take more than a few hours to be able to be able to recall 
-any of the 10000+ type specific operation names. 
+take more than a few hours to be able to be able to recall
+any of the 10000+ type specific operation names.
 
 Reusing 'xeqtbi' as an example, we have 3 parts:
 
@@ -73,7 +73,7 @@ Reusing 'xeqtbi' as an example, we have 3 parts:
     * 't'       (op variant modifier)
     * 'bi'      (op type modifier)
 
-That pattern - three letter prefix, 1 letter variant - never 
+That pattern - three letter prefix, 1 letter variant - never
 varies. The following table shows how the variant modifiers
 are typically used:
 
@@ -85,7 +85,7 @@ are typically used:
         *   Limit SIMD op to specific lane
 
     '2':
-        *   width×2 
+        *   width×2
         *   width÷2
 
     'a':
@@ -156,7 +156,7 @@ are typically used:
 
     'u':
         *   Unsigned integer
-        *   Hexdecimal, i.e. base 16 using uppercase alpha 
+        *   Hexdecimal, i.e. base 16 using uppercase alpha
 
     'v':
         *   Vector
@@ -179,7 +179,7 @@ are typically used:
 
 A small number of ungop ops don't take any operand and so
 have no type specific variants. When one does have multiple
-operands, its type specific suffix is *always* based on 
+operands, its type specific suffix is *always* based on
 the type of the first parameter.
 
 The following table lists the standard C types for which
@@ -205,7 +205,7 @@ operations may be available in the reference implementation:
 
     du      uint64_t
     di      int64_t
-    df      double 
+    df      double
 
     qu      QUAD_UTYPE [‡]
     qi      QUAD_ITYPE [‡]
@@ -239,7 +239,7 @@ operations may be available in the reference implementation:
     suffix  type
 
     dyu     (64 × bool)
-    
+
     dbu     (8 × uint8_t)
     dbi     (8 × int8_t)
     dbc     (8 × char)
@@ -262,7 +262,7 @@ operations may be available in the reference implementation:
     suffix  type
 
     qyu     (128 × bool)
-    
+
     qbu     (16 × uint8_t)
     qbi     (16 × int8_t)
     qbc     (16 × char)
@@ -284,7 +284,7 @@ operations may be available in the reference implementation:
     qqf     (1 × QUAD_FTYPE) ‡‡‡
 
 
-### 256 bit SIMD vector types (unused at present)
+## 256 bit SIMD vector types (unused at present)
 
     suffix  type
 
@@ -314,7 +314,7 @@ operations may be available in the reference implementation:
     ooi     (1 × OCTA_ITYPE) ‡‡‡‡
     oof     (1 × OCTA_FTYPE) ‡‡‡‡
 
-### 512 bit SIMD vector types (unused at present)
+## 512 bit SIMD vector types (unused at present)
 
     suffix  type
 
@@ -352,43 +352,43 @@ operations may be available in the reference implementation:
     † flt16_t is defined as a half precision ieee 754 float.
     If the target ABI has a dedicated C type, that's what
     it will be a typedef of. E.g. arm's __fp16 or when the
-    AVX-512FP16 x86 extension is supported, _Float16. 
-    Otherwise, flt16_t will be a unique, single element 
+    AVX-512FP16 x86 extension is supported, _Float16.
+    Otherwise, flt16_t will be a unique, single element
     homogeneous 16 bit unsigned integer aggregate.
 
     ‡ 128 bit operations are provisionally available. If the
-    __int128 type is supported it is used, otherwise, a 
-    unique, two element 64 bit integer aggregate is used 
-    whose Lo and Hi members represents the least and most 
-    significant 64 bits, respectively. If the target has 
-    hardware support for a quadruple precision IEEE 754 
-    float, whichever C type is equivalent is used. 
+    __int128 type is supported it is used, otherwise, a
+    unique, two element 64 bit integer aggregate is used
+    whose Lo and Hi members represents the least and most
+    significant 64 bits, respectively. If the target has
+    hardware support for a quadruple precision IEEE 754
+    float, whichever C type is equivalent is used.
     Otherwise, a unique, double element homogeneous 64 bit
     aggregate is used.
 
-    ‡‡ Hosted 64 bit C implementations will have either 32 
+    ‡‡ Hosted 64 bit C implementations will have either 32
     bit int AND long or 64 bit long and llong. the lu and
     li suffixes are reserved in the former for long and in
-    the latter for llong. This allows values to be 
+    the latter for llong. This allows values to be
     compatible with the generic operation. IMPORTANT NOTE:
-    some operations return a value of a different width 
+    some operations return a value of a different width
     than the first operand. E.g. cvduli is the type specific
     name of "convert signed long to unsigned 64 bit int"; if
-    long and llong are both 64 bits, cvduli will return a 
+    long and llong are both 64 bits, cvduli will return a
     value of type ulong, i.e. uint64_t, NOT ullong.
 
-    ‡‡‡ The 128 bit numeric types presently have no SIMD 
+    ‡‡‡ The 128 bit numeric types presently have no SIMD
     vector implementations.
-    
-    ‡‡‡‡ The 256 and 512 bit numeric types presently have 
-    no implementations at all. 
-    
-    
+
+    ‡‡‡‡ The 256 and 512 bit numeric types presently have
+    no implementations at all.
+
+
 The arithmetic types can be, and are, grouped by the generic
 machinery into sets:
 
     *u      unsigned integers
-    *i      signed integers 
+    *i      signed integers
     *f      floats
     *z      any integer                 (Z as in the symbol)
     *n      unsigned ints AND floats    (N as in natural)
@@ -396,10 +396,10 @@ machinery into sets:
     *r      real numbers                (R as in real)
 
 
-Some operations take pointers as the first operator. In 
+Some operations take pointers as the first operator. In
 this case, the type suffix is simply prefixed by "ac" when
 the element type is const qualified and "a" otherwise. The
-following (redundant) table contains the suffixes for all 
+following (redundant) table contains the suffixes for all
 one dimensional pointer types:
 
     a       void *
@@ -442,39 +442,75 @@ one dimensional pointer types:
     aclu    ulong const * or ullong const *
     acli    long const * or llong const *
 
-NOTE: ungop has no concept of "pointer to SIMD vector". 
+NOTE: ungop has no concept of "pointer to SIMD vector".
 Users should consider all SIMD vector values as inherently
-having the "register" storage class. Unfortunately, GCC 
-intrinsics don't work with register so we **STRONGLY** 
+having the `register` storage class. Unfortunately, GCC
+intrinsics don't work with `register` so we *_STRONGLY_*
 advise new code avoid its use.
 
 Here's some examples for the readme that break down the
 combination of prefix+variant+typemod:
 
-    INLINE(uint16_t,cszrhu) (uint16_t src);
-    *   csz - Count Sequential Zeros
-    *   r   - from hi/msb to lo/lsb, i.e. "leading" bits
-    *   hu  - uint16_t operand
+```C
 
-    INLINE(char *,strdabc) (char dst[8], Vdbc src);
-    *   str - STore Register
-    *   d   - source is 64 bit vector
-    *   abc - char * operand
+INLINE(uint16_t,cszrhu) (uint16_t src);
+/*  [csz]   Count Sequential Zeros
+    [r]     from hi/msb to lo/lsb, i.e. "leading" bits
+    [hu]    uint16_t operand
+*/
 
-    INLINE(Vqwf,dupqwf) (float const *src);
-    *   dup - DUPlicate
-    *   q   - quadword (128 bit) result
-    *   acwf- float const * operand 
+INLINE(char *,strdabc) (char dst[8], Vdbc src);
+/*  [str]   STore Register
+    [d]     source is 64 bit vector
+    [abc]   char * operand
+*/
 
-    INLINE(Vwbi,dupwqbi) (Vqbi src, Rc(0,15) k)
-    *   dup
-    *   w   - word (32 bit) result
-    +   wbi - Vwbi (4×char) operand 
+INLINE(Vqwf,dupqwf) (float const *src);
+/*  [dup]   DUPlicate
+    [q]     quadword (128 bit) result
+    [acwf]  float const * operand
+*/
+
+INLINE(Vwbi,dupwqbi) (Vqbi src, Rc(0,15) k)
+*   dup
+*   w   - word (32 bit) result
++   wbi - Vwbi (4×char) operand
+```
+
+# SIMD
+
+While each architecture implements SIMD in its own way, 
+there are more than enough similarities to standarize it.
+
+*   Vector values are represented by 32, 64, or 128 
+    contiguous bits packed into 4, 8, or 16 contiguous
+    bytes, respectively.
+
+*   Vectors are divided into 8, 16, 32, and 64 bit "lanes".
+    Lanes are numbered such that lane 0 contains the 
+    least significant bits. E.g. Lane 0 of a 64 bit vector
+    V of bytes contains its least significant 8 bits. On 
+    little endian architectures, which we presently require,
+    the lane number corresponds with the array index. On
+    big endian architectures, a 64 bit vector of bytes 
+    loaded from an array of 8 bytes, lane 0 corresponds to
+    array index 7.
+
+These rules might conflict with the target implementation
+but in practice, this shouldn't matter. The only conflicts
+there will be, if any, are with the way vector lanes are 
+identified. Any transformations we apply when adapting the
+native intrinsics to our vector representation will almost
+certainly be optimized away by even the most incompetent
+compilers.
+    
 
 # INDEX
 
 Finally, the following is a complete operations listing,
-including a brief description. 
+including a brief description.
+
+### unprefixed
 
     •pass:   forfeit the calling thread's remaining CPU time
 
@@ -564,6 +600,10 @@ including a brief description.
 
     •newl:  parameters L to R
     •newr:  parameters R to L
+
+### •lnq· «LiNear seQuence»
+
+    •lnql: incrementing
 
 
 ### •dup· «DUPlicate»
@@ -852,7 +892,7 @@ including a brief description.
 ### •min· «MINimum»
 
     •minl:  f(a, b) => likely(a < b) ? a : b
-    •minv:  across vector 
+    •minv:  across vector
 
 
 ### •rol· «ROtate representation Left»
@@ -882,7 +922,7 @@ including a brief description.
 
     •spll:  shift in from lo to hi
     •splr:  shift in from hi to lo
-    •splv:  vector 
+    •splv:  vector
 
 
 ### •spr· «Shift Pair Right and extract»
@@ -1026,4 +1066,5 @@ including a brief description.
 
     •modl: truncated
     •mod2: halfwidth
-    
+
+ 
