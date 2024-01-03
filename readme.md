@@ -41,41 +41,38 @@ designator representing the type specific operation.
 As what's effectively a major extension to the C11 standard
 library, the most important thing we had to consider was C
 namespace compatibility. None of the operation names may
-conflict with any symbol defined or reserved by C11 nor any
-any of its standard annexes; any version of POSIX/XSI;
-Microsoft's "Win32" and own C library (msvcrt); Google's
-C library "bionic"; "glibc"; nor Apple's standard library.
-They also shouldn't be English words that might conflict
-with commonly used variables. Coincidentally, none of the
-names should activate reasonable profanity filters.
+conflict with any symbol defined by C11 nor any of its 
+standard annexes; any version of POSIX/XSI; Microsoft's
+"Win32" and own C library (msvcrt); Google's C library 
+"bionic"; "glibc"; nor Apple's standard library. They also 
+shouldn't be English words that might conflict with commonly
+used variables. When possible, names should be designed to
+avoid triggering *reasonable* profanity filters.
 
 There are two possible methods to meet those requirements.
 The first, chosen by the C standard, is to obfuscate by
 encumbrance. For example:
 
-    atomic_compare_exchange_strong_explicit
+    atomic_compare_exchange_strong
 
 The other, chosen by us, is to obfuscate by algorithm. The
-following is equivalent to the former with sequentially
-consistent memory order:
+following is equivalent to the former:
 
-    xeqtbi
+    xeqt
 
-The latter is superficially nonsensical and almost certainly
-not going to conflict with existing projects. However, the
-formula used to generate that name is so simple it shouldn't
-take more than a few hours to be able to be able to recall
-any of the 10000+ type specific operation names.
+All together while there are over 10000 unique type specific
+operation names, it shouldn't take more than a few hours for
+any competent programmer to recognize what one of them is or
+how to spontaneously generate the name of a particular
+operation plus type combination.
 
-Reusing 'xeqtbi' as an example, we have 3 parts:
+Reusing 'xeqt' as an example, we have two parts:
 
-    * 'xeq'     (op prefix; means "eXchange if EQual")
-    * 't'       (op variant modifier)
-    * 'bi'      (op type modifier)
+    * 'xeq'     (the prefix; means "eXchange if EQual")
+    * 't'       (the variant modifier)
 
-That pattern - three letter prefix, 1 letter variant - never
-varies. The following table shows how the variant modifiers
-are typically used:
+The following table shows how the variant modifiers are 
+typically used:
 
     '1':
 
@@ -177,64 +174,79 @@ are typically used:
         *   Zero digits
 
 
-A small number of ungop ops don't take any operand and so
-have no type specific variants. When one does have multiple
-operands, its type specific suffix is *always* based on
-the type of the first parameter.
+Although _Generic is a powerful and long needed feature, it 
+has some rather severe limitations - primarily that most 
+"intrinsic functions" are actually implemented as function
+macros. The ones that require a compile time constant 
+therefore cannot be directly used with _Generic. Since the
+performance penalty of wrapping these intrinsics in a 
+static inline function can be rather severe, we made the 
+individual type specific operations that the _Generic 
+expression calls part of the public interface. 
 
-The following table lists the standard C types for which
-operations may be available in the reference implementation:
+One example of an operation for which it is almost always
+more efficient to use the type specific form is bit shifts.
+When e.g. shifting a 16 bit unsigned integer left by 7 bits
+and keeping the result's least significant bits, there are
+two options: the generic `shll` or the type specific
+`shllhu`. If the target architecture has an instruction
+for shifting by a constant and another for shifting by a 
+register, the former will obviously be faster. In practice, 
+a competent compiler would be able to optimize the generic
+form, which necessarily uses the register shift. Such a 
+compiler is not always available and even when it is there 
+is an obvious benefit in reducing the amount of optimizing 
+a compiler must do.
 
-## Arithmetic types
+Anyway, type specific operations like `shllhu` are named 
+according to a strict and simple to remember scheme that is
+always based on the first parameter. 
+
+The following table lists the ~52 standard C types for which
+operations may be available in the reference implementation
+and their type specific suffix:
+
+## Arithmetic types (15+3)
 
     suffix  type
 
     yu      bool
-
     bu      uint8_t
     bi      int8_t
     bc      char
-
     hu      uint16_t
     hi      int16_t
     hf      flt16_t [†]
-
     wu      uint32_t
     wi      int32_t
     wf      float
-
     du      uint64_t
     di      int64_t
     df      double
-
     qu      QUAD_UTYPE [‡]
     qi      QUAD_ITYPE [‡]
     qf      QUAD_FTYPE [‡]
-
     lu      ulong or ullong [‡‡]
     li      long or llong [‡‡]
 
 
-## 32 bit SIMD vector types
+## 32 bit SIMD vector types (10)
 
     suffix  type
 
     wyu     (32 × bool)
-
     wbu     (4 × uint8_t)
     wbi     (4 × int8_t)
     wbc     (4 × char)
-
     whu     (2 × uint16_t)
     whi     (2 × int16_t)
     whf     (2 × flt16_t)
-
     wwu     (1 × uint32_t)
     wwi     (1 × int32_t)
     wwf     (1 × float)
 
 
-## 64 bit SIMD vector types
+## 64 bit SIMD vector types (13)
 
     suffix  type
 
@@ -257,7 +269,7 @@ operations may be available in the reference implementation:
     ddf     (1 × double)
 
 
-## 128 bit SIMD vector types
+## 128 bit SIMD vector types (13+3)
 
     suffix  type
 
@@ -396,11 +408,11 @@ machinery into sets:
     *r      real numbers                (R as in real)
 
 
-Some operations take pointers as the first operator. In
-this case, the type suffix is simply prefixed by "ac" when
-the element type is const qualified and "a" otherwise. The
-following (redundant) table contains the suffixes for all
-one dimensional pointer types:
+Some operations take a memory address as the first operator.
+In this case, the type suffix is simply prefixed by "ac"
+when the elements are read-only ("address of constant") and
+"a" otherwise. The following (redundant) table contains the
+suffixes for all one dimensional C pointer types:
 
     a       void *
     ayu     bool *
@@ -443,10 +455,11 @@ one dimensional pointer types:
     acli    long const * or llong const *
 
 NOTE: ungop has no concept of "pointer to SIMD vector".
-Users should consider all SIMD vector values as inherently
-having the `register` storage class. Unfortunately, GCC
-intrinsics don't work with `register` so we *_STRONGLY_*
-advise new code avoid its use.
+Users of the reference C implementation should consider all 
+SIMD vector values as inherently having the `register` 
+storage class. Unfortunately, GCC intrinsics don't work
+with `register` so we *_STRONGLY_* advise new code avoid 
+its use.
 
 Here's some examples for the readme that break down the
 combination of prefix+variant+typemod:
@@ -486,23 +499,36 @@ there are more than enough similarities to standarize it.
     contiguous bits packed into 4, 8, or 16 contiguous
     bytes, respectively.
 
-*   Vectors are divided into 8, 16, 32, and 64 bit "lanes".
-    Lanes are numbered such that lane 0 contains the 
-    least significant bits. E.g. Lane 0 of a 64 bit vector
-    V of bytes contains its least significant 8 bits. On 
-    little endian architectures, which we presently require,
-    the lane number corresponds with the array index. On
-    big endian architectures, a 64 bit vector of bytes 
-    loaded from an array of 8 bytes, lane 0 corresponds to
-    array index 7.
+*   Vectors are divided into 1, 8, 16, 32, and 64 bit 
+    "vector lanes" numbered such that lane 0 contains the 
+    least significant bits. Multibit elements on little 
+    endian architectures, which are the only type we 
+    currently have plans to support, the vector lane and 
+    array index of a particular element are identical. On
+    big endian architectures, the lanes are "reversed". The
+    boolean vector lanes are such that lane K can be 
+    extracted by right shifting V by K bits and extracting 
+    the result's least significant bit.
 
-These rules might conflict with the target implementation
-but in practice, this shouldn't matter. The only conflicts
-there will be, if any, are with the way vector lanes are 
-identified. Any transformations we apply when adapting the
-native intrinsics to our vector representation will almost
-certainly be optimized away by even the most incompetent
-compilers.
+    array index (base 16)
+        0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+
+    lil endian multibit vector lanes
+        B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 Ba Bb Bc Bd Be Bf
+        H0    H1    H2    H3    H4    H5    H6    H7    
+        W0          W1          W2          W3 
+        D0                      D1
+        Q0 
+
+    big endian multibit vector lanes
+        Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
+           H7    H6    H5    H4    H3    H2    H1    H0 
+                 W3          W2          W1          W0 
+                             D1                      D0 
+
+Our standardized vector representation might conflict with
+the underlying architecture but in practice, this is 
+irrelevant. 
     
 
 # INDEX
