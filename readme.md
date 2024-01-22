@@ -493,38 +493,71 @@ INLINE(Vwbi,dupwqbi) (Vqbi src, Rc(0,15) k)
 # SIMD
 
 While each architecture implements SIMD in its own way, 
-there are more than enough similarities to standarize it.
+there are more than enough similarities to standardize it.
+Vector values are represented by 32, 64, or 128 contiguous 
+bits packed into 4, 8, or 16 contiguous bytes, respectively.
+This string of bits is then split into 1, 8, 16, 32, or 64
+bit "lanes", the contents of each being a correspondingly
+precise integer or floating point value. 
 
-*   Vector values are represented by 32, 64, or 128 
-    contiguous bits packed into 4, 8, or 16 contiguous
-    bytes, respectively.
+Like arrays, the type of value stored in a lane is known as
+the vector's element type. On architectures with a little
+endian vector representation, which are the only targets we
+support at present, the vector lane number and array index
+of a particular multibit element are equivalent, while on 
+architectures with a big endian vector representation, the
+lane numbering matches the scheme used for bits. Our Boolean
+vectors' lanes are numbered according to their position 
+within the vector as interpreted as an equivalent width 
+unsigned integer. I.e. to extract boolean lane 17 of a Z bit
+vector, a Z bit right shift of 17 is performed, followed by 
+ANDing 1.
 
-*   Vectors are divided into 1, 8, 16, 32, and 64 bit 
-    "vector lanes" numbered such that lane 0 contains the 
-    least significant bits. Multibit elements on little 
-    endian architectures, which are the only type we 
-    currently have plans to support, the vector lane and 
-    array index of a particular element are identical. On
-    big endian architectures, the lanes are "reversed". The
-    boolean vector lanes are such that lane K can be 
-    extracted by right shifting V by K bits and extracting 
-    the result's least significant bit.
+The following figures demonstrate the relationship
+between "vector lane" and "array index" of a particular 
+element, for multibit types. For multibyte types, the lane
+number label is located at the same position as that lane's
+least significant byte:
 
-    array index (base 16)
-        0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
 
-    lil endian multibit vector lanes
-        B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 Ba Bb Bc Bd Be Bf
-        H0    H1    H2    H3    H4    H5    H6    H7    
-        W0          W1          W2          W3 
-        D0                      D1
-        Q0 
+    Lww: W0_________
+    Lwh: H0___ H1___ 
+    Lwb: B0 B1 B2 B3
+          |  |  |  |
+    idx:  0  1  2  3
+          |  |  |  |  
+    Bwb: B3 B2 B1 B0
+    Bwh: ___H1 ___H0
+    Bww: _________W0
 
-    big endian multibit vector lanes
-        Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
-           H7    H6    H5    H4    H3    H2    H1    H0 
-                 W3          W2          W1          W0 
-                             D1                      D0 
+
+    Ldd: D0_____________________
+    Ldw: W0_________ W1_________
+    Ldh: H0___ H1___ H2___ H3___
+    Ldb: B0 B1 B2 B3 B4 B5 B6 B7
+          |  |  |  |  |  |  |  |
+    idx:  0  1  2  3  4  5  6  7
+          |  |  |  |  |  |  |  |
+    Bdb: B7 B6 B5 B4 B3 B2 B1 B0
+    Bdh: ___H3 ___H2 ___H1 ___H0
+    Bdw: _________W1 _________W0 
+    Bdd: _____________________D0
+
+
+    Lqq: Q0_____________________________________________
+    Lqd: D0_____________________ D1_____________________
+    Lqw: W0_________ W0_________ W0_________ W0_________ 
+    Lqh: H0___ H1___ H2___ H3___ H4___ H5___ H6___ H7___    
+    Lqb: B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 Ba Bb Bc Bd Be Bf
+          |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+    idx:  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+          |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+    Bqb: Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
+    Bqh: ___H7 ___H6 ___H5 ___H4 ___H3 ___H2 ___H1 ___H0
+    Bqw: _________W3 _________W2 _________W1 _________W0
+    Bqd: _____________________D1 _____________________D0  
+    Bqq: _____________________________________________Q0
+
 
 Our standardized vector representation might conflict with
 the underlying architecture but in practice, this is 
@@ -630,7 +663,7 @@ including a brief description.
 ### •lnq· «LiNear seQuence»
 
     •lnql: incrementing
-
+    •lnqr: decrementing 
 
 ### •dup· «DUPlicate»
 
@@ -785,7 +818,7 @@ including a brief description.
     •cvdf:  double (current rounding mode)
 
 
-### •cvq· «Convert to Quadword»
+### •cvq· «ConVert to Quadword»
 
     •cvqu: truncated QUAD_UTYPE
     •cvqi: truncated QUAD_ITYPE
@@ -794,7 +827,7 @@ including a brief description.
     •cvdf: QUAD_FTYPE (current rounding mode)
 
 
-### •ldr· «"LoaD Register from aligned»
+### •ldr· «LoaD Register from aligned»
 
     •ldr1: atomic_load_explicit(..., memory_order_relaxed)
     •ldra: atomic_load_explicit(..., memory_order_acquire)
@@ -1093,4 +1126,42 @@ including a brief description.
     •modl: truncated
     •mod2: halfwidth
 
- 
+
+### •pow· «POWer»
+
+    •powf: truncated
+
+### •sqr· «mathematical SQuare Root»
+
+    •sqrf: as float
+
+
+### •cbr· «mathematical CuBe Root»
+
+    •cbrf: as float
+    
+
+### •log· «logarithm»
+
+    •loge: base e
+    •log2: base 2
+    •logd: base 10
+
+### •sin· «mathematical SINe»
+
+    •sinr: radians
+    •sinh: hyperbolic 
+
+
+### •cos· «mathematical coSINe»
+
+    •cosr: radians
+    •cosh: hyperbolic 
+
+
+### •tan· «mathematical TANgent»
+
+    •tanr: radians
+    •tanh: hyperbolic 
+
+
