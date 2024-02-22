@@ -881,7 +881,7 @@ negative infinity for negative operands.
 
 ### •ldr· «LoaD Register from aligned»
 
-The source memory must be aligned on a multiple of the size
+The source address must be aligned on a multiple of the size
 of the result type. I.e. loading a 128 bit vector with ldrq
 requires a 16 byte aligned address. On architectures with a
 little endian vector representation, vector lanes are loaded
@@ -890,6 +890,9 @@ big endian vector representation were supported, the first
 lane of the result would be loaded from the last index of 
 the corresponding array. Refer to SIMD.
 
+    •ldrn: nonatomic nat-endian scalar load
+    •ldrl: nonatomic lil-endian scalar load
+    •ldrb: nonatomic big-endian scalar load
     •ldr1: atomic_load_explicit(..., memory_order_relaxed)
     •ldra: atomic_load_explicit(..., memory_order_acquire)
     •ldrt: atomic_load_explicit(..., memory_order_seq_cst)
@@ -917,6 +920,14 @@ alignment of the operand is unconstrained.
 
 ### •str· «STore Register aligned»
 
+Store value at address aligned on the size of the operand 
+type. I.e. storing a 128 bit vector requires an address 
+that is a multiple of 16. Vectors are stored such that a 
+store of A at address Z using the appropriate STR, followed
+by a load at Z with the appropriate LDR results in a new 
+vector with exactly the same binary representation as A.
+The result is the destination address.
+
     •str1: atomic_store_explicit(..., memory_order_relaxed)
     •stre: atomic_store_explicit(..., memory_order_release)
     •strt: atomic_store_explicit(..., memory_order_seq_cst)
@@ -924,6 +935,9 @@ alignment of the operand is unconstrained.
 
 
 ### •sun· «Store UNaligned»
+
+Identical to the corresponding STR operation except the
+alignment is unconstrained.
 
     •sunn: nat-endian scalar
     •sunt: nat-endian scalar with temporality hint
@@ -938,6 +952,14 @@ alignment of the operand is unconstrained.
 
 ### •swp· «SWaP»
 
+E.g. swp1(src, dst) atomically performs:
+
+```
+    tmp=*dst, *dst=src, src=tmp
+```
+
+If dst isn't properly aligned, the result is undefined
+
     •swp1: atomic_exchange_explicit(..., memory_order_relaxed)
     •swpa: atomic_exchange_explicit(..., memory_order_acquire)
     •swpe: atomic_exchange_explicit(..., memory_order_release)
@@ -945,6 +967,15 @@ alignment of the operand is unconstrained.
 
 
 ### •xeq· «eXchange if EQual»
+
+E.g. xeq1(cmp, src, dst) atomically performs:
+
+```
+    tmp=*dst;
+    if (tm)
+    *dst=src, src=tmp
+```
+If dst isn't properly aligned, the result is undefined
 
     •xeq1: succ=relaxed, fail=relaxed
     •xeqa: succ=acquire, fail=acquire
@@ -1095,9 +1126,6 @@ sirp (shift pair rite by scalar×esize keep lower)
     •splr:  shift in from msb to lsb
     •splv:  vector
 
-
-
-
 ### •inv· «unary INVert»
 
     •invs:  ~a
@@ -1166,6 +1194,12 @@ sirp (shift pair rite by scalar×esize keep lower)
     •addt: atomic_fetch_add(..., memory_order_seq_cst)
 
 
+### •inc· «INCrement by 1»
+
+    •incl:  truncated
+    •incs:  saturated
+    •inc2:  widened×2
+
 ### •sum· «SUM (add across vector)»
 
     •suml:  truncated
@@ -1184,6 +1218,12 @@ sirp (shift pair rite by scalar×esize keep lower)
     •sube:  atomic_fetch_sub(..., memory_order_release)
     •subt:  atomic_fetch_sub(..., memory_order_seq_cst)
 
+### •dec· «DECrement by 1»
+
+    •decl:  truncated
+    •decs:  saturated
+    •dec2:  widened×2
+    
 
 ### •dif· «absolute DIFference»
 
@@ -1272,8 +1312,8 @@ sirp (shift pair rite by scalar×esize keep lower)
 
 ### •rnd· «RaNDom number»
 
-    •rndr: range
-
+    •rndn: fill each element of result with random bits
+    
     
 
 
