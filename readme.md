@@ -366,28 +366,33 @@ and their type specific suffix:
     it will be a typedef of. E.g. arm's __fp16 or when the
     AVX-512FP16 x86 extension is supported, _Float16.
     Otherwise, flt16_t will be a unique, single element
-    homogeneous 16 bit unsigned integer aggregate.
+    homogeneous 16 bit unsigned integer aggregate type.
 
-    ‡ 128 bit operations are provisionally available. If the
-    __int128 type is supported it is used, otherwise, a
-    unique, two element 64 bit integer aggregate is used
-    whose Lo and Hi members represents the least and most
-    significant 64 bits, respectively. If the target has
-    hardware support for a quadruple precision IEEE 754
-    float, whichever C type is equivalent is used.
-    Otherwise, a unique, double element homogeneous 64 bit
-    aggregate is used.
+    ‡ 128 bit operations are provisionally available. That 
+    is, if the target supports __int128 or a binary128 based
+    long double, operations are available for those types.
+    Otherwise, the corresponding int type will be defined as
+    a unique, two element 64 bit integer aggregate, while 
+    the float type will be a unique floating point aggregate
+    type composed of two doubles. In both cases, the Lo 
+    member may be used to access the value's least
+    significant 64 bits and the Hi member its most 
+    significant 64 bits. 128 bit operations are *not* 
+    available in the generic API.
 
-    ‡‡ Hosted 64 bit C implementations will have either 32
-    bit int AND long or 64 bit long and llong. the lu and
-    li suffixes are reserved in the former for long and in
-    the latter for llong. This allows values to be
-    compatible with the generic operation. IMPORTANT NOTE:
-    some operations return a value of a different width
-    than the first operand. E.g. cvduli is the type specific
-    name of "convert signed long to unsigned 64 bit int"; if
-    long and llong are both 64 bits, cvduli will return a
-    value of type ulong, i.e. uint64_t, NOT ullong.
+    ‡‡ Hosted 64 bit C implementations will have either a 32
+    bit int AND long or 64 bit long and llong. the 'lu' and
+    'li' suffixes are reserved in the former for long and in
+    the latter for llong. This allows values of these types 
+    to be compatible with the generic operation. However, be
+    aware that unless explicitly stated, when an operation
+    results in a value of a different size, its type is 
+    always the lowest ranked type with that width. E.g. if 
+    long and llong are both 64 bit, the return type of 
+    add2wi is long since it has lower rank than long long.
+    When the result width doesn't change, the return type is
+    always identical unless otherwise specified. E.g. xorslu
+    on the same LP64 based target returns a ullong.
 
     ‡‡‡ The 128 bit numeric types presently have no SIMD
     vector implementations.
@@ -454,12 +459,13 @@ suffixes for all one dimensional C pointer types:
     aclu    ulong const * or ullong const *
     acli    long const * or llong const *
 
-NOTE: ungop has no concept of "pointer to SIMD vector".
+NOTE: ungop has no concept of a "pointer to a SIMD vector".
 Users of the reference C implementation should consider all 
 SIMD vector values as inherently having the `register` 
-storage class. Unfortunately, GCC intrinsics don't work
-with `register` so we *_STRONGLY_* advise new code avoid 
-its use.
+storage class. An early build actually used the keyword in
+all vector operation signatures but unfortunately, GCC 
+intrinsics don't work with register qualified vectors. We
+therefore *_STRONGLY_* advise avoiding `register`
 
 Here's some examples for the readme that break down the
 combination of prefix+variant+typemod:
@@ -496,29 +502,29 @@ While each architecture implements SIMD in its own way,
 there are more than enough similarities to standardize it.
 Vector values are represented by 32, 64, or 128 contiguous 
 bits packed into 4, 8, or 16 contiguous bytes, respectively.
-This string of bits is then split into 1, 8, 16, 32, or 64
-bit "lanes", the contents of each being a correspondingly
-precise integer or floating point value. 
+This string of bits is then split into one or more 1, 8, 16,
+32, or 64 bit "lanes", the number of which being however
+many can fit in the containing vector. There are never any
+padding bits between vector elements.
 
 Like arrays, the type of value stored in a lane is known as
 the vector's element type. On architectures with a little
 endian vector representation, which are the only targets we
-support at present, the vector lane number and array index
+presently support, the vector lane number and array index
 of a particular multibit element are equivalent, while on 
 architectures with a big endian vector representation, the
-lane numbering matches the scheme used for bits. Our Boolean
-vectors' lanes are numbered according to their position 
-within the vector as interpreted as an equivalent width 
-unsigned integer. I.e. to extract boolean lane 17 of a Z bit
-vector, a Z bit right shift of 17 is performed, followed by 
-ANDing 1.
+lowest lane will be the highest index. Boolean vector lanes
+are numbered according to the bits position and are thus 
+the same on all platforms.
 
-The following figures demonstrate the relationship
-between "vector lane" and "array index" of a particular 
-element, for multibit types. For multibyte types, the lane
-number label is located at the same position as that lane's
-least significant byte:
+The following figures demonstrate the relationship between
+"vector lane" and "array index" of a particular element for
+multibit types. For multibyte types, the lane's number label
+is found at the same position as its least significant byte:
 
+    Ltt = little endian
+    Btt = big endian
+    idx = index
 
     Lww: W0_________
     Lwh: H0___ H1___ 
@@ -569,14 +575,19 @@ irrelevant.
 Finally, the following is a complete operations listing,
 including a brief description.
 
-### unprefixed
+### unprefixed/special
 
     •pass:   forfeit the calling thread's remaining CPU time
-
     •unos:   f(N) => fill register with N sequential 1 bits
+    •sign:   extract sign bit (no generic)
+    •expo:   extract exponent of float (no generic)
+    •mant:   extract mantissa of float (no generic)
 
 
 ### •cmb· «Compiler Memory Barrier»
+
+Prevent memory access reordering across the barrier by the
+compiler. Execution time reordering may still occur.
 
     •cmba:  ≈ atomic_signal_fence(memory_order_acquire)
     •cmbe:  ≈ atomic_signal_fence(memory_order_release)
@@ -584,6 +595,9 @@ including a brief description.
 
 
 ### •hmb· «Hardware Memory Barrier»
+Prevent all memory accesses of the relevant type from being
+reordered across the barrier. Unlike CMB, execution time
+reordering is also prevented.
 
     •hmba:  ≈ atomic_thread_fence(memory_order_acquire
     •hmbe:  ≈ atomic_thread_fence(memory_order_release)
@@ -591,13 +605,21 @@ including a brief description.
 
 
 ### •smb· «Synchronizing Memory Barrier»
+Identical to the corresponding HMB except that the thread 
+executing the SMB is blocked until all memory accesses of 
+the relevant type that preceded are completed. What exactly
+"completed" means in this regard is obviously implementation
+defined. At minimum, memory coherency is guaranteed.
 
-    •smba:  hmbc() plus load sync
-    •smbe:  hmbc() plus store sync
-    •smbt:  hmbc() plus total sync
+    •smba:  hmbc() and wait for all preceding loads
+    •smbe:  hmbc() and wait for all preceding stores
+    •smbt:  hmbc() and wait for all preceding accesses
 
 
 ### •ast· «generic Reinterpret cASt»
+
+Reinterpret the representation of a value as that of 
+another equivalent width type.
 
     •astm   virtual as machine or machine as virtual
     •astv:  virtual as scalar or scalar as virtual
@@ -647,6 +669,8 @@ including a brief description.
 
 
 ### •toa· «TO Ascii representation»
+Converts scalar to its text representation and stores it in
+a sufficiently large byte array.
 
     •toay:  binary
     •toao:  octal
@@ -657,22 +681,31 @@ including a brief description.
 
 ### •new· «Vector constructor»
 
-    •newl:  parameters L to R
-    •newr:  parameters R to L
+Construct a vector from a sequence of values specified as a
+list of numbered parameters.
+
+    •newl:  parameters given lo to hi
+    •newr:  parameters given hi to lo
+
 
 ### •lnq· «LiNear seQuence»
 
-    •lnql: incrementing
-    •lnqr: decrementing 
+Construct a vector representing a linear range.
+
+    •lnql: incrementing sequence 
+    •lnqr: decrementing sequence
+
 
 ### •dup· «DUPlicate»
+
+Construct a vector with all lanes set to the same value
 
     •dupw:  32 bit result
     •dupd:  64 bit result
     •dupq:  128 bit result
     •dupo:  256 bit result
     •dups:  512 bit result
-    •dupl:  duplicate first vector lane (broadcast)
+    •dupl:  duplicates the first vector lane ("broadcast")
 
 
 ### •get· «Extract»
@@ -684,12 +717,16 @@ including a brief description.
 
 ### •set· «Replace»
 
+Construct a vector with the value of a single lane replaced 
+
     •set1:  a single element
     •setl:  the lower half
     •setr:  the upper half
 
 
 ### •cat· «conCATenate»
+
+Concatenates the representations of two values.
 
     •catl:  L ## R
     •catr:  f(a, b) => catl(revs(b), revs(a))
@@ -704,29 +741,41 @@ including a brief description.
     •revt:  Unicode text
 
 
-### •zip· «interleave»
+### •zip· «interleave pair»
 
-    •zipl:  lower ½
-    •zipr:  upper ½
-    •zipp:  entire pair
+    •zipl:  keep the lower ½
+    •zipr:  keep the upper ½
+    •zipp:  keep entire result
 
 
-### •uzp· «UnZiP»
+### •uzp· «UnZip Pair»
 
-    •uzpl:  extract even numbered lanes
+    •uzpl:  extract the even numbered lanes of a vector pair
     •uzpr:  extract odd numbered lanes
 
 
 ### •bln· «BLeNd»
 
-    •blnm:  multiple arguments
+Construct a new vector consisting of elements selected from
+one of two source vectors using a mask
+
+    •blnm:  mask given via multiple parameters
+    
 
 
 ### •per· «PERmute»
 
-    •perp:  if index==-1, dst unchanged
-    •perz:  zero inserted in dst if index==-1
-    •pers:  ones inserted in dst if index==-1
+Construct a new N element vector from a source vector and a
+sequence of N vector lanes given as a list of integer 
+parameters. The lane numbers must either be -1, indicating a
+default value should be used, or a valid lane number. All 
+operations read the first parameter as the result's lane 0,
+the second parameter as its lane 1, and so on.
+
+    •perm:  lane copied from first source
+    •perp:  lane copied from a second source vector
+    •perz:  each bit in lane set to 0
+    •pers:  each bit in lane set to 1
 
 
 ### •cnt· «CouNt Total»
@@ -746,6 +795,9 @@ including a brief description.
 
 
 ### •raz· «Round with ties Away from Zero»
+
+Aka ties toward positive infinity for positive opeands and
+negative infinity for negative operands.
 
     •razf:  as Tf integral
     •razh:  as Hi
@@ -829,21 +881,33 @@ including a brief description.
 
 ### •ldr· «LoaD Register from aligned»
 
+The source memory must be aligned on a multiple of the size
+of the result type. I.e. loading a 128 bit vector with ldrq
+requires a 16 byte aligned address. On architectures with a
+little endian vector representation, vector lanes are loaded
+from the corresponding array index. If architectures with a
+big endian vector representation were supported, the first 
+lane of the result would be loaded from the last index of 
+the corresponding array. Refer to SIMD.
+
     •ldr1: atomic_load_explicit(..., memory_order_relaxed)
     •ldra: atomic_load_explicit(..., memory_order_acquire)
     •ldrt: atomic_load_explicit(..., memory_order_seq_cst)
-    •ldrw: load 32 bit vector from 4B
-    •ldrd: load 64 bit vector from 8B
-    •ldrq: load 128 bit vector from 16B
-    •ldro: load 256 bit vector from 32B
-    •ldrs: load 512 bit vector from 64B
+    •ldrw: load 4B as 32 bit vector
+    •ldrd: load 8B as 64 bit vector
+    •ldrq: load 16B as 128 bit vector
+    •ldro: (not implemented)
+    •ldrs: (not implemented)
 
 
-### •lun· «Load register UNaligned»
+### •lun· «Load UNaligned»
 
-    •lunn: nat-endian
-    •lunl: lil-endian
-    •lunb: big-endian
+Identical to the corresponding ldr operation except that the
+alignment of the operand is unconstrained.
+
+    •lunn: nat-endian scalar
+    •lunl: lil-endian scalar
+    •lunb: big-endian scalar
     •lunw: load 32 bit vector
     •lund: load 64 bit vector
     •lunq: load 128 bit vector
@@ -859,7 +923,7 @@ including a brief description.
     •strv: store entire vector
 
 
-### •sun· «Store register UNaligned»
+### •sun· «Store UNaligned»
 
     •sunn: nat-endian scalar
     •sunt: nat-endian scalar with temporality hint
@@ -965,41 +1029,73 @@ including a brief description.
     •rors:  by int
     •rorv:  by corresponding vector element
 
+zsert = zeros are shifted in
+lsert = the lower bits of second operand are shifted in
+rsert = the upper bits of second operand are shifted in
+ssert = the value of the sign bit us shifted in
 
-### •shl· «Shift element Bits Left by integer»
+shl2 (shift zsert by scalar left keep wider)
+shll (shift zsert by scalar left keep lower)
+shlr (shift zsert by scalar left keep upper)
+shls (shift zsert by scalar left saturating)
 
-    •shll:  truncated
-    •shls:  saturated
+svl2 (shift zsert left by vector with widen)
+svll (shift zsert left by vector keep lower)
+svlr (shift zsert left by vector keep upper)
+svls (shift zsert left by vector saturating)
+
+sill (shift lsert left by scalar keep lower)
+silp (shift pair left by scalar×esize keep upper)
+
+shrs (shift ssert rite by scalar)
+
+svrs (shift ssert rite by vector)
+
+sirr (shift rsert rite by scalar)
+sirp (shift pair rite by scalar×esize keep lower)
+
+### •shl· «SHift element bits Left by scalar»
+
+    •shl2:  zfill keep wider
+    •shll:  zfill keep lower
+    •shlr:  zfill keep upper
+    •shls:  zfill & saturate
+
+### •svl· «Shift bits by corresponding Vector element Left»
+
+    •svl2:  zfill keep wider
+    •svll:  zfill keep lower
+    •svlr:  zfill keep upper
+    •svls:  zfill & saturate
+
+
+### •sil· «Shift Insertion Left»
+
+    •sill:  lsert
+    •silv:  pair by scalar×esize
 
 
 ### •shr· «Shift element Bits Right by integer»
 
-    •shrs:  saturated
+    •shrs:  sfill/saturated
 
+
+### •svr· «Shift bits by corresponding Vector element Right»
+
+    •svrs:  saturated
+
+### •sir· «Shift Insert Right»
+
+    •sirr:  rsert
+    •sirp:  pair by scalar×esize
 
 ### •spl· «Shift Pair Left and extract»
 
-    •spll:  shift in from lo to hi
-    •splr:  shift in from hi to lo
+    •spll:  shift in from lsb to msb
+    •splr:  shift in from msb to lsb
     •splv:  vector
 
 
-### •spr· «Shift Pair Right and extract»
-
-    •sprl:  shift in from lo to hi
-    •sprr:  shift in from hi to lo
-    •sprv:  vector
-
-
-### •svl· «Shift Vector Left by corresponding element»
-
-    •svll:  truncated
-    •svls:  saturated
-
-
-### •svr· «Shift Vector Right by corresponding element»
-
-    •svrs:  saturated
 
 
 ### •inv· «unary INVert»
@@ -1082,6 +1178,7 @@ including a brief description.
     •subl:  truncated
     •subs:  saturated
     •sub2:  widened×2
+    •subm:  ((a-b)-c)
     •sub1:  atomic_fetch_sub(..., memory_order_relaxed)
     •suba:  atomic_fetch_sub(..., memory_order_acquire)
     •sube:  atomic_fetch_sub(..., memory_order_release)
@@ -1103,6 +1200,14 @@ including a brief description.
     •mulp:  result is homogeneous aggregate pair
     •mulv:  result is vector pair
 
+
+### •prd· «PRoDuct (multiply across vector)»
+
+    •prdl:  truncated
+    •prds:  saturated
+    •prd2:  widened×2
+    •prdp:  result is homogeneous aggregate pair
+ 
 
 ### •mad· «Multiply ADd»
 
@@ -1163,5 +1268,12 @@ including a brief description.
 
     •tanr: radians
     •tanh: hyperbolic 
+
+
+### •rnd· «RaNDom number»
+
+    •rndr: range
+
+    
 
 
