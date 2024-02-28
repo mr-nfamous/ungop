@@ -985,37 +985,37 @@ If dst isn't properly aligned, the result is undefined
 
 ### •ceq· «Compare EQual»
 
+    •ceqz: (a == 0) ? -1 : 0
     •ceqs: (a == b) ? -1 : 0
     •ceqy: (a == b) ? +1 : 0
-    •ceqz: (a == 0) ? -1 : 0
 
 
 ### •cne· «Compare Not Equal»
 
+    •cnez: (a != 0) ? -1 : 0
     •cnes: (a != b) ? -1 : 0
     •cney: (a != b) ? +1 : 0
-    •cnez: (a != 0) ? -1 : 0
 
 
 ### •clt· «Compare Less Than»
 
+    •cltz: (a < 0) ? -1 : 0
     •clts: (a < b) ? -1 : 0
     •clty: (a < b) ? +1 : 0
-    •cltz: (a < 0) ? -1 : 0
 
 
 ### •cle· «Compare Less or Equal»
 
+    •clez:  (a <= 0) ? -1 : 0
     •cles:  (a <= b) ? -1 : 0
     •cley:  (a <= b) ? +1 : 0
-    •clez:  (a <= 0) ? -1 : 0
 
 
 ### •cgt· «Compare Greater Than»
 
+    •cgtz:  (a > 0) ? -1 : 0
     •cgts:  (a > b) ? -1 : 0
     •cgty:  (a > b) ? +1 : 0
-    •cgtz:  (a > 0) ? -1 : 0
 
 
 ### •cge· «Compare Greater than or Equal»
@@ -1051,71 +1051,106 @@ If dst isn't properly aligned, the result is undefined
 
 ### •rol· «ROtate representation Left»
 
-    •rols:  by single int
-    •rolv:  by corresponding vector element
+    •rols:  by scalar
 
 
 ### •ror· «ROtate representation Right»
 
-    •rors:  by int
-    •rorv:  by corresponding vector element
+    •rors:  by scalar
 
 zsert = zeros are shifted in
 lsert = the lower bits of second operand are shifted in
 rsert = the upper bits of second operand are shifted in
 ssert = the value of the sign bit us shifted in
 
-shl2 (shift zsert by scalar left keep wider)
+
+shl2 (shift ssert by scalar left and widen)
 shll (shift zsert by scalar left keep lower)
 shlr (shift zsert by scalar left keep upper)
 shls (shift zsert by scalar left saturating)
 
-svl2 (shift zsert left by vector with widen)
+svl2 (shift zsert left by vector and widen)
 svll (shift zsert left by vector keep lower)
 svlr (shift zsert left by vector keep upper)
 svls (shift zsert left by vector saturating)
 
-sill (shift lsert left by scalar keep lower)
-silp (shift pair left by scalar×esize keep upper)
+sill (shift lsert left by scalar)
+silr (shift rsert left by scalar)
 
 shrs (shift ssert rite by scalar)
 
 svrs (shift ssert rite by vector)
 
+sirl (shift lsert rite by scalar)
 sirr (shift rsert rite by scalar)
-sirp (shift pair rite by scalar×esize keep lower)
 
-### •shl· «SHift element bits Left by scalar»
+spvl (shift pair left)
+spvr (shift pair right)
 
-    •shl2:  zfill keep wider
+### •shl· «SHift bits Left by scalar»
+
+shll and shlr left shifts unsigned integers logically and
+signed integers arithmetically then extracts the lower or
+upper half of the intermediate result. shl2 on the other
+hand returns the entire twice-as-wide intermediate result.
+shls is identical to shl2 then converting the twice as big
+intermediate result to the same type by saturation.
+
+    •shl2:  sfill keep wider
+    •shls:  sfill
     •shll:  zfill keep lower
     •shlr:  zfill keep upper
-    •shls:  zfill & saturate
 
 ### •svl· «Shift bits by corresponding Vector element Left»
+
+Identical to the corresponding shl_ operation except the
+second operand is a vector and the shift amount is 
+determined by the corresponding element
 
     •svl2:  zfill keep wider
     •svll:  zfill keep lower
     •svlr:  zfill keep upper
-    •svls:  zfill & saturate
+    •svls:  saturate
 
 
-### •sil· «Shift Insertion Left»
+### •sil· «Shift/Insert Left»
 
-    •sill:  lsert
-    •silv:  pair by scalar×esize
+Shifts each element in the first operand A left by the 
+number of bits specified by the third operand C. A slice of
+bits from an end of the corresponding element of the second
+operand B is replaces the shifted out bits.
+
+
+    •sill:  (A<<C)|B[0:C]
+    •silr:  (A<<C)|B[-C:]
 
 
 ### •shr· «Shift element Bits Right by integer»
+
+Shifts each element in the first operand A right by the
+number of bits specified as the second operand B. With 
+unsigned operands, one zero is shifted in for each bit 
+shifted out. For signed operands, copies of the sign bit
+are shifted in such that right shifting any signed integer
+by 1 is equivalent to division by 2.
 
     •shrs:  sfill/saturated
 
 
 ### •svr· «Shift bits by corresponding Vector element Right»
 
+Equivalent to shr_ except the shift amount is determined at
+runtime by the corresponding unsigned integer, which must 
+be between 1 and the element size.
+
     •svrs:  saturated
 
 ### •sir· «Shift Insert Right»
+
+Shifts each element in the first operand A right by the 
+number of bits specified by the third operand C. Instead of
+shifting in zeros, a string of bits is copied from one end
+of the second operand B.
 
     •sirr:  rsert
     •sirp:  pair by scalar×esize
