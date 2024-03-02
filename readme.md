@@ -579,6 +579,7 @@ including a brief description.
 
     •pass:   forfeit the calling thread's remaining CPU time
     •unos:   f(N) => fill register with N sequential 1 bits
+    •void:   the zero constant 
     •sign:   extract sign bit (no generic)
     •expo:   extract exponent of float (no generic)
     •mant:   extract mantissa of float (no generic)
@@ -686,7 +687,6 @@ list of numbered parameters.
 
     •newl:  parameters given lo to hi
     •newr:  parameters given hi to lo
-
 
 ### •lnq· «LiNear seQuence»
 
@@ -1049,53 +1049,72 @@ If dst isn't properly aligned, the result is undefined
     •minv:  across vector
 
 
-### •rol· «ROtate representation Left»
+### •rot· «ROTate binary representation»
 
-    •rols:  by scalar
+Shifts the binary representation of each element in the
+first operand by a number of bits specified as an unsigned
+integer given as the second operand. The bits shifted out
+"roll over", i.e. rotate back into the space at the 
+opposite end of the element. 
+
+    •rotl:  left
+    •rotr:  rite
+
+### •rov· «ROtate binary representation by Vector element»
+    •rovl:  left
+    •rovr:  rite
 
 
-### •ror· «ROtate representation Right»
-
-    •rors:  by scalar
 
 zsert = zeros are shifted in
 lsert = the lower bits of second operand are shifted in
 rsert = the upper bits of second operand are shifted in
 ssert = the value of the sign bit us shifted in
 
+all elements by same unsigned int:
 
-shl2 (shift ssert by scalar left and widen)
-shll (shift zsert by scalar left keep lower)
-shlr (shift zsert by scalar left keep upper)
-shls (shift zsert by scalar left saturating)
+    rotl (rotate left)
+    rotr (rotate rite)
+    
+    shl2 (shift ssert by scalar left and widen)
+    shll (shift zsert by scalar left keep lower)
+    shlr (shift zsert by scalar left keep upper)
+    shls (shift zsert by scalar left saturating)
+    
+    shrs (shift ssert rite by scalar)
 
-svl2 (shift zsert left by vector and widen)
-svll (shift zsert left by vector keep lower)
-svlr (shift zsert left by vector keep upper)
-svls (shift zsert left by vector saturating)
+    sill (shift lsert left by scalar)
+    silr (shift rsert left by scalar)
+    
+    sirl (shift lsert rite by scalar)
+    sirr (shift rsert rite by scalar)
+    
+    spll (shift pair left from lo)
+    splr (shift pair left from hi)
+    
+    sprl (shift pair right from lo)
+    sprr (shift pair right from hi)
 
-sill (shift lsert left by scalar)
-silr (shift rsert left by scalar)
+each element by corresponding vector element:
+    
+    svl2 (shift zsert left by vector and widen)
+    svll (shift zsert left by vector keep lower)
+    svlr (shift zsert left by vector keep upper)
+    svls (shift zsert left by vector saturating)
+    
+    svrs (shift ssert rite by vector)
 
-shrs (shift ssert rite by scalar)
+### •shl· «SHift Left by scalar»
 
-svrs (shift ssert rite by vector)
+For integers, each element in the operand is shifted left
+by a constant number of bits, which has the effect of 
+multiplying the operand by a power of two. For floats, the
+shift amount is added to the object's exponent member, 
+which is semantically equivalent to left shifting an int.
 
-sirl (shift lsert rite by scalar)
-sirr (shift rsert rite by scalar)
-
-spvl (shift pair left)
-spvr (shift pair right)
-
-### •shl· «SHift bits Left by scalar»
-
-shll and shlr left shifts unsigned integers logically and
-signed integers arithmetically then extracts the lower or
-upper half of the intermediate result. shl2 on the other
-hand returns the entire twice-as-wide intermediate result.
-shls is identical to shl2 then converting the twice as big
-intermediate result to the same type by saturation.
-
+Implementations commonly define a macro form, giving users
+the ability to explicitly use the faster constant shift 
+instructions. 
     •shl2:  sfill keep wider
     •shls:  sfill
     •shll:  zfill keep lower
@@ -1103,63 +1122,101 @@ intermediate result to the same type by saturation.
 
 ### •svl· «Shift bits by corresponding Vector element Left»
 
-Identical to the corresponding shl_ operation except the
-second operand is a vector and the shift amount is 
-determined by the corresponding element
+Like shl_ except instead of using a constant shift amount
+for each element, the corresponding unsigned element in a 
+second vector is used.
+
+TODO: debate the possible addition of svlr
 
     •svl2:  zfill keep wider
     •svll:  zfill keep lower
-    •svlr:  zfill keep upper
     •svls:  saturate
 
 
-### •sil· «Shift/Insert Left»
-
-Shifts each element in the first operand A left by the 
-number of bits specified by the third operand C. A slice of
-bits from an end of the corresponding element of the second
-operand B is replaces the shifted out bits.
-
-
-    •sill:  (A<<C)|B[0:C]
-    •silr:  (A<<C)|B[-C:]
-
-
-### •shr· «Shift element Bits Right by integer»
+### •shr· «SHift Right by scalar»
 
 Shifts each element in the first operand A right by the
 number of bits specified as the second operand B. With 
-unsigned operands, one zero is shifted in for each bit 
-shifted out. For signed operands, copies of the sign bit
-are shifted in such that right shifting any signed integer
-by 1 is equivalent to division by 2.
+unsigned operands, a zero is shifted in at the MSB for each
+bit shifted out at the LSB. For signed operands, copies of
+the sign bit are shifted in.
+
+TODO: debate renaming shrs/svrs to shrl/svrl. Both suffixes
+make sense semantically.
 
     •shrs:  sfill/saturated
 
 
 ### •svr· «Shift bits by corresponding Vector element Right»
 
-Equivalent to shr_ except the shift amount is determined at
-runtime by the corresponding unsigned integer, which must 
-be between 1 and the element size.
+Like shr_ except instead of using a constant shift amount
+for each element, the corresponding unsigned element in a 
+second vector is used.
 
     •svrs:  saturated
+    
+
+### •sil· «Shift/Insert Left»
+
+Shifts each element in the first operand A left by the 
+number of bits specified by the third operand C. A slice 
+of C bits are taken from one end of the corresponding 
+element in B and inserted in the space opened by the shift.
+
+    •sill:  (A<<C)|B[0:C]
+    •silr:  (A<<C)|B[-C:]
 
 ### •sir· «Shift Insert Right»
 
 Shifts each element in the first operand A right by the 
 number of bits specified by the third operand C. Instead of
-shifting in zeros, a string of bits is copied from one end
-of the second operand B.
+shifting in zeros, a contiguous sequence of bits from one 
+of the ends of the second integer operand B is inserted.
 
     •sirr:  rsert
     •sirp:  pair by scalar×esize
 
-### •spl· «Shift Pair Left and extract»
 
-    •spll:  shift in from lsb to msb
-    •splr:  shift in from msb to lsb
-    •splv:  vector
+### •spl· «Shift Pair Left»
+
+Shifts the binary representation of a vector left by a 
+multiple of its lane size. Instead of shifting in zeros, a
+sequence of consecutive elements taken from the end of a 
+second vector is inserted.
+
+    •spll:  insert lo slice
+    •splr:  insert hi slice
+
+
+### •spr· «Shift Pair Right»
+
+Shifts the binary representation of a vector right by a 
+multiple of its lane size. Instead of shifting in zeros, a
+sequence of consecutive elements taken from the end of a 
+second vector is inserted.
+
+E.g. on a little endian arch:
+
+    A = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7}
+    B = {0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
+    
+    A[:2] = {0x2, 0x3,  0x4, 0x5, 0x6, 0x7}
+    B[:2] = {0x8, 0x9}
+
+    v = sprldbu(A, B, 2) => A[2:] ## B[2:]
+    (   {0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9} )
+
+NOTE/TODO: some implementations only implement dedicated 
+instructions for one of the "shift by element size × N"
+ops. E.g. arm has vext and x86 has _mm_alignr, both 
+corresponding to sprl. In theory, compilers should often be
+able to detect that a user is using a less optimal spr/spl
+but we need a way for users to be able to detect if a 
+particular version has a dedicated operation.
+
+    •sprl:  insert lo slice
+    •sprr:  insert hi slice
+
 
 ### •inv· «unary INVert»
 
