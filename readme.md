@@ -688,12 +688,17 @@ list of numbered parameters.
     •newl:  parameters given lo to hi
     •newr:  parameters given hi to lo
 
-### •lnq· «LiNear seQuence»
 
-Construct a vector representing a linear range.
+### •seq· «linear SEQuence»
 
-    •lnql: incrementing sequence 
-    •lnqr: decrementing sequence
+Construct a vector with each element representing the next
+element in a range
+
+    •seqw: 32 bit result
+    •seqd: 64 bit result
+    •seqq: 128 bit result
+    •seqo: 256 bit result
+    •seqs: 512 bit result
 
 
 ### •dup· «DUPlicate»
@@ -874,9 +879,9 @@ negative infinity for negative operands.
 
     •cvqu: truncated QUAD_UTYPE
     •cvqi: truncated QUAD_ITYPE
-    •cvdz: saturated QUAD_UTYPE
-    •cvds: saturated QUAD_ITYPE
-    •cvdf: QUAD_FTYPE (current rounding mode)
+    •cvqz: saturated QUAD_UTYPE
+    •cvqs: saturated QUAD_ITYPE
+    •cvqf: QUAD_FTYPE (current rounding mode)
 
 
 ### •ldr· «LoaD Register from aligned»
@@ -982,8 +987,18 @@ If dst isn't properly aligned, the result is undefined
     •xeqe: succ=release, fail=acquire
     •xeqt: succ=seq_cst, fail=seq_cst
 
+ceqs ceqy zeqs zeqy veqs veqy neqs neqy
+cnes cney znes zney vnes vney nnes nney
+clts clty zlts zlty vlts vlty nlts nlty
+cles cley zles zley vles vley nles nley
+cgts cgty zgts zgty vgts vgty ngts ngty
+cges cgey zges zgey vges vgey nges ngey
+
 
 ### •ceq· «Compare EQual»
+
+Compare each element in the first operand with the
+corresponding element in the second operand.
 
     •ceqz: (a == 0) ? -1 : 0
     •ceqs: (a == b) ? -1 : 0
@@ -1024,6 +1039,23 @@ If dst isn't properly aligned, the result is undefined
     •cgey:  (a >= b) ? +1 : 0
     •cgez:  (a >= 0) ? -1 : 0
 
+### •cbn· «Compare BetweeN»
+
+Takes three operands: a scalar or vector as N and two 
+scalars as L and R. For each element E in N, determine if
+L <= N <= R.
+
+    •cbns:  (l <= x) && (x <= r) ? -1 : 0
+    •cbny:  (l <= x) && (x <= r) ? +1 : 0
+
+### •nbn· «compare Not BetweeN»
+
+Performs the complement of cbn
+
+
+    •cnbs:  (l <= x) && (x <= r) ? 0 : -1
+    •cnby:  (l <= x) && (x <= r) ? 0 : -1
+
 
 ### •any· «test if ANY bits in mask are set»
 
@@ -1049,21 +1081,18 @@ If dst isn't properly aligned, the result is undefined
     •minv:  across vector
 
 
-### •rot· «ROTate binary representation»
-
-Shifts the binary representation of each element in the
-first operand by a number of bits specified as an unsigned
-integer given as the second operand. The bits shifted out
-"roll over", i.e. rotate back into the space at the 
-opposite end of the element. 
+### •rot· «ROTate binary representation by int»
 
     •rotl:  left
-    •rotr:  rite
+    •rolr:  right
+    •rots:  left by pos, right by neg
+
 
 ### •rov· «ROtate binary representation by Vector element»
+
     •rovl:  left
     •rovr:  rite
-
+    •rovs:  left by pos, right by neg
 
 
 zsert = zeros are shifted in
@@ -1073,9 +1102,10 @@ ssert = the value of the sign bit us shifted in
 
 all elements by same unsigned int:
 
-    rotl (rotate left)
-    rotr (rotate rite)
-    
+    rotl (left by uint)
+    rotr (rite by uint)
+    rots (left by +int, rite by abs(-int))
+
     shl2 (shift ssert by scalar left and widen)
     shll (shift zsert by scalar left keep lower)
     shlr (shift zsert by scalar left keep upper)
@@ -1096,7 +1126,11 @@ all elements by same unsigned int:
     sprr (shift pair right from hi)
 
 each element by corresponding vector element:
-    
+
+    rovl (left by uint)
+    rovr (rite by uint)
+    rovs (left by +int, rite by abs(-int))
+
     svl2 (shift zsert left by vector and widen)
     svll (shift zsert left by vector keep lower)
     svlr (shift zsert left by vector keep upper)
