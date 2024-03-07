@@ -622,62 +622,62 @@ defined. At minimum, memory coherency is guaranteed.
 Reinterpret the representation of a value as that of 
 another equivalent width type.
 
-    •astm   virtual as machine or machine as virtual
-    •astv:  virtual as scalar or scalar as virtual
-    •astu:  Ts as Tu
-    •asti:  Tn as Ti
-    •astf:  Tz as Tf
+    •astm   interpet virtual as machine or machine as virtual
+    •astv:  interpret virtual as scalar or scalar as virtual
+    •astu:  interpret Ts as Tu
+    •asti:  interpret Tn as Ti
+    •astf:  interpret Tz as Tf
 
 
 ### •asy· «reinterpret cASt as boolean vector»
 
-    •asyu:  V**r as V*yu
+    •asyu:  interpet V**r as V*yu
 
 
 ### •asb· «reinterpret cast AS Byte»
 
-    •asbu:  Bs as Bu or Vt*s as Vtbu
-    •asbi:  Bn as Bi or Vt*n as Vtbi
-    •asbc:  Br as Bc or Vt*r as Vtbc
+    •asbu:  interpret Bs as Bu or Vt*s as Vtbu
+    •asbi:  interpret Bn as Bi or Vt*n as Vtbi
+    •asbc:  interpret Br as Bc or Vt*r as Vtbc
 
 
 ### •ash· «reinterpret cast AS Halfword»
 
-    •ashu:  Hs as Hu or Vt*s as Vthu
-    •ashi:  Hn as Hi or Vt*n as Vthi
-    •ashf:  Hz as Hf or Vt*z as Vthf
+    •ashu:  interpret Hs as Hu or Vt*s as Vthu
+    •ashi:  interpret Hn as Hi or Vt*n as Vthi
+    •ashf:  interpret Hz as Hf or Vt*z as Vthf
 
 
 ### •asw· «reinterpret cast AS Word»
 
-    •aswu:  Ws as Wu or Vt*s as Vtwu
-    •aswi:  Wn as Wi or Vt*n as Vtwi
-    •aswf:  Wz as Wf or Vt*z as Vtwf
+    •aswu:  interpret Ws as Wu or Vt*s as Vtwu
+    •aswi:  interpret Wn as Wi or Vt*n as Vtwi
+    •aswf:  interpret Wz as Wf or Vt*z as Vtwf
 
 
 ### •asd· «reinterpret cast AS Doubleword»
 
-    •asdu:  Dr as Du or Vt*r as Vtdu
-    •asdi:  Dr as Di or Vt*r as Vtdi
-    •asdf:  Dr as Df or Vt*r as Vtdf
+    •asdu:  interpret Dr as Du or Vt*r as Vtdu
+    •asdi:  interpret Dr as Di or Vt*r as Vtdi
+    •asdf:  interpret Dr as Df or Vt*r as Vtdf
 
 
 ### •asq· «reinterpret cast AS Quadword»
 
-    •asqu:  Qr as Qu or Vt*r as Vtqu
-    •asqi:  Qr as Qi or Vt*r as Vtqi
-    •asqf:  Qr as Qf or Vt*r as Vtqf
+    •asqu:  interpret Qr as Qu or Vt*r as Vtqu
+    •asqi:  interpret Qr as Qi or Vt*r as Vtqi
+    •asqf:  interpret Qr as Qf or Vt*r as Vtqf
 
 
 ### •toa· «TO Ascii representation»
 Converts scalar to its text representation and stores it in
 a sufficiently large byte array.
 
-    •toay:  binary
-    •toao:  octal
-    •toad:  decimal
-    •toau:  hexdecimal repr (uppercase alnum)
-    •toax:  hexdecimal repr (lowercase alnum)
+    •toay:  store binary repr
+    •toao:  store octal repr
+    •toad:  store decimal repr
+    •toal:  store lowercase hexdecimal repr
+    •toau:  store uppercase hexdecimal repr 
 
 
 ### •new· «Vector constructor»
@@ -685,8 +685,8 @@ a sufficiently large byte array.
 Construct a vector from a sequence of values specified as a
 list of numbered parameters.
 
-    •newl:  parameters given lo to hi
-    •newr:  parameters given hi to lo
+    •newl:  vector ctor, parameters given lo to hi
+    •newr:  vector ctor, parameters given hi to lo
 
 
 ### •seq· «linear SEQuence»
@@ -694,56 +694,55 @@ list of numbered parameters.
 Construct a vector with each element representing the next
 element in a range
 
-    •seqw: 32 bit result
-    •seqd: 64 bit result
-    •seqq: 128 bit result
-    •seqo: 256 bit result
-    •seqs: 512 bit result
+    •seqw: 4×8b or 2×16b bit range
+    •seqd: 8×8b, 4×16b, of 2×32b range
+    •seqq: 16×8b, 8×16b, 4×32b, or 2×64b range
+    •seqo: 32×8b, 16×16b, 8×32b, or 4×64b range
+    •seqs: 64×8b, 32×16b, 16×32b, or 8×64b range
+
 
 
 ### •dup· «DUPlicate»
 
 Construct a vector with all lanes set to the same value
 
-    •dupw:  32 bit result
-    •dupd:  64 bit result
-    •dupq:  128 bit result
-    •dupo:  256 bit result
-    •dups:  512 bit result
     •dupl:  duplicates the first vector lane ("broadcast")
+    •dupw:  set all lanes of new 32 bit vector
+    •dupd:  set all lanes of new 64 bit vector
+    •dupq:  set all lanes of new 128 bit vector
+    •dupo:  set all lanes of new 256 bit vector
+    •dups:  set all lanes of new 512 bit vector
 
 
 ### •get· «Extract»
 
-    •get1:  a single element
-    •getl:  lower half
-    •getr:  upper half
+    •get1:  extract single element
+    •getl:  extract lower half
+    •getr:  extract upper half
 
 
 ### •set· «Replace»
 
 Construct a vector with the value of a single lane replaced 
 
-    •set1:  a single element
-    •setl:  the lower half
-    •setr:  the upper half
+    •set1:  replace single element
+    •setl:  replace lower half
+    •setr:  replace upper half
 
 
 ### •cat· «conCATenate»
 
 Concatenates the representations of two values.
 
-    •catl:  L ## R
-    •catr:  f(a, b) => catl(revs(b), revs(a))
+    •catl:  concatenate L ## R
+    •catr:  concatenate revs(R) ## revs(L)
 
 
 ### •rev· «REVerse»
 
-    •revs:  sequence
-    •revy:  element bits
-    •revb:  element bytes
-    •revh:  element halfwords
-    •revt:  Unicode text
+    •revs:  reverse vector
+    •revy:  reverse element bits
+    •revb:  reverse element bytes
 
 
 ### •zip· «interleave pair»
@@ -765,7 +764,6 @@ Construct a new vector consisting of elements selected from
 one of two source vectors using a mask
 
     •blnm:  mask given via multiple parameters
-    
 
 
 ### •per· «PERmute»
@@ -786,7 +784,7 @@ the second parameter as its lane 1, and so on.
 ### •cnt· «CouNt Total»
 
     •cnt1:  one digits (i.e. hamming weight/popcount)
-    •cntr:  redundant sign bits
+    •cnts:  redundant sign bits
     •cnta:  matching 7-bit range (ASCII)
     •cntb:  matching 8-bit range (ISO-8859-1/'latin-1')
     •cnth:  matching 16-bit range (Unicode BMP)
@@ -813,75 +811,75 @@ negative infinity for negative operands.
 
 ### •rtz· «Round with ties Towards Zero»
 
-    •rtzf:  as Tf integral
-    •rtzh:  as Hi
-    •rtzw:  as Wi
-    •rtzd:  as Di
-    •rtzq:  as Qi
+    •rtzf:  round with ties to zero as Tf integral
+    •rtzh:  round with ties to zero as Hi
+    •rtzw:  round with ties to zero as Wi
+    •rtzd:  round with ties to zero as Di
+    •rtzq:  round with ties to zero as Qi
 
 
 ### •rtp· «Round with ties Towards Positive infinity»
 
-    •rtph:  as Tf integral
-    •rtph:  as Hi
-    •rtpw:  as Wi
-    •rtpd:  as Di
-    •rtpq:  as Qi
+    •rtph:  round with ties to +inf as Tf integral
+    •rtph:  round with ties to +inf as Hi
+    •rtpw:  round with ties to +inf  as Wi
+    •rtpd:  round with ties to +inf  as Di
+    •rtpq:  round with ties to +inf  as Qi
 
 
 ### •rtn· «Round with ties Towards Negative infinity»
 
-    •rtnh:  as Tf integral
-    •rtnh:  as Hi
-    •rtnw:  as Wi
-    •rtnd:  as Di
-    •rtnq:  as Qi
+    •rtnh:  round with ties to -inf as Tf integral
+    •rtnh:  round with ties to -inf as Hi
+    •rtnw:  round with ties to -inf as Wi
+    •rtnd:  round with ties to -inf as Di
+    •rtnq:  round with ties to -inf as Qi
 
 
 ### •cvb· «ConVert to Byte»
 
-    •cvbc:  char
-    •cvbu:  uint8_t
-    •cvbi:  int8_t
-    •cvbz:  saturated uint8_t
-    •cvbs:  saturated int8_t
+    •cvbc:  convert to truncated char
+    •cvbu:  convert to truncated uint8_t
+    •cvbi:  convert to truncated int8_t
+    •cvbz:  convert to saturated uint8_t
+    •cvbs:  convert to saturated int8_t
     •cvbf:  reserved (probably for bf16/brain float)
 
 
 ### •cvh· «ConVert to Halfword»
 
-    •cvhu:  uint16_t
-    •cvhi:  int16_t
-    •cvhz:  saturated uint16_t
-    •cvhs:  saturated int16_t
-    •cvhf:  flt16_t (current rounding mode)
+    •cvhu:  convert to truncated uint16_t
+    •cvhi:  convert to truncated int16_t
+    •cvhz:  convert to saturated uint16_t
+    •cvhs:  convert to saturated int16_t
+    •cvhf:  convert to flt16_t (current rounding mode)
 
 
 ### •cvw· «ConVert to Word»
 
-    •cvwu:  uint32_t
-    •cvwi:  int32_t
+    •cvwu:  convert to truncated uint32_t
+    •cvwi:  convert to truncated int32_t
     •cvwz:  saturated uint32_t
     •cvws:  saturated int32_t
-    •cvwf:  float (current rounding mode)
+    •cvwf:  convert to float (current rounding mode)
 
 
 ### •cvd· «ConVert to Doubleword»
 
-    •cvdu:  uint64_t
-    •cvdi:  int64_t
-    •cvdz:  saturated uint64_t
-    •cvds:  saturated int64_t
+    •cvdu:  convert to truncated uint64_t
+    •cvdi:  convert to truncated int64_t
+    •cvdz:  convert to saturated uint64_t
+    •cvds:  convert to saturated int64_t
     •cvdf:  double (current rounding mode)
 
 
 ### •cvq· «ConVert to Quadword»
 
-    •cvqu: truncated QUAD_UTYPE
-    •cvqi: truncated QUAD_ITYPE
-    •cvqz: saturated QUAD_UTYPE
-    •cvqs: saturated QUAD_ITYPE
-    •cvqf: QUAD_FTYPE (current rounding mode)
+    •cvqu: convert to truncated QUAD_UTYPE
+    •cvqi: convert to truncated QUAD_ITYPE
+    •cvqz: convert to saturated QUAD_UTYPE
+    •cvqs: convert to saturated QUAD_ITYPE
+    •cvqf: convert to QUAD_FTYPE (current rounding mode)
 
 
 ### •ldr· «LoaD Register from aligned»
@@ -901,9 +899,9 @@ the corresponding array. Refer to SIMD.
     •ldr1: atomic_load_explicit(..., memory_order_relaxed)
     •ldra: atomic_load_explicit(..., memory_order_acquire)
     •ldrt: atomic_load_explicit(..., memory_order_seq_cst)
-    •ldrw: load 4B as 32 bit vector
-    •ldrd: load 8B as 64 bit vector
-    •ldrq: load 16B as 128 bit vector
+    •ldrw: load aligned 4B as 32 bit vector
+    •ldrd: load aligned 8B as 64 bit vector
+    •ldrq: load aligned 16B as 128 bit vector
     •ldro: (not implemented)
     •ldrs: (not implemented)
 
@@ -913,14 +911,14 @@ the corresponding array. Refer to SIMD.
 Identical to the corresponding ldr operation except that the
 alignment of the operand is unconstrained.
 
-    •lunn: nat-endian scalar
-    •lunl: lil-endian scalar
-    •lunb: big-endian scalar
-    •lunw: load 32 bit vector
-    •lund: load 64 bit vector
-    •lunq: load 128 bit vector
-    •luno: load 256 bit vector
-    •luns: load 512 bit vector
+    •lunn: load nat-endian scalar from unaligned
+    •lunl: load lil-endian scalar from unaligned
+    •lunb: big-endian scalar from unaligned
+    •lunw: load 32 bit vector from unaligned
+    •lund: load 64 bit vector from unaligned
+    •lunq: load 128 bit vector from unaligned
+    •luno: (not implemented)
+    •luns: (not implemented)
 
 
 ### •str· «STore Register aligned»
@@ -933,9 +931,9 @@ by a load at Z with the appropriate LDR results in a new
 vector with exactly the same binary representation as A.
 The result is the destination address.
 
-    •str1: atomic_store_explicit(..., memory_order_relaxed)
-    •stre: atomic_store_explicit(..., memory_order_release)
-    •strt: atomic_store_explicit(..., memory_order_seq_cst)
+    •str1: atomic_store_explicit(...,memory_order_relaxed)
+    •stre: atomic_store_explicit(...,memory_order_release)
+    •strt: atomic_store_explicit(...,memory_order_seq_cst)
     •strv: store entire vector
 
 
@@ -944,15 +942,12 @@ The result is the destination address.
 Identical to the corresponding STR operation except the
 alignment is unconstrained.
 
-    •sunn: nat-endian scalar
-    •sunt: nat-endian scalar with temporality hint
-    •sunl: lil-endian scalar
-    •sunb: big-endian scalar
-    •sunw: 4 bytes as 32 bit vector
-    •sund: 8 bytes as 64 bit vector
-    •sunq: 16 bytes as 128 bit vector
-    •suno: 32 bytes as 256 bit vector
-    •suns: 64 bytes as 512 bit vector
+    •sunn: stored nat-endian scalar to unaligned
+    •sunl: store lil-endian scalar to unaligned
+    •sunb: store big-endian scalar to unaligned
+    •sunw: store 32 bit vector as 4 unaligned bytes 
+    •sund: store 64 bit vector as 8 unaligned bytes
+    •sunq: store 128 bit vector as 16 unaligned bytes
 
 
 ### •swp· «SWaP»
@@ -965,10 +960,10 @@ E.g. swp1(src, dst) atomically performs:
 
 If dst isn't properly aligned, the result is undefined
 
-    •swp1: atomic_exchange_explicit(..., memory_order_relaxed)
-    •swpa: atomic_exchange_explicit(..., memory_order_acquire)
-    •swpe: atomic_exchange_explicit(..., memory_order_release)
-    •swpt: atomic_exchange_explicit(..., memory_order_seq_cst)
+    •swp1: atomic_exchange_explicit(...,memory_order_relaxed)
+    •swpa: atomic_exchange_explicit(...,memory_order_acquire)
+    •swpe: atomic_exchange_explicit(...,memory_order_release)
+    •swpt: atomic_exchange_explicit(...,memory_order_seq_cst)
 
 
 ### •xeq· «eXchange if EQual»
@@ -1053,8 +1048,8 @@ L <= N <= R.
 Performs the complement of cbn
 
 
-    •cnbs:  (l <= x) && (x <= r) ? 0 : -1
-    •cnby:  (l <= x) && (x <= r) ? 0 : -1
+    •nbns:  (l <= x) && (x <= r) ? 0 : -1
+    •nbny:  (l <= x) && (x <= r) ? 0 : -1
 
 
 ### •any· «test if ANY bits in mask are set»
@@ -1065,34 +1060,36 @@ Performs the complement of cbn
 
 ### •avg· «AVeraGe»
 
-    •avgs:  elementwise
-    •avgv:  across vector
+    •avgs:  average of corresponding elements
+    •avgv:  average across vector
 
 
 ### •max· «MAXimum»
 
     •maxl:  f(a, b) => likely(a > b) ? a : b
-    •maxv:  across vector
+    •maxp:  pairwise maximum
+    •maxv:  maximum across vector
 
 
 ### •min· «MINimum»
 
     •minl:  f(a, b) => likely(a < b) ? a : b
-    •minv:  across vector
+    •minp:  
+    •minv:  minimum across vector
 
 
 ### •rot· «ROTate binary representation by int»
 
-    •rotl:  left
-    •rolr:  right
+    •rotl:  rotate binary repr left by uint
+    •rolr:  rotate binary repr right by uint
     •rots:  left by pos, right by neg
 
 
 ### •rov· «ROtate binary representation by Vector element»
 
-    •rovl:  left
-    •rovr:  rite
-    •rovs:  left by pos, right by neg
+    •rovl:  rotate binary repr left by corresponding 
+    •rovr:  rotate binary repr rite by corresponding 
+    •rovs:  rotate binary repr left by pos, right by neg
 
 
 zsert = zeros are shifted in
@@ -1263,9 +1260,9 @@ particular version has a dedicated operation.
 
 ### •neg· «unary NEGate»
 
-    •negs:  saturated
     •negl:  truncated
-    •neg2:  widened×2
+    •negs:  saturated
+    •negf:  negate as float
 
 
 ### •abs· «ABSolute value»
@@ -1273,7 +1270,6 @@ particular version has a dedicated operation.
     •absl:  truncated
     •abss:  saturated
     •absu:  unsigned result
-    •abs2:  widened×2
     •absf:  floating result (using current rounding mode)
 
 
@@ -1438,7 +1434,7 @@ particular version has a dedicated operation.
 
 ### •rnd· «RaNDom number»
 
-    •rndn: fill each element of result with random bits
+    •rndy: fill each element of result with random bits
     
     
 
