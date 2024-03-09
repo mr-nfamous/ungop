@@ -597,8 +597,8 @@ compiler. Execution time reordering may still occur.
 
 ### •hmb· «Hardware Memory Barrier»
 Prevent all memory accesses of the relevant type from being
-reordered across the barrier. Unlike CMB, execution time
-reordering is also prevented.
+reordered across the barrier. Unlike cmb, reordering at 
+execution time is also prevented.
 
     •hmba:  ≈ atomic_thread_fence(memory_order_acquire
     •hmbe:  ≈ atomic_thread_fence(memory_order_release)
@@ -606,11 +606,12 @@ reordering is also prevented.
 
 
 ### •smb· «Synchronizing Memory Barrier»
-Identical to the corresponding HMB except that the thread 
-executing the SMB is blocked until all memory accesses of 
-the relevant type that preceded are completed. What exactly
-"completed" means in this regard is obviously implementation
-defined. At minimum, memory coherency is guaranteed.
+Identical to the corresponding hmb except that the thread 
+executing the smb spins until all previously initiated but 
+unfinished memory accesses of the relevant type complete.
+What exactly "complete" means in this regard is obviously 
+implementation defined. At minimum, memory coherency is 
+guaranteed.
 
     •smba:  hmbc() and wait for all preceding loads
     •smbe:  hmbc() and wait for all preceding stores
@@ -716,6 +717,8 @@ Construct a vector with all lanes set to the same value
 
 ### •get· «Extract»
 
+Extract part of a vector
+
     •get1:  extract single element
     •getl:  extract lower half
     •getr:  extract upper half
@@ -723,7 +726,7 @@ Construct a vector with all lanes set to the same value
 
 ### •set· «Replace»
 
-Construct a vector with the value of a single lane replaced 
+Copy a vector and replace a part of the copy.
 
     •set1:  replace single element
     •setl:  replace lower half
@@ -732,7 +735,7 @@ Construct a vector with the value of a single lane replaced
 
 ### •cat· «conCATenate»
 
-Concatenates the representations of two values.
+Concatenate the representations of two values.
 
     •catl:  concatenate L ## R
     •catr:  concatenate revs(R) ## revs(L)
@@ -982,63 +985,76 @@ If dst isn't properly aligned, the result is undefined
     •xeqe: succ=release, fail=acquire
     •xeqt: succ=seq_cst, fail=seq_cst
 
-ceqs ceqy zeqs zeqy veqs veqy neqs neqy
-cnes cney znes zney vnes vney nnes nney
-clts clty zlts zlty vlts vlty nlts nlty
-cles cley zles zley vles vley nles nley
-cgts cgty zgts zgty vgts vgty ngts ngty
-cges cgey zges zgey vges vgey nges ngey
-
-
 ### •ceq· «Compare EQual»
 
-Compare each element in the first operand with the
-corresponding element in the second operand.
-
-    •ceqz: (a == 0) ? -1 : 0
     •ceqs: (a == b) ? -1 : 0
     •ceqy: (a == b) ? +1 : 0
 
 
 ### •cne· «Compare Not Equal»
 
-    •cnez: (a != 0) ? -1 : 0
     •cnes: (a != b) ? -1 : 0
     •cney: (a != b) ? +1 : 0
 
 
 ### •clt· «Compare Less Than»
 
-    •cltz: (a < 0) ? -1 : 0
     •clts: (a < b) ? -1 : 0
     •clty: (a < b) ? +1 : 0
 
 
 ### •cle· «Compare Less or Equal»
 
-    •clez:  (a <= 0) ? -1 : 0
     •cles:  (a <= b) ? -1 : 0
     •cley:  (a <= b) ? +1 : 0
 
 
 ### •cgt· «Compare Greater Than»
 
-    •cgtz:  (a > 0) ? -1 : 0
     •cgts:  (a > b) ? -1 : 0
     •cgty:  (a > b) ? +1 : 0
 
 
 ### •cge· «Compare Greater than or Equal»
 
-    •cges:  (a >= b) ? -1 : 0
     •cgey:  (a >= b) ? +1 : 0
     •cgez:  (a >= 0) ? -1 : 0
+
+### •zeq· «Zero EQuals»
+
+    •zeqs: (0 == a) ? -1 : 0
+    •zeqy: (0 == a) ? +1 : 0
+
+### •zne· «Zero does Not Equal»
+
+    •znes: (0 != a) ? -1 : 0
+    •zney: (0 != a) ? +1 : 0
+
+### •zlt· «Zero Less Than»
+
+    •zlts: (0 < a) ? -1 : 0
+    •zlty: (0 < a) ? +1 : 0
+
+### •zle· «Zero Less than or Equal to»
+
+    •zles: (0 < a) ? -1 : 0
+    •zley: (0 < a) ? +1 : 0
+
+### •zgt· «Zero Greater Than»
+
+    •zgts: (0 > a) ? -1 : 0
+    •zgty: (0 > a) ? +1 : 0
+
+### •zle· «Zero Greater than or Equal to»
+
+    •zges: (0 < a) ? -1 : 0
+    •zgey: (0 < a) ? +1 : 0
 
 ### •cbn· «Compare BetweeN»
 
 Takes three operands: a scalar or vector as N and two 
 scalars as L and R. For each element E in N, determine if
-L <= N <= R.
+L <= E <= R.
 
     •cbns:  (l <= x) && (x <= r) ? -1 : 0
     •cbny:  (l <= x) && (x <= r) ? +1 : 0
