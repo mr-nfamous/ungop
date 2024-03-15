@@ -717,16 +717,12 @@ Construct a vector with all lanes set to the same value
 
 ### •get· «Extract»
 
-Extract part of a vector
-
-    •get1:  extract single element
+    •get1:  extract single vector element
     •getl:  extract lower half
     •getr:  extract upper half
 
 
 ### •set· «Replace»
-
-Copy a vector and replace a part of the copy.
 
     •set1:  replace single element
     •setl:  replace lower half
@@ -734,8 +730,6 @@ Copy a vector and replace a part of the copy.
 
 
 ### •cat· «conCATenate»
-
-Concatenate the representations of two values.
 
     •catl:  concatenate L ## R
     •catr:  concatenate revs(R) ## revs(L)
@@ -802,7 +796,7 @@ the second parameter as its lane 1, and so on.
 
 ### •raz· «Round with ties Away from Zero»
 
-Aka ties toward positive infinity for positive opeands and
+Aka ties toward positive infinity for positive operands and
 negative infinity for negative operands.
 
     •razf:  as Tf integral
@@ -912,7 +906,7 @@ the corresponding array. Refer to SIMD.
 ### •lun· «Load UNaligned»
 
 Identical to the corresponding ldr operation except that the
-alignment of the operand is unconstrained.
+alignment of the operand is irrelevant.
 
     •lunn: load nat-endian scalar from unaligned
     •lunl: load lil-endian scalar from unaligned
@@ -943,7 +937,7 @@ The result is the destination address.
 ### •sun· «Store UNaligned»
 
 Identical to the corresponding STR operation except the
-alignment is unconstrained.
+alignment is irrelevant.
 
     •sunn: stored nat-endian scalar to unaligned
     •sunl: store lil-endian scalar to unaligned
@@ -989,36 +983,41 @@ If dst isn't properly aligned, the result is undefined
 
     •ceqs: (a == b) ? -1 : 0
     •ceqy: (a == b) ? +1 : 0
-
+    •ceqn: counts number of eq vector elements
 
 ### •cne· «Compare Not Equal»
 
     •cnes: (a != b) ? -1 : 0
     •cney: (a != b) ? +1 : 0
+    •cnen: counts number of ne vector elements
 
 
 ### •clt· «Compare Less Than»
 
     •clts: (a < b) ? -1 : 0
     •clty: (a < b) ? +1 : 0
+    •cltn: counts number of lt equal vector element
 
 
 ### •cle· «Compare Less or Equal»
 
     •cles:  (a <= b) ? -1 : 0
     •cley:  (a <= b) ? +1 : 0
+    •clen: counts number of le vector elements
 
 
 ### •cgt· «Compare Greater Than»
 
     •cgts:  (a > b) ? -1 : 0
     •cgty:  (a > b) ? +1 : 0
+    •cgtn: counts number of gt vector elements
 
 
 ### •cge· «Compare Greater than or Equal»
 
     •cgey:  (a >= b) ? +1 : 0
     •cgez:  (a >= 0) ? -1 : 0
+    •cgtn: counts number of ge vector elements
 
 ### •zeq· «Zero EQuals»
 
@@ -1237,7 +1236,7 @@ second vector is inserted.
 
 ### •spr· «Shift Pair Right»
 
-Shifts the binary representation of a vector right by a 
+Shift the binary representation of a vector right by a 
 multiple of its lane size. Instead of shifting in zeros, a
 sequence of consecutive elements taken from the end of a 
 second vector is inserted.
@@ -1274,21 +1273,6 @@ particular version has a dedicated operation.
     •invt:  atomic_xor_explicit(a, -1, memory_order_seq_cst)
 
 
-### •neg· «unary NEGate»
-
-    •negl:  truncated
-    •negs:  saturated
-    •negf:  negate as float
-
-
-### •abs· «ABSolute value»
-
-    •absl:  truncated
-    •abss:  saturated
-    •absu:  unsigned result
-    •absf:  floating result (using current rounding mode)
-
-
 ### •and· «bitwise AND»
 
     •ands:  a & b
@@ -1321,6 +1305,20 @@ particular version has a dedicated operation.
     •xorm:  v[0] ^ v[1] ^ v[2] ^ ...
 
 
+### •neg· «unary NEGate»
+
+    •negl:  truncated
+    •negs:  saturated
+    •negf:  negate as float
+
+
+### •abs· «ABSolute value»
+
+    •absl:  truncated
+    •abss:  saturated
+    •absu:  unsigned result
+    •absf:  floating result (using current rounding mode)
+
 ### •add· «ADDition»
 
     •addl:  truncated
@@ -1329,20 +1327,28 @@ particular version has a dedicated operation.
     •add1:  atomic_fetch_add(..., memory_order_relaxed)
     •adda:  atomic_fetch_add(..., memory_order_acquire)
     •adde:  atomic_fetch_add(..., memory_order_release)
-    •addt: atomic_fetch_add(..., memory_order_seq_cst)
-
+    •addt:  atomic_fetch_add(..., memory_order_seq_cst)
+    •addh:  flt16_t c = (flt16_t) a+b
+    •addw:  float   c = (float) a+b
+    •addd:  double  c = (double) a+b
 
 ### •inc· «INCrement by 1»
 
     •incl:  truncated
     •incs:  saturated
     •inc2:  widened×2
+    •inch:  flt16_t
+    •incw:  float 
+    •incd:  double
 
 ### •sum· «SUM (add across vector)»
 
     •suml:  truncated
     •sum2:  widened×2
     •sums:  saturated
+    •sumh:  flt16_t
+    •sumw:  float 
+    •sumd:  double
 
 
 ### •sub· «SUBtract»
@@ -1350,24 +1356,29 @@ particular version has a dedicated operation.
     •subl:  truncated
     •subs:  saturated
     •sub2:  widened×2
-    •subm:  ((a-b)-c)
     •sub1:  atomic_fetch_sub(..., memory_order_relaxed)
     •suba:  atomic_fetch_sub(..., memory_order_acquire)
     •sube:  atomic_fetch_sub(..., memory_order_release)
     •subt:  atomic_fetch_sub(..., memory_order_seq_cst)
+    •subh:  flt16_t
+    •subw:  float 
+    •subd:  double
+
 
 ### •dec· «DECrement by 1»
 
     •decl:  truncated
     •decs:  saturated
     •dec2:  widened×2
-    
+    •dech:  flt16_t
+    •decw:  float 
+    •decd:  double
+
 
 ### •dif· «absolute DIFference»
 
     •difu:  unsigned
     •difs:  saturated
-    •diff:  float
 
 
 ### •mul· «MULtiply»
@@ -1376,16 +1387,11 @@ particular version has a dedicated operation.
     •muls:  saturated
     •mul2:  widened×2
     •mulp:  result is homogeneous aggregate pair
-    •mulv:  result is vector pair
+    •mulv:  result is vector pair {[0]=lower, [1]=upper}
+    •mulh:  result is flt16_t
+    •mulw:  result is float
+    •muld:  result is double
 
-
-### •prd· «PRoDuct (multiply across vector)»
-
-    •prdl:  truncated
-    •prds:  saturated
-    •prd2:  widened×2
-    •prdp:  result is homogeneous aggregate pair
- 
 
 ### •mad· «Multiply ADd»
 
@@ -1394,7 +1400,9 @@ particular version has a dedicated operation.
     •mad2:  width of b and c are ½ of a
     •madp:  result is homogeneous aggregate pair {.Lo, .Hi}
     •madv:  result is vector pair {[0]=p.Lo, [1]=p.Hi}
-
+    •madh:  result is fl16_t
+    •madw:  result is float
+    •madd:  result is double
 
 ### •div· «DIVide»
 
@@ -1412,23 +1420,31 @@ particular version has a dedicated operation.
 
 ### •pow· «POWer»
 
-    •powf: truncated
+    •powl: truncated
+
 
 ### •sqr· «mathematical SQuare Root»
 
-    •sqrf: as float
+    •sqrl: truncated
+    •sqrh: as flt16_t
+    •sqrw: as float
+    •sqrd: as double
 
 
 ### •cbr· «mathematical CuBe Root»
 
-    •cbrf: as float
-    
+    •cbrl: truncated
+    •cbrh: as flt16_t
+    •cbrw: as float
+    •cbrd: as double
+
 
 ### •log· «logarithm»
 
     •loge: base e
     •log2: base 2
     •logd: base 10
+
 
 ### •sin· «mathematical SINe»
 
