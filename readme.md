@@ -30,46 +30,47 @@ point.
 
 # ABOUT
 
-ungop - pronounced "ungop" - is the specification of a set
-of generic low level operations intended to standardize and
-replace the use of implementation defined "intrinsic"
-functions. It includes a C reference implementation in which
-each operation is defined as a macro that uses its first
-parameter with the C11 _Generic operator to select a function
-designator representing the type specific operation.
+ungop - pronounced "ungop" - is the name of an instruction
+set architecture specification, including a reference C
+implementation for a suite of intrinsic functions and macros,
+which gives users the ability to access the full capabilities
+of modern processors, most importantly SIMD/vector operations.
 
 As what's effectively a major extension to the C11 standard
 library, the most important thing we had to consider was C
-namespace compatibility. None of the operation names may
-conflict with any symbol defined by C11 nor any of its 
-standard annexes; any version of POSIX/XSI; Microsoft's
-"Win32" and own C library (msvcrt); Google's C library 
-"bionic"; "glibc"; nor Apple's standard library. They also 
-shouldn't be English words that might conflict with commonly
-used variables. When possible, names should be designed to
-avoid triggering *reasonable* profanity filters.
+namespace compatibility. None of the instruction names may
+conflict with any symbol defined by:
+
+*   C11 nor any of its standard annexes; 
+*   any version of POSIX/XSI; 
+*   Microsoft's "Win32 API" or own C library (msvcrt);
+*   Google's C library "bionic"
+*   "glibc" 
+*   Apple's standard library. 
+
+They also shouldn't be English words that might conflict with
+commonly used variable names. Finally, we want to ensure
+profanity filters aren't *reasonably* triggered.
 
 There are two possible methods to meet those requirements.
-The first, chosen by the C standard, is to obfuscate by
-encumbrance. For example:
+The first, which was chosen by the C standard in C11 / C2x, 
+is to obfuscate by encumbrance. For example:
 
     atomic_compare_exchange_strong
+    stdc_trailing_zeros
 
-The other, chosen by us, is to obfuscate by algorithm. The
-following is equivalent to the former:
+The other, chosen by us, is to obfuscate by algorithm. That 
+is, all instructions consist of a three letter prefix plus a
+single letter variant indicator, which together form a four
+letter operation name. 
 
-    xeqt
+    xeqt = atomic_compare_exchange_strong
+    cszr = stdc_trailing_zeros
 
-All together while there are over 10000 unique type specific
-operation names, it shouldn't take more than a few hours for
-any competent programmer to recognize what one of them is or
-how to spontaneously generate the name of a particular
-operation plus type combination.
+Reusing 'cszr' as an example, we have two parts:
 
-Reusing 'xeqt' as an example, we have two parts:
-
-    * 'xeq'     (the prefix; means "eXchange if EQual")
-    * 't'       (the variant modifier)
+    * 'csz' -> "Count Sequential Zeros"
+    * 'r'   -> rtl, aka right to left, aka high to low
 
 The following table shows how the variant modifiers are 
 typically used:
@@ -174,35 +175,19 @@ typically used:
         *   Zero digits
 
 
-Although _Generic is a powerful and long needed feature, it 
-has some rather severe limitations - primarily that most 
-"intrinsic functions" are actually implemented as function
-macros. The ones that require a compile time constant 
-therefore cannot be directly used with _Generic. Since the
-performance penalty of wrapping these intrinsics in a 
-static inline function can be rather severe, we made the 
-individual type specific operations that the _Generic 
-expression calls part of the public interface. 
+Since we aren't a compiler, implementing the four letter
+generic form of each operation requires _Generic, and 
+although it is a powerful and long needed feature, it has
+some rather severe limitations - primarily that evaluation
+occurs long after preprocessing. This requires making the
+_Generic operator evaluate to a function designator. Not
+all operations can be efficiently inlined so it is very
+important that users be able to bypass the generic form and
+directly invoke the type specific form. How type specific
+operations are named must therefore be easy to learn and 
+consistent.
 
-One example of an operation for which it is almost always
-more efficient to use the type specific form is bit shifts.
-When e.g. shifting a 16 bit unsigned integer left by 7 bits
-and keeping the result's least significant bits, there are
-two options: the generic `shll` or the type specific
-`shllhu`. If the target architecture has an instruction
-for shifting by a constant and another for shifting by a 
-register, the former will obviously be faster. In practice, 
-a competent compiler would be able to optimize the generic
-form, which necessarily uses the register shift. Such a 
-compiler is not always available and even when it is there 
-is an obvious benefit in reducing the amount of optimizing 
-a compiler must do.
-
-Anyway, type specific operations like `shllhu` are named 
-according to a strict and simple to remember scheme that is
-always based on the first parameter. 
-
-The following table lists the ~52 standard C types for which
+The following table lists the ~57 standard C types for which
 operations may be available in the reference implementation
 and their type specific suffix:
 
@@ -269,7 +254,7 @@ and their type specific suffix:
     ddf     (1 × double)
 
 
-## 128 bit SIMD vector types (13+3)
+## 128 bit SIMD vector types (16)
 
     suffix  type
 
@@ -407,15 +392,23 @@ machinery into sets:
     *u      unsigned integers
     *i      signed integers
     *f      floats
-    *z      any integer                 (Z as in the symbol)
+    *z      any integer                 (Z like the symbol)
     *n      unsigned ints AND floats    (N as in natural)
     *s      signed ints AND floats      (S as in signed)
-    *r      real numbers                (R as in real)
+    *r      real numbers                (R like the symbol)
+
+Note that char is always included if one of the 8 bit 
+integers is. That is, for targets with a signed char, "bz" 
+will include char and unsigned char. This profoundly
+simplifies the implementation of generic 8 bit integer ops,
+especially considering MSVC, which incorrectly doesn't
+consider `char`, `unsigned char`, and `signed char` as three
+distinct types.
 
 
 Some operations take a memory address as the first operator.
 In this case, the type suffix is simply prefixed by "ac"
-when the elements are read-only ("address of constant") and
+when the memory is read-only ("address of constant") and
 "a" otherwise. The following (redundant) table contains the
 suffixes for all one dimensional C pointer types:
 
@@ -484,7 +477,7 @@ INLINE(char *,strdabc) (char dst[8], Vdbc src);
     [abc]   char * operand
 */
 
-INLINE(Vqwf,dupqwf) (float const *src);
+INLINE(Vqwf,dupqacwf) (float const *src);
 /*  [dup]   DUPlicate
     [q]     quadword (128 bit) result
     [acwf]  float const * operand
@@ -495,6 +488,10 @@ INLINE(Vwbi,dupwqbi) (Vqbi src, Rc(0,15) k)
 *   w   - word (32 bit) result
 +   wbi - Vwbi (4×char) operand
 ```
+
+Pointers to `volatile` qualified values will almost
+certainly not work with the generic operations and we
+strongly recommend users avoid its usage in new code.
 
 # SIMD
 
@@ -517,7 +514,7 @@ lowest lane will be the highest index. Boolean vector lanes
 are numbered according to the bits position and are thus 
 the same on all platforms.
 
-The following figures demonstrate the relationship between
+The following figures illustrate the relationship between
 "vector lane" and "array index" of a particular element for
 multibit types. For multibyte types, the lane's number label
 is found at the same position as its least significant byte:
@@ -526,59 +523,72 @@ is found at the same position as its least significant byte:
     Btt = big endian
     idx = index
 
-    Lww: W0_________
-    Lwh: H0___ H1___ 
     Lwb: B0 B1 B2 B3
+    Lwh: H0___ H1___ 
+    Lww: W0_________
           |  |  |  |
     idx:  0  1  2  3
           |  |  |  |  
-    Bwb: B3 B2 B1 B0
-    Bwh: ___H1 ___H0
     Bww: _________W0
+    Bwh: ___H1 ___H0
+    Bwb: B3 B2 B1 B0
 
 
-    Ldd: D0_____________________
-    Ldw: W0_________ W1_________
-    Ldh: H0___ H1___ H2___ H3___
     Ldb: B0 B1 B2 B3 B4 B5 B6 B7
+    Ldh: H0___ H1___ H2___ H3___
+    Ldw: W0_________ W1_________
+    Ldd: D0_____________________
           |  |  |  |  |  |  |  |
     idx:  0  1  2  3  4  5  6  7
           |  |  |  |  |  |  |  |
-    Bdb: B7 B6 B5 B4 B3 B2 B1 B0
-    Bdh: ___H3 ___H2 ___H1 ___H0
-    Bdw: _________W1 _________W0 
     Bdd: _____________________D0
+    Bdw: _________W1 _________W0 
+    Bdh: ___H3 ___H2 ___H1 ___H0
+    Bdb: B7 B6 B5 B4 B3 B2 B1 B0
 
 
-    Lqq: Q0_____________________________________________
-    Lqd: D0_____________________ D1_____________________
-    Lqw: W0_________ W0_________ W0_________ W0_________ 
-    Lqh: H0___ H1___ H2___ H3___ H4___ H5___ H6___ H7___    
     Lqb: B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 Ba Bb Bc Bd Be Bf
+    Lqh: H0___ H1___ H2___ H3___ H4___ H5___ H6___ H7___    
+    Lqw: W0_________ W0_________ W0_________ W0_________ 
+    Lqd: D0_____________________ D1_____________________
+    Lqq: Q0_____________________________________________
           |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
     idx:  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
           |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-    Bqb: Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
-    Bqh: ___H7 ___H6 ___H5 ___H4 ___H3 ___H2 ___H1 ___H0
-    Bqw: _________W3 _________W2 _________W1 _________W0
-    Bqd: _____________________D1 _____________________D0  
     Bqq: _____________________________________________Q0
+    Bqd: _____________________D1 _____________________D0  
+    Bqw: _________W3 _________W2 _________W1 _________W0
+    Bqh: ___H7 ___H6 ___H5 ___H4 ___H3 ___H2 ___H1 ___H0
+    Bqb: Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
 
 
-Our standardized vector representation might conflict with
-the underlying architecture but in practice, this is 
-irrelevant. 
-    
+Operations described as "left shifts" move the elements 
+such that the least significant bit of the shifted region 
+is located at a higher index. This includes both bitwise 
+and elementwise shifts. E.g. the following illustrates the
+left shift of a Vdbu by 2 elements, with B6 and B7 being
+"shifted out" and zeros being "shifted in", on a little 
+endian vector representation:
 
-# INDEX
 
-Finally, the following is a complete operations listing,
+    Before: || B0 B1 B2 B3 B4 B5 B6 B7 ||
+    After:  || zz zz B0 B1 B2 B3 B4 B5 || B6 B7
+
+Note: our illustrations of the positions of vector elements
+will always order stuff as it would appear if stored in 
+memory - with "byte 0" coming before / to the left of 
+"byte 1".
+
+
+# OP INDEX
+
+Finally, the following is a complete instruction listing,
 including a brief description.
 
 ### unprefixed/special
 
     •pass:   forfeit the calling thread's remaining CPU time
-    •unos:   f(N) => fill register with N sequential 1 bits
+    •unos:   f(N) => generate N sequential 1 bits
     •void:   the zero constant 
     •sign:   extract sign bit (no generic)
     •expo:   extract exponent of float (no generic)
@@ -586,7 +596,6 @@ including a brief description.
 
 
 ### •cmb· «Compiler Memory Barrier»
-
 Prevent memory access reordering across the barrier by the
 compiler. Execution time reordering may still occur.
 
@@ -619,7 +628,6 @@ guaranteed.
 
 
 ### •ast· «generic Reinterpret cASt»
-
 Reinterpret the representation of a value as that of 
 another equivalent width type.
 
@@ -671,7 +679,7 @@ another equivalent width type.
 
 
 ### •toa· «TO Ascii representation»
-Converts scalar to its text representation and stores it in
+Convert scalar to its text representation and store it in
 a sufficiently large byte array.
 
     •toay:  store binary repr
@@ -682,7 +690,6 @@ a sufficiently large byte array.
 
 
 ### •new· «Vector constructor»
-
 Construct a vector from a sequence of values specified as a
 list of numbered parameters.
 
@@ -691,9 +698,8 @@ list of numbered parameters.
 
 
 ### •seq· «linear SEQuence»
-
 Construct a vector with each element representing the next
-element in a range
+element in a range.
 
     •seqw: 4×8b or 2×16b bit range
     •seqd: 8×8b, 4×16b, of 2×32b range
@@ -704,7 +710,6 @@ element in a range
 
 
 ### •dup· «DUPlicate»
-
 Construct a vector with all lanes set to the same value
 
     •dupl:  duplicates the first vector lane ("broadcast")
@@ -718,6 +723,7 @@ Construct a vector with all lanes set to the same value
 ### •get· «Extract»
 
     •get1:  extract single vector element
+    •get2:  extract pair
     •getl:  extract lower half
     •getr:  extract upper half
 
@@ -756,7 +762,6 @@ Construct a vector with all lanes set to the same value
 
 
 ### •bln· «BLeNd»
-
 Construct a new vector consisting of elements selected from
 one of two source vectors using a mask
 
@@ -764,7 +769,6 @@ one of two source vectors using a mask
 
 
 ### •per· «PERmute»
-
 Construct a new N element vector from a source vector and a
 sequence of N vector lanes given as a list of integer 
 parameters. The lane numbers must either be -1, indicating a
@@ -983,41 +987,37 @@ If dst isn't properly aligned, the result is undefined
 
     •ceqs: (a == b) ? -1 : 0
     •ceqy: (a == b) ? +1 : 0
-    •ceqn: counts number of eq vector elements
+
 
 ### •cne· «Compare Not Equal»
 
     •cnes: (a != b) ? -1 : 0
     •cney: (a != b) ? +1 : 0
-    •cnen: counts number of ne vector elements
 
 
 ### •clt· «Compare Less Than»
 
     •clts: (a < b) ? -1 : 0
     •clty: (a < b) ? +1 : 0
-    •cltn: counts number of lt equal vector element
 
 
 ### •cle· «Compare Less or Equal»
 
     •cles:  (a <= b) ? -1 : 0
     •cley:  (a <= b) ? +1 : 0
-    •clen: counts number of le vector elements
 
 
 ### •cgt· «Compare Greater Than»
 
     •cgts:  (a > b) ? -1 : 0
     •cgty:  (a > b) ? +1 : 0
-    •cgtn: counts number of gt vector elements
 
 
 ### •cge· «Compare Greater than or Equal»
 
     •cgey:  (a >= b) ? +1 : 0
     •cgez:  (a >= 0) ? -1 : 0
-    •cgtn: counts number of ge vector elements
+
 
 ### •zeq· «Zero EQuals»
 
@@ -1049,28 +1049,38 @@ If dst isn't properly aligned, the result is undefined
     •zges: (0 < a) ? -1 : 0
     •zgey: (0 < a) ? +1 : 0
 
+
+### •veq· «Vector match EQual»
+
+Test if any element in a vector is equal to the second 
+operand
+
+    •veqs: saturated vector result
+    •veqy: bool result
+    
 ### •cbn· «Compare BetweeN»
 
-Takes three operands: a scalar or vector as N and two 
-scalars as L and R. For each element E in N, determine if
+Takes three operands: a scalar or vector as A and two 
+scalars as L and R. For each element E in A, determine if
 L <= E <= R.
 
-    •cbns:  (l <= x) && (x <= r) ? -1 : 0
-    •cbny:  (l <= x) && (x <= r) ? +1 : 0
-
-### •nbn· «compare Not BetweeN»
-
-Performs the complement of cbn
+    •cbns:  (l <= e) && (e <= r) ? -1 : 0
+    •cbny:  (l <= e) && (e <= r) ? +1 : 0
 
 
-    •nbns:  (l <= x) && (x <= r) ? 0 : -1
-    •nbny:  (l <= x) && (x <= r) ? 0 : -1
+### •cnb· «Compare Not Between»
+
+Performs the complement of cbn.
 
 
-### •any· «test if ANY bits in mask are set»
+    •cnbs:  (l > e) || (e > r) ? -1 : 0
+    •cnby:  (l > e) || (e > r) ? +1 : 0
 
-    •anys:  ((a&b) != 0) ? -1 : 0
-    •anyy:  ((a&b) != 0) ? +1 : 0
+
+### •tst· «TeST if any bits in mask are set»
+
+    •tsts:  ((a&b) != 0) ? -1 : 0
+    •tsty:  ((a&b) != 0) ? +1 : 0
 
 
 ### •avg· «AVeraGe»
@@ -1277,7 +1287,7 @@ particular version has a dedicated operation.
 
     •ands:  a & b
     •andn:  a & ~b
-    •andm:  a & b & c
+    •andv:  across vector
     •and1:  atomic_and_explicit(..., memory_order_relaxed)
     •anda:  atomic_and_explicit(..., memory_order_acquire)
     •ande:  atomic_and_explicit(..., memory_order_release)
@@ -1288,7 +1298,7 @@ particular version has a dedicated operation.
 
     •orrs:  a | b
     •orrn:  a | ~b
-    •orrm:  a | b | c
+    •orrv:  across vector
     •orr1:  atomic_or_explicit(..., memory_order_relaxed)
     •orra:  atomic_or_explicit(..., memory_order_acquire)
     •orre:  atomic_or_explicit(..., memory_order_release)
@@ -1297,12 +1307,13 @@ particular version has a dedicated operation.
 
 ### •xor· «bitwise XOR»
 
+    •xors:  a ^ b
+    •xorn:  a ^ ~b
+    •xorv:  across vector 
     •xor1:  atomic_xor_explicit(..., memory_order_relaxed)
     •xora:  atomic_xor_explicit(..., memory_order_acquire)
     •xore:  atomic_xor_explicit(..., memory_order_release)
     •xort:  atomic_xor_explicit(..., memory_order_seq_cst)
-    •xors:  a ^ b
-    •xorm:  v[0] ^ v[1] ^ v[2] ^ ...
 
 
 ### •neg· «unary NEGate»
@@ -1317,7 +1328,9 @@ particular version has a dedicated operation.
     •absl:  truncated
     •abss:  saturated
     •absu:  unsigned result
-    •absf:  floating result (using current rounding mode)
+    •absh:  flt16_t result (using current rounding mode)
+    •absw:  float result (using current rounding mode)
+    •absd:  double result (using current rounding mode)
 
 ### •add· «ADDition»
 
