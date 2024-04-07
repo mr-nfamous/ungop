@@ -30,7 +30,7 @@ point.
 
 # ABOUT
 
-ungop - pronounced "ungop" - is the name of an abstract 
+ungop - pronounced "ungop" - is the name of an abstract
 complex instruction set architecture specification, which
 includes a reference C implementation for a suite of macros
 and functions that give users the means to take advantage of
@@ -41,11 +41,11 @@ The most important consideration when designing a low level
 interface is namespace compatibility with existing libraries.
 We guarantee no name conflicts with any of the following:
 
-*   C11 including any symbols defined in its standard annexes; 
-*   any version of POSIX/XSI; 
+*   C11 including any symbols defined in its standard annexes;
+*   any version of POSIX/XSI;
 *   Microsoft's "Win32 API" or own C library (msvcrt);
 *   Google's C library "bionic"
-*   "glibc" 
+*   "glibc"
 *   Apple's standard library
 
 Names also shouldn't be English words that may conflict with
@@ -53,20 +53,19 @@ commonly used variable names. Finally, we try not to trigger
 reasonably designed profanity filters.
 
 There are two possible ways these requirements can be met.
-The first, which was chosen by the C standard committees is 
+The first, which was chosen by the C standard committees is
 obfuscation by encumbrance. E.g.
 
     atomic_compare_exchange_strong
     stdc_trailing_zeros
 
-The other, chosen by us, is to obfuscate by algorithm. That 
+The other, chosen by us, is to obfuscate by algorithm. That
 is, all ungop instruction names follow exactly the same
-pattern, without exception. Specifically, each name begins 
-with a three ASCII letter prefix, followed by a single latin
-letter variant modifier. Most instructions also have type
-specific variants, which are named by appending an 
-algorithmically derived suffix to the base name, but more on
-that later.
+pattern, without exception. Specifically, each name begins
+with a three ASCII letter prefix, followed by a single letter
+variant modifier. Most instructions also have type specific 
+variants, which are named by appending an algorithmically
+derived suffix to the base name, but more on that later.
 
 Compare the following ungop instructions with the equivalent
 C2x standard library function names:
@@ -79,7 +78,7 @@ Reusing 'cszr' to illustrate:
     * 'csz' -> "Count Sequential Zeros"
     * 'r'   -> rtl, aka right to left, aka high to low
 
-Great care went into ensuring consistency of the variant 
+Great care went into ensuring consistency of the variant
 modifer letters. The following table shows which letters
 are used and how:
 
@@ -184,13 +183,13 @@ are used and how:
 In the C reference implementation, _Generic facilitates the
 usage of the base instructions in user code. Unfortunately,
 it has some rather severe limitations, so we are stating up
-front that we recommend using the type specific forms of 
-operations from the getgo. 
+front that we recommend using the type specific forms of
+operations from the getgo.
 
-Anyway, it works by choosing the type specific operation 
+Anyway, it works by choosing the type specific operation
 name based on the first operand. As briefly mentioned before,
 the type specific name is algorithmically determined using
-a very easy to memorize system. The following table lists 
+a very easy to memorize system. The following table lists
 the ~57 C types for which operations may be available in the
 reference implementation and their type specific suffix:
 
@@ -356,27 +355,27 @@ reference implementation and their type specific suffix:
     Otherwise, flt16_t will be a unique, single element
     homogeneous 16 bit unsigned integer aggregate type.
 
-    ‡ 128 bit operations are provisionally available. That 
+    ‡ 128 bit operations are provisionally available. That
     is, if the target supports __int128 or a binary128 based
     long double, operations are available for those types.
     Otherwise, the corresponding int type will be defined as
-    a unique, two element 64 bit integer aggregate, while 
+    a unique, two element 64 bit integer aggregate, while
     the float type will be a unique floating point aggregate
-    type composed of two doubles. In both cases, the Lo 
+    type composed of two doubles. In both cases, the Lo
     member may be used to access the value's least
-    significant 64 bits and the Hi member its most 
-    significant 64 bits. 128 bit operations are *not* 
+    significant 64 bits and the Hi member its most
+    significant 64 bits. 128 bit operations are *not*
     available in the generic API.
 
     ‡‡ Hosted 64 bit C implementations will have either a 32
     bit int AND long or 64 bit long and llong. the 'lu' and
     'li' suffixes are reserved in the former for long and in
-    the latter for llong. This allows values of these types 
+    the latter for llong. This allows values of these types
     to be compatible with the generic operation. However, be
     aware that unless explicitly stated, when an operation
-    results in a value of a different size, its type is 
-    always the lowest ranked type with that width. E.g. if 
-    long and llong are both 64 bit, the return type of 
+    results in a value of a different size, its type is
+    always the lowest ranked type with that width. E.g. if
+    long and llong are both 64 bit, the return type of
     add2wi is long since it has lower rank than long long.
     When the result width doesn't change, the return type is
     always identical unless otherwise specified. E.g. xorslu
@@ -400,8 +399,8 @@ machinery into sets:
     *s      signed ints AND floats      (S as in signed)
     *r      real numbers                (R like the symbol)
 
-Note that char is always included if one of the 8 bit 
-integers is. That is, for targets with a signed char, "bz" 
+Note that char is always included if one of the 8 bit
+integers is. That is, for targets with a signed char, "bz"
 will include char and unsigned char. This profoundly
 simplifies the implementation of generic 8 bit integer ops,
 especially considering MSVC, which incorrectly doesn't
@@ -456,10 +455,10 @@ suffixes for all one dimensional C pointer types:
     acli    long const * or llong const *
 
 NOTE: ungop has no concept of a "pointer to a SIMD vector".
-Users of the reference C implementation should consider all 
-SIMD vector values as inherently having the `register` 
+Users of the reference C implementation should consider all
+SIMD vector values as inherently having the `register`
 storage class. An early build actually used the keyword in
-th3 vector operation signatures but unfortunately, GCC 
+th3 vector operation signatures but unfortunately, GCC
 intrinsics don't work with register qualified vectors. We
 therefore *_STRONGLY_* advise avoiding `register`.
 
@@ -498,9 +497,9 @@ strongly recommend users avoid its usage in new code.
 
 # SIMD
 
-While each architecture implements SIMD in its own way, 
+While each architecture implements SIMD in its own way,
 there are more than enough similarities to standardize it.
-Vector values are represented by 32, 64, or 128 contiguous 
+Vector values are represented by 32, 64, or 128 contiguous
 bits packed into 4, 8, or 16 contiguous bytes, respectively.
 This string of bits is then split into one or more 1, 8, 16,
 32, or 64 bit numbered "lanes". The number of lanes is based
@@ -511,8 +510,8 @@ Like arrays, the type of value stored in a lane is known as
 the vector's element type. On architectures with a little
 endian vector representation, which are the only targets we
 presently support, the vector lane number and array index
-of a particular multibit element will be equivalent, while 
-on architectures with a big endian vector representation, 
+of a particular multibit element will be equivalent, while
+on architectures with a big endian vector representation,
 the lowest lane will have the highest index. Boolean vector
 lanes are numbered according to the bits position and are
 thus the same on all platforms.
@@ -527,11 +526,11 @@ is found at the same position as its least significant byte:
     idx = C array index
 
     Lwb: B0 B1 B2 B3
-    Lwh: H0___ H1___ 
+    Lwh: H0___ H1___
     Lww: W0_________
           |  |  |  |
     idx:  0  1  2  3
-          |  |  |  |  
+          |  |  |  |
     Bww: _________W0
     Bwh: ___H1 ___H0
     Bwb: B3 B2 B1 B0
@@ -545,48 +544,32 @@ is found at the same position as its least significant byte:
     idx:  0  1  2  3  4  5  6  7
           |  |  |  |  |  |  |  |
     Bdd: _____________________D0
-    Bdw: _________W1 _________W0 
+    Bdw: _________W1 _________W0
     Bdh: ___H3 ___H2 ___H1 ___H0
     Bdb: B7 B6 B5 B4 B3 B2 B1 B0
 
 
     Lqb: B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 Ba Bb Bc Bd Be Bf
-    Lqh: H0___ H1___ H2___ H3___ H4___ H5___ H6___ H7___    
-    Lqw: W0_________ W0_________ W0_________ W0_________ 
+    Lqh: H0___ H1___ H2___ H3___ H4___ H5___ H6___ H7___
+    Lqw: W0_________ W0_________ W0_________ W0_________
     Lqd: D0_____________________ D1_____________________
     Lqq: Q0_____________________________________________
           |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
     idx:  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
           |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
     Bqq: _____________________________________________Q0
-    Bqd: _____________________D1 _____________________D0  
+    Bqd: _____________________D1 _____________________D0
     Bqw: _________W3 _________W2 _________W1 _________W0
     Bqh: ___H7 ___H6 ___H5 ___H4 ___H3 ___H2 ___H1 ___H0
     Bqb: Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
 
 
-Operations described as "left shifts" move the elements 
-such that the least significant bit of the shifted region 
-is located at a higher index. This includes both bitwise 
-and elementwise shifts. E.g. the following illustrates the
-left shift of a Vdbu by 2 elements, with B6 and B7 being
-"shifted out" and zeros being "shifted in", on a little 
-endian vector representation:
-
-
-    Before: || B0 B1 B2 B3 B4 B5 B6 B7 ||
-    After:  || zz zz B0 B1 B2 B3 B4 B5 || B6 B7
-
-Note: our illustrations of the positions of vector elements
-will always order stuff as it would appear if stored in 
-memory - with "byte 0" coming before / to the left of 
-"byte 1".
-
 
 # OP INDEX
 
 Finally, the following is a complete instruction listing,
-including a brief description.
+including a brief description. For more details, see the
+comments in the op's section in ungop.h
 
 
 ### •***· «unprefixed/misc»
@@ -598,546 +581,6 @@ including a brief description.
     •expo(f)   => extract exponent of float
     •mant(f)   => extract mantissa of float
 
-
-### •cmb· «Compiler Memory Barrier»
-
-    •cmba() => atomic_signal_fence(memory_order_acquire)
-    •cmbe() => atomic_signal_fence(memory_order_release)
-    •cmbt() => atomic_signal_fence(memory_order_seq_cst)
-
-
-### •hmb· «Hardware Memory Barrier»
-
-    •hmba() => atomic_thread_fence(memory_order_acquire
-    •hmbe() => atomic_thread_fence(memory_order_release)
-    •hmbt() => atomic_thread_fence(memory_order_seq_cst)
-
-
-### •smb· «Synchronized Memory Barrier»
-
-    •smba() => SYNC(hmbc())
-    •smbe() => SYNC(hmbc())
-    •smbt() => SYNC(hmbc())
-
-
-### •ast· «reinterpret AS (generic)»
-
-    •astm(a) => as machine 
-    •astv(a) => as virtual 
-    •astu(a) => ((STG_TYPE(a)){a}).U
-    •asti(a) => ((STG_TYPE(a)){a}).I
-    •astf(a) => ((STG_TYPE(a)){a}).F
-
-
-### •asy· «reinterpret AS (boolean)»
-
-    •asyu(a) => only applies to vectors
-
-
-### •asb· «reinterpret cASt Byte»
-
-    •asbu(a) => ((BYTE_TYPE){a}).U
-    •asbi(a) => ((BYTE_TYPE){a}).I
-    •asbc(a) => ((BYTE_TYPE){a}).F
-
-
-### •ash· «reinterpret cASt Halfword»
-
-    •ashu(a) => ((HALF_TYPE){a}).U
-    •ashi(a) => ((HALF_TYPE){a}).I
-    •ashf(a) => ((HALF_TYPE){a}).F
-
-
-### •asw· «reinterpret cASt Word»
-
-    •aswu(a) => ((WORD_TYPE){a}).U
-    •aswi(a) => ((WORD_TYPE){a}).I
-    •aswf(a) => ((WORD_TYPE){a}).F
-
-
-### •asd· «reinterpret cASt Doubleword»
-
-    •asdu(a) => ((DWRD_TYPE){a}).U
-    •asdi(a) => ((DWRD_TYPE){a}).I
-    •asdf(a) => ((DWRD_TYPE){a}).F
-
-
-### •asq· «reinterpret cASt Quadword»
-
-    •asqu(a) => ((QUAD_TYPE){a}).U
-    •asqi(a) => ((QUAD_TYPE){a}).I
-    •asqf(a) => ((QUAD_TYPE){a}).F
-
-
-### •toa· «TO Ascii representation»
-
-    •toay(a) => BIN(a)
-    •toao(a) => OCT(a)
-    •toad(a) => DEC(a)
-    •toal(a) => LOWERHEX(a)
-    •toau(a) => UPPERHEX(a)
-
-
-### •new· «vector constant ctor»
-
-    •newl(...) => {*}
-    •newr(...) => {revs(*)}
-
-
-### •seq· «linear SEQuence»
-
-    •seqw(a, b) => {a, a+b×1, a+b×2, ...}
-    •seqd(a, b) => {a, a+b×1, a+b×2, ...}
-    •seqq(a, b) => {a, a+b×1, a+b×2, ...}
-
-
-### •dup· «linear SEQuence»
-
-    •dupl(a) => DUP(get1(a, 0))
-    •dupw(a) => DUP(a)
-    •dupd(a) => DUP(a)
-    •dupq(a) => DUP(a)
-
-
-### •bfg· «BitField Get»
-
-    •bfg1(a, b, c) => (a[b:c])
-
-
-### •bfs· «BitField Set»
-
-    •bfs1(a, b, c, d) => (a[b:c] = d)
-
-
-### •bfs· «BitField Clear»
-
-    •bfc1(a, b, c) => (a[b:c] = 0)
-
-
-### •get· «vector extraction»
-
-    •get1(a, b) => (a[b])
-    •getl(b)    => (b.Lo)
-    •getr(a)    => (b.Hi)
-
-
-### •set· «vector replacement»
-
-    •set1(a, b, c)  => (a[b] = c)
-    •setl(a, b)     => (a.Lo = b)
-    •setr(a, b)     => (a.Hi = b)
-
-
-### •cat· «representation conCATenation»
-
-    •catl(l, r) => l ## r
-    •catr(l, r) => catl(revs(r), revs(l))
-
-
-### •rev· «REVerse»
-
-    •revy(a) => reverse element bits
-    •revb(a) => reverse element bytes
-    •revs(a) => REVERSE(a)
-
-
-### •zip· «interleave»
-
-    •zipl(a, b) => KEEPLOW(ZIP(a, b))
-    •zipr(a, b) => KEEPHIGH(ZIP(a, b))
-    •zipp(a, b) => ZIP(a, b)
-
-
-### •uzp· «UnZiP (deinterleave)»
-
-    •uzpl(a, b) => extract evens
-    •uzpr(a, b) => extract odds
-
-
-### •bln· «BLeNd»
-
-    •blnm(a, b, ...) => blend a && b
-    
-
-### •per· «PERmute»
-
-    •pers(a, ...)    =>  permute with 0 default 
-    •perm(a, b, ...) => permute with b default 
-
-
-### •cnt· «CouNt Total»
-
-    •cnt1(a) => count one digits (i.e. hamming weight)
-    •cnts(a) => count redundant sign bits
-
-
-### •csz· «Count Sequential Zeros»
-
-    •cszl(a) => count least significant ("trailing") zeros
-    •cszr(a) => count most significant ("leading") zeros
-
-
-### •raz· «Round Away from Zero (toward)»
-
-    •razf(a) => ROUND(a, DR_NEXT)
-    •razb(a) => (int8_t) ROUND(a, DR_NEXT)
-    •razh(a) => (int16_t) ROUND(a, DR_NEXT)
-    •razw(a) => (int32_t) ROUND(a, DR_NEXT)
-    •razd(a) => (int64_t) ROUND(a, DR_NEXT)
-    •razq(a) => (QUAD_ITYPE) ROUND(a, DR_NEXT)
-
-
-### •rtz· «Round Toward Zero (trunc)»
-
-    •rtzf(a) => ROUND(a, DR_ZERO)
-    •rtzb(a) => (int8_t) ROUND(a, DR_ZERO)
-    •rtzh(a) => (int16_t) ROUND(a, DR_ZERO)
-    •rtzw(a) => (int32_t) ROUND(a, DR_ZERO)
-    •rtzd(a) => (int64_t) ROUND(a, DR_ZERO)
-    •rtzq(a) => (QUAD_ITYPE) ROUND(a, DR_ZERO)
-
-
-### •rtp· «Round Toward Positive inf (ceil)»
-
-    •rtpf(a) => ROUND(a, DR_NINF)
-    •rtpb(a) => (int8_t) ROUND(a, DR_PINF)
-    •rtph(a) => (int16_t) ROUND(a, DR_PINF)
-    •rtpw(a) => (int32_t) ROUND(a, DR_PINF)
-    •rtpd(a) => (int64_t) ROUND(a, DR_PINF)
-    •rtpq(a) => (QUAD_ITYPE) ROUND(a, DR_PINF)
-
-
-### •rtp· «Round Toward Negative inf (floor)»
-
-    •rtnf(a) => ROUND(a, DR_NINF)
-    •rtnb(a) => (int8_t) ROUND(a, DR_NINF)
-    •rtnh(a) => (int16_t) ROUND(a, DR_NINF)
-    •rtnw(a) => (int32_t) ROUND(a, DR_NINF)
-    •rtnd(a) => (int64_t) ROUND(a, DR_NINF)
-    •rtnq(a) => (QUAD_ITYPE) ROUND(a, DR_NINF)
-
-
-### •cvb· «Convert to Byte»
-
-    •cvbc(a) => TRUNCATE((char) a)
-    •cvbu(a) => TRUNCATE((uint8_t) a)
-    •cvbi(a) => TRUNCATE((int8_t) a)
-    •cvbz(a) => SATURATE((uint8_t) a)
-    •cvbs(a) => SATURATE((int8_t) a)
-
-
-### •cvh· «Convert to Halfword»
-
-    •cvhu(a) => TRUNCATE((uint16_t) a)
-    •cvhi(a) => TRUNCATE((int16_t) a)
-    •cvhz(a) => SATURATE((uint16_t) a)
-    •cvhs(a) => SATURATE((int16_t) a)
-    •cvhf(a) => (flt16_t) a
-
-
-### •cvw· «Convert to Word»
-
-    •cvwu(a) => TRUNCATE((uint32_t) a)
-    •cvwi(a) => TRUNCATE((int32_t) a)
-    •cvwz(a) => SATURATE((uint32_t) a)
-    •cvws(a) => SATURATE((int32_t) a)
-    •cvwf(a) => (float) a
-
-
-### •cvw· «Convert to Doubleword»
-
-    •cvdu(a) => TRUNCATE((uint64_t) a)
-    •cvdi(a) => TRUNCATE((int64_t) a)
-    •cvdz(a) => SATURATE((uint64_t) a)
-    •cvds(a) => SATURATE((int64_t) a)
-    •cvdf(a) => (double) a
-
-
-### •cvw· «Convert to Quadword»
-
-    •cvqu(a) => TRUNCATE((QUAD_UTYPE) a)
-    •cvqi(a) => TRUNCATE((QUAD_ITYPE) a)
-    •cvqz(a) => SATURATE((QUAD_UTYPE) a)
-    •cvqs(a) => SATURATE((QUAD_ITYPE) a)
-    •cvqf(a) => (QUAD_FTYPE) a
-
-
-### •ldr· «LoaD aligned to Register»
-
-    •ldrn(a)   => *a
-    •ldrw(a)   => *a (a points to 32 bit vector)
-    •ldrd(a)   => *a (a points to 64 bit vector)
-    •ldrq(a)   => *a (a points to 128 bit vector)
-    •ldr1(...) => atomic_load_explicit(...order_relaxed)
-    •ldra(...) => atomic_load_explicit(...order_acquire)
-    •ldrt(...) => atomic_load_explicit(...order_seq_cst)
-
-
-### •lun· «LoaD Unaligned to register»
-
-    •lunn(a)   => READ(a) 
-    •lunw(a)   => READ(a) (a points to 32 bit vector)
-    •lund(a)   => READ(a) (a points to 64 bit vector)
-    •lunq(a)   => READ(a) (a points to 128 bit vector)
-
-
-### •str· «STore Register to aligned»
-
-    •strn(a, b) => *b=a
-    •str1(...)  => atomic_store_explicit(...order_relaxed)
-    •stre(...)  => atomic_store_explicit(...order_release)
-    •strt(...)  => atomic_store_explicit(...order_seq_cst)
-
-
-### •sun· «Store register to UNaligned»
-
-    •sunn(a, b) => WRITE(b, a), a
-    •sunw(a, b) => WRITE(a, b) (b is 32 bit vector)
-    •sund(a, b) => WRITE(a, b) (b is 64 bit vector)
-    •sunq(a, b) => WRITE(a, b) (b is 128 bit vector)
-
-
-### •swp· «SWaP»
-
-    •swp1(...) => atomic_exchange_explicit(...order_relaxed)
-    •swpa(...) => atomic_exchange_explicit(...order_acquire)
-    •swpe(...) => atomic_exchange_explicit(...order_release)
-    •swpt(...) => atomic_exchange_explicit(...order_seq_cst)
-
-
-### •xeq· «eXchange if EQual»
-
-    •xeq1(...) => CAS(..., succ=relaxed, fail=relaxed)
-    •xeqa(...) => CAS(..., succ=acquire, fail=acquire)
-    •xeqe(...) => CAS(..., succ=release, fail=acquire)
-    •xeqt(...) => CAS(..., succ=seq_cst, fail=seq_cst)
-
-
-### •cbn· «Compare BetweeN»
-
-    •cbns(a, l, r) => (l <= a) && (a <= r) ? -1 : 0
-    •cbny(a, l, r) => (l <= a) && (a <= r) ? +1 : 0
-
-
-### •cnb· «Compare Not Between»
-
-    •cnbs(a, l, r) => (a < l) || (r < a) ? -1 : 0
-    •cnby(a, l, r) => (a < l) || (r < a) ? +1 : 0
-
-
-### •ceq· «Compare EQual»
-
-    •ceqs(a, b) => a == b ? -1 : 0
-    •ceqy(a, b) => a == b ? +1 : 0
-
-
-### •cne· «Compare Not Equal»
-
-    •cnes(a, b) => a != b ? -1 : 0
-    •cney(a, b) => a != b ? +1 : 0
-
-
-### •clt· «Compare Less Than»
-
-    •clts(a, b) => a < b ? -1 : 0
-    •clty(a, b) => a < b ? +1 : 0
-
-
-### •cle· «Compare Less than or Equal»
-
-    •cles(a, b) => a <= b ? -1 : 0
-    •cley(a, b) => a <= b ? +1 : 0
-
-
-### •cgt· «Compare Greater Than»
-
-    •cgts(a, b) => a > b ? -1 : 0
-    •cgty(a, b) => a > b ? +1 : 0
-
-
-### •cge· «Compare Greater than or Equal»
-
-    •cges(a, b) => a >= b ? -1 : 0
-    •cgey(a, b) => a >= b ? +1 : 0
-
-
-### •zeq· «Zero EQuals»
-
-    •zeqs(a) => (0 == a) ? -1 : 0
-    •zeqy(a) => (0 == a) ? +1 : 0
-
-
-### •zne· «Zero uNEqual»
-
-    •znes(a) => (0 != a) ? -1 : 0
-    •zney(a) => (0 != a) ? +1 : 0
-
-
-### •zlt· «Zero Less Than»
-
-    •zlts(a) => (0 < a) ? -1 : 0
-    •zlty(a) => (0 < a) ? +1 : 0
-
-
-### •zlt· «Zero Less than or Equal»
-
-    •zles(a) => (0 <= a) ? -1 : 0
-    •zley(a) => (0 <= a) ? +1 : 0
-
-
-### •zgt· «Zero Greater Than»
-
-    •zgts(a) => (0 > a) ? -1 : 0
-    •zgty(a) => (0 > a) ? +1 : 0
-
-
-### •zge· «Zero Greater than or Equal»
-
-    •zges(a) => (0 >= a) ? -1 : 0
-    •zgey(a) => (0 >= a) ? +1 : 0
-
-
-### •veq· «Vector EQuality match»
-
-    •veqs(a, b) => VECTORIZE(CEQS, a, DUP(b))
-    •veqy(a, b) => VECTORIZE(CEQS, a, DUP(b))
-
-
-### •tst· «Test Set biTs»
-
-    •tsts(a, b) => ((a&b) != 0) ? -1 : 0
-    •tsty(a, b) => ((a&b) != 0) ? +1 : 0
-
-
-### •avg· «AVeraGe»
-
-    •avgl(a, b) => SUM(a, b)÷2
-
-
-### •max· «MAXimum»
-
-    •maxl(a, b) => LIKELY(a > b) ? a : b
-    •maxv(v)    => REDUCE(maxl, v)
-
-
-### •min· «MINimum»
-
-    •minl(a, b) => LIKELY(a < b) ? a : b
-    •minv(v)    => REDUCE(minl, v)
-
-
-### •rot· «ROTate binary representation by int»
-
-    •rotl(a, b) => (a[-b:] OR a[:+b])
-    •rotr(a, b) => (a[+b:] OR a[:-b])
-
-
-### •rov· «vectorized 'rot'»
-
-    •rovl(a, b) => VECTORIZE(rotl, a, b)
-    •rovr(a, b) => VECTORIZE(rotr, a, b)
-    
-
-### •shl· «SHift Left»
-
-    •shl2(a, b) => WIDENED(a)<<b
-    •shls(a, b) => SATURATE(a<<b)
-    •shll(a, b) => TRUNCATE(a<<b)
-    •shlr(a, b) => KEEPHIGH(a<<b)
-
-
-### •svl· «vectorized 'shl'»
-
-    •svl2(a, b) => VECTORIZE(shl2, a, b)
-    •svll(a, b) => VECTORIZE(shll, a, b)
-    •svls(a, b) => VECTORIZE(shls, a, b)
-
-
-### •shr· «SHift Right»
-
-    •shrs(a, b) => SATURATE(a>>v)
-
-
-### •svr· «vectorized 'shr'»
-
-    •svrs(a, b) => VECTORIZE(shrs, a, b)
-
-
-### •sil· «Shift Insert Left»
-
-    •sill(a, b, c) => (a<<c) OR b[:+c]
-    •silr(a, b, c) => (a<<c) OR b[-c:]
-
-
-### •sir· «Shift Insert Right»
-
-    •sirl(a, b, c) => 
-    •sirr(a, b, c) => 
-
-
-### •spr· «Shift Pair Left»
-
-    •spll(l, r, n) => l[n:] ## r[:+n]
-    •splr(l, r, n) => l[n:] ## r[-n:]
-
-
-### •spr· «Shift Pair Right»
-
-    •sprl(l, r, n) => l[:n] ## r[:+n]
-    •sprr(l, r, n) => l[:n] ## r[-n:]
-
-
-### •inv· «bitwise INVert»
-
-    •invs(a) => NOT a
-    •inv1(a) => atomic_xor_explicit(a,-1,memory_order_relaxed)
-    •inva(a) => atomic_xor_explicit(a,-1,memory_order_acquire)
-    •inve(a) => atomic_xor_explicit(a,-1,memory_order_release)
-    •invt(a) => atomic_xor_explicit(a,-1,memory_order_seq_cst)
-
-
-### •and· «bitwise AND»
-
-    •ands(a, b) => a AND b
-    •andn(a, b) => a AND NOT b
-    •andv(a)    => REDUCE(ands, a)
-    •and1(...)  => atomic_and_explicit(..., memory_order_relaxed)
-    •anda(...)  => atomic_and_explicit(..., memory_order_acquire)
-    •ande(...)  => atomic_and_explicit(..., memory_order_release)
-    •andt(...)  => atomic_and_explicit(..., memory_order_seq_cst)
-
-
-### •orr· «bitwise ORR»
-
-    •orrs(a, b) => a OR b
-    •orrn(a, b) => a OR NOT b
-    •orrv(v)    => REDUCE(orrs, v)
-    •orr1(...)  => atomic_or_explicit(..., memory_order_relaxed)
-    •orra(...)  => atomic_or_explicit(..., memory_order_acquire)
-    •orre(...)  => atomic_or_explicit(..., memory_order_release)
-    •orrt(...)  => atomic_or_explicit(..., memory_order_seq_cst)
-
-
-### •xor· «bitwise XOR»
-
-    •xors(a, b) => a XOR b
-    •xorn(a, b) => a XOR ~b
-    •xorv(v)    => REDUCE(xors, v)
-    •xor1(...)  => atomic_xor_explicit(..., memory_order_relaxed)
-    •xora(...)  => atomic_xor_explicit(..., memory_order_acquire)
-    •xore(...)  => atomic_xor_explicit(..., memory_order_release)
-    •xort(...)  => atomic_xor_explicit(..., memory_order_seq_cst)
-
-
-### •neg· «NEGate»
-
-    •negl(a) => TRUNCATE(-a)
-    •negs(a) => SATURATE(-a)
-    •negh(a) => (flt16_t) -a
-    •negw(a) => (float) -a
-    •negd(a) => (double) -a
-
-
 ### •abs· «ABSolute value»
 
     •absl(x) => TRUNCATE(|x|)
@@ -1146,7 +589,6 @@ including a brief description.
     •absh(x) => (flt16_t) |x|
     •absw(x) => (float) |x|
     •absd(x) => (double) |x|
-
 
 ### •add· «ADDition»
 
@@ -1161,21 +603,408 @@ including a brief description.
     •adde(...)  => atomic_fetch_add(..., memory_order_release)
     •addt(...)  => atomic_fetch_add(..., memory_order_seq_cst)
 
+### •and· «bitwise AND»
+
+    •ands(a, b) => a AND b
+    •andn(a, b) => a AND NOT b
+    •andv(a)    => REDUCE(ands, a)
+    •and1(...)  => atomic_and_explicit(..., memory_order_relaxed)
+    •anda(...)  => atomic_and_explicit(..., memory_order_acquire)
+    •ande(...)  => atomic_and_explicit(..., memory_order_release)
+    •andt(...)  => atomic_and_explicit(..., memory_order_seq_cst)
+
+### •asb· «reinterpret cASt Byte»
+
+    •asbu(a) => ((BYTE_TYPE){a}).U
+    •asbi(a) => ((BYTE_TYPE){a}).I
+    •asbc(a) => ((BYTE_TYPE){a}).F
+
+### •asd· «reinterpret cASt Doubleword»
+
+    •asdu(a) => ((DWRD_TYPE){a}).U
+    •asdi(a) => ((DWRD_TYPE){a}).I
+    •asdf(a) => ((DWRD_TYPE){a}).F
+
+### •ash· «reinterpret cASt Halfword»
+
+    •ashu(a) => ((HALF_TYPE){a}).U
+    •ashi(a) => ((HALF_TYPE){a}).I
+    •ashf(a) => ((HALF_TYPE){a}).F
+
+### •asq· «reinterpret cASt Quadword»
+
+    •asqu(a) => ((QUAD_TYPE){a}).U
+    •asqi(a) => ((QUAD_TYPE){a}).I
+    •asqf(a) => ((QUAD_TYPE){a}).F
+
+### •ast· «reinterpret cASt (generic)»
+
+    •astm(a) => as machine
+    •astv(a) => as virtual
+    •astu(a) => ((STG_TYPE(a)){a}).U
+    •asti(a) => ((STG_TYPE(a)){a}).I
+    •astf(a) => ((STG_TYPE(a)){a}).F
+
+### •asy· «reinterpret cASt (boolean)»
+
+    •asyu(a) => only applies to vectors
+
+### •asw· «reinterpret cASt Word»
+
+    •aswu(a) => ((WORD_TYPE){a}).U
+    •aswi(a) => ((WORD_TYPE){a}).I
+    •aswf(a) => ((WORD_TYPE){a}).F
+
+### •avg· «AVeraGe»
+
+    •avgl(a, b) => SUM(a, b)÷2
+
+### •bfg· «BitField Get»
+
+    •bfg1(a, b, c) => (a[b:c])
+
+### •bfs· «BitField Set»
+
+    •bfs1(a, b, c, d) => (a[b:c] = d)
+
+### •bfc· «BitField Clear»
+
+    •bfc1(a, b, c) => (a[b:c] = 0)
+
+### •bln· «BLeNd»
+
+    •blnm(a, b, ...c) => {b[i] if c[i] else a[i] for ...}
+
+### •cat· «representation conCATenation»
+
+    •catl(l, r) => l ## r
+
+### •cbn· «Compare BetweeN»
+
+    •cbns(a, l, r) => (l <= a) && (a <= r) ? -1 : 0
+    •cbny(a, l, r) => (l <= a) && (a <= r) ? +1 : 0
+
+### •ceq· «Compare EQual»
+
+    •ceqs(a, b) => a == b ? -1 : 0
+    •ceqy(a, b) => a == b ? +1 : 0
+
+### •cgt· «Compare Greater Than»
+
+    •cgts(a, b) => a > b ? -1 : 0
+    •cgty(a, b) => a > b ? +1 : 0
+
+### •cge· «Compare Greater than or Equal»
+
+    •cges(a, b) => a >= b ? -1 : 0
+    •cgey(a, b) => a >= b ? +1 : 0
+
+### •cle· «Compare Less than or Equal»
+
+    •cles(a, b) => a <= b ? -1 : 0
+    •cley(a, b) => a <= b ? +1 : 0
+
+### •clt· «Compare Less Than»
+
+    •clts(a, b) => a < b ? -1 : 0
+    •clty(a, b) => a < b ? +1 : 0
+
+### •cnb· «Compare Not Between»
+
+    •cnbs(a, l, r) => (a < l) || (r < a) ? -1 : 0
+    •cnby(a, l, r) => (a < l) || (r < a) ? +1 : 0
+
+### •cne· «Compare Not Equal»
+
+    •cnes(a, b) => a != b ? -1 : 0
+    •cney(a, b) => a != b ? +1 : 0
+
+### •cmb· «Compiler Memory Barrier»
+
+    •cmba() => atomic_signal_fence(memory_order_acquire)
+    •cmbe() => atomic_signal_fence(memory_order_release)
+    •cmbt() => atomic_signal_fence(memory_order_seq_cst)
+
+### •cnt· «CouNt Total»
+
+    •cnt1(a) => count one digits (i.e. hamming weight)
+    •cnts(a) => count redundant sign bits
+
+### •csz· «Count Sequential Zeros»
+
+    •cszl(a) => count least significant ("trailing") zeros
+    •cszr(a) => count most significant ("leading") zeros
+
+### •cvb· «Convert to Byte»
+
+    •cvbc(a) => TRUNCATE((char) a)
+    •cvbu(a) => TRUNCATE((uint8_t) a)
+    •cvbi(a) => TRUNCATE((int8_t) a)
+    •cvbz(a) => SATURATE((uint8_t) a)
+    •cvbs(a) => SATURATE((int8_t) a)
+
+### •cvd· «Convert to Doubleword»
+
+    •cvdu(a) => TRUNCATE((uint64_t) a)
+    •cvdi(a) => TRUNCATE((int64_t) a)
+    •cvdz(a) => SATURATE((uint64_t) a)
+    •cvds(a) => SATURATE((int64_t) a)
+    •cvdf(a) => (double) a
+
+### •cvh· «Convert to Halfword»
+
+    •cvhu(a) => TRUNCATE((uint16_t) a)
+    •cvhi(a) => TRUNCATE((int16_t) a)
+    •cvhz(a) => SATURATE((uint16_t) a)
+    •cvhs(a) => SATURATE((int16_t) a)
+    •cvhf(a) => (flt16_t) a
+
+### •cvw· «Convert to Word»
+
+    •cvwu(a) => TRUNCATE((uint32_t) a)
+    •cvwi(a) => TRUNCATE((int32_t) a)
+    •cvwz(a) => SATURATE((uint32_t) a)
+    •cvws(a) => SATURATE((int32_t) a)
+    •cvwf(a) => (float) a
+
+### •cvq· «Convert to Quadword»
+
+    •cvqu(a) => TRUNCATE((QUAD_UTYPE) a)
+    •cvqi(a) => TRUNCATE((QUAD_ITYPE) a)
+    •cvqz(a) => SATURATE((QUAD_UTYPE) a)
+    •cvqs(a) => SATURATE((QUAD_ITYPE) a)
+    •cvqf(a) => (QUAD_FTYPE) a
+
+### •dec· «DECrement»
+
+    •decl(x) => TRUNCATE(x-1)
+
+### •dif· «absolute DIFference»
+
+    •difu(a, b) => absu(|a-b|)
+
+### •div· «DIVide without remainder»
+
+    •divl(a, b) => a/b
+    •div2(a, b) => a/b (halfwidth dividend)
+    •divh(a, b) => (flt16_t) a/b
+    •divw(a, b) => (float) a/b
+    •divd(a, b) => (double) a/b
+
+### •dup· «DUPlicate vector element»
+
+    •dupl(a) => DUP(get1(a, 0))
+    •dupw(a) => DUP(a)
+    •dupd(a) => DUP(a)
+    •dupq(a) => DUP(a)
+
+### •fam· «Fused Add Multiply»
+
+    •faml(a, b, c) => TRUNCATE(a+b*c)
+    •fam2(a, b, c) => a+NARROWED(b)*NARROWED(c)
+    •famf(a, b, c) => FLOATING(a+b*c)
+
+### •get· «vector GET»
+
+    •get1(a, b) => (a[b])
+    •getl(b)    => (b.Lo)
+    •getr(a)    => (b.Hi)
+
+### •hmb· «Hardware Memory Barrier»
+
+    •hmba() => atomic_thread_fence(memory_order_acquire)
+    •hmbe() => atomic_thread_fence(memory_order_release)
+    •hmbt() => atomic_thread_fence(memory_order_seq_cst)
 
 ### •inc· «INCrement»
 
     •incl(x) => TRUNCATE(x+1)
 
+### •inv· «bitwise INVert»
 
-### •sum· «across vector 'add'»
+    •invs(a) => NOT a
+    •inv1(a) => atomic_xor_explicit(a,-1,memory_order_relaxed)
+    •inva(a) => atomic_xor_explicit(a,-1,memory_order_acquire)
+    •inve(a) => atomic_xor_explicit(a,-1,memory_order_release)
+    •invt(a) => atomic_xor_explicit(a,-1,memory_order_seq_cst)
 
-    •suml(a) => REDUCE(addl, a)
-    •sum2(a) => REDUCE(add2, a)
-    •sums(a) => REDUCE(adds, a)
-    •sumh(a) => (flt16_t) REDUCE(adds, a)
-    •sumw(a) => (float) REDUCE(adds, a)
-    •sumd(a) => (double) REDUCE(adds, a)
+### •ldr· «LoaD aligned to Register»
 
+    •ldrn(a)   => *a
+    •ldrw(a)   => *a (a points to 32 bit vector)
+    •ldrd(a)   => *a (a points to 64 bit vector)
+    •ldrq(a)   => *a (a points to 128 bit vector)
+    •ldr1(...) => atomic_load_explicit(...order_relaxed)
+    •ldra(...) => atomic_load_explicit(...order_acquire)
+    •ldrt(...) => atomic_load_explicit(...order_seq_cst)
+
+### •lun· «LoaD Unaligned to register»
+
+    •lunn(a)   => READ(a)
+    •lunw(a)   => READ(a) (a points to 32 bit vector)
+    •lund(a)   => READ(a) (a points to 64 bit vector)
+    •lunq(a)   => READ(a) (a points to 128 bit vector)
+
+### •max· «MAXimum»
+
+    •maxl(a, b) => LIKELY(a > b) ? a : b
+    •maxv(v)    => REDUCE(maxl, v)
+
+### •min· «MINimum»
+
+    •minl(a, b) => LIKELY(a < b) ? a : b
+    •minv(v)    => REDUCE(minl, v)
+
+### •mod· «MODulus (division remainder)»
+
+    •modl(a, b) => TRUNCATE(a%b)
+    •mod2(a, b) => a%b
+
+### •mul· «MULtiply»
+
+    •mull(a, b) => TRUNCATE(a*b)
+    •mulr(a, b) => KEEPHIGH(a*b)
+    •muls(a, b) => SATURATE(a*b)
+    •mul2(a, b) => WIDENED(a)*b
+    •mulh(a, b) => (flt16_t) a*b
+    •mulw(a, b) => (float) a*b
+    •muld(a, b) => (double) a*b
+
+### •neg· «NEGate»
+
+    •negl(a) => TRUNCATE(-a)
+    •negs(a) => SATURATE(-a)
+    •negh(a) => (flt16_t) -a
+    •negw(a) => (float) -a
+    •negd(a) => (double) -a
+
+### •new· «vector constant ctor»
+
+    •newl(...) => {*}
+    •newr(...) => {revs(*)}
+
+### •orr· «bitwise ORR»
+
+    •orrs(a, b) => a OR b
+    •orrn(a, b) => a OR NOT b
+    •orrv(v)    => REDUCE(orrs, v)
+    •orr1(...)  => atomic_or_explicit(..., memory_order_relaxed)
+    •orra(...)  => atomic_or_explicit(..., memory_order_acquire)
+    •orre(...)  => atomic_or_explicit(..., memory_order_release)
+    •orrt(...)  => atomic_or_explicit(..., memory_order_seq_cst)
+
+### •per· «PERmute»
+
+    •pers(a, ...)    => permute with 0 default
+    •perm(a, b, ...) => permute with b default
+
+### •rev· «REVerse»
+
+    •revy(a) => reverse element bits
+    •revb(a) => reverse element bytes
+    •revs(a) => REVERSE(a)
+
+### •smb· «Synchronized Memory Barrier»
+
+    •smba() => SYNC(hmba())
+    •smbe() => SYNC(hmbe())
+    •smbt() => SYNC(hmbt())
+
+### •raz· «Round Away from Zero (toward)»
+
+    •razf(a) => ROUND(a, DR_NEXT)
+    •razb(a) => (int8_t) ROUND(a, DR_NEXT)
+    •razh(a) => (int16_t) ROUND(a, DR_NEXT)
+    •razw(a) => (int32_t) ROUND(a, DR_NEXT)
+    •razd(a) => (int64_t) ROUND(a, DR_NEXT)
+    •razq(a) => (QUAD_ITYPE) ROUND(a, DR_NEXT)
+
+### •rot· «ROTate binary representation by int»
+
+    •rotl(a, b) => (a[-b:] OR a[:+b])
+    •rotr(a, b) => (a[+b:] OR a[:-b])
+
+### •rov· «vectorized 'rot'»
+
+    •rovl(a, b) => VECTORIZE(rotl, a, b)
+    •rovr(a, b) => VECTORIZE(rotr, a, b)
+
+### •rtz· «Round Toward Zero (trunc)»
+
+    •rtzf(a) => ROUND(a, DR_ZERO)
+    •rtzb(a) => (int8_t) ROUND(a, DR_ZERO)
+    •rtzh(a) => (int16_t) ROUND(a, DR_ZERO)
+    •rtzw(a) => (int32_t) ROUND(a, DR_ZERO)
+    •rtzd(a) => (int64_t) ROUND(a, DR_ZERO)
+    •rtzq(a) => (QUAD_ITYPE) ROUND(a, DR_ZERO)
+
+### •rtp· «Round Toward Positive inf (ceil)»
+
+    •rtpf(a) => ROUND(a, DR_NINF)
+    •rtpb(a) => (int8_t) ROUND(a, DR_PINF)
+    •rtph(a) => (int16_t) ROUND(a, DR_PINF)
+    •rtpw(a) => (int32_t) ROUND(a, DR_PINF)
+    •rtpd(a) => (int64_t) ROUND(a, DR_PINF)
+    •rtpq(a) => (QUAD_ITYPE) ROUND(a, DR_PINF)
+
+### •rtn· «Round Toward Negative inf (floor)»
+
+    •rtnf(a) => ROUND(a, DR_NINF)
+    •rtnb(a) => (int8_t) ROUND(a, DR_NINF)
+    •rtnh(a) => (int16_t) ROUND(a, DR_NINF)
+    •rtnw(a) => (int32_t) ROUND(a, DR_NINF)
+    •rtnd(a) => (int64_t) ROUND(a, DR_NINF)
+    •rtnq(a) => (QUAD_ITYPE) ROUND(a, DR_NINF)
+
+### •seq· «linear SEQuence»
+
+    •seqw(a, b) => {a, a+b×1, a+b×2, ...}
+    •seqd(a, b) => {a, a+b×1, a+b×2, ...}
+    •seqq(a, b) => {a, a+b×1, a+b×2, ...}
+
+### •set· «vector SET»
+
+    •set1(a, b, c)  => (a[b] = c)
+    •setl(a, b)     => (a.Lo = b)
+    •setr(a, b)     => (a.Hi = b)
+
+### •shl· «SHift Left»
+
+    •shl2(a, b) => WIDENED(a)<<b
+    •shls(a, b) => SATURATE(a<<b)
+    •shll(a, b) => TRUNCATE(a<<b)
+    •shlr(a, b) => KEEPHIGH(a<<b)
+
+### •shr· «SHift Right»
+
+    •shrs(a, b) => SATURATE(a>>v)
+
+### •sil· «Shift Insert Left»
+
+    •sill(a, b, c) => (a<<c) OR b[:+c]
+    •silr(a, b, c) => (a<<c) OR b[-c:]
+
+### •sir· «Shift Insert Right»
+
+    •sirl(a, b, c) => (a>>c) OR (b[:+c]<<(WIDTHOF(a)-c))
+    •sirr(a, b, c) => (a>>c) OR (b[-c:]<<(WIDTHOF(a)-c))
+
+### •spl· «Shift Pair Left»
+
+    •spll(l, r, n) => l[n:] ## r[:+n]
+    •splr(l, r, n) => l[n:] ## r[-n:]
+
+### •spr· «Shift Pair Right»
+
+    •sprl(l, r, n) => l[:n] ## r[:+n]
+    •sprr(l, r, n) => l[:n] ## r[-n:]
+
+### •str· «STore Register to aligned»
+
+    •strn(a, b) => *b=a
+    •str1(...)  => atomic_store_explicit(...order_relaxed)
+    •stre(...)  => atomic_store_explicit(...order_release)
+    •strt(...)  => atomic_store_explicit(...order_seq_cst)
 
 ### •sub· «SUBtraction»
 
@@ -1190,48 +1019,112 @@ including a brief description.
     •sube(...)  => atomic_fetch_sub(..., memory_order_release)
     •subt(...)  => atomic_fetch_sub(..., memory_order_seq_cst)
 
+### •sum· «across vector 'add'»
 
-### •dec· «DECrement»
+    •suml(a) => REDUCE(addl, a)
+    •sum2(a) => REDUCE(add2, a)
+    •sums(a) => REDUCE(adds, a)
+    •sumh(a) => (flt16_t) REDUCE(adds, a)
+    •sumw(a) => (float) REDUCE(adds, a)
+    •sumd(a) => (double) REDUCE(adds, a)
 
-    •decl(x) => TRUNCATE(x-1)
+### •sun· «Store register to UNaligned»
 
+    •sunn(a, b) => WRITE(b, a), a
+    •sunw(a, b) => WRITE(a, b) (b is 32 bit vector)
+    •sund(a, b) => WRITE(a, b) (b is 64 bit vector)
+    •sunq(a, b) => WRITE(a, b) (b is 128 bit vector)
 
-### •dif· «absolute DIFference»
+### •svl· «vectorized 'shl'»
 
-    •difu(a, b) => UNSIGNED(|a-b|)
+    •svl2(a, b) => VECTORIZE(shl2, a, b)
+    •svll(a, b) => VECTORIZE(shll, a, b)
+    •svls(a, b) => VECTORIZE(shls, a, b)
 
+### •svr· «vectorized 'shr'»
 
-### •mul· «MULtiply»
+    •svrs(a, b) => VECTORIZE(shrs, a, b)
 
-    •mull(a, b) => TRUNCATE(a*b)
-    •mulr(a, b) => KEEPHIGH(a*b)
-    •muls(a, b) => SATURATE(a*b)
-    •mul2(a, b) => WIDENED(a)*b
-    •mulh(a, b) => (flt16_t) a*b
-    •mulw(a, b) => (float) a*b
-    •muld(a, b) => (double) a*b
+### •swp· «SWaP»
 
+    •swp1(...) => atomic_exchange_explicit(...order_relaxed)
+    •swpa(...) => atomic_exchange_explicit(...order_acquire)
+    •swpe(...) => atomic_exchange_explicit(...order_release)
+    •swpt(...) => atomic_exchange_explicit(...order_seq_cst)
 
-### •fam· «Fused Add Multiply»
+### •toa· «TO Ascii representation»
 
-    •faml(a, b, c) => TRUNCATE(a+b×c)
-    •fam2(a, b, c) => a+NARROWED(b)×NARROWED(c)
-    •famf(a, b, c) => FLOATING(a+b×c)
+    •toay(a) => BIN(a)
+    •toao(a) => OCT(a)
+    •toad(a) => DEC(a)
+    •toal(a) => LOWERHEX(a)
+    •toau(a) => UPPERHEX(a)
 
+### •tst· «Test Set biTs»
 
-### •div· «DIVide without remainder»
+    •tsts(a, b) => ((a&b) != 0) ? -1 : 0
+    •tsty(a, b) => ((a&b) != 0) ? +1 : 0
 
-    •divl(a, b) => a÷b 
-    •div2(a, b) => a÷b (halfwidth dividend)
-    •divp(a, b) => a÷b (aggregate {Q,R})
-    •divh(a, b) => (flt16_t) a/b
-    •divw(a, b) => (float) a/b
-    •divd(a, b) => (double) a/b
+### •uzp· «UnZiP (deinterleave)»
 
+    •uzpl(a, b) => extract evens
+    •uzpr(a, b) => extract odds
 
-### •mod· «MODulus (division remainder)»
+### •veq· «Vector EQuality match»
 
-    •modl(a, b) => TRUNCATE(a%b)
-    •mod2(a, b) => a%b
+    •veqs(a, b) => VECTORIZE(CEQS, a, DUP(b))
+    •veqy(a, b) => VECTORIZE(CEQS, a, DUP(b))
 
+### •xeq· «eXchange if EQual»
+
+    •xeq1(...) => CAS(..., succ=relaxed, fail=relaxed)
+    •xeqa(...) => CAS(..., succ=acquire, fail=acquire)
+    •xeqe(...) => CAS(..., succ=release, fail=acquire)
+    •xeqt(...) => CAS(..., succ=seq_cst, fail=seq_cst)
+
+### •xor· «bitwise XOR»
+
+    •xors(a, b) => a XOR b
+    •xorn(a, b) => a XOR ~b
+    •xorv(v)    => REDUCE(xors, v)
+    •xor1(...)  => atomic_xor_explicit(..., memory_order_relaxed)
+    •xora(...)  => atomic_xor_explicit(..., memory_order_acquire)
+    •xore(...)  => atomic_xor_explicit(..., memory_order_release)
+    •xort(...)  => atomic_xor_explicit(..., memory_order_seq_cst)
+
+### •zeq· «Zero EQuals»
+
+    •zeqs(a) => (0 == a) ? -1 : 0
+    •zeqy(a) => (0 == a) ? +1 : 0
+
+### •zip· «interleave»
+
+    •zipl(a, b) => KEEPLOW(ZIP(a, b))
+    •zipr(a, b) => KEEPHIGH(ZIP(a, b))
+    •zipp(a, b) => ZIP(a, b)
+
+### •zge· «Zero Greater than or Equal»
+
+    •zges(a) => (0 >= a) ? -1 : 0
+    •zgey(a) => (0 >= a) ? +1 : 0
+
+### •zgt· «Zero Greater Than»
+
+    •zgts(a) => (0 > a) ? -1 : 0
+    •zgty(a) => (0 > a) ? +1 : 0
+
+### •zle· «Zero Less than or Equal»
+
+    •zles(a) => (0 <= a) ? -1 : 0
+    •zley(a) => (0 <= a) ? +1 : 0
+
+### •zlt· «Zero Less Than»
+
+    •zlts(a) => (0 < a) ? -1 : 0
+    •zlty(a) => (0 < a) ? +1 : 0
+
+### •zne· «Zero uNEqual»
+
+    •znes(a) => (0 != a) ? -1 : 0
+    •zney(a) => (0 != a) ? +1 : 0
 
