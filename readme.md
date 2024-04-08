@@ -655,10 +655,6 @@ comments in the op's section in ungop.h
     •aswi(a) => ((WORD_TYPE){a}).I
     •aswf(a) => ((WORD_TYPE){a}).F
 
-### •avg· «AVeraGe»
-
-    •avgl(a, b) => SUM(a, b)÷2
-
 ### •bfg· «BitField Get»
 
     •bfg1(a, b, c) => (a[b:c])
