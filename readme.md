@@ -771,9 +771,13 @@ comments in the op's section in ungop.h
     •cvqs(a) => SATURATE((QUAD_ITYPE) a)
     •cvqf(a) => (QUAD_FTYPE) a
 
-### •dec· «DECrement»
+### •dcr· «DeCRement»
 
-    •decl(x) => TRUNCATE(x-1)
+    •dcr1(a) => add1(a, -1)
+    •dcra(a) => adda(a, -1)
+    •dcre(a) => adde(a, -1)
+    •dcrt(a) => addt(a, -1)
+    •dcrl(a) => TRUNCATE(a+1)
 
 ### •dif· «absolute DIFference»
 
@@ -812,9 +816,13 @@ comments in the op's section in ungop.h
     •hmbe() => atomic_thread_fence(memory_order_release)
     •hmbt() => atomic_thread_fence(memory_order_seq_cst)
 
-### •inc· «INCrement»
+### •icr· «InCRement»
 
-    •incl(x) => TRUNCATE(x+1)
+    •icr1(a) => atomic_add_explicif(a, 1, memory_order_relaxed)
+    •icra(a) => atomic_add_explicif(a, 1, memory_order_acquire)
+    •icre(a) => atomic_add_explicif(a, 1, memory_order_release)
+    •icrt(a) => atomic_add_explicif(a, 1, memory_order_seq_cst)
+    •icrl(a) => TRUNCATE(a+1)
 
 ### •inv· «bitwise INVert»
 
