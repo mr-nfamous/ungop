@@ -564,18 +564,48 @@ is found at the same position as its least significant byte:
     Bqb: Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
 
 
-
 # OP INDEX
 
 Finally, the following is a complete instruction listing,
 including a brief description. For more details, see the
 comments in the op's section in ungop.h
 
+Key:
+
+    TRUNCATE(x) of a N bit integer means the operation has 
+    an intermediate result that's greater than N bits but 
+    only the least significant N bits are kept. For example, 
+    mullbu, at least semantically, generates a 16 bit 
+    product from two 8 bit unsigned ints but discards the
+    most significant 8 bits.
+
+    KEEPHIGH is like TRUNCATE except it's the upper half
+    that's kept
+
+    SATURATE(x) means if the intermediate result is greater
+    than the result type's maximum, the result is the max
+    and vice versa for the minimum. E.g. addsbi(127,127)
+    returns 127 since 127+127=254 and 254 is greater than
+    INT8_MAX. Likewise, addsbi(-127,-127) returns -128,
+    since -127+-127 is -254, which is less than INT8_MIN.
+
+    WIDENED(x) means the result is twice as large as x
+
+    UNSIGNED(x) means the result is an unsigned int of 
+    equal width as x 
+
+    SIGNED(x) means the result is an signed int of equal 
+    width as x 
+
+    FLOATING(x) means the result is a float of equal width
+    as x 
+
+    
 
 ### •***· «unprefixed/misc»
 
-    •void      => the zero constant (constant)
-    •pass()    => forfeit the calling thread's CPU time
+    •void      => the zero constant (not a callable)
+    •pass()    => forfeit calling thread's CPU time
     •unos(n)   => generate N sequential 1 bits
     •sign(s)   => extract sign bit of signed
     •expo(f)   => extract exponent of float
@@ -592,26 +622,26 @@ comments in the op's section in ungop.h
 
 ### •add· «ADDition»
 
-    •addl(a, b) => TRUNCATE(a+b)
-    •adds(a, b) => SATURATE(a+b)
-    •add2(a, b) => WIDENED(a)+b
-    •addh(a, b) => (flt16_t) a+b
-    •addw(a, b) => (float) a+b
-    •addd(a, b) => (double) a+b
-    •add1(...)  => atomic_fetch_add(..., memory_order_relaxed)
-    •adda(...)  => atomic_fetch_add(..., memory_order_acquire)
-    •adde(...)  => atomic_fetch_add(..., memory_order_release)
-    •addt(...)  => atomic_fetch_add(..., memory_order_seq_cst)
+    •addl(a,b) => TRUNCATE(a+b)
+    •adds(a,b) => SATURATE(a+b)
+    •add2(a,b) => WIDENED(a)+b
+    •addh(a,b) => (flt16_t) a+b
+    •addw(a,b) => (float) a+b
+    •addd(a,b) => (double) a+b
+    •add1(...) => atomic add w/ memory_order_relaxed
+    •adda(...) => atomic add w/ memory_order_acquire
+    •adde(...) => atomic add w/ memory_order_release
+    •addt(...) => atomic add w/ memory_order_seq_cst
 
 ### •and· «bitwise AND»
 
-    •ands(a, b) => a AND b
-    •andn(a, b) => a AND NOT b
-    •andv(a)    => REDUCE(ands, a)
-    •and1(...)  => atomic_and_explicit(..., memory_order_relaxed)
-    •anda(...)  => atomic_and_explicit(..., memory_order_acquire)
-    •ande(...)  => atomic_and_explicit(..., memory_order_release)
-    •andt(...)  => atomic_and_explicit(..., memory_order_seq_cst)
+    •ands(a,b) => a AND b
+    •andn(a,b) => a AND NOT b
+    •andv(a)   => REDUCE(ands, a)
+    •and1(...) => atomic and w/ memory_order_relaxed
+    •anda(...) => atomic and w/ memory_order_acquire
+    •ande(...) => atomic and w/ memory_order_release
+    •andt(...) => atomic and w/ memory_order_seq_cst
 
 ### •asb· «reinterpret cASt Byte»
 
@@ -724,43 +754,43 @@ comments in the op's section in ungop.h
 ### •cnt· «CouNt Total»
 
     •cnt1(a) => count one digits (i.e. hamming weight)
-    •cnts(a) => count redundant sign bits
+    •cnts(a) => sequential repetitions of most sig bit
 
 ### •csz· «Count Sequential Zeros»
 
-    •cszl(a) => count least significant ("trailing") zeros
-    •cszr(a) => count most significant ("leading") zeros
+    •cszl(a) => least to most aka "trailing zeros"
+    •cszr(a) => most to least aka "leading zeros"
 
 ### •cvb· «Convert to Byte»
 
-    •cvbc(a) => TRUNCATE((char) a)
+    •cvbc(a) => TRUNCATE(   (char) a)
     •cvbu(a) => TRUNCATE((uint8_t) a)
-    •cvbi(a) => TRUNCATE((int8_t) a)
+    •cvbi(a) => TRUNCATE( (int8_t) a)
     •cvbz(a) => SATURATE((uint8_t) a)
-    •cvbs(a) => SATURATE((int8_t) a)
+    •cvbs(a) => SATURATE( (int8_t) a)
 
 ### •cvd· «Convert to Doubleword»
 
     •cvdu(a) => TRUNCATE((uint64_t) a)
-    •cvdi(a) => TRUNCATE((int64_t) a)
+    •cvdi(a) => TRUNCATE( (int64_t) a)
     •cvdz(a) => SATURATE((uint64_t) a)
-    •cvds(a) => SATURATE((int64_t) a)
+    •cvds(a) => SATURATE( (int64_t) a)
     •cvdf(a) => (double) a
 
 ### •cvh· «Convert to Halfword»
 
     •cvhu(a) => TRUNCATE((uint16_t) a)
-    •cvhi(a) => TRUNCATE((int16_t) a)
+    •cvhi(a) => TRUNCATE( (int16_t) a)
     •cvhz(a) => SATURATE((uint16_t) a)
-    •cvhs(a) => SATURATE((int16_t) a)
+    •cvhs(a) => SATURATE( (int16_t) a)
     •cvhf(a) => (flt16_t) a
 
 ### •cvw· «Convert to Word»
 
     •cvwu(a) => TRUNCATE((uint32_t) a)
-    •cvwi(a) => TRUNCATE((int32_t) a)
+    •cvwi(a) => TRUNCATE( (int32_t) a)
     •cvwz(a) => SATURATE((uint32_t) a)
-    •cvws(a) => SATURATE((int32_t) a)
+    •cvws(a) => SATURATE( (int32_t) a)
     •cvwf(a) => (float) a
 
 ### •cvq· «Convert to Quadword»
@@ -773,11 +803,11 @@ comments in the op's section in ungop.h
 
 ### •dcr· «DeCRement»
 
+    •dcrl(a) => TRUNCATE(a+1)
     •dcr1(a) => add1(a, -1)
     •dcra(a) => adda(a, -1)
     •dcre(a) => adde(a, -1)
     •dcrt(a) => addt(a, -1)
-    •dcrl(a) => TRUNCATE(a+1)
 
 ### •dif· «absolute DIFference»
 
@@ -1132,3 +1162,63 @@ comments in the op's section in ungop.h
     •znes(a) => (0 != a) ? -1 : 0
     •zney(a) => (0 != a) ? +1 : 0
 
+
+#Highlights 
+
+    * reinterpret casts, aka type punning. E.g. aswfwi 
+    reinterprets the 4 byte representation of its 32 bit
+    signed int operand as a 4 byte/32 bit float
+
+    * value conversions, with options to truncate, widen,
+    or saturate. e.g. cvbuqhi converts the 128 bit vector 
+    of eight signed 16 bit integers to a 64 bit vector of
+    8 bit unsigned integers as if by C assignment; cvbzqhi
+    also converts the eight 16 bit ints to 8 bit ints but
+    clamps any negative elements to 0.
+
+    * comparisons that evaluate to +1 OR -1, i.e. when true,
+    all bits are set to 1. cbny checks if a number is in a
+    range and cbny checks if a number is not in a range
+
+    * equivalents of all ops in C11's <stdatomic.h> except
+    the atomic_flag. memory_order_consume and the related
+    kill_dependency also have no equivalent, but this is
+    irrelevant since modern architectures don't implement
+    them anyway
+
+    * reverse representation (bits, bytes, entire vector)
+
+    * load any scalar or vector from possibly misaligned
+    address. E.g. lunnadu safely loads an unsigned 64 bit 
+    integer from any address using the most efficient way
+    available
+    
+    * vector manipulation. Shuffle with pers/perm, blend 
+    with blnm, interleave with zipl/zipr/zipp, deinterleave
+    with uzpl/uzpr, etc.
+    
+    * count set bits/hamming weight with cnt1. count 
+    sequential zeros with cszl and cszr. Operations are 
+    defined for both scalars and vectors
+    
+    * arithmetic with widening, truncation, saturation, 
+    narrowing, and with implicit conversion to float. Many 
+    other common operation combos are also available such
+    as absolute difference, average, AND NOT, OR NOT, and
+    XOR NOT.
+
+    * every kind of shift there is. Arithmetic, logical, 
+    with insertion of bits from one end or another of a 
+    second integer.
+    
+    * scalar and vector concatenation
+    
+    * "reduce", i.e. across vector ops, including sum, min,
+    max, average, and the bitwise ops like AND, OR, and 
+    XOR. There's also veqy/vney/vlty/vgty/vley/vgey to
+    quickly check if any result of a SIMD vector compare 
+    op was true
+    
+    
+    
+    
