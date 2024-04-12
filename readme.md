@@ -1169,55 +1169,47 @@ Key:
     reinterprets the 4 byte representation of its 32 bit
     signed int operand as a 4 byte/32 bit float
 
-    * value conversions, with options to truncate, widen,
+    * Value conversions, with options to truncate, widen,
     or saturate. e.g. cvbuqhi converts the 128 bit vector 
     of eight signed 16 bit integers to a 64 bit vector of
     8 bit unsigned integers as if by C assignment; cvbzqhi
     also converts the eight 16 bit ints to 8 bit ints but
     clamps any negative elements to 0.
 
-    * comparisons that evaluate to +1 OR -1, i.e. when true,
-    all bits are set to 1. cbny checks if a number is in a
-    range and cbny checks if a number is not in a range
+    * Comparisons that evaluate to +1 when true as well as 
+    "saturated" comparisons that evaluate to -1 when true
 
-    * equivalents of all ops in C11's <stdatomic.h> except
+    * Equivalents for all ops in C11's <stdatomic.h> except
     the atomic_flag. memory_order_consume and the related
     kill_dependency also have no equivalent, but this is
     irrelevant since modern architectures don't implement
     them anyway
 
-    * reverse representation (bits, bytes, entire vector)
+    * Representation reversal (bits, bytes, entire vector)
 
-    * load any scalar or vector from possibly misaligned
+    * Load any scalar or vector from possibly misaligned
     address. E.g. lunnadu safely loads an unsigned 64 bit 
     integer from any address using the most efficient way
     available
     
-    * vector manipulation. Shuffle with pers/perm, blend 
-    with blnm, interleave with zipl/zipr/zipp, deinterleave
-    with uzpl/uzpr, etc.
+    * Vector blending, permutation, (de)interleaving, and
+    concatenation/splitting.
     
-    * count set bits/hamming weight with cnt1. count 
-    sequential zeros with cszl and cszr. Operations are 
-    defined for both scalars and vectors
+    * Count set bits/Hamming weight
     
-    * arithmetic with widening, truncation, saturation, 
-    narrowing, and with implicit conversion to float. Many 
-    other common operation combos are also available such
-    as absolute difference, average, AND NOT, OR NOT, and
-    XOR NOT.
+    * Count sequential zeros
 
-    * every kind of shift there is. Arithmetic, logical, 
-    with insertion of bits from one end or another of a 
-    second integer.
-    
-    * scalar and vector concatenation
-    
-    * "reduce", i.e. across vector ops, including sum, min,
-    max, average, and the bitwise ops like AND, OR, and 
-    XOR. There's also veqy/vney/vlty/vgty/vley/vgey to
-    quickly check if any result of a SIMD vector compare 
-    op was true
+    * Arithmetic with saturated, truncated, widened, or
+    narrowed integer result. Mixed integer and float ops
+    with implicit conversion to float.
+
+    * Common CISC combo ops such as fused multiply add, 
+    AND NOT, OR NOT, XOR NOT
+
+    * Multiple forms of bit shift including widened left 
+    shift, saturated arithmetic shifts, and insert shifts
+
+
     
     
     
