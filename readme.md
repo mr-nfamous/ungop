@@ -1035,7 +1035,6 @@ Key:
 
 ### •str· «STore Register to aligned»
 
-    •strn(a, b) => *b=a
     •str1(...)  => atomic_store_explicit(...order_relaxed)
     •stre(...)  => atomic_store_explicit(...order_release)
     •strt(...)  => atomic_store_explicit(...order_seq_cst)
@@ -1064,7 +1063,6 @@ Key:
 
 ### •sun· «Store register to UNaligned»
 
-    •sunn(a, b) => WRITE(b, a), a
     •sunw(a, b) => WRITE(a, b) (b is 32 bit vector)
     •sund(a, b) => WRITE(a, b) (b is 64 bit vector)
     •sunq(a, b) => WRITE(a, b) (b is 128 bit vector)
