@@ -12960,11 +12960,11 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT8_SILL      UINT8_BASE(SILL)
 #define     UINT8_SILR      UINT8_BASE(SILR)
 
-#define     UINT8_STR1      UINT8_BASE(STR1)
+#define     UINT8_STR1A     UINT8_BASE(STR1A)
 #define     UINT8_STRDA     UINT8_BASE(STRDA)
-#define     UINT8_STRE      UINT8_BASE(STRE)
+#define     UINT8_STREA     UINT8_BASE(STREA)
 #define     UINT8_STRQA     UINT8_BASE(STRQA)
-#define     UINT8_STRT      UINT8_BASE(STRT)
+#define     UINT8_STRTA     UINT8_BASE(STRTA)
 #define     UINT8_STRWA     UINT8_BASE(STRWA)
 
 #define     UINT8_SUB2      UINT8_BASE(SUB2)
@@ -12978,25 +12978,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT8_SUBEA     UINT8_BASE(SUBEA)
 #define     UINT8_SUBTA     UINT8_BASE(SUBTA)
 
-#define     UINT8_SUNN      UINT8_BASE(SUNN)
 #define     UINT8_SUNWA     UINT8_BASE(SUNWA)
 #define     UINT8_SUNDA     UINT8_BASE(SUNDA)
 #define     UINT8_SUNQA     UINT8_BASE(SUNQA)
 
-#define     UINT8_SWP1      UINT8_BASE(SWP1)
-#define     UINT8_SWPA      UINT8_BASE(SWPA)
-#define     UINT8_SWPE      UINT8_BASE(SWPE)
-#define     UINT8_SWPT      UINT8_BASE(SWPT)
+#define     UINT8_SWP1A     UINT8_BASE(SWP1A)
+#define     UINT8_SWPAA     UINT8_BASE(SWPAA)
+#define     UINT8_SWPEA     UINT8_BASE(SWPEA)
+#define     UINT8_SWPTA     UINT8_BASE(SWPTA)
 
 #define     UINT8_TSTS      UINT8_BASE(TSTS)
 #define     UINT8_TSTY      UINT8_BASE(TSTY)
 
 #define     UINT8_UNOS      UINT8_BASE(UNOS)
 
-#define     UINT8_XEQ1      UINT8_BASE(XEQ1)
-#define     UINT8_XEQA      UINT8_BASE(XEQA)
-#define     UINT8_XEQE      UINT8_BASE(XEQE)
-#define     UINT8_XEQT      UINT8_BASE(XEQT)
+#define     UINT8_XEQ1A     UINT8_BASE(XEQ1A)
+#define     UINT8_XEQAA     UINT8_BASE(XEQAA)
+#define     UINT8_XEQEA     UINT8_BASE(XEQEA)
+#define     UINT8_XEQTA     UINT8_BASE(XEQTA)
 
 #define     UINT8_XOR1A     UINT8_BASE(XOR1A)
 #define     UINT8_XORAA     UINT8_BASE(XORAA)
@@ -13229,13 +13228,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT8_SILL       INT8_BASE(SILL)
 #define     INT8_SILR       INT8_BASE(SILR)
 
-#define     INT8_STR1       INT8_BASE(STR1)
+#define     INT8_STR1A      INT8_BASE(STR1A)
 #define     INT8_STRDA      INT8_BASE(STRDA)
-#define     INT8_STRE       INT8_BASE(STRE)
+#define     INT8_STREA      INT8_BASE(STREA)
 #define     INT8_STROA      INT8_BASE(STROA)
 #define     INT8_STRQA      INT8_BASE(STRQA)
 #define     INT8_STRSA      INT8_BASE(STRSA)
-#define     INT8_STRT       INT8_BASE(STRT)
+#define     INT8_STRTA      INT8_BASE(STRTA)
 #define     INT8_STRWA      INT8_BASE(STRWA)
 
 #define     INT8_SUB2       INT8_BASE(SUB2)
@@ -13250,25 +13249,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT8_SUBEA      INT8_BASE(SUBEA)
 #define     INT8_SUBTA      INT8_BASE(SUBTA)
 
-#define     INT8_SUNN       INT8_BASE(SUNN)
 #define     INT8_SUNWA      INT8_BASE(SUNWA)
 #define     INT8_SUNDA      INT8_BASE(SUNDA)
 #define     INT8_SUNQA      INT8_BASE(SUNQA)
 
-#define     INT8_SWP1       INT8_BASE(SWP1)
-#define     INT8_SWPA       INT8_BASE(SWPA)
-#define     INT8_SWPE       INT8_BASE(SWPE)
-#define     INT8_SWPT       INT8_BASE(SWPT)
+#define     INT8_SWP1A      INT8_BASE(SWP1A)
+#define     INT8_SWPAA      INT8_BASE(SWPAA)
+#define     INT8_SWPEA      INT8_BASE(SWPEA)
+#define     INT8_SWPTA      INT8_BASE(SWPTA)
 
 #define     INT8_TSTS       INT8_BASE(TSTS)
 #define     INT8_TSTY       INT8_BASE(TSTY)
 
 #define     INT8_UNOS       INT8_BASE(UNOS)
 
-#define     INT8_XEQ1       INT8_BASE(XEQ1)
-#define     INT8_XEQA       INT8_BASE(XEQA)
-#define     INT8_XEQE       INT8_BASE(XEQE)
-#define     INT8_XEQT       INT8_BASE(XEQT)
+#define     INT8_XEQ1A      INT8_BASE(XEQ1A)
+#define     INT8_XEQAA      INT8_BASE(XEQAA)
+#define     INT8_XEQEA      INT8_BASE(XEQEA)
+#define     INT8_XEQTA      INT8_BASE(XEQTA)
 
 #define     INT8_XOR1A      INT8_BASE(XOR1A)
 #define     INT8_XORAA      INT8_BASE(XORAA)
@@ -13512,13 +13510,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT16_SILL     UINT16_BASE(SILL)
 #define     UINT16_SILR     UINT16_BASE(SILR)
 
-#define     UINT16_STR1     UINT16_BASE(STR1)
+#define     UINT16_STR1A    UINT16_BASE(STR1A)
 #define     UINT16_STRDA    UINT16_BASE(STRDA)
-#define     UINT16_STRE     UINT16_BASE(STRE)
+#define     UINT16_STREA    UINT16_BASE(STREA)
 #define     UINT16_STROA    UINT16_BASE(STROA)
 #define     UINT16_STRQA    UINT16_BASE(STRQA)
 #define     UINT16_STRSA    UINT16_BASE(STRSA)
-#define     UINT16_STRT     UINT16_BASE(STRT)
+#define     UINT16_STRTA    UINT16_BASE(STRTA)
 #define     UINT16_STRWA    UINT16_BASE(STRWA)
 
 #define     UINT16_SUB2     UINT16_BASE(SUB2)
@@ -13533,25 +13531,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT16_SUBEA    UINT16_BASE(SUBEA)
 #define     UINT16_SUBTA    UINT16_BASE(SUBTA)
 
-#define     UINT16_SUNN     UINT16_BASE(SUNN)
 #define     UINT16_SUNWA    UINT16_BASE(SUNWA)
 #define     UINT16_SUNDA    UINT16_BASE(SUNDA)
 #define     UINT16_SUNQA    UINT16_BASE(SUNQA)
 
-#define     UINT16_SWP1     UINT16_BASE(SWP1)
-#define     UINT16_SWPA     UINT16_BASE(SWPA)
-#define     UINT16_SWPE     UINT16_BASE(SWPE)
-#define     UINT16_SWPT     UINT16_BASE(SWPT)
+#define     UINT16_SWP1A    UINT16_BASE(SWP1A)
+#define     UINT16_SWPAA    UINT16_BASE(SWPAA)
+#define     UINT16_SWPEA    UINT16_BASE(SWPEA)
+#define     UINT16_SWPTA    UINT16_BASE(SWPTA)
 
 #define     UINT16_TSTS     UINT16_BASE(TSTS)
 #define     UINT16_TSTY     UINT16_BASE(TSTY)
 
 #define     UINT16_UNOS     UINT16_BASE(UNOS)
 
-#define     UINT16_XEQ1     UINT16_BASE(XEQ1)
-#define     UINT16_XEQA     UINT16_BASE(XEQA)
-#define     UINT16_XEQE     UINT16_BASE(XEQE)
-#define     UINT16_XEQT     UINT16_BASE(XEQT)
+#define     UINT16_XEQ1A    UINT16_BASE(XEQ1A)
+#define     UINT16_XEQAA    UINT16_BASE(XEQAA)
+#define     UINT16_XEQEA    UINT16_BASE(XEQEA)
+#define     UINT16_XEQTA    UINT16_BASE(XEQTA)
 
 #define     UINT16_XOR1A    UINT16_BASE(XOR1A)
 #define     UINT16_XORAA    UINT16_BASE(XORAA)
@@ -13790,13 +13787,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT16_SILL      INT16_BASE(SILL)
 #define     INT16_SILR      INT16_BASE(SILR)
 
-#define     INT16_STR1      INT16_BASE(STR1)
+#define     INT16_STR1A     INT16_BASE(STR1A)
 #define     INT16_STRDA     INT16_BASE(STRDA)
-#define     INT16_STRE      INT16_BASE(STRE)
+#define     INT16_STREA     INT16_BASE(STREA)
 #define     INT16_STROA     INT16_BASE(STROA)
 #define     INT16_STRQA     INT16_BASE(STRQA)
 #define     INT16_STRSA     INT16_BASE(STRQA)
-#define     INT16_STRT      INT16_BASE(STRT)
+#define     INT16_STRTA     INT16_BASE(STRTA)
 #define     INT16_STRWA     INT16_BASE(STRWA)
 
 #define     INT16_SUB2      INT16_BASE(SUB2)
@@ -13811,25 +13808,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT16_SUBEA     INT16_BASE(SUBEA)
 #define     INT16_SUBTA     INT16_BASE(SUBTA)
 
-#define     INT16_SUNN      INT16_BASE(SUNN)
 #define     INT16_SUNWA     INT16_BASE(SUNWA)
 #define     INT16_SUNDA     INT16_BASE(SUNDA)
 #define     INT16_SUNQA     INT16_BASE(SUNQA)
 
-#define     INT16_SWP1      INT16_BASE(SWP1)
-#define     INT16_SWPA      INT16_BASE(SWPA)
-#define     INT16_SWPE      INT16_BASE(SWPE)
-#define     INT16_SWPT      INT16_BASE(SWPT)
+#define     INT16_SWP1A     INT16_BASE(SWP1A)
+#define     INT16_SWPAA     INT16_BASE(SWPAA)
+#define     INT16_SWPEA     INT16_BASE(SWPEA)
+#define     INT16_SWPTA     INT16_BASE(SWPTA)
 
 #define     INT16_TSTS      INT16_BASE(TSTS)
 #define     INT16_TSTY      INT16_BASE(TSTY)
 
 #define     INT16_UNOS      INT16_BASE(UNOS)
 
-#define     INT16_XEQ1      INT16_BASE(XEQ1)
-#define     INT16_XEQA      INT16_BASE(XEQA)
-#define     INT16_XEQE      INT16_BASE(XEQE)
-#define     INT16_XEQT      INT16_BASE(XEQT)
+#define     INT16_XEQ1A     INT16_BASE(XEQ1A)
+#define     INT16_XEQAA     INT16_BASE(XEQAA)
+#define     INT16_XEQEA     INT16_BASE(XEQEA)
+#define     INT16_XEQTA     INT16_BASE(XEQTA)
 
 #define     INT16_XOR1A     INT16_BASE(XOR1A)
 #define     INT16_XORAA     INT16_BASE(XORAA)
@@ -14070,13 +14066,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT32_SILL     UINT32_BASE(SILL)
 #define     UINT32_SILR     UINT32_BASE(SILR)
 
-#define     UINT32_STR1     UINT32_BASE(STR1)
+#define     UINT32_STR1A    UINT32_BASE(STR1A)
 #define     UINT32_STRDA    UINT32_BASE(STRDA)
-#define     UINT32_STRE     UINT32_BASE(STRE)
+#define     UINT32_STREA    UINT32_BASE(STREA)
 #define     UINT32_STROA    UINT32_BASE(STROA)
 #define     UINT32_STRQA    UINT32_BASE(STRQA)
 #define     UINT32_STRSA    UINT32_BASE(STRSA)
-#define     UINT32_STRT     UINT32_BASE(STRT)
+#define     UINT32_STRTA    UINT32_BASE(STRTA)
 #define     UINT32_STRWA    UINT32_BASE(STRWA)
 
 #define     UINT32_SUB2     UINT32_BASE(SUB2)
@@ -14091,25 +14087,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT32_SUBEA    UINT32_BASE(SUBEA)
 #define     UINT32_SUBTA    UINT32_BASE(SUBTA)
 
-#define     UINT32_SUNN     UINT32_BASE(SUNN)
 #define     UINT32_SUNWA    UINT32_BASE(SUNWA)
 #define     UINT32_SUNDA    UINT32_BASE(SUNDA)
 #define     UINT32_SUNQA    UINT32_BASE(SUNQA)
 
-#define     UINT32_SWP1     UINT32_BASE(SWP1)
-#define     UINT32_SWPA     UINT32_BASE(SWPA)
-#define     UINT32_SWPE     UINT32_BASE(SWPE)
-#define     UINT32_SWPT     UINT32_BASE(SWPT)
+#define     UINT32_SWP1A    UINT32_BASE(SWP1A)
+#define     UINT32_SWPAA    UINT32_BASE(SWPAA)
+#define     UINT32_SWPEA    UINT32_BASE(SWPEA)
+#define     UINT32_SWPTA    UINT32_BASE(SWPTA)
 
 #define     UINT32_TSTS     UINT32_BASE(TSTS)
 #define     UINT32_TSTY     UINT32_BASE(TSTY)
 
 #define     UINT32_UNOS     UINT32_BASE(UNOS)
 
-#define     UINT32_XEQ1     UINT32_BASE(XEQ1)
-#define     UINT32_XEQA     UINT32_BASE(XEQA)
-#define     UINT32_XEQE     UINT32_BASE(XEQE)
-#define     UINT32_XEQT     UINT32_BASE(XEQT)
+#define     UINT32_XEQ1A    UINT32_BASE(XEQ1A)
+#define     UINT32_XEQAA    UINT32_BASE(XEQAA)
+#define     UINT32_XEQEA    UINT32_BASE(XEQEA)
+#define     UINT32_XEQTA    UINT32_BASE(XEQTA)
 
 #define     UINT32_XOR1A    UINT32_BASE(XOR1A)
 #define     UINT32_XORAA    UINT32_BASE(XORAA)
@@ -14348,13 +14343,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT32_SILL      INT32_BASE(SILL)
 #define     INT32_SILR      INT32_BASE(SILR)
 
-#define     INT32_STR1      INT32_BASE(STR1)
+#define     INT32_STR1A     INT32_BASE(STR1A)
 #define     INT32_STRDA     INT32_BASE(STRDA)
-#define     INT32_STRE      INT32_BASE(STRE)
+#define     INT32_STREA     INT32_BASE(STREA)
 #define     INT32_STROA     INT32_BASE(STROA)
 #define     INT32_STRQA     INT32_BASE(STRQA)
 #define     INT32_STRSA     INT32_BASE(STRSA)
-#define     INT32_STRT      INT32_BASE(STRT)
+#define     INT32_STRTA     INT32_BASE(STRTA)
 #define     INT32_STRWA     INT32_BASE(STRWA)
 
 #define     INT32_SUB2      INT32_BASE(SUB2)
@@ -14369,25 +14364,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT32_SUBEA     INT32_BASE(SUBEA)
 #define     INT32_SUBTA     INT32_BASE(SUBTA)
 
-#define     INT32_SUNN      INT32_BASE(SUNN)
 #define     INT32_SUNWA     INT32_BASE(SUNWA)
 #define     INT32_SUNDA     INT32_BASE(SUNDA)
 #define     INT32_SUNQA     INT32_BASE(SUNQA)
 
-#define     INT32_SWP1      INT32_BASE(SWP1)
-#define     INT32_SWPA      INT32_BASE(SWPA)
-#define     INT32_SWPE      INT32_BASE(SWPE)
-#define     INT32_SWPT      INT32_BASE(SWPT)
+#define     INT32_SWP1A     INT32_BASE(SWP1A)
+#define     INT32_SWPAA     INT32_BASE(SWPAA)
+#define     INT32_SWPEA     INT32_BASE(SWPEA)
+#define     INT32_SWPTA     INT32_BASE(SWPTA)
 
 #define     INT32_TSTS      INT32_BASE(TSTS)
 #define     INT32_TSTY      INT32_BASE(TSTY)
 
 #define     INT32_UNOS      INT32_BASE(UNOS)
 
-#define     INT32_XEQ1      INT32_BASE(XEQ1)
-#define     INT32_XEQA      INT32_BASE(XEQA)
-#define     INT32_XEQE      INT32_BASE(XEQE)
-#define     INT32_XEQT      INT32_BASE(XEQT)
+#define     INT32_XEQ1A     INT32_BASE(XEQ1A)
+#define     INT32_XEQAA     INT32_BASE(XEQAA)
+#define     INT32_XEQEA     INT32_BASE(XEQEA)
+#define     INT32_XEQTA     INT32_BASE(XEQTA)
 
 #define     INT32_XOR1A     INT32_BASE(XOR1A)
 #define     INT32_XORAA     INT32_BASE(XORAA)
@@ -14626,13 +14620,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT64_SILL     UINT64_BASE(SILL)
 #define     UINT64_SILR     UINT64_BASE(SILR)
 
-#define     UINT64_STR1     UINT64_BASE(STR1)
+#define     UINT64_STR1A    UINT64_BASE(STR1A)
 #define     UINT64_STRDA    UINT64_BASE(STRDA)
-#define     UINT64_STRE     UINT64_BASE(STRE)
+#define     UINT64_STREA    UINT64_BASE(STREA)
 #define     UINT64_STROA    UINT64_BASE(STROA)
 #define     UINT64_STRQA    UINT64_BASE(STRQA)
 #define     UINT64_STRSA    UINT64_BASE(STRSA)
-#define     UINT64_STRT     UINT64_BASE(STRT)
+#define     UINT64_STRTA    UINT64_BASE(STRTA)
 #define     UINT64_STRWA    UINT64_BASE(STRWA)
 
 #define     UINT64_SUB2     UINT64_BASE(SUB2)
@@ -14648,25 +14642,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT64_SUBTA    UINT64_BASE(SUBTA)
 
 
-#define     UINT64_SUNN     UINT64_BASE(SUNN)
 #define     UINT64_SUNWA    UINT64_BASE(SUNWA)
 #define     UINT64_SUNDA    UINT64_BASE(SUNDA)
 #define     UINT64_SUNQA    UINT64_BASE(SUNQA)
 
-#define     UINT64_SWP1     UINT64_BASE(SWP1)
-#define     UINT64_SWPA     UINT64_BASE(SWPA)
-#define     UINT64_SWPE     UINT64_BASE(SWPE)
-#define     UINT64_SWPT     UINT64_BASE(SWPT)
+#define     UINT64_SWP1A    UINT64_BASE(SWP1A)
+#define     UINT64_SWPAA    UINT64_BASE(SWPAA)
+#define     UINT64_SWPEA    UINT64_BASE(SWPEA)
+#define     UINT64_SWPTA    UINT64_BASE(SWPTA)
 
 #define     UINT64_TSTS     UINT64_BASE(TSTS)
 #define     UINT64_TSTY     UINT64_BASE(TSTY)
 
 #define     UINT64_UNOS     UINT64_BASE(UNOS)
 
-#define     UINT64_XEQ1     UINT64_BASE(XEQ1)
-#define     UINT64_XEQA     UINT64_BASE(XEQA)
-#define     UINT64_XEQE     UINT64_BASE(XEQE)
-#define     UINT64_XEQT     UINT64_BASE(XEQT)
+#define     UINT64_XEQ1A    UINT64_BASE(XEQ1A)
+#define     UINT64_XEQAA    UINT64_BASE(XEQAA)
+#define     UINT64_XEQEA    UINT64_BASE(XEQEA)
+#define     UINT64_XEQTA    UINT64_BASE(XEQTA)
 
 #define     UINT64_XOR1A    UINT64_BASE(XOR1A)
 #define     UINT64_XORAA    UINT64_BASE(XORAA)
@@ -14900,13 +14893,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_SILL      INT64_BASE(SILL)
 #define     INT64_SILR      INT64_BASE(SILR)
 
-#define     INT64_STR1      INT64_BASE(STR1)
+#define     INT64_STR1A     INT64_BASE(STR1A)
 #define     INT64_STRDA     INT64_BASE(STRDA)
-#define     INT64_STRE      INT64_BASE(STRE)
+#define     INT64_STREA     INT64_BASE(STREA)
 #define     INT64_STROA     INT64_BASE(STROA)
 #define     INT64_STRQA     INT64_BASE(STRQA)
 #define     INT64_STRSA     INT64_BASE(STRSA)
-#define     INT64_STRT      INT64_BASE(STRT)
+#define     INT64_STRTA     INT64_BASE(STRTA)
 #define     INT64_STRWA     INT64_BASE(STRWA)
 
 #define     INT64_SUB2      INT64_BASE(SUB2)
@@ -14921,25 +14914,24 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_SUBEA     INT64_BASE(SUBEA)
 #define     INT64_SUBTA     INT64_BASE(SUBTA)
 
-#define     INT64_SUNN      INT64_BASE(SUNN)
 #define     INT64_SUNWA     INT64_BASE(SUNWA)
 #define     INT64_SUNDA     INT64_BASE(SUNDA)
 #define     INT64_SUNQA     INT64_BASE(SUNQA)
 
-#define     INT64_SWP1      INT64_BASE(SWP1)
-#define     INT64_SWPA      INT64_BASE(SWPA)
-#define     INT64_SWPE      INT64_BASE(SWPE)
-#define     INT64_SWPT      INT64_BASE(SWPT)
+#define     INT64_SWP1A     INT64_BASE(SWP1A)
+#define     INT64_SWPAA     INT64_BASE(SWPAA)
+#define     INT64_SWPEA     INT64_BASE(SWPEA)
+#define     INT64_SWPTA     INT64_BASE(SWPTA)
 
 #define     INT64_TSTS      INT64_BASE(TSTS)
 #define     INT64_TSTY      INT64_BASE(TSTY)
 
 #define     INT64_UNOS      INT64_BASE(UNOS)
 
-#define     INT64_XEQ1      INT64_BASE(XEQ1)
-#define     INT64_XEQA      INT64_BASE(XEQA)
-#define     INT64_XEQE      INT64_BASE(XEQE)
-#define     INT64_XEQT      INT64_BASE(XEQT)
+#define     INT64_XEQ1A     INT64_BASE(XEQ1A)
+#define     INT64_XEQAA     INT64_BASE(XEQAA)
+#define     INT64_XEQEA     INT64_BASE(XEQEA)
+#define     INT64_XEQTA     INT64_BASE(XEQTA)
 
 #define     INT64_XOR1A     INT64_BASE(XOR1A)
 #define     INT64_XORAA     INT64_BASE(XORAA)
@@ -27430,21 +27422,25 @@ FUNCOF(             \
 }
 #endif
 
-
 #if _ENTER_STR1
 {
 #endif
-/*  atomic_store_explicit(dst, src, memory_order_relaxed)
+/*  STR (atomic store w/ memory_order_relaxed)
 
-Atomically store an integer to memory with the ordering
-semantics of C11's memory_order_relaxed
+Atomically store the value of the second operand SRC at 
+the address specified by the first operand DST. 
+
+If the address is not properly aligned, the result is
+undefined. For more info, consult the specification of
+C11's atomic_fetch_str and memory_order_acquire
 */
 
 #define     str1(...)  (str1_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     str1_funcof(S, D) \
-FUNCOF(             \
-    str1,   (   S   ),  \
-    YDZ,  /* TGK */ \
+#define     str1_funcof(A, ...) \
+FUNCOF_AK(          \
+    str1, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -27453,43 +27449,51 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     str1ac   ADDR_STR1
-#define     str1yu   BOOL_STR1
-#define     str1bu  UINT8_STR1
-#define     str1bi   INT8_STR1
-#define     str1bc   CHAR_STR1
-#define     str1hu UINT16_STR1
-#define     str1hi  INT16_STR1
-#define     str1wu UINT32_STR1
-#define     str1wi  INT32_STR1
-#define     str1du UINT64_STR1
-#define     str1di  INT64_STR1
+#define     str1ayu    BOOL_STR1A
+#define     str1abu   UINT8_STR1A
+#define     str1abi    INT8_STR1A
+#define     str1abc    CHAR_STR1A
+#define     str1ahu  UINT16_STR1A
+#define     str1ahi   INT16_STR1A
+#define     str1awu  UINT32_STR1A
+#define     str1awi   INT32_STR1A
+#define     str1adu  UINT64_STR1A
+#define     str1adi   INT64_STR1A
 #if DWRD_NLONG == 2
-#   define  str1lu  ULONG_STR1
-#   define  str1li   LONG_STR1
+#   define  str1alu   ULONG_STR1A
+#   define  str1ali    LONG_STR1A
 #elif QUAD_NLLONG == 2
-#   define  str1lu ULLONG_STR1
-#   define  str1li  LLONG_STR1
+#   define  str1alu  ULLONG_STR1A
+#   define  str1ali   LLONG_STR1A
+#else
+#   define  str1aqu  ULLONG_STR1A
+#   define  str1aqi   LLONG_STR1A
 #endif
 
-#if _LEAVE_STR1
+#if _LEAVE_STRA
 }
 #endif
 
 #if _ENTER_STRE
 {
 #endif
-/*  atomic_store_explicit(dst, src, memory_order_release)
+/*  STR (atomic fetch str w/ memory_order_release)
 
-Atomically store an integer to memory with the ordering
-semantics of C11's memory_order_release
+Atomically exchange the contents of the scalar variable at
+the address specified by the first operand with the second
+operand.
+
+If the address is not properly aligned, the result is
+undefined. For more info, consult the specification of
+C11's atomic_fetch_str and memory_order_release
 */
 
 #define     stre(...)  (stre_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     stre_funcof(S, D) \
-FUNCOF(             \
-    stre, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     stre_funcof(A, ...) \
+FUNCOF_AK(          \
+    stre, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -27498,23 +27502,25 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     streac   ADDR_STRE
-#define     streyu   BOOL_STRE
-#define     strebu  UINT8_STRE
-#define     strebi   INT8_STRE
-#define     strebc   CHAR_STRE
-#define     strehu UINT16_STRE
-#define     strehi  INT16_STRE
-#define     strewu UINT32_STRE
-#define     strewi  INT32_STRE
-#define     stredu UINT64_STRE
-#define     stredi  INT64_STRE
+#define     streayu    BOOL_STREA
+#define     streabu   UINT8_STREA
+#define     streabi    INT8_STREA
+#define     streabc    CHAR_STREA
+#define     streahu  UINT16_STREA
+#define     streahi   INT16_STREA
+#define     streawu  UINT32_STREA
+#define     streawi   INT32_STREA
+#define     streadu  UINT64_STREA
+#define     streadi   INT64_STREA
 #if DWRD_NLONG == 2
-#   define  strelu  ULONG_STRE
-#   define  streli   LONG_STRE
+#   define  strealu   ULONG_STREA
+#   define  streali    LONG_STREA
 #elif QUAD_NLLONG == 2
-#   define  strelu ULLONG_STRE
-#   define  streli  LLONG_STRE
+#   define  strealu  ULLONG_STREA
+#   define  streali   LLONG_STREA
+#else
+#   define  streaqu  ULLONG_STREA
+#   define  streaqi   LLONG_STREA
 #endif
 
 #if _LEAVE_STRE
@@ -27524,17 +27530,23 @@ FUNCOF(             \
 #if _ENTER_STRT
 {
 #endif
-/*  atomic_store_explicit(dst, src, memory_order_seq_cst)
+/*  STR (atomic fetch str w/ memory_order_seq_cst)
 
-Atomically store an integer to memory with the ordering
-semantics of C11's memory_order_seq_cst
+Atomically exchange the contents of the scalar variable at
+the address specified by the first operand with the second
+operand.
+
+If the address is not properly aligned, the result is
+undefined. For more info, consult the specification of
+C11's atomic_fetch_str and memory_order_seq_cst
 */
 
 #define     strt(...)  (strt_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     strt_funcof(S, D) \
-FUNCOF(             \
-    strt, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     strt_funcof(A, ...) \
+FUNCOF_AK(          \
+    strt, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -27543,28 +27555,31 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     strtac   ADDR_STRT
-#define     strtyu   BOOL_STRT
-#define     strtbu  UINT8_STRT
-#define     strtbi   INT8_STRT
-#define     strtbc   CHAR_STRT
-#define     strthu UINT16_STRT
-#define     strthi  INT16_STRT
-#define     strtwu UINT32_STRT
-#define     strtwi  INT32_STRT
-#define     strtdu UINT64_STRT
-#define     strtdi  INT64_STRT
+#define     strtayu    BOOL_STRTA
+#define     strtabu   UINT8_STRTA
+#define     strtabi    INT8_STRTA
+#define     strtabc    CHAR_STRTA
+#define     strtahu  UINT16_STRTA
+#define     strtahi   INT16_STRTA
+#define     strtawu  UINT32_STRTA
+#define     strtawi   INT32_STRTA
+#define     strtadu  UINT64_STRTA
+#define     strtadi   INT64_STRTA
 #if DWRD_NLONG == 2
-#   define  strtlu  ULONG_STRT
-#   define  strtli   LONG_STRT
+#   define  strtalu   ULONG_STRTA
+#   define  strtali    LONG_STRTA
 #elif QUAD_NLLONG == 2
-#   define  strtlu ULLONG_STRT
-#   define  strtli  LLONG_STRT
+#   define  strtalu  ULLONG_STRTA
+#   define  strtali   LLONG_STRTA
+#else
+#   define  strtaqu  ULLONG_STRTA
+#   define  strtaqi   LLONG_STRTA
 #endif
 
 #if _LEAVE_STRT
 }
 #endif
+
 
 
 #if _ENTER_STRW
@@ -27577,9 +27592,10 @@ address isn't 4 byte aligned, the result is undefined.
 */
 
 #define     strw(...)  (strw_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     strw_funcof(A,...)  \
+
+#define     strw_funcof(D, S, ...)  \
 FUNCOF_AK(                  \
-    strw, (   A   ),\
+    strw, (   D   ),\
     NONE, /* TGK */ \
     BWR,  /* TGA */ \
     NONE, /* TGW */ \
@@ -27615,13 +27631,12 @@ FUNCOF_AK(                  \
 
 Write the contents of a 64 bit vector to memory. If the
 address isn't 8 byte aligned, the result is undefined.
-
 */
 
-#define     strd(...)  (strd_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     strd_funcof(A,...)  \
+#define     strd(D, S)  (strd_funcof(D,S)(D,S))
+#define     strd_funcof(D,...)  \
 FUNCOF_AK(                  \
-    strd, (   A   ),\
+    strd, (   D   ),\
     NONE, /* TGK */ \
     BDR,  /* TGA */ \
     NONE, /* TGW */ \
@@ -27666,9 +27681,9 @@ address isn't 16 byte aligned, the result is undefined.
 */
 
 #define     strq(...)  (strq_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     strq_funcof(A,...)  \
+#define     strq_funcof(D,...)  \
 FUNCOF_AK(                  \
-    strq, (   A   ),\
+    strq, (   D   ),\
     NONE, /* TGK */ \
     BDR,  /* TGA */ \
     NONE, /* TGW */ \
@@ -27702,68 +27717,6 @@ FUNCOF_AK(                  \
 #if _LEAVE_STRQ
 }
 #endif
-
-#if _ENTER_STRN
-{
-#endif
-/*  SToRe (native endian aligned)
-
-Use strn when it's convenient for the result of the store
-expression to be the value stored rather than the address.
-*/
-
-#define     strn(A, B)  (strn_funcof(A)(A,B))
-#define     strn_funcof(A)  \
-FUNCOF(             \
-    strn, (   A   ),\
-    NONE, /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     strnwbu VWBU_STRN
-#define     strnwbi VWBI_STRN
-#define     strnwbc VWBC_STRN
-#define     strnwhu VWHU_STRN
-#define     strnwhi VWHI_STRN
-#define     strnwhf VWHF_STRN
-#define     strnwwu VWWU_STRN
-#define     strnwwi VWWI_STRN
-#define     strnwwf VWWF_STRN
-
-#define     strndbu VDBU_STRN
-#define     strndbi VDBI_STRN
-#define     strndbc VDBC_STRN
-#define     strndhu VDHU_STRN
-#define     strndhi VDHI_STRN
-#define     strndhf VDHF_STRN
-#define     strndwu VDWU_STRN
-#define     strndwi VDWI_STRN
-#define     strndwf VDWF_STRN
-#define     strnddu VDDU_STRN
-#define     strnddi VDDI_STRN
-#define     strnddf VDDF_STRN
-
-#define     strnqbu VQBU_STRN
-#define     strnqbi VQBI_STRN
-#define     strnqbc VQBC_STRN
-#define     strnqhu VQHU_STRN
-#define     strnqhi VQHI_STRN
-#define     strnqhf VQHF_STRN
-#define     strnqwu VQWU_STRN
-#define     strnqwi VQWI_STRN
-#define     strnqwf VQWF_STRN
-#define     strnqdu VQDU_STRN
-#define     strnqdi VQDI_STRN
-#define     strnqdf VQDF_STRN
-#if _LEAVE_STRN
-}
-#endif
-
 
 #if _ENTER_SUBL
 {
@@ -28297,13 +28250,7 @@ FUNCOF(             \
 #if _ENTER_SUML
 {
 #endif
-/*  Sum (truncated)
-
-Ints: compute the sum of N bit elements, keeping only the
-lower N bits of the result.
-
-Floats: compute the sum of N bit elements. If overflow
-occurs, the result is implementation defined.
+/*  SUM (truncated)
 */
 
 #define     suml(...) (suml_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -28311,9 +28258,9 @@ occurs, the result is implementation defined.
 FUNCOF(             \
     suml, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
-    YWR,  /* TGD */ \
-    YDR,  /* TGQ */ \
+    YHZ,  /* TGW */ \
+    YWZ,  /* TGD */ \
+    YDZ,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -28325,7 +28272,6 @@ FUNCOF(             \
 #define     sumlwbc   VWBC_SUML
 #define     sumlwhu   VWHU_SUML
 #define     sumlwhi   VWHI_SUML
-#define     sumlwhf   VWHF_SUML
 
 #define     sumldyu   VDYU_SUML
 #define     sumldbu   VDBU_SUML
@@ -28333,10 +28279,8 @@ FUNCOF(             \
 #define     sumldbc   VDBC_SUML
 #define     sumldhu   VDHU_SUML
 #define     sumldhi   VDHI_SUML
-#define     sumldhf   VDHF_SUML
 #define     sumldwu   VDWU_SUML
 #define     sumldwi   VDWI_SUML
-#define     sumldwf   VDWF_SUML
 
 #define     sumlqyu   VQYU_SUML
 #define     sumlqbu   VQBU_SUML
@@ -28344,13 +28288,10 @@ FUNCOF(             \
 #define     sumlqbc   VQBC_SUML
 #define     sumlqhu   VQHU_SUML
 #define     sumlqhi   VQHI_SUML
-#define     sumlqhf   VQHF_SUML
 #define     sumlqwu   VQWU_SUML
 #define     sumlqwi   VQWI_SUML
-#define     sumlqwf   VQWF_SUML
 #define     sumlqdu   VQDU_SUML
 #define     sumlqdi   VQDI_SUML
-#define     sumlqdf   VQDF_SUML
 #if _LEAVE_SUML
 }
 #endif
@@ -28358,13 +28299,7 @@ FUNCOF(             \
 #if _ENTER_SUM2
 {
 #endif
-/*  Sum (widened×2)
-
-Ints: compute the N×2 bit sum of a vector of N bit ints
-
-Floats: compute the sum of a vector of floats with a
-widened result. E.g. sum2qwf(x) is semantically identical
-to sumlodf(cvdfqwf(x)).
+/*  SUM (widened×2)
 */
 
 #define     sum2(...) (sum2_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -28372,9 +28307,9 @@ to sumlodf(cvdfqwf(x)).
 FUNCOF(             \
     sum2,   (   A   ),  \
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
-    BWR,  /* TGD */ \
-    BWR,  /* TGQ */ \
+    BHZ,  /* TGW */ \
+    BWZ,  /* TGD */ \
+    BWZ,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -28386,17 +28321,14 @@ FUNCOF(             \
 #define     sum2wbc   VWBC_SUM2
 #define     sum2whu   VWHU_SUM2
 #define     sum2whi   VWHI_SUM2
-#define     sum2whf   VWHF_SUM2
 
 #define     sum2dbu   VDBU_SUM2
 #define     sum2dbi   VDBI_SUM2
 #define     sum2dbc   VDBC_SUM2
 #define     sum2dhu   VDHU_SUM2
 #define     sum2dhi   VDHI_SUM2
-#define     sum2dhf   VDHF_SUM2
 #define     sum2dwu   VDWU_SUM2
 #define     sum2dwi   VDWI_SUM2
-#define     sum2dwf   VDWF_SUM2
 
 #define     sum2qyu   VQYU_SUM2
 #define     sum2qbu   VQBU_SUM2
@@ -28404,10 +28336,8 @@ FUNCOF(             \
 #define     sum2qbc   VQBC_SUM2
 #define     sum2qhu   VQHU_SUM2
 #define     sum2qhi   VQHI_SUM2
-#define     sum2qhf   VQHF_SUM2
 #define     sum2qwu   VQWU_SUM2
 #define     sum2qwi   VQWI_SUM2
-#define     sum2qwf   VQWF_SUM2
 #if _LEAVE_SUM2
 }
 #endif
@@ -28415,7 +28345,7 @@ FUNCOF(             \
 #if _ENTER_SUMS
 {
 #endif
-/*  Sum (saturated)
+/*  SUM (saturated)
 
 Compute the sum of a multielement integer vector. If the
 result can't be represented by the operand's element type,
@@ -28461,33 +28391,38 @@ FUNCOF(             \
 #define     sumsqwi   VQWI_SUMS
 #define     sumsqdu   VQDU_SUMS
 #define     sumsqdi   VQDI_SUMS
-
-#define     sumsoyu   VOYU_SUMS
-#define     sumsobu   VOBU_SUMS
-#define     sumsobi   VOBI_SUMS
-#define     sumsobc   VOBC_SUMS
-#define     sumsohu   VOHU_SUMS
-#define     sumsohi   VOHI_SUMS
-#define     sumsowu   VOWU_SUMS
-#define     sumsowi   VOWI_SUMS
-#define     sumsodu   VODU_SUMS
-#define     sumsodi   VODI_SUMS
-#define     sumsoqu   VOQU_SUMS
-#define     sumsoqi   VOQI_SUMS
-
-#define     sumssyu   VSYU_SUMS
-#define     sumssbu   VSBU_SUMS
-#define     sumssbi   VSBI_SUMS
-#define     sumssbc   VSBC_SUMS
-#define     sumsshu   VSHU_SUMS
-#define     sumsshi   VSHI_SUMS
-#define     sumsswu   VSWU_SUMS
-#define     sumsswi   VSWI_SUMS
-#define     sumssdu   VSDU_SUMS
-#define     sumssdi   VSDI_SUMS
-#define     sumssqu   VSQU_SUMS
-#define     sumssqi   VSQI_SUMS
 #if _LEAVE_SUMS
+}
+#endif
+
+#if _ENTER_SUMF
+{
+#endif
+/*  SUM (floating)
+*/
+
+#define     sumf(...) (sumf_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     sumf_funcof(A, ...)  \
+FUNCOF(             \
+    sumf, (   A   ),\
+    NONE, /* TGK */ \
+    HF,   /* TGW */ \
+    HWF,  /* TGD */ \
+    HDF,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     sumfwhf   VWHF_SUMF
+
+#define     sumfdhf   VDHF_SUMF
+#define     sumfdwf   VDWF_SUMF
+
+#define     sumfqhf   VQHF_SUMF
+#define     sumfqwf   VQWF_SUMF
+#define     sumfqdf   VQDF_SUMF
+#if _LEAVE_SUMF
 }
 #endif
 
@@ -28500,10 +28435,10 @@ FUNCOF(             \
 Store a 32 bit vector at an arbitrary address.
 */
 
-#define     sunw(...)  (sunw_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     sunw(D, S)  (sunw_funcof(D,S)(D,S))
 #define     sunw_funcof(A,...)  \
 FUNCOF_AK(                  \
-    sunw, (   A   ),\
+    sunw, (   D   ),\
     NONE, /* TGK */ \
     BWR,  /* TGA */ \
     NONE, /* TGW */ \
@@ -28620,91 +28555,6 @@ FUNCOF_AK(                  \
 #if _LEAVE_SUNQ
 }
 #endif
-
-#if _ENTER_SUNN
-{
-#endif
-/*  Store UNaligned (native endian)
-
-    Store value in at an arbitrary address.
-*/
-
-#define     sunn(...) (sunn_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     sunn_funcof(A, ...) \
-FUNCOF(          \
-    sunn, (   A   ),\
-    YDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     sunnyu   BOOL_SUNN
-#define     sunnbu  UINT8_SUNN
-#define     sunnbi   INT8_SUNN
-#define     sunnbc   CHAR_SUNN
-#define     sunnhu UINT16_SUNN
-#define     sunnhi  INT16_SUNN
-#define     sunnhf  FLT16_SUNN
-#define     sunnwu UINT32_SUNN
-#define     sunnwi  INT32_SUNN
-#define     sunnwf    FLT_SUNN
-#define     sunndu UINT64_SUNN
-#define     sunndi  INT64_SUNN
-#define     sunndf    DBL_SUNN
-#if   DWRD_NLONG == 2
-#   define  sunnlu  ULONG_SUNN
-#   define  sunnli   LONG_SUNN
-#elif QUAD_NLLONG == 2
-#   define  sunnlu ULLONG_SUNN
-#   define  sunnli  LLONG_SUNN
-#else
-#   define  sunnqu ULLONG_SUNN
-#   define  sunnqi  LLONG_SUNN
-#endif
-
-#define     sunnwbu  VDBU_SUNN
-#define     sunnwbi  VDBI_SUNN
-#define     sunnwbc  VDBC_SUNN
-#define     sunnwhu  VDHU_SUNN
-#define     sunnwhi  VDHI_SUNN
-#define     sunnwhf  VDHF_SUNN
-#define     sunnwwu  VDWU_SUNN
-#define     sunnwwi  VDWI_SUNN
-#define     sunnwwf  VDWF_SUNN
-
-#define     sunndbu  VDBU_SUNN
-#define     sunndbi  VDBI_SUNN
-#define     sunndbc  VDBC_SUNN
-#define     sunndhu  VDHU_SUNN
-#define     sunndhi  VDHI_SUNN
-#define     sunndhf  VDHF_SUNN
-#define     sunndwu  VDWU_SUNN
-#define     sunndwi  VDWI_SUNN
-#define     sunndwf  VDWF_SUNN
-#define     sunnddu  VDDU_SUNN
-#define     sunnddi  VDDI_SUNN
-#define     sunnddf  VDDF_SUNN
-
-#define     sunnqbu  VQBU_SUNN
-#define     sunnqbi  VQBI_SUNN
-#define     sunnqbc  VQBC_SUNN
-#define     sunnqhu  VQHU_SUNN
-#define     sunnqhi  VQHI_SUNN
-#define     sunnqhf  VQHF_SUNN
-#define     sunnqwu  VQWU_SUNN
-#define     sunnqwi  VQWI_SUNN
-#define     sunnqwf  VQWF_SUNN
-#define     sunnqdu  VQDU_SUNN
-#define     sunnqdi  VQDI_SUNN
-#define     sunnqdf  VQDF_SUNN
-#if _LEAVE_SUNN
-}
-#endif
-
 
 
 #if _ENTER_SVLL
@@ -28954,10 +28804,11 @@ FUNCOF(             \
 */
 
 #define     swp1(...)  (swp1_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     swp1_funcof(S, D) \
-FUNCOF(             \
-    swp1,   (   S   ),  \
-    YDZ,  /* TGK */ \
+#define     swp1_funcof(A, B) \
+FUNCOF_AK(          \
+    swp1, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -28966,43 +28817,53 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     swp1ac    ADDR_SWP1
-#define     swp1yu    BOOL_SWP1
-#define     swp1bu   UINT8_SWP1
-#define     swp1bi    INT8_SWP1
-#define     swp1bc    CHAR_SWP1
-#define     swp1hu  UINT16_SWP1
-#define     swp1hi   INT16_SWP1
-#define     swp1wu  UINT32_SWP1
-#define     swp1wi   INT32_SWP1
-#define     swp1du  UINT64_SWP1
-#define     swp1di   INT64_SWP1
+#define     swp1aac    ADDR_SWP1A
+#define     swp1ayu    BOOL_SWP1A
+#define     swp1abu   UINT8_SWP1A
+#define     swp1abi    INT8_SWP1A
+#define     swp1abc    CHAR_SWP1A
+#define     swp1ahu  UINT16_SWP1A
+#define     swp1ahi   INT16_SWP1A
+#define     swp1awu  UINT32_SWP1A
+#define     swp1awi   INT32_SWP1A
+#define     swp1adu  UINT64_SWP1A
+#define     swp1adi   INT64_SWP1A
 #if DWRD_NLONG == 2
-#   define  swp1lu   ULONG_SWP1
-#   define  swp1li    LONG_SWP1
+#   define  swp1lu   ULONG_SWP1A
+#   define  swp1li    LONG_SWP1A
 #elif QUAD_NLLONG == 2
-#   define  swp1lu  ULLONG_SWP1
-#   define  swp1li   LLONG_SWP1
+#   define  swp1lu  ULLONG_SWP1A
+#   define  swp1li   LLONG_SWP1A
 #else
-#   define  swp1qu  ULLONG_SWP1
-#   define  swp1qi   LLONG_SWP1
+#   define  swp1qu  ULLONG_SWP1A
+#   define  swp1qi   LLONG_SWP1A
 #endif
 
 #if _LEAVE_SWP1
 }
 #endif
 
+
 #if _ENTER_SWPA
 {
 #endif
-/*  atomic_exchange_explicit(..., memory_order_acquire)
+/*  SWP (atomic exchange w/ memory_order_acquire)
+
+Atomically exchange the contents of the scalar variable at
+the address specified by the first operand with the second
+operand.
+
+If the address is not properly aligned, the result is
+undefined. For more info, consult the specification of
+C11's atomic_fetch_swp and memory_order_acquire
 */
 
 #define     swpa(...)  (swpa_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     swpa_funcof(S, D) \
-FUNCOF(             \
-    swpa, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     swpa_funcof(A, ...) \
+FUNCOF_AK(          \
+    swpa, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -29011,26 +28872,25 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     swpaac    ADDR_SWPA
-#define     swpayu    BOOL_SWPA
-#define     swpabu   UINT8_SWPA
-#define     swpabi    INT8_SWPA
-#define     swpabc    CHAR_SWPA
-#define     swpahu  UINT16_SWPA
-#define     swpahi   INT16_SWPA
-#define     swpawu  UINT32_SWPA
-#define     swpawi   INT32_SWPA
-#define     swpadu  UINT64_SWPA
-#define     swpadi   INT64_SWPA
+#define     swpaayu    BOOL_SWPAA
+#define     swpaabu   UINT8_SWPAA
+#define     swpaabi    INT8_SWPAA
+#define     swpaabc    CHAR_SWPAA
+#define     swpaahu  UINT16_SWPAA
+#define     swpaahi   INT16_SWPAA
+#define     swpaawu  UINT32_SWPAA
+#define     swpaawi   INT32_SWPAA
+#define     swpaadu  UINT64_SWPAA
+#define     swpaadi   INT64_SWPAA
 #if DWRD_NLONG == 2
-#   define  swpalu   ULONG_SWPA
-#   define  swpali    LONG_SWPA
+#   define  swpaalu   ULONG_SWPAA
+#   define  swpaali    LONG_SWPAA
 #elif QUAD_NLLONG == 2
-#   define  swpalu  ULLONG_SWPA
-#   define  swpali   LLONG_SWPA
+#   define  swpaalu  ULLONG_SWPAA
+#   define  swpaali   LLONG_SWPAA
 #else
-#   define  swpaqu  ULLONG_SWPA
-#   define  swpaqi   LLONG_SWPA
+#   define  swpaaqu  ULLONG_SWPAA
+#   define  swpaaqi   LLONG_SWPAA
 #endif
 
 #if _LEAVE_SWPA
@@ -29040,14 +28900,23 @@ FUNCOF(             \
 #if _ENTER_SWPE
 {
 #endif
-/*  atomic_exchange_explicit(..., memory_order_release)
+/*  SWP (atomic fetch swp w/ memory_order_release)
+
+Atomically exchange the contents of the scalar variable at
+the address specified by the first operand with the second
+operand.
+
+If the address is not properly aligned, the result is
+undefined. For more info, consult the specification of
+C11's atomic_fetch_swp and memory_order_release
 */
 
 #define     swpe(...)  (swpe_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     swpe_funcof(S, D) \
-FUNCOF(             \
-    swpe, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     swpe_funcof(A, ...) \
+FUNCOF_AK(          \
+    swpe, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -29056,26 +28925,25 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     swpeac    ADDR_SWPE
-#define     swpeyu    BOOL_SWPE
-#define     swpebu   UINT8_SWPE
-#define     swpebi    INT8_SWPE
-#define     swpebc    CHAR_SWPE
-#define     swpehu  UINT16_SWPE
-#define     swpehi   INT16_SWPE
-#define     swpewu  UINT32_SWPE
-#define     swpewi   INT32_SWPE
-#define     swpedu  UINT64_SWPE
-#define     swpedi   INT64_SWPE
+#define     swpeayu    BOOL_SWPEA
+#define     swpeabu   UINT8_SWPEA
+#define     swpeabi    INT8_SWPEA
+#define     swpeabc    CHAR_SWPEA
+#define     swpeahu  UINT16_SWPEA
+#define     swpeahi   INT16_SWPEA
+#define     swpeawu  UINT32_SWPEA
+#define     swpeawi   INT32_SWPEA
+#define     swpeadu  UINT64_SWPEA
+#define     swpeadi   INT64_SWPEA
 #if DWRD_NLONG == 2
-#   define  swpelu   ULONG_SWPE
-#   define  swpeli    LONG_SWPE
+#   define  swpealu   ULONG_SWPEA
+#   define  swpeali    LONG_SWPEA
 #elif QUAD_NLLONG == 2
-#   define  swpelu  ULLONG_SWPE
-#   define  swpeli   LLONG_SWPE
+#   define  swpealu  ULLONG_SWPEA
+#   define  swpeali   LLONG_SWPEA
 #else
-#   define  swpequ  ULLONG_SWPE
-#   define  swpeqi   LLONG_SWPE
+#   define  swpeaqu  ULLONG_SWPEA
+#   define  swpeaqi   LLONG_SWPEA
 #endif
 
 #if _LEAVE_SWPE
@@ -29085,12 +28953,23 @@ FUNCOF(             \
 #if _ENTER_SWPT
 {
 #endif
+/*  SWP (atomic fetch swp w/ memory_order_seq_cst)
+
+Atomically exchange the contents of the scalar variable at
+the address specified by the first operand with the second
+operand.
+
+If the address is not properly aligned, the result is
+undefined. For more info, consult the specification of
+C11's atomic_fetch_swp and memory_order_seq_cst
+*/
 
 #define     swpt(...)  (swpt_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     swpt_funcof(S, D) \
-FUNCOF(             \
-    swpt, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     swpt_funcof(A, ...) \
+FUNCOF_AK(          \
+    swpt, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -29099,27 +28978,25 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     swptac    ADDR_SWPT
-#define     swptyu    BOOL_SWPT
-#define     swptbu   UINT8_SWPT
-#define     swptbi    INT8_SWPT
-#define     swptbc    CHAR_SWPT
-#define     swpthu  UINT16_SWPT
-#define     swpthi   INT16_SWPT
-#define     swptwu  UINT32_SWPT
-#define     swptwi   INT32_SWPT
-#define     swptdu  UINT64_SWPT
-#define     swptdi   INT64_SWPT
-
+#define     swptayu    BOOL_SWPTA
+#define     swptabu   UINT8_SWPTA
+#define     swptabi    INT8_SWPTA
+#define     swptabc    CHAR_SWPTA
+#define     swptahu  UINT16_SWPTA
+#define     swptahi   INT16_SWPTA
+#define     swptawu  UINT32_SWPTA
+#define     swptawi   INT32_SWPTA
+#define     swptadu  UINT64_SWPTA
+#define     swptadi   INT64_SWPTA
 #if DWRD_NLONG == 2
-#   define  swptlu   ULONG_SWPT
-#   define  swptli    LONG_SWPT
+#   define  swptalu   ULONG_SWPTA
+#   define  swptali    LONG_SWPTA
 #elif QUAD_NLLONG == 2
-#   define  swptlu  ULLONG_SWPT
-#   define  swptli   LLONG_SWPT
+#   define  swptalu  ULLONG_SWPTA
+#   define  swptali   LLONG_SWPTA
 #else
-#   define  swptqu  ULLONG_SWPT
-#   define  swptqi   LLONG_SWPT
+#   define  swptaqu  ULLONG_SWPTA
+#   define  swptaqi   LLONG_SWPTA
 #endif
 
 #if _LEAVE_SWPT
@@ -29618,10 +29495,11 @@ FUNCOF(             \
     )
 */
 #define     xeq1(...)  (xeq1_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     xeq1_funcof(S, ...) \
-FUNCOF(             \
-    xeq1,   (   S   ),  \
-    YDZ,  /* TGK */ \
+#define     xeq1_funcof(A, ...) \
+FUNCOF_AK(          \
+    xeq1, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -29630,26 +29508,26 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     xeq1ac    ADDR_XEQ1
-#define     xeq1yu    BOOL_XEQ1
-#define     xeq1bu   UINT8_XEQ1
-#define     xeq1bi    INT8_XEQ1
-#define     xeq1bc    CHAR_XEQ1
-#define     xeq1hu  UINT16_XEQ1
-#define     xeq1hi   INT16_XEQ1
-#define     xeq1wu  UINT32_XEQ1
-#define     xeq1wi   INT32_XEQ1
-#define     xeq1du  UINT64_XEQ1
-#define     xeq1di   INT64_XEQ1
+#define     xeq1aac    ADDR_XEQ1A
+#define     xeq1ayu    BOOL_XEQ1A
+#define     xeq1abu   UINT8_XEQ1A
+#define     xeq1abi    INT8_XEQ1A
+#define     xeq1abc    CHAR_XEQ1A
+#define     xeq1ahu  UINT16_XEQ1A
+#define     xeq1ahi   INT16_XEQ1A
+#define     xeq1awu  UINT32_XEQ1A
+#define     xeq1awi   INT32_XEQ1A
+#define     xeq1adu  UINT64_XEQ1A
+#define     xeq1adi   INT64_XEQ1A
 #if DWRD_NLONG == 2
-#   define  xeq1lu   ULONG_XEQ1
-#   define  xeq1li    LONG_XEQ1
+#   define  xeq1alu   ULONG_XEQ1A
+#   define  xeq1ali    LONG_XEQ1A
 #elif QUAD_NLLONG == 2
-#   define  xeq1lu  ULLONG_XEQ1
-#   define  xeq1li   LLONG_XEQ1
+#   define  xeq1alu  ULLONG_XEQ1A
+#   define  xeq1ali   LLONG_XEQ1A
 #else
-#   define  xeq1qu  ULLONG_XEQ1
-#   define  xeq1qi   LLONG_XEQ1
+#   define  xeq1aqu  ULLONG_XEQ1A
+#   define  xeq1aqi   LLONG_XEQ1A
 #endif
 
 #if _LEAVE_XEQ1
@@ -29667,10 +29545,11 @@ FUNCOF(             \
 */
 
 #define     xeqa(...)  (xeqa_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     xeqa_funcof(S, ...) \
-FUNCOF(             \
-    xeqa, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     xeqa_funcof(A, ...) \
+FUNCOF_AK(          \
+    xeqa, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -29679,26 +29558,26 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     xeqaac    ADDR_XEQA
-#define     xeqayu    BOOL_XEQA
-#define     xeqabu   UINT8_XEQA
-#define     xeqabi    INT8_XEQA
-#define     xeqabc    CHAR_XEQA
-#define     xeqahu  UINT16_XEQA
-#define     xeqahi   INT16_XEQA
-#define     xeqawu  UINT32_XEQA
-#define     xeqawi   INT32_XEQA
-#define     xeqadu  UINT64_XEQA
-#define     xeqadi   INT64_XEQA
+#define     xeqaaac    ADDR_XEQAA
+#define     xeqaayu    BOOL_XEQAA
+#define     xeqaabu   UINT8_XEQAA
+#define     xeqaabi    INT8_XEQAA
+#define     xeqaabc    CHAR_XEQAA
+#define     xeqaahu  UINT16_XEQAA
+#define     xeqaahi   INT16_XEQAA
+#define     xeqaawu  UINT32_XEQAA
+#define     xeqaawi   INT32_XEQAA
+#define     xeqaadu  UINT64_XEQAA
+#define     xeqaadi   INT64_XEQAA
 #if DWRD_NLONG == 2
-#   define  xeqalu   ULONG_XEQA
-#   define  xeqali    LONG_XEQA
+#   define  xeqaalu   ULONG_XEQAA
+#   define  xeqaali    LONG_XEQAA
 #elif QUAD_NLLONG == 2
-#   define  xeqalu  ULLONG_XEQA
-#   define  xeqali   LLONG_XEQA
+#   define  xeqaalu  ULLONG_XEQAA
+#   define  xeqaali   LLONG_XEQAA
 #else
-#   define  xeqaqu  ULLONG_XEQA
-#   define  xeqaqi   LLONG_XEQA
+#   define  xeqaaqu  ULLONG_XEQAA
+#   define  xeqaaqi   LLONG_XEQAA
 #endif
 
 #if _LEAVE_XEQA
@@ -29714,11 +29593,13 @@ FUNCOF(             \
         memory_order_acquire
     )
 */
+
 #define     xeqe(...)  (xeqe_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     xeqe_funcof(S, ...) \
-FUNCOF(             \
-    xeqe, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     xeqe_funcof(A, ...) \
+FUNCOF_AK(          \
+    xeqe, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -29727,27 +29608,28 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     xeqeac    ADDR_XEQE
-#define     xeqeyu    BOOL_XEQE
-#define     xeqebu   UINT8_XEQE
-#define     xeqebi    INT8_XEQE
-#define     xeqebc    CHAR_XEQE
-#define     xeqehu  UINT16_XEQE
-#define     xeqehi   INT16_XEQE
-#define     xeqewu  UINT32_XEQE
-#define     xeqewi   INT32_XEQE
-#define     xeqedu  UINT64_XEQE
-#define     xeqedi   INT64_XEQE
+#define     xeqeaac    ADDR_XEQEA
+#define     xeqeayu    BOOL_XEQEA
+#define     xeqeabu   UINT8_XEQEA
+#define     xeqeabi    INT8_XEQEA
+#define     xeqeabc    CHAR_XEQEA
+#define     xeqeahu  UINT16_XEQEA
+#define     xeqeahi   INT16_XEQEA
+#define     xeqeawu  UINT32_XEQEA
+#define     xeqeawi   INT32_XEQEA
+#define     xeqeadu  UINT64_XEQEA
+#define     xeqeadi   INT64_XEQEA
 #if DWRD_NLONG == 2
-#   define  xeqelu   ULONG_XEQE
-#   define  xeqeli    LONG_XEQE
+#   define  xeqealu   ULONG_XEQEA
+#   define  xeqeali    LONG_XEQEA
 #elif QUAD_NLLONG == 2
-#   define  xeqelu  ULLONG_XEQE
-#   define  xeqeli   LLONG_XEQE
+#   define  xeqealu  ULLONG_XEQEA
+#   define  xeqeali   LLONG_XEQEA
 #else
-#   define  xeqequ  ULLONG_XEQE
-#   define  xeqeqi   LLONG_XEQE
+#   define  xeqeaqu  ULLONG_XEQEA
+#   define  xeqeaqi   LLONG_XEQEA
 #endif
+
 
 #if _LEAVE_XEQE
 }
@@ -29764,10 +29646,11 @@ FUNCOF(             \
 */
 
 #define     xeqt(...)  (xeqt_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     xeqt_funcof(S, ...) \
-FUNCOF(             \
-    xeqt, (   S   ),\
-    YDZ,  /* TGK */ \
+#define     xeqt_funcof(A, ...) \
+FUNCOF_AK(          \
+    xeqt, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -29776,26 +29659,26 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     xeqtac    ADDR_XEQT
-#define     xeqtyu    BOOL_XEQT
-#define     xeqtbu   UINT8_XEQT
-#define     xeqtbi    INT8_XEQT
-#define     xeqtbc    CHAR_XEQT
-#define     xeqthu  UINT16_XEQT
-#define     xeqthi   INT16_XEQT
-#define     xeqtwu  UINT32_XEQT
-#define     xeqtwi   INT32_XEQT
-#define     xeqtdu  UINT64_XEQT
-#define     xeqtdi   INT64_XEQT
+#define     xeqtaac    ADDR_XEQTA
+#define     xeqtayu    BOOL_XEQTA
+#define     xeqtabu   UINT8_XEQTA
+#define     xeqtabi    INT8_XEQTA
+#define     xeqtabc    CHAR_XEQTA
+#define     xeqtahu  UINT16_XEQTA
+#define     xeqtahi   INT16_XEQTA
+#define     xeqtawu  UINT32_XEQTA
+#define     xeqtawi   INT32_XEQTA
+#define     xeqtadu  UINT64_XEQTA
+#define     xeqtadi   INT64_XEQTA
 #if DWRD_NLONG == 2
-#   define  xeqtlu   ULONG_XEQT
-#   define  xeqtli    LONG_XEQT
+#   define  xeqtalu   ULONG_XEQTA
+#   define  xeqtali    LONG_XEQTA
 #elif QUAD_NLLONG == 2
-#   define  xeqtlu  ULLONG_XEQT
-#   define  xeqtli   LLONG_XEQT
+#   define  xeqtalu  ULLONG_XEQTA
+#   define  xeqtali   LLONG_XEQTA
 #else
-#   define  xeqtqu  ULLONG_XEQT
-#   define  xeqtqi   LLONG_XEQT
+#   define  xeqtaqu  ULLONG_XEQTA
+#   define  xeqtaqi   LLONG_XEQTA
 #endif
 
 #if _LEAVE_XEQT
@@ -31441,7 +31324,7 @@ int wtfclang(void) {return 0;}
 int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
 {
     unsigned char seq[4];
-    (void) VWBU_STRN(src, seq);
+    (void) UCHAR_STRWA(seq, src);
     return fprintf(
         dst, fmt,
         seq[0], seq[1], seq[2], seq[3]
@@ -31454,7 +31337,7 @@ int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
 int         outfwhu(Vwhu src, FILE *dst, char const *fmt)
 {
     unsigned short seq[2];
-    (void) VWHU_STRN(src, seq);
+    (void) USHRT_STRWA(seq, src);
     return fprintf(dst, fmt, seq[0], seq[1]);
 }
 
@@ -31464,7 +31347,7 @@ int         outfwhu(Vwhu src, FILE *dst, char const *fmt)
 int         outfdbu(Vdbu src, FILE *dst, char const *fmt)
 {
     unsigned char seq[8];
-    (void) VDBU_STRN(src, seq);
+    (void) UINT8_STRDA(seq, src);
     return fprintf(
         dst, fmt,
         seq[0], seq[1], seq[2], seq[3],
@@ -31478,7 +31361,7 @@ int         outfdhu(Vdhu src, FILE *dst, char const *fmt)
 {
 #define     outfdhi(src, ...) outfdhu(VDHI_ASTU(src), __VA_ARGS__)
     unsigned short seq[4];
-    (void) VDHU_STRN(src, seq);
+    (void) UINT16_STRDA(seq, src);
     return fprintf(
         dst, fmt,
         seq[0], seq[1], seq[2], seq[3]
@@ -31489,7 +31372,7 @@ int         outfdwu(Vdwu src, FILE *dst, char const *fmt)
 {
 #define     outfdwi(src, ...) outfdwu(VDWI_ASTU(src), __VA_ARGS__)
     unsigned seq[2];
-    (void) VDWU_STRN(src, seq);
+    (void) UINT32_STRDA(seq, src);
     return fprintf(
         dst, fmt,
         seq[0], seq[1]
@@ -31500,14 +31383,14 @@ int         outfddu(Vddu src, FILE *dst, char const *fmt)
 {
 #define     outfddi(src, ...) outfddu(VDDI_ASTU(src), __VA_ARGS__)
     uint64_t seq[1];
-    (void) VDDU_STRN(src, seq);
+    (void) UINT64_STRDA(seq, src);
     return fprintf(dst, fmt, seq[0]);
 }
 
 int         outfqbu(Vqbu src, FILE *dst, char const *fmt)
 {
     unsigned char seq[16];
-    (void) VQBU_STRN(src, seq);
+    (void) UINT8_STRQA(seq, src);
     return fprintf(
         dst, fmt,
         seq[0x0], seq[0x1], seq[0x2], seq[0x3],
@@ -31520,7 +31403,7 @@ int         outfqbu(Vqbu src, FILE *dst, char const *fmt)
 int         outfqhu(Vqhu src, FILE *dst, char const *fmt)
 {
     unsigned short seq[8];
-    (void) VQHU_STRN(src, seq);
+    (void) UINT16_STRQA(seq, src);
     return fprintf(
         dst, fmt,
         seq[0], seq[1], seq[2], seq[3],
@@ -31531,17 +31414,17 @@ int         outfqhu(Vqhu src, FILE *dst, char const *fmt)
 
 int         outfqwu(Vqwu src, FILE *dst, char const *fmt)
 {
-    uint32_t s[4];
-    (void) VQWU_STRN(src, s);
-    return fprintf(dst, fmt, s[0], s[1], s[2], s[3]);
+    uint32_t d[4];
+    (void) UINT32_STRQA(d, src);
+    return fprintf(dst, fmt, d[0], d[1], d[2], d[3]);
 }
 #define     outfqwi(src, ...) outfqwu(VQWI_ASTU(src), __VA_ARGS__)
 
 int         outfqdu(Vqdu src, FILE *dst, char const *fmt)
 {
-    uint64_t seq[2];
-    (void) VQDU_STRN(src, seq);
-    return fprintf(dst, fmt, seq[0], seq[1]);
+    uint64_t d[2];
+    (void) UINT64_STRQA(d, src);
+    return fprintf(dst, fmt, d[0], d[1]);
 }
 #define     outfqdi(src, ...) outfqdu(VQDI_ASTU(src), __VA_ARGS__)
 
@@ -31914,9 +31797,10 @@ int main(int argc, char *argv[], char *envp[])
             (int) vshld_n_s64(+2147483647, 1)
         );
     }
-    if (1)
+    if (0)
     {
-        uchar x = 0;
+        uchar x;
+        str1(&x, 0);
         (void) xort(&x, 0);
         (void) addt(&x, 1);
         (void) orrt(&x, 2);
@@ -31924,7 +31808,24 @@ int main(int argc, char *argv[], char *envp[])
         (void) subt(&x, 4);
         (void) icra(&x);
         (void) inve(&x);
-        printf("x = %hhu\n", x);
+        printf("x = %hhu\n", swptabu(&x, 255));
+    }
+    if (0)
+    {
+        int x[16];
+        (void) sunq(x+1, dupqwi(0));
+        (void) strw(x+0, newlwwi(12345678));
+        printf("x = {%d}\n", *x);
+    }
+    if (0)
+    {
+        int a = 555;
+        int b = xeqt(&a, 555, 69);
+        printf("a=%i, b=%i\n", a, b);
+    }
+    if (1)
+    {
+        printf("1.1+2.2 = %g\n",sumf(newlqdf(1.1,2.2)));
     }
 }
 

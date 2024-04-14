@@ -1,79 +1,91 @@
 /*°′″  «»  ≤≥  ≠≈  —¦  ÷×  !¡  ©®  £€  $¢  №⋕  λμ  πφ  ∑∏  ¶§  †‡  ±∞  √∆  ∫∳
 
-    This file defines the following operations for targets
-    that implement the GNU C atomics:
+This file defines the following operations for targets
+that implement the GNU C atomics:
 
-    * cmba  (signal_fence @ memory_order_acquire)
-    * cmbe  (signal_fence @ memory_order_release)
-    * cmbt  (signal_fence @ memory_order_release)
+* cmba() => atomic_signal_fence(memory_order_acquire)
+* cmbe() => atomic_signal_fence(memory_order_release)
+* cmbt() => atomic_signal_fence(memory_order_release)
 
-    * hmba  (thread_fence @ memory_order_acquire) †
-    * hmbe  (thread_fence @ memory_order_release) †
-    * hmbt  (thread_fence @ memory_order_release) †
+* hmba() => atomic_thread_fence(memory_order_acquire)
+* hmbe() => atomic_thread_fence(memory_order_release)
+* hmbt() => atomic_thread_fence(memory_order_release)
 
-    * ldr1  (load @ memory_order_relaxed)
-    * ldra  (load @ memory_order_acquire)
-    * ldrt  (load @ memory_order_seq_cst)
+* smba() => hmbt() + synced reads
+* smbe() => hmbt() + synced writes
+* smbt() => hmbt() + synced all
 
-    * str1  (store @ memory_order_acquire)
-    * stre  (store @ memory_order_release)
-    * strt  (store @ memory_order_seq_cst)
+* ldr1(s) => atomic_load_explicit(s,memory_order_relaxed)
+* ldra(s) => atomic_load_explicit(s,memory_order_acquire)
+* ldrt(s) => atomic_load_explicit(s,memory_order_seq_cst)
 
-    * swp1  (exchange @ memory_order_relaxed)
-    * swpa  (exchange @ memory_order_acquire)
-    * swpe  (exchange @ memory_order_release)
-    * swpt  (exchange @ memory_order_seq_cst)
+* str1(d, s) => atomic_load_explicit(d, s,memory_order_relaxed)
+* stre(d, s) => atomic_load_explicit(d, s,memory_order_release)
+* strt(d, s) => atomic_load_explicit(d, s,memory_order_seq_cst)
 
-    * xeq1  (compare_exchange @ memory_order_relaxed) ‡
-    * xeqa  (compare_exchange @ memory_order_acquire) ‡
-    * xeqe  (compare_exchange @ memory_order_release) ‡
-    * xeqt  (compare_exchange @ memory_order_seq_cst) ‡
-    ‡   atomic_compare_exchange_* exchanges the contents of
-        two pointers while xeq* exchanges the contents of a
-        register with the contents of a pointer. On Windows
-        targets, xeq* can be perfectly mapped to one of the
-        InterlockedCompareExchange family functions; on other
-        targets, we might need to use inline asm to generate
-        the appropriate instruction sequence
+* swp1(a, b) => atomic_exchange_explicit(a, b, memory_order_relaxed)
+* swpa(a, b) => atomic_exchange_explicit(a, b, memory_order_acquire)
+* swpe(a, b) => atomic_exchange_explicit(a, b, memory_order_release)
+* swpt(a, b) => atomic_exchange_explicit(a, b, memory_order_seq_cst)
 
-    * add1  (fetch_add @ memory_order_relaxed)
-    * adda  (fetch_add @ memory_order_acquire)
-    * adde  (fetch_add @ memory_order_release)
-    * addt  (fetch_add @ memory_order_seq_cst)
+* xeq1(a, b, c) => (compare_exchange @ memory_order_relaxed) ‡
+* xeqa(a, b, c) => (compare_exchange @ memory_order_acquire) ‡
+* xeqe(a, b, c) => (compare_exchange @ memory_order_release) ‡
+* xeqt(a, b, c) => (compare_exchange @ memory_order_seq_cst) ‡
+‡   atomic_compare_exchange_* exchanges the contents of
+    two pointers while xeq* exchanges the contents of a
+    register with the contents of a pointer. On Windows
+    targets, xeq* can be perfectly mapped to one of the
+    InterlockedCompareExchange family functions; on other
+    targets, we might need to use inline asm to generate
+    the appropriate instruction sequence
 
-    * sub1  (fetch_sub @ memory_order_relaxed)
-    * suba  (fetch_sub @ memory_order_acquire)
-    * sube  (fetch_sub @ memory_order_release)
-    * subt  (fetch_sub @ memory_order_seq_cst)
+* add1(a, b) => fetch_add_explicit(a, b, memory_order_relaxed)
+* adda(a, b) => fetch_add_explicit(a, b, memory_order_acquire)
+* adde(a, b) => fetch_add_explicit(a, b, memory_order_release)
+* addt(a, b) => fetch_add_explicit(a, b, memory_order_seq_cst)
 
-    * and1  (fetch_and @ memory_order_relaxed)
-    * anda  (fetch_and @ memory_order_acquire)
-    * ande  (fetch_and @ memory_order_release)
-    * andt  (fetch_and @ memory_order_seq_cst)
+* sub1(a, b) => fetch_sub_explicit(a, b, memory_order_relaxed)
+* suba(a, b) => fetch_sub_explicit(a, b, memory_order_acquire)
+* sube(a, b) => fetch_sub_explicit(a, b, memory_order_release)
+* subt(a, b) => fetch_sub_explicit(a, b, memory_order_seq_cst)
 
-    * orr1  (fetch_or @ memory_order_relaxed)
-    * orra  (fetch_or @ memory_order_acquire)
-    * orre  (fetch_or @ memory_order_release)
-    * orrt  (fetch_or @ memory_order_seq_cst)
+* and1(a, b) => fetch_and_explicit(a, b, memory_order_relaxed)
+* anda(a, b) => fetch_and_explicit(a, b, memory_order_acquire)
+* ande(a, b) => fetch_and_explicit(a, b, memory_order_release)
+* andt(a, b) => fetch_and_explicit(a, b, memory_order_seq_cst)
 
-    * xor1  (fetch_xor @ memory_order_relaxed)
-    * xora  (fetch_xor @ memory_order_acquire)
-    * xore  (fetch_xor @ memory_order_release)
-    * xort  (fetch_xor @ memory_order_seq_cst)
+* orr1(a, b) => fetch_or_explicit(a, b, memory_order_relaxed)
+* orra(a, b) => fetch_or_explicit(a, b, memory_order_acquire)
+* orre(a, b) => fetch_or_explicit(a, b, memory_order_release)
+* orrt(a, b) => fetch_or_explicit(a, b, memory_order_seq_cst)
+
+* xor1(a, b) => fetch_xor_explicit(a, b, memory_order_relaxed)
+* xora(a, b) => fetch_xor_explicit(a, b, memory_order_acquire)
+* xore(a, b) => fetch_xor_explicit(a, b, memory_order_release)
+* xort(a, b) => fetch_xor_explicit(a, b, memory_order_seq_cst)
+
+* icr1(a) => fetch_add_explicit(a, +1, memory_order_relaxed)
+* icra(a) => fetch_add_explicit(a, +1, memory_order_acquire)
+* icre(a) => fetch_add_explicit(a, +1, memory_order_release)
+* icrt(a) => fetch_add_explicit(a, +1, memory_order_seq_cst)
+
+* dcr1(a) => fetch_add_explicit(a, -1, memory_order_relaxed)
+* dcra(a) => fetch_add_explicit(a, -1, memory_order_acquire)
+* dcre(a) => fetch_add_explicit(a, -1, memory_order_release)
+* dcrt(a) => fetch_add_explicit(a, -1, memory_order_seq_cst)
+
+* inv1(a) => fetch_xor_explicit(a, -1, memory_order_relaxed)
+* inva(a) => fetch_xor_explicit(a, -1, memory_order_acquire)
+* inve(a) => fetch_xor_explicit(a, -1, memory_order_release)
+* invt(a) => fetch_xor_explicit(a, -1, memory_order_seq_cst)
 
 There are no "op_fetch" ops, nor are there any plans to
 implement them. 
 
+TODO: something about lack of atomic_flag
 */
 
-typedef enum memory_order {
-    memory_order_relaxed=__ATOMIC_RELAXED,
-    memory_order_consume=__ATOMIC_CONSUME,
-    memory_order_acquire=__ATOMIC_ACQUIRE,
-    memory_order_release=__ATOMIC_RELEASE,
-    memory_order_acq_rel=__ATOMIC_ACQ_REL,
-    memory_order_seq_cst=__ATOMIC_SEQ_CST,
-} memory_order;
 
 #define     MY_RELAXED(F, ...) \
 __atomic_##F(__VA_OPT__(__VA_ARGS__,)__ATOMIC_RELAXED)
@@ -91,9 +103,22 @@ __atomic_##F(__VA_OPT__(__VA_ARGS__,)__ATOMIC_ACQ_REL)
 __atomic_##F(__VA_OPT__(__VA_ARGS__,)__ATOMIC_SEQ_CST)
 
 
-#if _ENTER_GNUC_CMB
-{
-#endif
+union my_bool_xeq {uchar B; _Bool Y;};
+
+typedef enum memory_order {
+    memory_order_relaxed=__ATOMIC_RELAXED,
+    memory_order_consume=__ATOMIC_CONSUME,
+    memory_order_acquire=__ATOMIC_ACQUIRE,
+    memory_order_release=__ATOMIC_RELEASE,
+    memory_order_acq_rel=__ATOMIC_ACQ_REL,
+    memory_order_seq_cst=__ATOMIC_SEQ_CST,
+} memory_order;
+
+INLINE(uchar, UCHAR_XEQ1A) (uchar volatile[1], uchar, uchar);
+INLINE(uchar, UCHAR_XEQAA) (uchar volatile[1], uchar, uchar);
+INLINE(uchar, UCHAR_XEQEA) (uchar volatile[1], uchar, uchar);
+INLINE(uchar, UCHAR_XEQTA) (uchar volatile[1], uchar, uchar);
+
 
 INLINE(void, cmba) (void) {MY_ACQUIRE(signal_fence);}
 
@@ -101,14 +126,6 @@ INLINE(void, cmbe) (void) {MY_RELEASE(signal_fence);}
 
 INLINE(void, cmbt) (void) {MY_SEQ_CST(signal_fence);}
 
-#if _LEAVE_GNUC_
-}
-#endif
-
-
-#if _ENTER_GNUC_HMB
-{
-#endif
 
 INLINE(void, hmba) (void) {MY_ACQUIRE(thread_fence);}
 
@@ -116,14 +133,6 @@ INLINE(void, hmbe) (void) {MY_RELEASE(thread_fence);}
 
 INLINE(void, hmbt) (void) {MY_SEQ_CST(thread_fence);}
 
-#if _LEAVE_GNUC_
-}
-#endif
-
-
-#if _ENTER_GNUC_SMB
-{
-#endif
 
 #if     defined(SPC_ARM_ACLE)
 
@@ -146,12 +155,6 @@ INLINE(void, smbt) (void) {_mm_mfence();}
 #error "unknown arch"
 
 #endif
-
-
-#if _LEAVE_GNUC_SMB_
-}
-#endif
-
 
 #if _ENTER_GNUC_LDR1
 {
@@ -395,92 +398,92 @@ INLINE(void *,  ADDR_LDRTAC) (void const *volatile const src[1])
 {
 #endif
 
-INLINE( _Bool,  BOOL_STR1)  (_Bool src,  _Bool volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-
-INLINE( uchar, UCHAR_STR1)  (uchar src,  uchar volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-INLINE( schar, SCHAR_STR1)  (schar src,  schar volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-INLINE(  char,  CHAR_STR1)   (char src,   char volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-
-INLINE(ushort, USHRT_STR1) (ushort src, ushort volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-INLINE( short,  SHRT_STR1)  (short src,  short volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-
-INLINE(  uint,  UINT_STR1)   (uint src,   uint volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-INLINE(   int,   INT_STR1)    (int src,    int volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-
-INLINE( ulong, ULONG_STR1)  (ulong src,  ulong volatile dst[1])
-{
-    MY_RELAXED(store_n, dst, src);
-    return src;
-}
-
-INLINE(  long,  LONG_STR1)   (long src,   long volatile dst[1])
+INLINE( _Bool,   BOOL_STR1A)  (_Bool volatile dst[1], _Bool src)
 {
     MY_RELAXED(store_n, dst, src);
     return  src;
 }
 
 
-INLINE(ullong,ULLONG_STR1) (ullong src, ullong volatile dst[1])
+INLINE( uchar,  UCHAR_STR1A)  (uchar volatile dst[1], uchar src)
 {
     MY_RELAXED(store_n, dst, src);
-    return src;
+    return  src;
 }
 
-INLINE( llong, LLONG_STR1)  (llong src,  llong volatile dst[1])
+INLINE( schar,  SCHAR_STR1A)  (schar volatile dst[1], schar src)
 {
     MY_RELAXED(store_n, dst, src);
-    return src;
+    return  src;
+}
+
+INLINE(  char,   CHAR_STR1A)   (char volatile dst[1], char src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
 }
 
 
-INLINE(void *,  ADDR_STR1)
+INLINE(ushort,  USHRT_STR1A) (ushort volatile dst[1], ushort src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+INLINE( short,   SHRT_STR1A)  (short volatile dst[1], short src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(  uint,   UINT_STR1A)   (uint volatile dst[1], uint src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+INLINE(   int,    INT_STR1A)    (int volatile dst[1], int src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE( ulong,  ULONG_STR1A)  (ulong volatile dst[1], ulong src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+INLINE(  long,   LONG_STR1A)   (long volatile dst[1], long src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(ullong, ULLONG_STR1A) (ullong volatile dst[1], ullong src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+INLINE( llong,  LLONG_STR1A)  (llong volatile dst[1], llong src)
+{
+    MY_RELAXED(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(void *,  ADDR_STR1A)
 (
-    void const *            src,
-    void const *volatile    dst[1]
+    void const *volatile   dst[1],
+    void const *           src
 )
 {
-    MY_RELAXED(store_n, dst, src);
-    return (void *) src;
+    MY_RELAXED(store_n, ((intptr_t volatile *) dst), ((intptr_t) src));
+    return  (void *) src;
 }
 
 #if _LEAVE_GNUC_STR1
@@ -491,92 +494,92 @@ INLINE(void *,  ADDR_STR1)
 {
 #endif
 
-
-INLINE( _Bool,  BOOL_STRE)  (_Bool src,  _Bool volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-
-INLINE( uchar, UCHAR_STRE)  (uchar src,  uchar volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-INLINE( schar, SCHAR_STRE)  (schar src,  schar volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-INLINE(  char,  CHAR_STRE)   (char src,   char volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-
-INLINE(ushort, USHRT_STRE) (ushort src, ushort volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-INLINE( short,  SHRT_STRE)  (short src,  short volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-
-INLINE(  uint,  UINT_STRE)   (uint src,   uint volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-INLINE(   int,   INT_STRE)    (int src,    int volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-
-INLINE( ulong, ULONG_STRE)  (ulong src,  ulong volatile dst[1])
-{
-    MY_RELEASE(store_n, dst, src);
-    return src;
-}
-
-INLINE(  long,  LONG_STRE)   (long src,   long volatile dst[1])
+INLINE( _Bool,   BOOL_STREA)  (_Bool volatile dst[1], _Bool src)
 {
     MY_RELEASE(store_n, dst, src);
     return  src;
 }
 
 
-INLINE(ullong,ULLONG_STRE) (ullong src, ullong volatile dst[1])
+INLINE( uchar,  UCHAR_STREA)  (uchar volatile dst[1], uchar src)
 {
     MY_RELEASE(store_n, dst, src);
-    return src;
+    return  src;
 }
 
-INLINE( llong, LLONG_STRE)  (llong src,  llong volatile dst[1])
+INLINE( schar,  SCHAR_STREA)  (schar volatile dst[1], schar src)
 {
     MY_RELEASE(store_n, dst, src);
-    return src;
+    return  src;
 }
 
-INLINE(void *,  ADDR_STRE)
+INLINE(  char,   CHAR_STREA)   (char volatile dst[1], char src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(ushort,  USHRT_STREA) (ushort volatile dst[1], ushort src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+INLINE( short,   SHRT_STREA)  (short volatile dst[1], short src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(  uint,   UINT_STREA)   (uint volatile dst[1], uint src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+INLINE(   int,    INT_STREA)    (int volatile dst[1], int src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE( ulong,  ULONG_STREA)  (ulong volatile dst[1], ulong src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+INLINE(  long,   LONG_STREA)   (long volatile dst[1], long src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(ullong, ULLONG_STREA) (ullong volatile dst[1], ullong src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+INLINE( llong,  LLONG_STREA)  (llong volatile dst[1], llong src)
+{
+    MY_RELEASE(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(void *,  ADDR_STREA)
 (
-    void const *            src,
-    void const *volatile    dst[1]
+    void const *volatile   dst[1],
+    void const *           src
 )
 {
-    MY_RELEASE(store_n, dst, src);
-    return (void *) src;
+    MY_RELEASE(store_n, ((intptr_t volatile *) dst), ((intptr_t) src));
+    return  (void *) src;
 }
 
 #if _LEAVE_GNUC_STRE
@@ -587,92 +590,92 @@ INLINE(void *,  ADDR_STRE)
 {
 #endif
 
-INLINE(void *,  ADDR_STRT)
-(
-    void const *            src,
-    void const *volatile    dst[1]
-)
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return (void *) src;
-}
-
-
-INLINE( _Bool,  BOOL_STRT)  (_Bool src,  _Bool volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-
-INLINE( uchar, UCHAR_STRT)  (uchar src,  uchar volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-INLINE( schar, SCHAR_STRT)  (schar src,  schar volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-INLINE(  char,  CHAR_STRT)   (char src,   char volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-
-INLINE(ushort, USHRT_STRT) (ushort src, ushort volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-INLINE( short,  SHRT_STRT)  (short src,  short volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-
-INLINE(  uint,  UINT_STRT)   (uint src,   uint volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-INLINE(   int,   INT_STRT)    (int src,    int volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-
-INLINE( ulong, ULONG_STRT)  (ulong src,  ulong volatile dst[1])
-{
-    MY_SEQ_CST(store_n, dst, src);
-    return src;
-}
-
-INLINE(  long,  LONG_STRT)   (long src,   long volatile dst[1])
+INLINE( _Bool,   BOOL_STRTA)  (_Bool volatile dst[1], _Bool src)
 {
     MY_SEQ_CST(store_n, dst, src);
     return  src;
 }
 
 
-INLINE(ullong,ULLONG_STRT) (ullong src, ullong volatile dst[1])
+INLINE( uchar,  UCHAR_STRTA)  (uchar volatile dst[1], uchar src)
 {
     MY_SEQ_CST(store_n, dst, src);
-    return src;
+    return  src;
 }
 
-INLINE( llong, LLONG_STRT)  (llong src,  llong volatile dst[1])
+INLINE( schar,  SCHAR_STRTA)  (schar volatile dst[1], schar src)
 {
     MY_SEQ_CST(store_n, dst, src);
-    return src;
+    return  src;
+}
+
+INLINE(  char,   CHAR_STRTA)   (char volatile dst[1], char src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(ushort,  USHRT_STRTA) (ushort volatile dst[1], ushort src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+INLINE( short,   SHRT_STRTA)  (short volatile dst[1], short src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(  uint,   UINT_STRTA)   (uint volatile dst[1], uint src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+INLINE(   int,    INT_STRTA)    (int volatile dst[1], int src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE( ulong,  ULONG_STRTA)  (ulong volatile dst[1], ulong src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+INLINE(  long,   LONG_STRTA)   (long volatile dst[1], long src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(ullong, ULLONG_STRTA) (ullong volatile dst[1], ullong src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+INLINE( llong,  LLONG_STRTA)  (llong volatile dst[1], llong src)
+{
+    MY_SEQ_CST(store_n, dst, src);
+    return  src;
+}
+
+
+INLINE(void *,  ADDR_STRTA)
+(
+    void const *volatile   dst[1],
+    void const *           src
+)
+{
+    MY_SEQ_CST(store_n, ((intptr_t volatile *) dst), ((intptr_t) src));
+    return  (void *) src;
 }
 
 #if _LEAVE_GNUC_STRT
@@ -684,82 +687,81 @@ INLINE( llong, LLONG_STRT)  (llong src,  llong volatile dst[1])
 {
 #endif
 
-INLINE( _Bool, BOOL_SWP1)  (_Bool b,  _Bool volatile a[1])
+INLINE( _Bool,   BOOL_SWP1A)  (_Bool volatile a[1], _Bool b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
 
-INLINE( uchar, UCHAR_SWP1)  (uchar b,  uchar volatile a[1])
+INLINE( uchar,  UCHAR_SWP1A)  (uchar volatile a[1], uchar b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
-INLINE( schar, SCHAR_SWP1)  (schar b,  schar volatile a[1])
+INLINE( schar,  SCHAR_SWP1A)  (schar volatile a[1], schar b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
-INLINE(  char,  CHAR_SWP1)   (char b,   char volatile a[1])
-{
-    return  MY_RELAXED(exchange_n, a, b);
-}
-
-
-INLINE(ushort, USHRT_SWP1) (ushort b, ushort volatile a[1])
-{
-    return  MY_RELAXED(exchange_n, a, b);
-}
-
-INLINE( short,  SHRT_SWP1)  (short b,  short volatile a[1])
+INLINE(  char,   CHAR_SWP1A)   (char volatile a[1], char b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
 
-INLINE(  uint,  UINT_SWP1)   (uint b,   uint volatile a[1])
+INLINE(ushort,  USHRT_SWP1A) (ushort volatile a[1], ushort b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
-INLINE(   int,   INT_SWP1)    (int b,    int volatile a[1])
-{
-    return  MY_RELAXED(exchange_n, a, b);
-}
-
-
-INLINE( ulong, ULONG_SWP1)  (ulong b,  ulong volatile a[1])
-{
-    return  MY_RELAXED(exchange_n, a, b);
-}
-
-INLINE(  long,  LONG_SWP1)   (long b,   long volatile a[1])
+INLINE( short,   SHRT_SWP1A)  (short volatile a[1], short b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
 
-INLINE(ullong,ULLONG_SWP1) (ullong b, ullong volatile a[1])
+INLINE(  uint,   UINT_SWP1A)   (uint volatile a[1], uint b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
-INLINE( llong, LLONG_SWP1)  (llong b,  llong volatile a[1])
+INLINE(   int,    INT_SWP1A)    (int volatile a[1], int b)
 {
     return  MY_RELAXED(exchange_n, a, b);
 }
 
 
-INLINE(void *,  ADDR_SWP1)
+INLINE( ulong,  ULONG_SWP1A)  (ulong volatile a[1], ulong b)
+{
+    return  MY_RELAXED(exchange_n, a, b);
+}
+
+INLINE(  long,   LONG_SWP1A)   (long volatile a[1], long b)
+{
+    return  MY_RELAXED(exchange_n, a, b);
+}
+
+
+INLINE(ullong, ULLONG_SWP1A) (ullong volatile a[1], ullong b)
+{
+    return  MY_RELAXED(exchange_n, a, b);
+}
+
+INLINE( llong,  LLONG_SWP1A)  (llong volatile a[1], llong b)
+{
+    return  MY_RELAXED(exchange_n, a, b);
+}
+
+INLINE(void *,  ADDR_SWP1A)
 (
-    void const *            a,
-    void const *volatile    b[1]
+    void const *volatile    a[1],
+    void const *            b
 )
 {
     return (void *) MY_RELAXED(
         exchange_n,
-        (intptr_t volatile *) b,
-        (intptr_t) a
+        (intptr_t volatile *) a,
+        (intptr_t) b
     );
 }
 
@@ -771,82 +773,81 @@ INLINE(void *,  ADDR_SWP1)
 {
 #endif
 
-INLINE( _Bool, BOOL_SWPA)  (_Bool b,  _Bool volatile a[1])
+INLINE( _Bool,   BOOL_SWPAA)  (_Bool volatile a[1], _Bool b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
 
-INLINE( uchar, UCHAR_SWPA)  (uchar b,  uchar volatile a[1])
+INLINE( uchar,  UCHAR_SWPAA)  (uchar volatile a[1], uchar b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
-INLINE( schar, SCHAR_SWPA)  (schar b,  schar volatile a[1])
+INLINE( schar,  SCHAR_SWPAA)  (schar volatile a[1], schar b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
-INLINE(  char,  CHAR_SWPA)   (char b,   char volatile a[1])
-{
-    return  MY_ACQUIRE(exchange_n, a, b);
-}
-
-
-INLINE(ushort, USHRT_SWPA) (ushort b, ushort volatile a[1])
-{
-    return  MY_ACQUIRE(exchange_n, a, b);
-}
-
-INLINE( short,  SHRT_SWPA)  (short b,  short volatile a[1])
+INLINE(  char,   CHAR_SWPAA)   (char volatile a[1], char b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
 
-INLINE(  uint,  UINT_SWPA)   (uint b,   uint volatile a[1])
+INLINE(ushort,  USHRT_SWPAA) (ushort volatile a[1], ushort b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
-INLINE(   int,   INT_SWPA)    (int b,    int volatile a[1])
-{
-    return  MY_ACQUIRE(exchange_n, a, b);
-}
-
-
-INLINE( ulong, ULONG_SWPA)  (ulong b,  ulong volatile a[1])
-{
-    return  MY_ACQUIRE(exchange_n, a, b);
-}
-
-INLINE(  long,  LONG_SWPA)   (long b,   long volatile a[1])
+INLINE( short,   SHRT_SWPAA)  (short volatile a[1], short b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
 
-INLINE(ullong,ULLONG_SWPA) (ullong b, ullong volatile a[1])
+INLINE(  uint,   UINT_SWPAA)   (uint volatile a[1], uint b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
-INLINE( llong, LLONG_SWPA)  (llong b,  llong volatile a[1])
+INLINE(   int,    INT_SWPAA)    (int volatile a[1], int b)
 {
     return  MY_ACQUIRE(exchange_n, a, b);
 }
 
 
-INLINE(void *,  ADDR_SWPA)
+INLINE( ulong,  ULONG_SWPAA)  (ulong volatile a[1], ulong b)
+{
+    return  MY_ACQUIRE(exchange_n, a, b);
+}
+
+INLINE(  long,   LONG_SWPAA)   (long volatile a[1], long b)
+{
+    return  MY_ACQUIRE(exchange_n, a, b);
+}
+
+
+INLINE(ullong, ULLONG_SWPAA) (ullong volatile a[1], ullong b)
+{
+    return  MY_ACQUIRE(exchange_n, a, b);
+}
+
+INLINE( llong,  LLONG_SWPAA)  (llong volatile a[1], llong b)
+{
+    return  MY_ACQUIRE(exchange_n, a, b);
+}
+
+INLINE(void *,  ADDR_SWPAA)
 (
-    void const *            a,
-    void const *volatile    b[1]
+    void const *volatile    a[1],
+    void const *            b
 )
 {
     return (void *) MY_ACQUIRE(
         exchange_n,
-        (intptr_t volatile *) b,
-        (intptr_t) a
+        (intptr_t volatile *) a,
+        (intptr_t) b
     );
 }
 
@@ -858,83 +859,81 @@ INLINE(void *,  ADDR_SWPA)
 {
 #endif
 
-
-INLINE( _Bool, BOOL_SWPE)  (_Bool b,  _Bool volatile a[1])
+INLINE( _Bool,   BOOL_SWPEA)  (_Bool volatile a[1], _Bool b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
 
-INLINE( uchar, UCHAR_SWPE)  (uchar b,  uchar volatile a[1])
+INLINE( uchar,  UCHAR_SWPEA)  (uchar volatile a[1], uchar b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
-INLINE( schar, SCHAR_SWPE)  (schar b,  schar volatile a[1])
+INLINE( schar,  SCHAR_SWPEA)  (schar volatile a[1], schar b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
-INLINE(  char,  CHAR_SWPE)   (char b,   char volatile a[1])
-{
-    return  MY_RELEASE(exchange_n, a, b);
-}
-
-
-INLINE(ushort, USHRT_SWPE) (ushort b, ushort volatile a[1])
-{
-    return  MY_RELEASE(exchange_n, a, b);
-}
-
-INLINE( short,  SHRT_SWPE)  (short b,  short volatile a[1])
+INLINE(  char,   CHAR_SWPEA)   (char volatile a[1], char b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
 
-INLINE(  uint,  UINT_SWPE)   (uint b,   uint volatile a[1])
+INLINE(ushort,  USHRT_SWPEA) (ushort volatile a[1], ushort b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
-INLINE(   int,   INT_SWPE)    (int b,    int volatile a[1])
-{
-    return  MY_RELEASE(exchange_n, a, b);
-}
-
-
-INLINE( ulong, ULONG_SWPE)  (ulong b,  ulong volatile a[1])
-{
-    return  MY_RELEASE(exchange_n, a, b);
-}
-
-INLINE(  long,  LONG_SWPE)   (long b,   long volatile a[1])
+INLINE( short,   SHRT_SWPEA)  (short volatile a[1], short b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
 
-INLINE(ullong,ULLONG_SWPE) (ullong b, ullong volatile a[1])
+INLINE(  uint,   UINT_SWPEA)   (uint volatile a[1], uint b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
-INLINE( llong, LLONG_SWPE)  (llong b,  llong volatile a[1])
+INLINE(   int,    INT_SWPEA)    (int volatile a[1], int b)
 {
     return  MY_RELEASE(exchange_n, a, b);
 }
 
 
-INLINE(void *,                ADDR_SWPE)
+INLINE( ulong,  ULONG_SWPEA)  (ulong volatile a[1], ulong b)
+{
+    return  MY_RELEASE(exchange_n, a, b);
+}
+
+INLINE(  long,   LONG_SWPEA)   (long volatile a[1], long b)
+{
+    return  MY_RELEASE(exchange_n, a, b);
+}
+
+
+INLINE(ullong, ULLONG_SWPEA) (ullong volatile a[1], ullong b)
+{
+    return  MY_RELEASE(exchange_n, a, b);
+}
+
+INLINE( llong,  LLONG_SWPEA)  (llong volatile a[1], llong b)
+{
+    return  MY_RELEASE(exchange_n, a, b);
+}
+
+INLINE(void *,  ADDR_SWPEA)
 (
-    void const *            a,
-    void const *volatile    b[1]
+    void const *volatile    a[1],
+    void const *            b
 )
 {
     return (void *) MY_RELEASE(
         exchange_n,
-        (intptr_t volatile *) b,
-        (intptr_t) a
+        (intptr_t volatile *) a,
+        (intptr_t) b
     );
 }
 
@@ -946,82 +945,81 @@ INLINE(void *,                ADDR_SWPE)
 {
 #endif
 
-
-INLINE( _Bool, BOOL_SWPT)  (_Bool b,  _Bool volatile a[1])
+INLINE( _Bool,   BOOL_SWPTA)  (_Bool volatile a[1], _Bool b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
 
-INLINE( uchar, UCHAR_SWPT)  (uchar b,  uchar volatile a[1])
+INLINE( uchar,  UCHAR_SWPTA)  (uchar volatile a[1], uchar b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
-INLINE( schar, SCHAR_SWPT)  (schar b,  schar volatile a[1])
+INLINE( schar,  SCHAR_SWPTA)  (schar volatile a[1], schar b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
-INLINE(  char,  CHAR_SWPT)   (char b,   char volatile a[1])
-{
-    return  MY_SEQ_CST(exchange_n, a, b);
-}
-
-
-INLINE(ushort, USHRT_SWPT) (ushort b, ushort volatile a[1])
-{
-    return  MY_SEQ_CST(exchange_n, a, b);
-}
-
-INLINE( short,  SHRT_SWPT)  (short b,  short volatile a[1])
+INLINE(  char,   CHAR_SWPTA)   (char volatile a[1], char b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
 
-INLINE(  uint,  UINT_SWPT)   (uint b,   uint volatile a[1])
+INLINE(ushort,  USHRT_SWPTA) (ushort volatile a[1], ushort b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
-INLINE(   int,   INT_SWPT)    (int b,    int volatile a[1])
-{
-    return  MY_SEQ_CST(exchange_n, a, b);
-}
-
-
-INLINE( ulong, ULONG_SWPT)  (ulong b,  ulong volatile a[1])
-{
-    return  MY_SEQ_CST(exchange_n, a, b);
-}
-
-INLINE(  long,  LONG_SWPT)   (long b,   long volatile a[1])
+INLINE( short,   SHRT_SWPTA)  (short volatile a[1], short b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
 
-INLINE(ullong,ULLONG_SWPT) (ullong b, ullong volatile a[1])
+INLINE(  uint,   UINT_SWPTA)   (uint volatile a[1], uint b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
-INLINE( llong, LLONG_SWPT)  (llong b,  llong volatile a[1])
+INLINE(   int,    INT_SWPTA)    (int volatile a[1], int b)
 {
     return  MY_SEQ_CST(exchange_n, a, b);
 }
 
-INLINE(void *,                ADDR_SWPT)
+
+INLINE( ulong,  ULONG_SWPTA)  (ulong volatile a[1], ulong b)
+{
+    return  MY_SEQ_CST(exchange_n, a, b);
+}
+
+INLINE(  long,   LONG_SWPTA)   (long volatile a[1], long b)
+{
+    return  MY_SEQ_CST(exchange_n, a, b);
+}
+
+
+INLINE(ullong, ULLONG_SWPTA) (ullong volatile a[1], ullong b)
+{
+    return  MY_SEQ_CST(exchange_n, a, b);
+}
+
+INLINE( llong,  LLONG_SWPTA)  (llong volatile a[1], llong b)
+{
+    return  MY_SEQ_CST(exchange_n, a, b);
+}
+
+INLINE(void *,  ADDR_SWPTA)
 (
-    void const *            a,
-    void const *volatile    b[1]
+    void const *volatile    a[1],
+    void const *            b
 )
 {
     return (void *) MY_SEQ_CST(
         exchange_n,
-        (intptr_t volatile *) b,
-        (intptr_t) a
+        (intptr_t volatile *) a,
+        (intptr_t) b
     );
 }
 
@@ -1029,425 +1027,417 @@ INLINE(void *,                ADDR_SWPT)
 }
 #endif
 
-INLINE(uchar, UCHAR_XEQ1) (uchar c, uchar volatile a[1], uchar b);
-INLINE(uchar, UCHAR_XEQA) (uchar c, uchar volatile a[1], uchar b);
-INLINE(uchar, UCHAR_XEQE) (uchar c, uchar volatile a[1], uchar b);
-INLINE(uchar, UCHAR_XEQT) (uchar c, uchar volatile a[1], uchar b);
 
-#if _ENTER_GNUC_XEQ1
+#if _ENTER_GNUC_XEQ1A
 {
 #endif
 
-INLINE( _Bool,  BOOL_XEQ1)  (_Bool c,  _Bool volatile a[1],  _Bool b)
+
+
+INLINE( _Bool,  BOOL_XEQ1A)  (_Bool volatile a[1],  _Bool b,  _Bool c)
 {
-    union my_bool_xeq1 {uchar B; _Bool Y;};
     return (
-        (union my_bool_xeq1)
+        (union my_bool_xeq)
         {
-            UCHAR_XEQ1(
-                (union my_bool_xeq1){.Y=c}.B,
+            UCHAR_XEQ1A(
                 (uchar volatile *) a,
-                (union my_bool_xeq1){.Y=b}.B
+                (union my_bool_xeq){.Y=b}.B,
+                (union my_bool_xeq){.Y=c}.B
             )
         }
     ).Y;
 }
 
 
-INLINE( uchar, UCHAR_XEQ1)  (uchar c,  uchar volatile a[1],  uchar b)
+INLINE( schar, SCHAR_XEQ1A)  (schar volatile a[1],  schar b,  schar c)
 {
     return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
 }
 
-INLINE( schar, SCHAR_XEQ1)  (schar c,  schar volatile a[1],  schar b)
+INLINE( uchar, UCHAR_XEQ1A)  (uchar volatile a[1],  uchar b,  uchar c)
 {
     return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
 }
 
-INLINE(  char,  CHAR_XEQ1)   (char c,   char volatile a[1],   char b)
-{
-    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-
-INLINE(ushort, USHRT_XEQ1) (ushort c, ushort volatile a[1], ushort b)
-{
-    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-INLINE( short,  SHRT_XEQ1)  (short c,  short volatile a[1],  short b)
+INLINE(  char,  CHAR_XEQ1A)   (char volatile a[1],   char b,   char c)
 {
     return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
 }
 
 
-INLINE(  uint,  UINT_XEQ1)   (uint c,   uint volatile a[1],   uint b)
+INLINE(ushort, USHRT_XEQ1A) (ushort volatile a[1], ushort b, ushort c)
 {
     return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
 }
 
-INLINE(   int,   INT_XEQ1)    (int c,    int volatile a[1],    int b)
-{
-    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-
-INLINE( ulong, ULONG_XEQ1)  (ulong c,  ulong volatile a[1],  ulong b)
-{
-    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-INLINE(  long,  LONG_XEQ1)   (long c,   long volatile a[1],   long b)
+INLINE( short,  SHRT_XEQ1A)  (short volatile a[1],  short b,  short c)
 {
     return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
 }
 
 
-INLINE(ullong,ULLONG_XEQ1) (ullong c, ullong volatile a[1], ullong b)
+INLINE(  uint,  UINT_XEQ1A)   (uint volatile a[1],   uint b,   uint c)
 {
     return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
 }
 
-INLINE( llong, LLONG_XEQ1)  (llong c,  llong volatile a[1],  llong b)
+INLINE(   int,   INT_XEQ1A)    (int volatile a[1],    int b,    int c)
 {
     return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
 }
 
 
-INLINE(void *,  ADDR_XEQ1)
+INLINE( ulong, ULONG_XEQ1A)  (ulong volatile a[1],  ulong b,  ulong c)
+{
+    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+}
+
+INLINE(  long,  LONG_XEQ1A)   (long volatile a[1],   long b,   long c)
+{
+    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+}
+
+INLINE(ullong,ULLONG_XEQ1A) (ullong volatile a[1], ullong b, ullong c)
+{
+    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+}
+
+INLINE( llong, LLONG_XEQ1A)  (llong volatile a[1],  llong b,  llong c)
+{
+    return  MY_RELAXED(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+}
+
+
+INLINE(void *,  ADDR_XEQ1A)
 (
-    void const *c,
     void const *volatile a[1],
-    void const *b
+    void const *b,
+    void const *c
 )
 {
     return (void *)
-#if   INTPTR_REPR == INT_REPR
-        INT_XEQ1(  (intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+#if   INTPTR_WIDTH == INT_WIDTH
+        INT_XEQ1A(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LONG_REPR
-        LONG_XEQ1((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LONG_XEQ1A(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LLONG_REPR
-        LLONG_XEQ1((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LLONG_XEQ1A(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #else
 #   error "INTPTR_REPR"
 #endif
 
 }
 
-#if _LEAVE_GNUC_XEQ1
+#if _LEAVE_GNUC_XEQ1A
 }
 #endif
 
-#if _ENTER_GNUC_XEQA
+#if _ENTER_GNUC_XEQAA
 {
 #endif
 
-INLINE( _Bool,  BOOL_XEQA)  (_Bool c,  _Bool volatile a[1],  _Bool b)
+INLINE( _Bool,  BOOL_XEQAA)  (_Bool volatile a[1],  _Bool b,  _Bool c)
 {
-    union my_bool_xeqa {uchar B; _Bool Y;};
     return (
-        (union my_bool_xeqa)
+        (union my_bool_xeq)
         {
-            UCHAR_XEQA(
-                (union my_bool_xeqa){.Y=c}.B,
+            UCHAR_XEQAA(
                 (uchar volatile *) a,
-                (union my_bool_xeqa){.Y=b}.B
+                (union my_bool_xeq){.Y=b}.B,
+                (union my_bool_xeq){.Y=c}.B
             )
         }
     ).Y;
 }
 
 
-INLINE( uchar, UCHAR_XEQA)  (uchar c,  uchar volatile a[1],  uchar b)
+INLINE( schar, SCHAR_XEQAA)  (schar volatile a[1],  schar b,  schar c)
 {
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
 }
 
-INLINE( schar, SCHAR_XEQA)  (schar c,  schar volatile a[1],  schar b)
+INLINE( uchar, UCHAR_XEQAA)  (uchar volatile a[1],  uchar b,  uchar c)
 {
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
 }
 
-INLINE(  char,  CHAR_XEQA)   (char c,   char volatile a[1],   char b)
+INLINE(  char,  CHAR_XEQAA)   (char volatile a[1],   char b,   char c)
 {
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-
-INLINE(ushort, USHRT_XEQA) (ushort c, ushort volatile a[1], ushort b)
-{
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-INLINE( short,  SHRT_XEQA)  (short c,  short volatile a[1],  short b)
-{
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
 }
 
 
-INLINE(  uint,  UINT_XEQA)   (uint c,   uint volatile a[1],   uint b)
+INLINE(ushort, USHRT_XEQAA) (ushort volatile a[1], ushort b, ushort c)
 {
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
 }
 
-INLINE(   int,   INT_XEQA)    (int c,    int volatile a[1],    int b)
+INLINE( short,  SHRT_XEQAA)  (short volatile a[1],  short b,  short c)
 {
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-
-INLINE( ulong, ULONG_XEQA)  (ulong c,  ulong volatile a[1],  ulong b)
-{
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-INLINE(  long,  LONG_XEQA)   (long c,   long volatile a[1],   long b)
-{
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
 }
 
 
-INLINE(ullong,ULLONG_XEQA) (ullong c, ullong volatile a[1], ullong b)
+INLINE(  uint,  UINT_XEQAA)   (uint volatile a[1],   uint b,   uint c)
 {
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
 }
 
-INLINE( llong, LLONG_XEQA)  (llong c,  llong volatile a[1],  llong b)
+INLINE(   int,   INT_XEQAA)    (int volatile a[1],    int b,    int c)
 {
-    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
 }
 
 
-INLINE(void *,  ADDR_XEQA)
+INLINE( ulong, ULONG_XEQAA)  (ulong volatile a[1],  ulong b,  ulong c)
+{
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
+}
+
+INLINE(  long,  LONG_XEQAA)   (long volatile a[1],   long b,   long c)
+{
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
+}
+
+INLINE(ullong,ULLONG_XEQAA) (ullong volatile a[1], ullong b, ullong c)
+{
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
+}
+
+INLINE( llong, LLONG_XEQAA)  (llong volatile a[1],  llong b,  llong c)
+{
+    return  MY_ACQUIRE(compare_exchange_n, a, &b, c, 0, __ATOMIC_ACQUIRE), b;
+}
+
+
+INLINE(void *,  ADDR_XEQAA)
 (
-    void const *c,
     void const *volatile a[1],
-    void const *b
+    void const *b,
+    void const *c
 )
 {
     return (void *)
-#if   INTPTR_REPR == INT_REPR
-        INT_XEQA(  (intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+#if   INTPTR_WIDTH == INT_WIDTH
+        INT_XEQAA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LONG_REPR
-        LONG_XEQA((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LONG_XEQAA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LLONG_REPR
-        LLONG_XEQA((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LLONG_XEQAA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #else
 #   error "INTPTR_REPR"
 #endif
 
 }
 
-#if _LEAVE_GNUC_XEQA
+#if _LEAVE_GNUC_XEQAA
 }
 #endif
 
-#if _ENTER_GNUC_XEQE
+#if _ENTER_GNUC_XEQEA
 {
 #endif
 
-INLINE( _Bool,  BOOL_XEQE)  (_Bool c,  _Bool volatile a[1],  _Bool b)
+INLINE( _Bool,  BOOL_XEQEA)  (_Bool volatile a[1],  _Bool b,  _Bool c)
 {
-    union my_bool_xeqe {uchar B; _Bool Y;};
     return (
-        (union my_bool_xeqe)
+        (union my_bool_xeq)
         {
-            UCHAR_XEQE(
-                (union my_bool_xeqe){.Y=c}.B,
+            UCHAR_XEQEA(
                 (uchar volatile *) a,
-                (union my_bool_xeqe){.Y=b}.B
+                (union my_bool_xeq){.Y=b}.B,
+                (union my_bool_xeq){.Y=c}.B
             )
         }
     ).Y;
 }
 
 
-INLINE( uchar, UCHAR_XEQE)  (uchar c,  uchar volatile a[1],  uchar b)
+INLINE( schar, SCHAR_XEQEA)  (schar volatile a[1],  schar b,  schar c)
 {
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
 }
 
-INLINE( schar, SCHAR_XEQE)  (schar c,  schar volatile a[1],  schar b)
+INLINE( uchar, UCHAR_XEQEA)  (uchar volatile a[1],  uchar b,  uchar c)
 {
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
 }
 
-INLINE(  char,  CHAR_XEQE)   (char c,   char volatile a[1],   char b)
+INLINE(  char,  CHAR_XEQEA)   (char volatile a[1],   char b,   char c)
 {
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-
-INLINE(ushort, USHRT_XEQE) (ushort c, ushort volatile a[1], ushort b)
-{
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-INLINE( short,  SHRT_XEQE)  (short c,  short volatile a[1],  short b)
-{
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
 }
 
 
-INLINE(  uint,  UINT_XEQE)   (uint c,   uint volatile a[1],   uint b)
+INLINE(ushort, USHRT_XEQEA) (ushort volatile a[1], ushort b, ushort c)
 {
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
 }
 
-INLINE(   int,   INT_XEQE)    (int c,    int volatile a[1],    int b)
+INLINE( short,  SHRT_XEQEA)  (short volatile a[1],  short b,  short c)
 {
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-INLINE( ulong, ULONG_XEQE)  (ulong c,  ulong volatile a[1],  ulong b)
-{
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
-}
-
-INLINE(  long,  LONG_XEQE)   (long c,   long volatile a[1],   long b)
-{
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
 }
 
 
-INLINE(ullong,ULLONG_XEQE) (ullong c, ullong volatile a[1], ullong b)
+INLINE(  uint,  UINT_XEQEA)   (uint volatile a[1],   uint b,   uint c)
 {
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
 }
 
-INLINE( llong, LLONG_XEQE)  (llong c,  llong volatile a[1],  llong b)
+INLINE(   int,   INT_XEQEA)    (int volatile a[1],    int b,    int c)
 {
-    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELAXED), b;
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
 }
 
 
-INLINE(void *,  ADDR_XEQE)
+INLINE( ulong, ULONG_XEQEA)  (ulong volatile a[1],  ulong b,  ulong c)
+{
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
+}
+
+INLINE(  long,  LONG_XEQEA)   (long volatile a[1],   long b,   long c)
+{
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
+}
+
+INLINE(ullong,ULLONG_XEQEA) (ullong volatile a[1], ullong b, ullong c)
+{
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
+}
+
+INLINE( llong, LLONG_XEQEA)  (llong volatile a[1],  llong b,  llong c)
+{
+    return  MY_RELEASE(compare_exchange_n, a, &b, c, 0, __ATOMIC_RELEASE), b;
+}
+
+
+INLINE(void *,  ADDR_XEQEA)
 (
-    void const *c,
     void const *volatile a[1],
-    void const *b
+    void const *b,
+    void const *c
 )
 {
     return (void *)
-#if   INTPTR_REPR == INT_REPR
-        INT_XEQE(  (intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+#if   INTPTR_WIDTH == INT_WIDTH
+        INT_XEQEA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LONG_REPR
-        LONG_XEQE((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LONG_XEQEA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LLONG_REPR
-        LLONG_XEQE((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LLONG_XEQEA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #else
 #   error "INTPTR_REPR"
 #endif
 
 }
 
-#if _LEAVE_GNUC_XEQE
+#if _LEAVE_GNUC_XEQEA
 }
 #endif
 
-#if _ENTER_GNUC_XEQT
+#if _ENTER_GNUC_XEQTA
 {
 #endif
 
-INLINE( _Bool,  BOOL_XEQT)  (_Bool c,  _Bool volatile a[1],  _Bool b)
+INLINE( _Bool,  BOOL_XEQTA)  (_Bool volatile a[1],  _Bool b,  _Bool c)
 {
-    union my_bool_xeqt {uchar B; _Bool Y;};
     return (
-        (union my_bool_xeqt)
+        (union my_bool_xeq)
         {
-            UCHAR_XEQT(
-                (union my_bool_xeqt){.Y=c}.B,
+            UCHAR_XEQTA(
                 (uchar volatile *) a,
-                (union my_bool_xeqt){.Y=b}.B
+                (union my_bool_xeq){.Y=b}.B,
+                (union my_bool_xeq){.Y=c}.B
             )
         }
     ).Y;
 }
 
 
-INLINE( uchar, UCHAR_XEQT)  (uchar c,  uchar volatile a[1],  uchar b)
+INLINE( schar, SCHAR_XEQTA)  (schar volatile a[1],  schar b,  schar c)
 {
     return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
 }
 
-INLINE( schar, SCHAR_XEQT)  (schar c,  schar volatile a[1],  schar b)
+INLINE( uchar, UCHAR_XEQTA)  (uchar volatile a[1],  uchar b,  uchar c)
 {
     return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
 }
 
-INLINE(  char,  CHAR_XEQT)   (char c,   char volatile a[1],   char b)
-{
-    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
-}
-
-
-INLINE(ushort, USHRT_XEQT) (ushort c, ushort volatile a[1], ushort b)
-{
-    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
-}
-
-INLINE( short,  SHRT_XEQT)  (short c,  short volatile a[1],  short b)
+INLINE(  char,  CHAR_XEQTA)   (char volatile a[1],   char b,   char c)
 {
     return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
 }
 
 
-INLINE(  uint,  UINT_XEQT)   (uint c,   uint volatile a[1],   uint b)
+INLINE(ushort, USHRT_XEQTA) (ushort volatile a[1], ushort b, ushort c)
 {
     return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
 }
 
-INLINE(   int,   INT_XEQT)    (int c,    int volatile a[1],    int b)
-{
-    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
-}
-
-
-INLINE( ulong, ULONG_XEQT)  (ulong c,  ulong volatile a[1],  ulong b)
-{
-    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
-}
-
-INLINE(  long,  LONG_XEQT)   (long c,   long volatile a[1],   long b)
+INLINE( short,  SHRT_XEQTA)  (short volatile a[1],  short b,  short c)
 {
     return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
 }
 
 
-INLINE(ullong,ULLONG_XEQT) (ullong c, ullong volatile a[1], ullong b)
+INLINE(  uint,  UINT_XEQTA)   (uint volatile a[1],   uint b,   uint c)
 {
     return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
 }
 
-INLINE( llong, LLONG_XEQT)  (llong c,  llong volatile a[1],  llong b)
+INLINE(   int,   INT_XEQTA)    (int volatile a[1],    int b,    int c)
 {
     return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
 }
 
 
-INLINE(void *,                ADDR_XEQT)
+INLINE( ulong, ULONG_XEQTA)  (ulong volatile a[1],  ulong b,  ulong c)
+{
+    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
+}
+
+INLINE(  long,  LONG_XEQTA)   (long volatile a[1],   long b,   long c)
+{
+    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
+}
+
+INLINE(ullong,ULLONG_XEQTA) (ullong volatile a[1], ullong b, ullong c)
+{
+    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
+}
+
+INLINE( llong, LLONG_XEQTA)  (llong volatile a[1],  llong b,  llong c)
+{
+    return  MY_SEQ_CST(compare_exchange_n, a, &b, c, 0, __ATOMIC_SEQ_CST), b;
+}
+
+
+INLINE(void *,  ADDR_XEQTA)
 (
-    void const *c,
     void const *volatile a[1],
-    void const *b
+    void const *b,
+    void const *c
 )
 {
     return (void *)
-#if   INTPTR_REPR == INT_REPR
-        INT_XEQT(  (intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+#if   INTPTR_WIDTH == INT_WIDTH
+        INT_XEQTA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LONG_REPR
-        LONG_XEQT((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LONG_XEQTA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #elif INTPTR_REPR == LLONG_REPR
-        LLONG_XEQT((intptr_t) c, (intptr_t volatile *) a, (intptr_t) b);
+        LLONG_XEQTA(((intptr_t volatile *) a), ((intptr_t) b), ((intptr_t) c));
 #else
 #   error "INTPTR_REPR"
 #endif
 
 }
 
-#if _LEAVE_GNUC_XEQT
+#if _LEAVE_GNUC_XEQTA
 }
 #endif
+
 
 #if _ENTER_GNUC_AND1
 {
@@ -4025,196 +4015,3 @@ INLINE(void *,   ADDR_DCRTA) (void const *volatile b[1])
 }
 #endif
 
-
-#if defined(SPC_ARM_NEON) || defined(SPC_X86_SSE2)
-#endif
-
-#if defined(SPC_ARM_NEON)
-
-#elif defined(SPC_X86_SSE2)
-
-INLINE(Vdbu,VDBU_STRD) (Vdbu src, uint8_t volatile dst[8])
-{
-#define     VDBU_STRD   VDBU_STRD
-    return (((DWRD_TYPE *) dst)->F=VDBU_ASTM(src)), src;
-}
-
-INLINE(Vdbi,VDBI_STRD) (Vdbi src,  int8_t volatile dst[8])
-{
-#define     VDBI_STRD   VDBI_STRD
-    return (((DWRD_TYPE *) dst)->F=VDBI_ASTM(src)), src;
-}
-
-INLINE(Vdbc,VDBC_STRD) (Vdbc src,    char volatile dst[8])
-{
-#define     VDBC_STRD   VDBC_STRD
-    return (((DWRD_TYPE *) dst)->F=VDBC_ASTM(src)), src;
-}
-
-
-INLINE(Vdhu,VDHU_STRD) (Vdhu src, uint16_t volatile dst[4])
-{
-#define     VDHU_STRD   VDHU_STRD
-    return (((DWRD_TYPE *) dst)->F=VDHU_ASTM(src)), src;
-}
-
-INLINE(Vdhi,VDHI_STRD) (Vdhi src, int16_t volatile dst[4])
-{
-#define     VDHI_STRD   VDHI_STRD
-    return (((DWRD_TYPE *) dst)->F=VDHI_ASTM(src)), src;
-}
-
-INLINE(Vdhf,VDHF_STRD) (Vdhf src, flt16_t volatile dst[4])
-{
-#define     VDHF_STRD   VDHF_STRD
-    return (((DWRD_TYPE *) dst)->F=VDHF_ASTM(src)), src;
-}
-
-
-INLINE(Vdwu,VDWU_STRD) (Vdwu src, uint32_t volatile dst[2])
-{
-#define     VDWU_STRD   VDWU_STRD
-    return (((DWRD_TYPE *) dst)->F=VDWU_ASTM(src)), src;
-}
-
-INLINE(Vdwi,VDWI_STRD) (Vdwi src, int32_t volatile dst[2])
-{
-#define     VDWI_STRD   VDWI_STRD
-    return (((DWRD_TYPE *) dst)->F=VDWU_ASTM(src)), src;
-    return (((DWRD_TYPE *) dst)->F=src.V0), src;
-}
-
-INLINE(Vdwf,VDWF_STRD) (Vdwf src, float volatile dst[2])
-{
-#define     VDWF_STRD   VDWF_STRD
-    return (((DWRD_TYPE *) dst)->F=src.V0), src;
-}
-
-
-INLINE(Vddu,VDDU_STRD) (Vddu src, uint64_t volatile dst[1])
-{
-#define     VDDU_STRD   VDDU_STRD
-    return (((DWRD_TYPE *) dst)->F=src.V0), src;
-}
-
-INLINE(Vddi,VDDI_STRD) (Vddi src, int64_t volatile dst[1])
-{
-#define     VDDI_STRD   VDDI_STRD
-    return (((DWRD_TYPE *) dst)->F=src.V0), src;
-}
-
-INLINE(Vddf,VDDF_STRD) (Vddf src, double volatile dst[1])
-{
-#define     VDDF_STRD   VDDF_STRD
-    return (((DWRD_TYPE *) dst)->F=src.V0), src;
-}
-
-#else
-
-#endif
-
-
-
-#if defined(SPC_ARM_NEON)
-
-#elif defined(SPC_X86_SSE2)
-
-INLINE(Vqbc,VQBC_STRQ) (Vqbc src, char volatile dst[16])
-{
-#   define  VQBC_STRQ   VQBC_STRQ
-    _mm_store_si128((void *)dst, src.V0;
-    return  src;
-}
-
-INLINE(Vqbu,VQBU_STRQ) (Vqbu src, uint8_t volatile dst[16])
-{
-#   define  VQBU_STRQ   VQBU_STRQ
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqbi,VQBI_STRQ) (Vqbi src, int8_t volatile dst[16])
-{
-#   define  VQBI_STRQ   VQBI_STRQ
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqhu,VQHU_STRQ) (Vqhu src, uint16_t volatile dst[8])
-{
-#   define VQHU_STRQ   VQHU_STRQ
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqhi,VQHI_STRQ) (Vqhi src, int16_t volatile dst[8])
-{
-#   define  VQHI_STRQ   VQHI_STRQ
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqhf,VQHF_STRQ) (Vqhf src, flt16_t volatile dst[8])
-{
-#   define  VQHF_STRQ   VQHF_STRQ
-#   if defined(SPC_X86_AVX512FP16)
-    _mm_store_ph((void *) dst, src);
-#   else
-    _mm_store_si128((void *) dst, src.V0);
-#   endif
-    return  src;
-}
-
-INLINE(Vqwu,VQWU_STRQ) (Vqwu src, uint32_t volatile dst[4])
-{
-#   define  VQWU_STRQ   VQWU_STRQ
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqwi,VQWI_STRQ) (Vqwi src, int32_t volatile dst[4])
-{
-#   define  VQWI_STRQ   VQWI_STRQ
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqwf,VQWF_STRQ) (Vqwf src, float volatile dst[4])
-{
-#   define  VQWF_STRQ   VQWF_STRQ
-    _mm_store_ps((void *) dst, src);
-    return  src;
-}
-
-INLINE(Vqdu,VQDU_STRQ) (Vqdu src, uint64_t volatile dst[2])
-{
-#   define  VQDU_STRQ   VQDU_STRQ
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqdi,VQDI_STRQ) (Vqdi src, int64_t volatile dst[2])
-{
-#   define  VQDI_STRQ   VQDI_STRQ
-    vst1q_s64((void *) dst, src);
-    _mm_store_si128((void *) dst, src.V0);
-    return  src;
-}
-
-INLINE(Vqdf,VQDF_STRQ) (Vqdf src, double volatile dst[2])
-{
-#   define  VQDF_STRQ   VQDF_STRQ
-    _mm_store_pd((void *) dst, src);
-    return  src;
-}
-
-#endif
-
-#if _ENTER_EXTGOP_ARM_STR1
-{
-#endif
-
-
-#if _LEAVE_EXTGOP_ARM_STR1
-}
-#endif

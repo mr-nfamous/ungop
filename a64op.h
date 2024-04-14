@@ -13721,9 +13721,11 @@ INLINE(Vwwf,FLT_LUNWAC) (void const *a)
 {
 #endif
 
-/*  TODO: verify that there's any difference between e.g.
-    LD1.8B and LD1.4H in armv8. If they're identical, we
-    can dispense with this reinterpret cast convolution.
+/*  
+TODO: verify that there's any difference between e.g.
+LD1.8B and LD1.4H in armv8. If they're identical, we can
+dispense with this reinterpret cast convolution, both here
+and in sun*.
 */
 
 INLINE(Vdbu,UCHAR_LUNDAC) (void const *a)
@@ -13918,67 +13920,72 @@ INLINE(Vqdf,   DBL_LUNQAC) (void const *a)
 #if _ENTER_ARM_SUNW
 {
 #endif
+/*
+WORD_TYPE.M is a packed float
+*/
 
-INLINE(void *, UCHAR_SUNWA)   (void *a, Vwbu b)
+INLINE(Vwbu, UCHAR_SUNWA)   (void *dst, Vwbu src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWBU_ASTM(b)), a;
+    return  (((WORD_TYPE *) dst)->M.F=VWBU_ASTM(src)), src;
 }
 
-INLINE(void *, SCHAR_SUNWA)   (void *a, Vwbi b)
+INLINE(Vwbi, SCHAR_SUNWA)   (void *dst, Vwbi src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWBI_ASTM(b)), a;
+    return  (((WORD_TYPE *) dst)->M.F=VWBI_ASTM(src)), src;
 }
 
-INLINE(void *,  CHAR_SUNWA)   (void *a, Vwbc b)
+INLINE(Vwbc,  CHAR_SUNWA)   (void *dst, Vwbc src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWBC_ASTM(b)), a;
-}
-
-
-INLINE(void *, USHRT_SUNWA)   (void *a, Vwhu b)
-{
-    return  (((WORD_TYPE *) a)->M.F=VWHU_ASTM(b)), a;
-}
-
-INLINE(void *,  SHRT_SUNWA)   (void *a, Vwhi b)
-{
-    return  (((WORD_TYPE *) a)->M.F=VWHI_ASTM(b)), a;
-}
-
-INLINE(void *,  UINT_SUNWA)   (void *a, Vwwu b)
-{
-    return  (((WORD_TYPE *) a)->M.F=VWWU_ASTM(b)), a;
+    return  (((WORD_TYPE *) dst)->M.F=VWBC_ASTM(src)), src;
 }
 
 
-INLINE(void *,   INT_SUNWA)   (void *a, Vwwi b)
+INLINE(Vwhu, USHRT_SUNWA)   (void *dst, Vwhu src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWWI_ASTM(b)), a;
+    return  (((WORD_TYPE *) dst)->M.F=VWHU_ASTM(src)), src;
 }
+
+INLINE(Vwhi,  SHRT_SUNWA)   (void *dst, Vwhi src)
+{
+    return  (((WORD_TYPE *) dst)->M.F=VWHI_ASTM(src)), src;
+}
+
+
+INLINE(Vwwu,  UINT_SUNWA)   (void *dst, Vwwu src)
+{
+    return  (((WORD_TYPE *) dst)->M.F=VWWU_ASTM(src)), src;
+}
+
+INLINE(Vwwi,   INT_SUNWA)   (void *dst, Vwwi src)
+{
+    return  (((WORD_TYPE *) dst)->M.F=VWWI_ASTM(src)), src;
+}
+
 
 #if DWRD_NLONG == 2
 
-INLINE(void *, ULONG_SUNWA)   (void *a, Vwwu b)
+INLINE(Vwwu, ULONG_SUNWA)   (void *dst, Vwwu src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWWU_ASTM(b)), a;
+    return  (((WORD_TYPE *) dst)->M.F=VWWU_ASTM(src)), src;
 }
 
-INLINE(void *,  LONG_SUNWA)   (void *a, Vwwi b)
+INLINE(Vwwi,  LONG_SUNWA)   (void *dst, Vwwi src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWWI_ASTM(b)), a;
+    return  (((WORD_TYPE *) dst)->M.F=VWWI_ASTM(src)), src;
 }
 
 #endif
 
 
-INLINE(void *, FLT16_SUNWA)   (void *a, Vwhf b)
+INLINE(Vwhf, FLT16_SUNWA)   (void *dst, Vwhf src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWHF_ASTM(b)), a;
+    return  (((WORD_TYPE *) dst)->M.F=VWHF_ASTM(src)), src;
 }
 
-INLINE(void *, FLT_SUNWA)   (void *a, Vwwf b)
+INLINE(Vwwf, FLT_SUNWA)   (void *dst, Vwwf src)
 {
-    return  (((WORD_TYPE *) a)->M.F=VWWF_ASTM(b)), a;
+    ((WORD_TYPE *) dst)->M.F = VWWF_ASTM(src);
+    return  src;
 }
 
 
@@ -13990,504 +13997,236 @@ INLINE(void *, FLT_SUNWA)   (void *a, Vwwf b)
 {
 #endif
 
-INLINE(void *, UCHAR_SUNDA)   (void *a, Vdbu b)
+INLINE(Vdbu, UCHAR_SUNDA) (void *dst, Vdbu src)
 {
-    return  vst1_u8(a, b), a;
+    vst1_u8(dst, src);
+    return  src;
 }
 
-INLINE(void *, SCHAR_SUNDA)   (void *a, Vdbi b)
+INLINE(Vdbi, SCHAR_SUNDA) (void *dst, Vdbi src)
 {
-    return  vst1_u8(a, VDBI_ASBU(b)), a;
+    vst1_s8(dst, src);
+    return  src;
 }
 
-INLINE(void *,  CHAR_SUNDA)   (void *a, Vdbc b)
+INLINE(Vdbc,  CHAR_SUNDA) (void *dst, Vdbc src)
 {
-    return  vst1_u8(a, VDBC_ASBU(b)), a;
-}
-
-
-INLINE(void *, USHRT_SUNDA)   (void *a, Vdhu b)
-{
-    return  vst1_u8(a, VDHU_ASBU(b)), a;
-}
-
-INLINE(void *,  SHRT_SUNDA)   (void *a, Vdhi b)
-{
-    return  vst1_u8(a, VDHI_ASBU(b)), a;
+    vst1_u8(dst, VDBC_ASBU(src));
+    return  src;
 }
 
 
-INLINE(void *,  UINT_SUNDA)   (void *a, Vdwu b)
+INLINE(Vdhu, USHRT_SUNDA) (void *dst, Vdhu src)
 {
-    return  vst1_u8(a, VDWU_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_u16(src));
+    return  src;
 }
 
-INLINE(void *,   INT_SUNDA)   (void *a, Vdwi b)
+INLINE(Vdhi,  SHRT_SUNDA) (void *dst, Vdhi src)
 {
-    return  vst1_u8(a, VDWI_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_s16(src));
+    return  src;
 }
 
+
+
+INLINE(Vdwu,  UINT_SUNDA) (void *dst, Vdwu src)
+{
+    vst1_u8(dst, vreinterpret_u8_u32(src));
+    return  src;
+}
+
+INLINE(Vdwi,   INT_SUNDA) (void *dst, Vdwi src)
+{
+    vst1_u8(dst, vreinterpret_u8_s32(src));
+    return  src;
+}
 
 #if DWRD_NLONG == 2
 
-INLINE(void *, ULONG_SUNDA)   (void *a, Vdwu b)
+INLINE(Vdwu, ULONG_SUNDA) (void *dst, Vdwu src)
 {
-    return  UINT_SUNDA(a, b);
+    vst1_u8(dst, vreinterpret_u8_u32(src));
+    return  src;
 }
 
-INLINE(void *,  LONG_SUNDA)   (void *a, Vdwi b)
+INLINE(Vdwi,  LONG_SUNDA) (void *dst, Vdwi src)
 {
-    return  INT_SUNDA(a, b);
+    vst1_u8(dst, vreinterpret_u8_s32(src));
+    return  src;
 }
 
 #else
 
-INLINE(void *,  ULONG_SUNDA)   (void *a, Vddu b)
+INLINE(Vddu, ULONG_SUNDA) (void *dst, Vddu src)
 {
-    return  vst1_u8(a, VDDU_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_u64(src));
+    return  src;
 }
 
-INLINE(void *,  LONG_SUNDA)   (void *a, Vddi b)
+INLINE(Vddi,  LONG_SUNDA) (void *dst, Vddi src)
 {
-    return  vst1_u8(a, VDDI_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_s64(src));
+    return  src;
 }
 
 #endif
+
 
 #if QUAD_NLLONG == 2
 
-INLINE(void *,  ULLONG_SUNDA)   (void *a, Vddu b)
+INLINE(Vddu,ULLONG_SUNDA) (void *dst, Vddu src)
 {
-    return  vst1_u8(a, VDDU_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_u64(src));
+    return  src;
 }
 
-INLINE(void *,  LLONG_SUNDA)   (void *a, Vddi b)
+INLINE(Vddi, LLONG_SUNDA) (void *dst, Vddi src)
 {
-    return  vst1_u8(a, VDDI_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_s64(src));
+    return  src;
 }
 
 #endif
 
-
-INLINE(void *, FLT16_SUNDA)   (void *a, Vdhf b)
+INLINE(Vdhf, FLT16_SUNDA) (void *dst, Vdhf src)
 {
-    return  vst1_u8(a, VDHF_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_f16(src));
+    return  src;
 }
 
-INLINE(void *, FLT_SUNDA)   (void *a, Vdwf b)
+INLINE(Vdwf,   FLT_SUNDA) (void *dst, Vdwf src)
 {
-    return  vst1_u8(a, VDWF_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_f32(src));
+    return  src;
 }
 
-INLINE(void *, DBL_SUNDA)   (void *a, Vddf b)
+INLINE(Vddf,   DBL_SUNDA) (void *dst, Vddf src)
 {
-    return  vst1_u8(a, VDDF_ASBU(b)), a;
+    vst1_u8(dst, vreinterpret_u8_f64(src));
+    return  src;
 }
-
 
 #if _LEAVE_ARM_SUND
 }
 #endif
 
+
 #if _ENTER_ARM_SUNQ
 {
 #endif
 
-INLINE(void *, UCHAR_SUNQA)   (void *a, Vqbu b)
+INLINE(Vqbu, UCHAR_SUNQA) (void *dst, Vqbu src)
 {
-    return  vst1q_u8(a, b), a;
+    vst1q_u8(dst, src);
+    return  src;
 }
 
-INLINE(void *, SCHAR_SUNQA)   (void *a, Vqbi b)
+INLINE(Vqbi, SCHAR_SUNQA) (void *dst, Vqbi src)
 {
-    return  vst1q_s8(a, b), a;
+    vst1q_s8(dst, src);
+    return  src;
 }
 
-INLINE(void *,  CHAR_SUNQA)   (void *a, Vqbc b)
+INLINE(Vqbc,  CHAR_SUNQA) (void *dst, Vqbc src)
 {
-#if CHAR_MIN
-    return  vst1q_s8(a, VQBC_ASBI(b)), a;
-#else
-    return  vst1q_u8(a, VQBC_ASBU(b)), a;
-#endif
-}
-
-
-INLINE(void *, USHRT_SUNQA)   (void *a, Vqhu b)
-{
-    return  vst1q_u8(a, VQHU_ASBU(b)), a;
-}
-
-INLINE(void *,  SHRT_SUNQA)   (void *a, Vqhi b)
-{
-    return  vst1q_u8(a, VQHI_ASBU(b)), a;
+    vst1q_u8(dst, VQBC_ASBU(src));
+    return  src;
 }
 
 
-INLINE(void *,  UINT_SUNQA)   (void *a, Vqwu b)
+INLINE(Vqhu, USHRT_SUNQA) (void *dst, Vqhu src)
 {
-    return  vst1q_u8(a, VQWU_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_u16(src));
+    return  src;
 }
 
-INLINE(void *,   INT_SUNQA)   (void *a, Vqwi b)
+INLINE(Vqhi,  SHRT_SUNQA) (void *dst, Vqhi src)
 {
-    return  vst1q_u8(a, VQWI_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_s16(src));
+    return  src;
 }
 
+
+
+INLINE(Vqwu,  UINT_SUNQA) (void *dst, Vqwu src)
+{
+    vst1q_u8(dst, vreinterpretq_u8_u32(src));
+    return  src;
+}
+
+INLINE(Vqwi,   INT_SUNQA) (void *dst, Vqwi src)
+{
+    vst1q_u8(dst, vreinterpretq_u8_s32(src));
+    return  src;
+}
 
 #if DWRD_NLONG == 2
 
-INLINE(void *, ULONG_SUNQA)   (void *a, Vqwu b)
+INLINE(Vqwu, ULONG_SUNQA) (void *dst, Vqwu src)
 {
-    return  UINT_SUNQA(a, b);
+    vst1q_u8(dst, vreinterpretq_u8_u32(src));
+    return  src;
 }
 
-INLINE(void *,  LONG_SUNQA)   (void *a, Vqwi b)
+INLINE(Vqwi,  LONG_SUNQA) (void *dst, Vqwi src)
 {
-    return  INT_SUNQA(a, b);
+    vst1q_u8(dst, vreinterpretq_u8_s32(src));
+    return  src;
 }
 
 #else
 
-INLINE(void *,  ULONG_SUNQA)   (void *a, Vqdu b)
+INLINE(Vqdu, ULONG_SUNQA) (void *dst, Vqdu src)
 {
-    return  vst1q_u8(a, VQDU_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_u64(src));
+    return  src;
 }
 
-INLINE(void *,  LONG_SUNQA)   (void *a, Vqdi b)
+INLINE(Vqdi,  LONG_SUNQA) (void *dst, Vqdi src)
 {
-    return  vst1q_u8(a, VQDI_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_s64(src));
+    return  src;
 }
 
 #endif
+
 
 #if QUAD_NLLONG == 2
 
-INLINE(void *,  ULLONG_SUNQA)   (void *a, Vqdu b)
+INLINE(Vqdu,ULLONG_SUNQA) (void *dst, Vqdu src)
 {
-    return  vst1q_u8(a, VQDU_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_u64(src));
+    return  src;
 }
 
-INLINE(void *,  LLONG_SUNQA)   (void *a, Vqdi b)
+INLINE(Vqdi, LLONG_SUNQA) (void *dst, Vqdi src)
 {
-    return  vst1q_u8(a, VQDI_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_s64(src));
+    return  src;
 }
 
 #endif
 
-
-INLINE(void *, FLT16_SUNQA)   (void *a, Vqhf b)
+INLINE(Vqhf, FLT16_SUNQA) (void *dst, Vqhf src)
 {
-    return  vst1q_u8(a, VQHF_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_f16(src));
+    return  src;
 }
 
-INLINE(void *, FLT_SUNQA)   (void *a, Vqwf b)
+INLINE(Vqwf,   FLT_SUNQA) (void *dst, Vqwf src)
 {
-    return  vst1q_u8(a, VQWF_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_f32(src));
+    return  src;
 }
 
-INLINE(void *, DBL_SUNQA)   (void *a, Vqdf b)
+INLINE(Vqdf,   DBL_SUNQA) (void *dst, Vqdf src)
 {
-    return  vst1q_u8(a, VQDF_ASBU(b)), a;
+    vst1q_u8(dst, vreinterpretq_u8_f64(src));
+    return  src;
 }
-
 
 #if _LEAVE_ARM_SUNQ
-}
-#endif
-
-#if _ENTER_ARM_SUNN
-{
-#endif
-
-INLINE(  _Bool,  BOOL_SUNN) (  _Bool a, void *b)
-{
-    *(_Bool *) b = a;
-    return  a;
-}
-
-INLINE(  uchar, UCHAR_SUNN) (  uchar a, void *b)
-{
-    *(unsigned char *) b = a;
-    return  a;
-}
-
-INLINE(  schar, SCHAR_SUNN) (  schar a, void *b)
-{
-    *(signed char *) b = a;
-    return  a;
-}
-
-INLINE(   char,  CHAR_SUNN) (   char a, void *b)
-{
-    *(char *) b = a;
-    return  a;
-}
-
-INLINE( ushort, USHRT_SUNN) ( ushort a, void *b)
-{
-    ((USHRT_STG(TYPE) *) b)->M.U = a;
-    return  a;
-}
-
-INLINE(  short,  SHRT_SUNN) (  short a, void *b)
-{
-    ((SHRT_STG(TYPE) *) b)->M.I = a;
-    return  a;
-}
-
-INLINE(   uint,  UINT_SUNN) (   uint a, void *b)
-{
-    ((UINT_STG(TYPE) *) b)->M.U = a;
-    return  a;
-}
-
-INLINE(    int,  INT_SUNN) (     int a, void *b)
-{
-    ((INT_STG(TYPE) *) b)->M.I = a;
-    return  a;
-}
-
-INLINE(  ulong, ULONG_SUNN) (  ulong a, void *b)
-{
-    ((ULONG_STG(TYPE) *) b)->M.U = a;
-    return  a;
-}
-
-INLINE(   long,  LONG_SUNN) (   long a, void *b)
-{
-    ((LONG_STG(TYPE) *) b)->M.I = a;
-    return  a;
-}
-
-INLINE( ullong,ULLONG_SUNN) ( ullong a, void *b)
-{
-    ((ULLONG_STG(TYPE) *) b)->M.U = a;
-    return  a;
-}
-
-INLINE(  llong, LLONG_SUNN) (  llong a, void *b)
-{
-    ((LLONG_STG(TYPE) *) b)->M.I = a;
-    return  a;
-}
-
-INLINE(flt16_t, FLT16_SUNN) (flt16_t a, void *b)
-{
-    ((HALF_TYPE *) b)->M.F = a;
-    return  a;
-}
-
-INLINE(  float,   FLT_SUNN) (  float a, void *b)
-{
-    ((WORD_TYPE *) b)->M.F = a;
-    return  a;
-}
-
-INLINE( double,   DBL_SUNN) ( double a, void *b)
-{
-    ((DWRD_TYPE *) b)->M.F = a;
-    return  a;
-}
-
-INLINE(Vwbu,VWBU_SUNN) (Vwbu a, void *b)
-{
-    return  WBU_ASTV(FLT_SUNN(VWBU_ASTM(a), b));
-}
-
-INLINE(Vwbi,VWBI_SUNN) (Vwbi a, void *b)
-{
-    return  WBI_ASTV(FLT_SUNN(VWBI_ASTM(a), b));
-}
-
-INLINE(Vwbc,VWBC_SUNN) (Vwbc a, void *b)
-{
-    return  WBC_ASTV(FLT_SUNN(VWBC_ASTM(a), b));
-}
-
-
-INLINE(Vwhu,VWHU_SUNN) (Vwhu a, void *b)
-{
-    return  WHU_ASTV(FLT_SUNN(VWHU_ASTM(a), b));
-}
-
-INLINE(Vwhi,VWHI_SUNN) (Vwhi a, void *b)
-{
-    return  WHI_ASTV(FLT_SUNN(VWHI_ASTM(a), b));
-}
-
-INLINE(Vwhf,VWHF_SUNN) (Vwhf a, void *b)
-{
-    return  WHF_ASTV(FLT_SUNN(VWHF_ASTM(a), b));
-}
-
-
-INLINE(Vwwu,VWWU_SUNN) (Vwwu a, void *b)
-{
-    return  WWU_ASTV(FLT_SUNN(VWWU_ASTM(a), b));
-}
-
-INLINE(Vwwi,VWWI_SUNN) (Vwwi a, void *b)
-{
-    return  WWI_ASTV(FLT_SUNN(VWWI_ASTM(a), b));
-}
-
-INLINE(Vwwf,VWWF_SUNN) (Vwwf a, void *b)
-{
-    return  WWF_ASTV(FLT_SUNN(VWWF_ASTM(a), b));
-}
-
-
-INLINE(Vdbu,VDBU_SUNN) (Vdbu a, void *b)
-{
-    return  vst1_u8(b, a), a;
-}
-
-INLINE(Vdbi,VDBI_SUNN) (Vdbi a, void *b)
-{
-    return  vst1_s8(b, a), a;
-}
-
-INLINE(Vdbc,VDBC_SUNN) (Vdbc a, void *b)
-{
-#define     VDBC_SUNN(A, B) VDBU_ASBC(VDBU_SUNN(VDBC_ASBU(A),B))
-    return  VDBC_SUNN(a, b);
-}
-
-
-INLINE(Vdhu,VDHU_SUNN) (Vdhu a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_u16(a));
-    return  a;
-}
-
-INLINE(Vdhi,VDHI_SUNN) (Vdhi a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_s16(a));
-    return  a;
-}
-
-INLINE(Vdhf,VDHF_SUNN) (Vdhf a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_f16(a));
-    return  a;
-}
-
-
-INLINE(Vdwu,VDWU_SUNN) (Vdwu a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_u32(a));
-    return  a;
-}
-
-INLINE(Vdwi,VDWI_SUNN) (Vdwi a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_s32(a));
-    return  a;
-}
-
-INLINE(Vdwf,VDWF_SUNN) (Vdwf a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_f32(a));
-    return  a;
-}
-
-
-INLINE(Vddu,VDDU_SUNN) (Vddu a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_u64(a));
-    return  a;
-}
-
-INLINE(Vddi,VDDI_SUNN) (Vddi a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_s64(a));
-    return  a;
-}
-
-INLINE(Vddf,VDDF_SUNN) (Vddf a, void *b)
-{
-    vst1_u8(b, vreinterpret_u8_f64(a));
-    return  a;
-}
-
-
-INLINE(Vqbu,VQBU_SUNN) (Vqbu a, void *b)
-{
-    vst1q_u8(b, a);
-    return  a;
-}
-
-INLINE(Vqbi,VQBI_SUNN) (Vqbi a, void *b)
-{
-    vst1q_s8(b, a);
-    return  a;
-}
-
-INLINE(Vqbc,VQBC_SUNN) (Vqbc a, void *b)
-{
-#define     VQBC_SUNN(A, B) VQBU_ASBC(VQBU_SUNN(VQBC_ASBU(A),B))
-    return  VQBC_SUNN(a, b);
-}
-
-
-INLINE(Vqhu,VQHU_SUNN) (Vqhu a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_u16(a));
-    return  a;
-}
-
-INLINE(Vqhi,VQHI_SUNN) (Vqhi a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_s16(a));
-    return  a;
-}
-
-INLINE(Vqhf,VQHF_SUNN) (Vqhf a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_f16(a));
-    return  a;
-}
-
-
-INLINE(Vqwu,VQWU_SUNN) (Vqwu a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_u32(a));
-    return  a;
-}
-
-INLINE(Vqwi,VQWI_SUNN) (Vqwi a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_s32(a));
-    return  a;
-}
-
-INLINE(Vqwf,VQWF_SUNN) (Vqwf a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_f32(a));
-    return  a;
-}
-
-
-INLINE(Vqdu,VQDU_SUNN) (Vqdu a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_u64(a));
-    return  a;
-}
-
-INLINE(Vqdi,VQDI_SUNN) (Vqdi a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_s64(a));
-    return  a;
-}
-
-INLINE(Vqdf,VQDF_SUNN) (Vqdf a, void *b)
-{
-    vst1q_u8(b, vreinterpretq_u8_f64(a));
-    return  a;
-}
-
-#if _LEAVE_ARM_SUNN
 }
 #endif
 
@@ -14496,76 +14235,76 @@ INLINE(Vqdf,VQDF_SUNN) (Vqdf a, void *b)
 {
 #endif
 
-INLINE(  uchar *, UCHAR_STRWA)   (uchar a[4], Vwbu b)
+INLINE(Vwbu,UCHAR_STRWA)    (uchar dst[4], Vwbu src)
 {
-    ((WORD_TYPE *) a)->M.F = VWBU_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWBU_ASTM(src);
+    return  src;
 }
 
-INLINE(  schar *, SCHAR_STRWA)   (schar a[4], Vwbi b)
+INLINE(Vwbi,SCHAR_STRWA)    (schar dst[4], Vwbi src)
 {
-    ((WORD_TYPE *) a)->M.F = VWBI_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWBI_ASTM(src);
+    return  src;
 }
 
-INLINE(   char *,  CHAR_STRWA)    (char a[4], Vwbc b)
+INLINE(Vwbc, CHAR_STRWA)     (char dst[4], Vwbc src)
 {
-    ((WORD_TYPE *) a)->M.F = VWBC_ASTM(b);
-    return  a;
-}
-
-
-INLINE( ushort *, USHRT_STRWA)  (ushort a[2], Vwhu b)
-{
-    ((WORD_TYPE *) a)->M.F = VWHU_ASTM(b);
-    return  a;
-}
-
-INLINE(  short *,  SHRT_STRWA)   (short a[2], Vwhi b)
-{
-    ((WORD_TYPE *) a)->M.F = VWHI_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWBC_ASTM(src);
+    return  src;
 }
 
 
-INLINE(   uint *,  UINT_STRWA)    (uint a[1], Vwwu b)
+INLINE(Vwhu,USHRT_STRWA)   (ushort dst[2], Vwhu src)
 {
-    ((WORD_TYPE *) a)->M.F = VWWU_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWHU_ASTM(src);
+    return  src;
 }
 
-INLINE(    int *,   INT_STRWA)     (int a[1], Vwwi b)
+INLINE(Vwhi, SHRT_STRWA)    (short dst[2], Vwhi src)
 {
-    ((WORD_TYPE *) a)->M.F = VWWI_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWHI_ASTM(src);
+    return  src;
+}
+
+
+INLINE(Vwwu, UINT_STRWA)     (uint dst[1], Vwwu src)
+{
+    ((WORD_TYPE *) dst)->F = VWWU_ASTM(src);
+    return  src;
+}
+
+INLINE(Vwwi,  INT_STRWA)      (int dst[1], Vwwi src)
+{
+    ((WORD_TYPE *) dst)->F = VWWI_ASTM(src);
+    return  src;
 }
 
 #if DWRD_NLONG == 2
 
-INLINE(  ulong *, ULONG_STRWA)   (ulong a[1], Vwwu b)
+INLINE(Vwwu,ULONG_STRWA)    (ulong dst[1], Vwwu src)
 {
-    ((WORD_TYPE *) a)->M.F = VWWU_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWWU_ASTM(src);
+    return  dst;
 }
 
-INLINE(   long *,  LONG_STRWA)    (long a[1], Vwwi b)
+INLINE(Vwwi, LONG_STRWA)     (long dst[1], Vwwi src)
 {
-    ((WORD_TYPE *) a)->M.F = VWWI_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWWI_ASTM(src);
+    return  dst;
 }
 
 #endif
 
-INLINE(flt16_t *, FLT16_STRWA) (flt16_t a[2], Vwhf b)
+INLINE(Vwhf, FLT16_STRWA) (flt16_t dst[2], Vwhf src)
 {
-    ((WORD_TYPE *) a)->M.F = VWHF_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWHF_ASTM(src);
+    return  src;
 }
 
-INLINE(  float *,   FLT_STRWA)   (float a[1], Vwwf b)
+INLINE(Vwwf,   FLT_STRWA)   (float dst[1], Vwwf src)
 {
-    ((WORD_TYPE *) a)->M.F = VWWF_ASTM(b);
-    return  a;
+    ((WORD_TYPE *) dst)->F = VWWF_ASTM(src);
+    return  src;
 }
 
 #if _LEAVE_ARM_STRW
@@ -14576,96 +14315,114 @@ INLINE(  float *,   FLT_STRWA)   (float a[1], Vwwf b)
 {
 #endif
 
-INLINE(  uchar *, UCHAR_STRDA)   (uchar a[8], Vdbu b)
+INLINE(Vdbu, UCHAR_STRDA)   (uchar dst[8], Vdbu src)
 {
-    return  (vst1_u8(a, b), a);
+    vst1_u8(dst, src);
+    return  src;
 }
 
-INLINE(  schar *, SCHAR_STRDA)   (schar a[8], Vdbi b)
+INLINE(Vdbi, SCHAR_STRDA)   (schar dst[8], Vdbi src)
 {
-    return  (vst1_s8(a, b), a);
+    vst1_s8(dst, src);
+    return  src;
 }
 
-INLINE(   char *,  CHAR_STRDA)    (char a[8], Vdbc b)
+INLINE(Vdbc,  CHAR_STRDA)    (char dst[8], Vdbc src)
 {
-    return  (vst1_u8((uint8_t *) a, VDBC_ASBU(b)), a);
+    vst1_u8(((void *) dst), VDBC_ASBU(src));
+    return  src;
 }
 
-INLINE( ushort *, USHRT_STRDA)  (ushort a[4], Vdhu b)
+
+INLINE(Vdhu, USHRT_STRDA)  (ushort dst[4], Vdhu src)
 {
-    return  (vst1_u16(a, b), a);
+    vst1_u16(dst, src);
+    return  src;
 }
 
-INLINE(  short *,  SHRT_STRDA)   (short a[4], Vdhi b)
+INLINE(Vdhi,  SHRT_STRDA)   (short dst[4], Vdhi src)
 {
-    return  (vst1_s16(a, b), a);
+    vst1_s16(dst, src);
+    return  src;
 }
 
-INLINE(   uint *,  UINT_STRDA)    (uint a[2], Vdwu b)
+
+
+INLINE(Vdwu,  UINT_STRDA)    (uint dst[2], Vdwu src)
 {
-    return  (vst1_u32(a, b), a);
+    vst1_u32(dst, src);
+    return  src;
 }
 
-INLINE(    int *,   INT_STRDA)     (int a[2], Vdwi b)
+INLINE(Vdwi,   INT_STRDA)     (int dst[2], Vdwi src)
 {
-    return  (vst1_s32(a, b), a);
+    vst1_s32(dst, src);
+    return  src;
 }
 
 #if DWRD_NLONG == 2
 
-INLINE(  ulong *, ULONG_STRDA)   (ulong a[2], Vdwu b)
+INLINE(Vdwu, ULONG_STRDA)   (ulong dst[2], Vdwu src)
 {
-    return  (vst1_u32((uint32_t *) a, b), a);
+    vst1_u32(((uint32_t *) dst), src);
+    return  src;
 }
 
-INLINE(   long *,  LONG_STRDA)    (long a[2], Vdwi b)
+INLINE(Vdwi,  LONG_STRDA)    (long dst[2], Vdwi src)
 {
-    return  (vst1_s32((int32_t *) a, b), a);
+    vst1_s32(((int32_t *) dst), src);
+    return  src;
 }
 
 #else
 
-INLINE(  ulong *, ULONG_STRDA)   (ulong a[1], Vddu b)
+INLINE(Vddu, ULONG_STRDA)   (ulong dst[1], Vddu src)
 {
-    return  (vst1_u64(a, b), a);
+    vst1_u64(((uint64_t *) dst), src);
+    return  src;
 }
 
-INLINE(   long *,  LONG_STRDA)    (long a[1], Vddi b)
+INLINE(Vddi,  LONG_STRDA)    (long dst[1], Vddi src)
 {
-    return  (vst1_s64(a, b), a);
+    vst1_s64(((int64_t *) dst), src);
+    return  src;
 }
 
 #endif
+
 
 #if QUAD_NLLONG == 2
 
-INLINE( ullong *,ULLONG_STRDA)  (ullong a[1], Vddu b)
+INLINE(Vddu,ULLONG_STRDA)  (ullong dst[1], Vddu src)
 {
-    return  (vst1_u64((uint64_t *) a, b), a);
+    vst1_u64(((uint64_t *) dst), src);
+    return  src;
 }
 
-INLINE(  llong *, LLONG_STRDA)   (llong a[1], Vddi b)
+INLINE(Vddi, LLONG_STRDA)   (llong dst[1], Vddi src)
 {
-    return  (vst1_s64((int64_t *) a, b), a);
+    vst1_s64(((int64_t *) dst), src);
+    return  src;
 }
-
-#else
 
 #endif
 
-INLINE(flt16_t *, FLT16_STRDA) (flt16_t a[4], Vdhf b)
+INLINE(Vdhf, FLT16_STRDA) (flt16_t dst[4], Vdhf src)
 {
-    return  (vst1_f16(a, b), a);
+    vst1_f16(dst, src);
+    return  src;
 }
 
-INLINE(  float *,   FLT_STRDA)   (float a[2], Vdwf b)
+INLINE(Vdwf,   FLT_STRDA)   (float dst[2], Vdwf src)
 {
-    return  (vst1_f32(a, b), a);
+    vst1_f32(dst, src);
+    return  src;
 }
 
-INLINE( double *,   DBL_STRDA)  (double a[1], Vddf b)
+INLINE(Vddf,   DBL_STRDA)  (double dst[1], Vddf src)
 {
-    return  (vst1_f64(a, b), a);
+    vst1_f64(dst, src);
+    return  src;
 }
 
 #if _LEAVE_ARM_STRD
@@ -14676,298 +14433,117 @@ INLINE( double *,   DBL_STRDA)  (double a[1], Vddf b)
 {
 #endif
 
-INLINE(  uchar *, UCHAR_STRQA)   (uchar a[16], Vqbu b)
+INLINE(Vqbu, UCHAR_STRQA)   (uchar dst[16], Vqbu src)
 {
-    return  (vst1q_u8(a, b), a);
+    vst1q_u8(dst, src);
+    return  src;
 }
 
-INLINE(  schar *, SCHAR_STRQA)   (schar a[16], Vqbi b)
+INLINE(Vqbi, SCHAR_STRQA)   (schar dst[16], Vqbi src)
 {
-    return  (vst1q_s8(a, b), a);
+    vst1q_s8(dst, src);
+    return  src;
 }
 
-INLINE(   char *,  CHAR_STRQA)    (char a[16], Vqbc b)
+INLINE(Vqbc,  CHAR_STRQA)    (char dst[16], Vqbc src)
 {
-    return  (vst1q_u8((uint8_t *) a, VQBC_ASBU(b)), a);
-}
-
-
-INLINE( ushort *, USHRT_STRQA)  (ushort a[8], Vqhu b)
-{
-    return  (vst1q_u16(a, b), a);
-}
-
-INLINE(  short *,  SHRT_STRQA)   (short a[8], Vqhi b)
-{
-    return  (vst1q_s16(a, b), a);
+    vst1q_u8(((void *) dst), VQBC_ASBU(src));
+    return  src;
 }
 
 
-INLINE(   uint *,  UINT_STRQA)    (uint a[4], Vqwu b)
+INLINE(Vqhu, USHRT_STRQA)  (ushort dst[8], Vqhu src)
 {
-    return  (vst1q_u32(a, b), a);
+    vst1q_u16(dst, src);
+    return  src;
 }
 
-INLINE(    int *,   INT_STRQA)     (int a[4], Vqwi b)
+INLINE(Vqhi,  SHRT_STRQA)   (short dst[8], Vqhi src)
 {
-    return  (vst1q_s32(a, b), a);
+    vst1q_s16(dst, src);
+    return  src;
+}
+
+
+
+INLINE(Vqwu,  UINT_STRQA)    (uint dst[4], Vqwu src)
+{
+    vst1q_u32(dst, src);
+    return  src;
+}
+
+INLINE(Vqwi,   INT_STRQA)     (int dst[4], Vqwi src)
+{
+    vst1q_s32(dst, src);
+    return  src;
 }
 
 #if DWRD_NLONG == 2
 
-INLINE(  ulong *, ULONG_STRQA)   (ulong a[4], Vqwu b)
+INLINE(Vqwu, ULONG_STRQA)   (ulong dst[4], Vqwu src)
 {
-    return  (vst1q_u32((uint32_t *) a, b), a);
+    vst1q_u32(((uint32_t *) dst), src);
+    return  src;
 }
 
-INLINE(   long *,  LONG_STRQA)    (long a[4], Vqwi b)
+INLINE(Vqwi,  LONG_STRQA)    (long dst[4], Vqwi src)
 {
-    return  (vst1q_s32((int32_t *) a, b), a);
+    vst1q_s32(((int32_t *) dst), src);
+    return  src;
 }
 
 #else
 
-INLINE(  ulong *, ULONG_STRQA)   (ulong a[2], Vqdu b)
+INLINE(Vqdu, ULONG_STRQA)   (ulong dst[2], Vqdu src)
 {
-    return  (vst1q_u64(a, b), a);
+    vst1q_u64(((uint64_t *) dst), src);
+    return  src;
 }
 
-INLINE(   long *,  LONG_STRQA)    (long a[2], Vqdi b)
+INLINE(Vqdi,  LONG_STRQA)    (long dst[2], Vqdi src)
 {
-    return  (vst1q_s64(a, b), a);
+    vst1q_s64(((int64_t *) dst), src);
+    return  src;
 }
 
 #endif
+
 
 #if QUAD_NLLONG == 2
 
-INLINE( ullong *,ULLONG_STRQA)  (ullong a[2], Vqdu b)
+INLINE(Vqdu,ULLONG_STRQA)  (ullong dst[2], Vqdu src)
 {
-    return  (vst1q_u64((uint64_t *) a, b), a);
+    vst1q_u64(((uint64_t *) dst), src);
+    return  src;
 }
 
-INLINE(  llong *, LLONG_STRQA)   (llong a[2], Vqdi b)
+INLINE(Vqdi, LLONG_STRQA)   (llong dst[2], Vqdi src)
 {
-    return  (vst1q_s64((int64_t *) a, b), a);
+    vst1q_s64(((int64_t *) dst), src);
+    return  src;
 }
-
-#else
 
 #endif
 
-INLINE(flt16_t *, FLT16_STRQA) (flt16_t a[8], Vqhf b)
+INLINE(Vqhf, FLT16_STRQA) (flt16_t dst[8], Vqhf src)
 {
-    return  (vst1q_f16(a, b), a);
+    vst1q_f16(dst, src);
+    return  src;
 }
 
-INLINE(  float *,   FLT_STRQA)   (float a[4], Vqwf b)
+INLINE(Vqwf,   FLT_STRQA)   (float dst[4], Vqwf src)
 {
-    return  (vst1q_f32(a, b), a);
+    vst1q_f32(dst, src);
+    return  src;
 }
 
-INLINE( double *,   DBL_STRQA)  (double a[2], Vqdf b)
+INLINE(Vqdf,   DBL_STRQA)  (double dst[2], Vqdf src)
 {
-    return  (vst1q_f64(a, b), a);
+    vst1q_f64(dst, src);
+    return  src;
 }
 
 #if _LEAVE_ARM_STRQ
-}
-#endif
-
-#if _ENTER_ARM_STRN
-{
-#endif
-
-INLINE(float,WWF_STRN)(float src, void *dst)
-{
-    return (((WORD_TYPE *) dst)->M.F = src);
-}
-
-INLINE(Vwbu,VWBU_STRN) (Vwbu src, uint8_t dst[4])
-{
-#define     VWBU_STRN(SRC, DST) (WWF_STRN(VWBU_ASTM(SRC), DST), SRC)
-    return  VWBU_STRN(src, dst);
-}
-
-INLINE(Vwbi,VWBI_STRN) (Vwbi src,  int8_t dst[4])
-{
-#define     VWBI_STRN(SRC, DST) (WWF_STRN(VWBI_ASTM(SRC), DST), SRC)
-    return  VWBI_STRN(src, dst);
-}
-
-INLINE(Vwbc,VWBC_STRN) (Vwbc src, char dst[4])
-{
-#define     VWBC_STRN(SRC, DST) (WWF_STRN(VWBC_ASTM(SRC), DST), SRC)
-    return  VWBC_STRN(src, dst);
-}
-
-
-INLINE(Vwhu,VWHU_STRN) (Vwhu src, uint16_t dst[2])
-{
-#define     VWHU_STRN(SRC, DST) (WWF_STRN(VWHU_ASTM(SRC), DST), SRC)
-    return  VWHU_STRN(src, dst);
-}
-
-INLINE(Vwhi,VWHI_STRN) (Vwhi src, int16_t dst[2])
-{
-#define     VWHI_STRN(SRC, DST) (WWF_STRN(VWHI_ASTM(SRC), DST), SRC)
-    return  VWHI_STRN(src, dst);
-}
-
-INLINE(Vwhf,VWHF_STRN) (Vwhf src, flt16_t dst[2])
-{
-#define     VWHF_STRN(SRC, DST) (WWF_STRN(VWHF_ASTM(SRC), DST), SRC)
-    return  VWHF_STRN(src, dst);
-}
-
-
-INLINE(Vwwu,VWWU_STRN) (Vwwu src, uint32_t dst[1])
-{
-#define     VWWU_STRN(SRC, DST) (WWF_STRN(VWWU_ASTM(SRC), DST), SRC)
-    return  VWWU_STRN(src, dst);
-}
-
-INLINE(Vwwi,VWWI_STRN) (Vwwi src, int32_t dst[1])
-{
-#define     VWWI_STRN(SRC, DST) (WWF_STRN(VWWI_ASTM(SRC), DST), SRC)
-    return  VWWI_STRN(src, dst);
-}
-
-INLINE(Vwwf,VWWF_STRN) (Vwwf src,   float dst[1])
-{
-#define     VWWF_STRN(SRC, DST) (WWF_STRN(VWWF_ASTM(SRC), DST), SRC)
-    return  VWWF_STRN(src, dst);
-}
-
-
-INLINE(Vdbu,VDBU_STRN) (Vdbu src,  uint8_t dst[8])
-{
-    return  vst1_u8(dst, src), src;
-}
-
-INLINE(Vdbi,VDBI_STRN) (Vdbi src,   int8_t dst[8])
-{
-    return  vst1_s8(dst, src), src;
-}
-
-INLINE(Vdbc,VDBC_STRN) (Vdbc src,     char dst[8])
-{
-    return  vst1_u8((uint8_t *) dst, VDBC_ASBU(src)), src;
-}
-
-
-INLINE(Vdhu,VDHU_STRN) (Vdhu src, uint16_t dst[4])
-{
-    return  vst1_u16(dst, src), src;
-}
-
-INLINE(Vdhi,VDHI_STRN) (Vdhi src,  int16_t dst[4])
-{
-    return  vst1_s16(dst, src), src;
-}
-
-INLINE(Vdhf,VDHF_STRN) (Vdhf src,  flt16_t dst[4])
-{
-    return  vst1_f16(dst, src), src;
-}
-
-
-INLINE(Vdwu,VDWU_STRN) (Vdwu src, uint32_t dst[2])
-{
-    return  vst1_u32(dst, src), src;
-}
-
-INLINE(Vdwi,VDWI_STRN) (Vdwi src,  int32_t dst[2])
-{
-    return  vst1_s32(dst, src), src;
-}
-
-INLINE(Vdwf,VDWF_STRN) (Vdwf src,    float dst[2])
-{
-    return  vst1_f32(dst, src), src;
-}
-
-
-INLINE(Vddu,VDDU_STRN) (Vddu src, uint64_t dst[1])
-{
-    return  vst1_u64(dst, src), src;
-}
-
-INLINE(Vddi,VDDI_STRN) (Vddi src,  int64_t dst[1])
-{
-    return  vst1_s64(dst, src), src;
-}
-
-INLINE(Vddf,VDDF_STRN) (Vddf src,   double dst[1])
-{
-    return  vst1_f64(dst, src), src;
-}
-
-
-INLINE(Vqbu,VQBU_STRN) (Vqbu src, uint8_t dst[16])
-{
-    return  vst1q_u8(dst, src), src;
-}
-
-INLINE(Vqbi,VQBI_STRN) (Vqbi src,  int8_t dst[16])
-{
-    return  vst1q_s8(dst, src), src;
-}
-
-INLINE(Vqbc,VQBC_STRN) (Vqbc src,    char dst[16])
-{
-    return  vst1q_u8((uint8_t *) dst, VQBC_ASBU(src)), src;
-}
-
-
-INLINE(Vqhu,VQHU_STRN) (Vqhu src, uint16_t dst[8])
-{
-    return  vst1q_u16(dst, src), src;
-}
-
-INLINE(Vqhi,VQHI_STRN) (Vqhi src,  int16_t dst[8])
-{
-    return  vst1q_s16(dst, src), src;
-}
-
-INLINE(Vqhf,VQHF_STRN) (Vqhf src,  flt16_t dst[8])
-{
-    return  vst1q_f16(dst, src), src;
-}
-
-
-INLINE(Vqwu,VQWU_STRN) (Vqwu src, uint32_t dst[4])
-{
-    return  vst1q_u32(dst, src), src;
-}
-
-INLINE(Vqwi,VQWI_STRN) (Vqwi src,  int32_t dst[4])
-{
-    return  vst1q_s32(dst, src), src;
-}
-
-INLINE(Vqwf,VQWF_STRN) (Vqwf src,    float dst[4])
-{
-    return  vst1q_f32(dst, src), src;
-}
-
-
-INLINE(Vqdu,VQDU_STRN) (Vqdu src, uint64_t dst[2])
-{
-    return  vst1q_u64(dst, src), src;
-}
-
-INLINE(Vqdi,VQDI_STRN) (Vqdi src,  int64_t dst[2])
-{
-    return  vst1q_s64(dst, src), src;
-}
-
-INLINE(Vqdf,VQDF_STRN) (Vqdf src,   double dst[2])
-{
-    return  vst1q_f64(dst, src), src;
-}
-
-#if _LEAVE_ARM_STRN
 }
 #endif
 
@@ -33286,6 +32862,60 @@ INLINE(Vqdf,VQDF_FAMF) (Vqdf a, Vqdf b, Vqdf c)
 {
 #endif
 
+INLINE(   _Bool,VWYU_SUML) (Vwyu a)
+{
+    uint32_t v = VWWU_ASTV(VWYU_ASWU(a));
+    v = v^(v>>16);
+    v = v^(v>>8);
+    v = v^(v>>4);
+    v = v^(v>>2);
+    v = v^(v>>1);
+    return v;
+}
+
+INLINE( uint8_t,VWBU_SUML) (Vwbu a)
+{
+    uint8x8_t   v = vdup_n_u8(0);
+    float32x2_t m = vreinterpret_f32_u8(v);
+    m = vset_lane_f32(VWBU_ASTM(a), m, 0);
+    return  vaddv_u8(v);
+}
+
+INLINE(  int8_t,VWBI_SUML) (Vwbi a)
+{
+    int8x8_t    v = vdup_n_s8(0);
+    float32x2_t m = vreinterpret_f32_s8(v);
+    m = vset_lane_f32(VWBI_ASTM(a), m, 0);
+    return  vaddv_s8(v);
+}
+
+
+INLINE(    char,VWBC_SUML) (Vwbc a)
+{
+#if CHAR_MIN
+    return VWBI_SUML(VWBC_ASBI(a));
+#else
+    return VWBU_SUML(VWBC_ASBU(a));
+#endif
+}
+
+INLINE(uint16_t,VWHU_SUML) (Vwhu a)
+{
+    uint16x4_t  v = vdup_n_u16(0);
+    float32x2_t m = vreinterpret_f32_u16(v);
+    m = vset_lane_f32(VWHU_ASTM(a), m, 0);
+    return  vaddv_u16(v);
+}
+
+INLINE( int16_t,VWHI_SUML) (Vwhi a)
+{
+    int16x4_t   v = vdup_n_s16(0);
+    float32x2_t m = vreinterpret_f32_s16(v);
+    m = vset_lane_f32(VWHI_ASTM(a), m, 0);
+    return  vaddv_s16(v);
+}
+
+
 INLINE(   _Bool,VDYU_SUML) (Vdyu a)
 {
     uint64x1_t  m = VDYU_ASTM(a);
@@ -33364,6 +32994,54 @@ INLINE(  double,VQDF_SUML) (Vqdf a) {return vaddvq_f64(a);}
 {
 #endif
 
+INLINE( uint16_t,VWBU_SUM2) (Vwbu a)
+{
+    uint8x8_t   v = vdup_n_u8(0);
+    float32x2_t m = vreinterpret_f32_u8(v);
+    m = vset_lane_f32(VWBU_ASTM(a), m, 0);
+    return  vaddlv_u8(v);
+}
+
+INLINE(  int16_t,VWBI_SUM2) (Vwbi a)
+{
+    int8x8_t    v = vdup_n_s8(0);
+    float32x2_t m = vreinterpret_f32_s8(v);
+    m = vset_lane_f32(VWBI_ASTM(a), m, 0);
+    return  vaddlv_s8(v);
+}
+
+#if CHAR_MIN
+
+INLINE( int16_t,VWBC_SUM2) (Vwbc a)
+{
+    return VWBI_SUM2(VWBC_ASBI(a));
+}
+
+#else
+
+INLINE(uint16_t,VWBC_SUM2) (Vwbc a)
+{
+    return VWBU_SUM2(VWBC_ASBU(a));
+}
+
+#endif
+
+INLINE(uint32_t,VWHU_SUM2) (Vwhu a)
+{
+    uint16x4_t  v = vdup_n_u16(0);
+    float32x2_t m = vreinterpret_f32_u16(v);
+    m = vset_lane_f32(VWHU_ASTM(a), m, 0);
+    return  vaddlv_u16(v);
+}
+
+INLINE( int32_t,VWHI_SUM2) (Vwhi a)
+{
+    int16x4_t   v = vdup_n_s16(0);
+    float32x2_t m = vreinterpret_f32_s16(v);
+    m = vset_lane_f32(VWHI_ASTM(a), m, 0);
+    return  vaddlv_s16(v);
+}
+
 INLINE(uint16_t,VDBU_SUM2) (Vdbu a) {return vaddlv_u8(a);}
 INLINE( int16_t,VDBI_SUM2) (Vdbi a) {return vaddlv_s8(a);}
 #if CHAR_MIN
@@ -33382,7 +33060,7 @@ INLINE(uint16_t,VDBC_SUM2) (Vdbc a)
 
 INLINE(uint32_t,VDHU_SUM2) (Vdhu a) {return vaddlv_u16(a);}
 INLINE( int32_t,VDHI_SUM2) (Vdhi a) {return vaddlv_s16(a);}
-INLINE(   float,VDHF_SUM2) (Vdhf a) {return vaddvq_f32(vcvt_f32_f16(a));}
+
 
 INLINE(uint64_t,VDWU_SUM2) (Vdwu a) {return vaddlv_u32(a);}
 INLINE( int64_t,VDWI_SUM2) (Vdwi a) {return vaddlv_s32(a);}
@@ -33429,7 +33107,7 @@ INLINE(  double,VQWF_SUM2) (Vqwf a)
     return  vaddvq_f64(wl)+vaddvq_f64(wr);
 }
 
-#if _LEAVE_ARM_SUML
+#if _LEAVE_ARM_SUM2
 }
 #endif
 
@@ -33603,6 +33281,54 @@ INLINE( int64_t,VQDI_SUMS) (Vqdi a)
 }
 
 #if _LEAVE_ARM_SUMS
+}
+#endif
+
+
+#if _ENTER_ARM_SUMF
+{
+#endif
+
+INLINE(flt16_t,VWHF_SUMF) (Vwhf a)
+{
+    float16x4_t h = vdup_n_f16(0.0f16);
+    float32x2_t w = vreinterpret_f32_f16(h);
+    w = vset_lane_f32(VWHF_ASTM(a), w, 0);
+    float32x4_t q = vcvt_f32_f16(w);
+    return vaddvq_f32(q);
+}
+
+
+INLINE(flt16_t,VDHF_SUMF) (Vdhf a)
+{
+    return vaddvq_f32(vcvt_f32_f16(a));
+}
+
+INLINE(  float,VDWF_SUMF) (Vdwf a)
+{
+    return  vaddv_f32(a);
+}
+
+
+INLINE(flt16_t,VQHF_SUMF) (Vqhf a)
+{
+    float32x4_t l = vcvt_f32_f16(vget_low_f16(a));
+    float32x4_t r = vcvt_f32_f16(vget_high_f16(a));
+    return vaddvq_f32(l)+vaddvq_f32(r);
+}
+
+INLINE(  float,VQWF_SUMF) (Vqwf a)
+{
+    return  vaddvq_f32(a);
+}
+
+INLINE( double,VQDF_SUMF) (Vqdf a)
+{
+    return  vaddvq_f64(a);
+}
+
+
+#if _LEAVE_ARM_SUMF
 }
 #endif
 
