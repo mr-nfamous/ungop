@@ -1057,9 +1057,7 @@ Key:
     •suml(a) => REDUCE(addl, a)
     •sum2(a) => REDUCE(add2, a)
     •sums(a) => REDUCE(adds, a)
-    •sumh(a) => (flt16_t) REDUCE(adds, a)
-    •sumw(a) => (float) REDUCE(adds, a)
-    •sumd(a) => (double) REDUCE(adds, a)
+    •sumf(a) => REDUCE(addf, a)
 
 ### •sun· «Store register to UNaligned»
 
