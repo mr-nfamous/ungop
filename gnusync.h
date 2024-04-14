@@ -64,23 +64,6 @@
 There are no "op_fetch" ops, nor are there any plans to
 implement them. 
 
-The add/sub atomics for pointers are kinda exceptional in
-that they take a ptrdiff_t as the first operand. That is, 
-add1, adda, adde, addt, sub1, suba, sube, and subt are 
-semantically equivalent to something like:
-
-    void *
-    subaac(ptrdiff_t a, void const *b[1])
-    {
-        void *prev = ldr1acac(b);
-        str1ac((prev+a), b);
-        return prev;
-    }
-
-"Kinda" exceptional because the "ac" suffix, which roughly
-means "address constant", is a catch-all for anything pointer
-related.
-
 */
 
 typedef enum memory_order {
