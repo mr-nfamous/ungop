@@ -30112,7 +30112,7 @@ FUNCOF_AK(          \
 #if _ENTER_ZEQY
 {
 #endif
-/*  Elementwise compare '0 = e' (boolean)
+/*  Zero EQuals (boolean)
 
 Compare each element in the operand to zero. If true, in
 the corresponding result element store the integer 1 and
@@ -30204,7 +30204,13 @@ FUNCOF(             \
 #if _ENTER_ZEQS
 {
 #endif
-/*  Elementwise compare '0 = e' (saturated)
+/*  Zero EQuals (saturated)
+
+Compare each element in the operand to zero. If true, in
+the corresponding result element store the integer 1 and
+0 if false.
+
+Comparisons of NaN are undefined.
 */
 
 #define     zeqs(...) (zeqs_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30283,14 +30289,16 @@ FUNCOF(             \
 }
 #endif
 
+
 #if _ENTER_ZGEY
 {
 #endif
-/*  Elementwise compare '0 ≥ e' (boolean)
+/*  Zero Greater or Equal (boolean)
 
-Determine if zero is greater than or equal to each element
-in the operand, i.e. if each element is less than or equal
-to zero.
+For each element E in the operand, set the corresponding
+result element to 0 >= E
+
+Comparisons of NaN are undefined.
 */
 
 #define     zgey(...) (zgey_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30357,17 +30365,14 @@ FUNCOF(             \
 #if _ENTER_ZGES
 {
 #endif
-/*  Zero Greater or Equals (boolean)
+/*  Zero Greater or Equal (saturated)
 
-For each element E in the operand, set the corresponding
-result element to 1 if 0 >= E and 0 otherwise.
+For each element E in the operand, set all bits of the
+corresponding result element to the result of 0 >= E.
 
-For ints, the result's element type is the same as the
-operand's. For floats, the result is a signed int and both
--0 and +0 are considered zero.
-
-If any element is NaN, the result is undefined.
+Comparisons of NaN are undefined.
 */
+
 #define     zges(...) (zges_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     zges_funcof(A, ...)  \
 FUNCOF(             \
@@ -30436,7 +30441,9 @@ FUNCOF(             \
 /*  Zero Greater Than (boolean)
 
 For each element E in the operand, set the corresponding
-result element to 1 if 0 > E and 0 otherwise.
+result element to 0 > E
+
+Comparisons of NaN are undefined.
 */
 
 #define     zgty(...) (zgty_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30505,8 +30512,10 @@ FUNCOF(             \
 #endif
 /*  Zero Greater Than (saturated)
 
-For each element E in the operand, set the corresponding
-result element to -1 if 0 > E and 0 otherwise.
+For each element E in the operand, set all bits of the
+corresponding result element to the result of 0 > E.
+
+Comparisons of NaN are undefined.
 */
 
 #define     zgts(...) (zgts_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30570,19 +30579,16 @@ FUNCOF(             \
 }
 #endif
 
+
 #if _ENTER_ZNEY
 {
 #endif
 /*  Zero Not Equal (boolean)
 
 For each element E in the operand, set the corresponding
-result element to 1 if 0 != E and 0 otherwise.
+result element to 0 != E
 
-For integers, the result's element type is the same as the
-operand's. For floats, the result is a signed int and both
--0 and +0 are considered zero.
-
-If any element is NaN, the result is undefined.
+Comparisons of NaN are undefined.
 */
 
 #define     zney(...) (zney_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30670,14 +30676,10 @@ FUNCOF(             \
 #endif
 /*  Zero Not Equal (saturated)
 
-For each element E in the operand, set the corresponding
-result element to -1 if 0 != E and 0 otherwise.
+For each element E in the operand, set all bits of the
+corresponding result element to the result of 0 != E.
 
-For integers, the result's element type is the same as the
-operand's. For floats, the result is a signed int and both
--0 and +0 are considered zero.
-
-If any element is NaN, the result is undefined.
+Comparisons of NaN are undefined.
 */
 
 #define     znes(...) (znes_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30763,13 +30765,9 @@ FUNCOF(             \
 /*  Zero Less Than (boolean)
 
 For each element E in the operand, set the corresponding
-result element to 1 if 0 < E and 0 otherwise.
+result element to 0 < E
 
-For integers, the result's element type is the same as the
-operand's. For floats, the result is a signed int and both
--0 and +0 are considered zero.
-
-If any element is NaN, the result is undefined.
+Comparisons of NaN are undefined.
 */
 
 #define     zlty(...) (zlty_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30853,14 +30851,10 @@ FUNCOF(             \
 #endif
 /*  Zero Less Than (saturated)
 
-For each element E in the operand, set the corresponding
-result element to -1 if 0 < E and 0 otherwise.
+For each element E in the operand, set all bits of the
+corresponding result element to the result of 0 < E.
 
-For integers, the result's element type is the same as the
-operand's. For floats, the result is a signed int and both
--0 and +0 are considered zero.
-
-If any element is NaN, the result is undefined.
+Comparisons of NaN are undefined.
 */
 
 #define     zlts(...) (zlts_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -30946,7 +30940,9 @@ FUNCOF(             \
 /*  Zero Less or Equal (boolean)
 
 For each element E in the operand, set the corresponding
-result element to 1 if 0 <= E and 0 otherwise.
+result element to 0 <= E
+
+Comparisons of NaN are undefined.
 */
 
 #define     zley(...) (zley_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -31015,8 +31011,10 @@ FUNCOF(             \
 #endif
 /*  Zero Less or Equal (saturated)
 
-For each element E in the operand, set the corresponding
-result element to -1 if 0 <= E and 0 otherwise.
+For each element E in the operand, set all bits of the
+corresponding result element to the result of 0 <= E.
+
+Comparisons of NaN are undefined.
 */
 
 #define     zles(...) (zles_funcof(__VA_ARGS__)(__VA_ARGS__))
