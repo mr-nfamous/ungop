@@ -63,9 +63,9 @@
     }
     
     /*
-    Inplace capitalize nul terminated ASCII string. After 
-    handling an potentially unaligned pointer, simultaneously
-    capitalize 8 lowercase letters per operation. In this
+    Inplace capitalize NUL terminated ASCII string. After 
+    handling a potentially unaligned pointer, simultaneously
+    capitalize 8 lowercase letters per iteration. In this
     example, the type specific forms are always used. 
     
     Newly introduced ops include:
@@ -76,6 +76,7 @@
     * strdabc: str+d+abc = store char×8 to 8B aligned 
     
     */
+
     char *
     my_strupr(char str[])
     {
