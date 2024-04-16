@@ -35,8 +35,6 @@
     significant bit. NOTE: arm doesn't have SIMD cszl for 64
     bit operands. I.e. cszlddu is implemented as a mov from 
     vector to x-greg followed by ctz.
-    
-    
     */
     
     size_t 
@@ -64,4 +62,66 @@
         return (len-off)+(cszl(bar)/8);
     }
     
+    /*
+    Inplace capitalize nul terminated ASCII string. After 
+    handling an potentially unaligned pointer, simultaneously
+    capitalize 8 lowercase letters per operation. In this
+    example, the type specific forms are always used. 
     
+    Newly introduced ops include:
+    
+    * subldbc: sub+l+dbc = (char×8 - char×8)
+    * cbnsdbc: cbn+s+dbc = saturated ((a[0] < b) && (a[0] < c))
+    * dupdbc:  dup+d+bc  = (char×8){k,k,k,k, k,k,k,k}
+    * strdabc: str+d+abc = store char×8 to 8B aligned 
+    
+    */
+    char *
+    my_strupr(char str[])
+    {
+        size_t      off = 0x7&(uintptr_t) str;
+        char       *ret = str;
+        Vdbc        vec;
+        Vdbc        end;
+        uint64_t    bar;
+        int ctr = 0;
+        if (off)
+        {
+            str -= off;
+            for (; off < 8; off++)
+            {
+                if (!str[off]) 
+                    return ret;
+                str[off] -= (32&cbnsbc(str[off], 'a', 'z'));
+            }
+            str += 8;
+        }
+        for (;;str+=8)
+        {
+            vec = ldrdacbc(str);
+            end = zeqsdbc(vec);
+            bar = astvddu(asdudbc(end));
+            if (ctr++ > 100)
+            {
+                printf("oops\n");
+                return ret;
+            }
+            if (bar)
+            {
+                for (off=0; str[off] && (off < 8); off++)
+                {
+                    str[off] -= (32&cbnsbc(str[off], 'a', 'z'));
+                }
+                break;
+            }
+            vec = subldbc(
+                vec, 
+                andsdbc(
+                    dupdbc(32),
+                    cbnsdbc(vec, 'a', 'z')
+                )
+            );
+            (void) strdabc(str, vec);
+        }
+        return  ret;
+    }
