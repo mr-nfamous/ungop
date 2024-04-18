@@ -1,32 +1,20 @@
+# USAGE
 
-# HISTORY
+Perhaps this isn't self explanatory after all... To use, save
+a copy of all of the ".h" files in the top level include
+directory of your project. Then, put:
 
-    ...
-    |
-    +-- V15:
-    |   *   Renamed 'ldn' to 'lun'
-    |   *   Renamed 'stn' to 'sun'
-    |
-    +-- V16:
-    |   *   Renamed 'vxt' to 'get'
-    |   *   Renamed 'vst' to 'set'
-    |
-    +-- V17:
-    |   *   Renamed neq to cne
-    |   *   Deleted nlt
-    |   *   Deleted nle
-    |   *   Deleted ngt
-    |   *   Deleted nge
-    |
-    +-- V18:
-    |   *   Merged multiple sources into singular the "ungop.h"
-    |
-    +-- V19:
-    |   *   Renamed invt to invs
-    |   *   Deleted several kilobytes worth of trailing spaces
+    #include "ungop.h"
+    
+somewhere at or very near the top of each translation unit.
 
-NOTE: the version number is completely arbitrary at this
-point.
+This will automatically include several standard library 
+headers and detect the target architecture based on whatever
+well known feature test macros are available. Once we know
+the target and what supplementary processor features are
+available, one of the target specific headers will be 
+included. 
+
 
 # ABOUT
 
