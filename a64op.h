@@ -11,7 +11,6 @@ Microsoft implements the ACLE.
 
 #ifdef SPC_ARM_NEON
 
-
 INLINE(flt16_t, FLT16_ANDS) (flt16_t a, flt16_t b)
 {
     return  (
@@ -3093,7 +3092,7 @@ vget_lane_f32(                                  \
             -1, -1, -1, -1                      \
         )                                       \
     ),                                          \
-    V2_K0                                       \
+    0                                           \
 )
 
 #define     WH_PERM(A, B, K0, K1)               \
@@ -3105,7 +3104,7 @@ vget_lane_f32(                                  \
             K0, K1, -1, -1                      \
         )                                       \
     ),                                          \
-    V2_K0                                       \
+    0                                           \
 )
 
 
@@ -3872,7 +3871,7 @@ vget_lane_f32(                                  \
             -1, -1, -1, -1                      \
         )                                       \
     ),                                          \
-    V2_K0                                       \
+    0                                           \
 )
 
 #define     WH_PERS(v, H0, H1)                  \
@@ -3883,7 +3882,7 @@ vget_lane_f32(                                  \
             H0, H1, -1, -1                      \
         )                                       \
     ),                                          \
-    V2_K0                                       \
+    0                                           \
 )
 
 
@@ -5547,7 +5546,7 @@ INLINE(Vwbu,VDHU_CVBU) (Vdhu x)
     uint8x8_t   b = vreinterpret_u8_u16(x);
     b = vuzp1_u8(b, b);
     float32x2_t m = vreinterpret_f32_u8(b);
-    return  WBU_ASTV(vget_lane_f32(m, V2_K0));
+    return  WBU_ASTV(vget_lane_f32(m, 0));
 }
 
 INLINE(Vwbu,VDHI_CVBU) (Vdhi x)
@@ -5555,7 +5554,7 @@ INLINE(Vwbu,VDHI_CVBU) (Vdhi x)
     uint8x8_t   b = vreinterpret_u8_s16(x);
     b = vuzp1_u8(b, b);
     float32x2_t m = vreinterpret_f32_u8(b);
-    return  WBU_ASTV(vget_lane_f32(m, V2_K0));
+    return  WBU_ASTV(vget_lane_f32(m, 0));
 }
 
 INLINE(Vwbu,VDHF_CVBU) (Vdhf x)
@@ -5633,7 +5632,7 @@ INLINE(Vwbu,VQWU_CVBU) (Vqwu x)
     uint64x1_t  m = vdup_n_u64(0xffffffff0c080400ull);
     uint8x8_t   t = vreinterpret_u8_u64(m);
     t = vqtbl1_u8(b, t);
-    return  WBU_ASTV(vget_lane_f32(vreinterpret_f32_u8(t), V2_K0));
+    return  WBU_ASTV(vget_lane_f32(vreinterpret_f32_u8(t), 0));
 }
 
 INLINE(Vwbu,VQWI_CVBU) (Vqwi x)
@@ -5719,7 +5718,7 @@ INLINE(Vwbi,VQWI_CVBI) (Vqwi x)
     //                                    3 2 1 0
     uint8x8_t   t = vreinterpret_u8_u64(m);
     t = vqtbl1_u8(b, t);
-    return WBI_ASTV(vget_lane_f32(vreinterpret_f32_u8(t), V2_K0));
+    return WBI_ASTV(vget_lane_f32(vreinterpret_f32_u8(t), 0));
 }
 
 INLINE(Vwbi,VQWF_CVBI) (Vqwf x)
@@ -5958,7 +5957,7 @@ INLINE(float,WBI_CVBZ) (float m)
     float32x2_t d = vdup_n_f32(m);
     int16x8_t   q = vmovl_s8(vreinterpret_s8_f32(d));
     d = vreinterpret_f32_u8(vqmovun_s16(q));
-    return  vget_lane_f32(d, V2_K0);
+    return  vget_lane_f32(d, 0);
 }
 
 INLINE(Vwbu,VWBU_CVBZ) (Vwbu x) {return x;}
@@ -6048,7 +6047,7 @@ vget_lane_f32(                      \
     uint16x8_t  qhu = vcombine_u16(dhu, VDHU_VOID);
     uint8x8_t   dbu = vqmovn_u16(qhu);
     float32x2_t dwf = vreinterpret_f32_u8(dbu);
-    return  WBU_ASTV(vget_lane_f32(dwf, V2_K0));
+    return  WBU_ASTV(vget_lane_f32(dwf, 0));
 #endif
 }
 
@@ -6101,7 +6100,7 @@ vget_lane_f32(                      \
             )                       \
         )                           \
     ),                              \
-    V2_K0                           \
+    0                               \
 )
 
 #define     VQWF_CVBZ(V)            WBU_ASTV(QWF_CVBZ(VQWF_ASTM(V)))
@@ -19394,7 +19393,7 @@ INLINE(uchar,SCHAR_ABSU)  (schar a)
 INLINE(uchar, CHAR_ABSU)   (char a)
 {
 #if CHAR_MIN
-    return  SCHAR_ASBU(a);
+    return  SCHAR_ABSU(a);
 #else
     return  a;
 #endif
@@ -47738,6 +47737,10 @@ INLINE(Vqdu,VQDI_DIFU) (Vqdi a, Vqdi b)
 #if _LEAVE_ARM_DIFU
 }
 #endif
+
+#else
+
+#include "anyop.h"
 
 #endif // #ifdef SPC_ARM_NEON
 

@@ -11,6 +11,12 @@ clang
 -I/sdcard/C
 '''
 
+CHANGES:
+
+    23-04-17
+    * created anyop.h
+    * deleted some more 256/512 bit vector types
+    
 */
 
 #if _ENTER_EXTDEF
@@ -2474,7 +2480,11 @@ typedef QUAD_FTYPE flt128_t;
 {
 #endif
 
-typedef struct Yu8  {_Bool MY_NV8(I,:1);}   Yu8;
+typedef struct Yu8      {_Bool MY_NV8(K,:1);}   Yu8;
+typedef struct Yu16     {_Bool MY_NV16(K,:1);}  Yu16;
+typedef struct Yu32     {_Bool MY_NV32(K,:1);}  Yu32;
+typedef struct Yu64     {_Bool MY_NV64(K,:1);}  Yu64;
+typedef struct Yu128    {_Bool MY_NV128(K,:1);}  Yu128;
 
 typedef struct Bc1  {char MY_NV1(K,);}      Bc1;
 typedef struct Bc2  {char MY_NV2(K,);}      Bc2;
@@ -4771,6 +4781,8 @@ types. Length (M) is encoded in 4 bits using the following:
 {
 #endif
 
+#undef SPC_ARM_NEON
+
 #if defined(SPC_ARM_NEON)
 
 /*  A clang/LLVM compiler is required for arm targets, at
@@ -5284,6 +5296,37 @@ types. Length (M) is encoded in 4 bits using the following:
 }
 #endif
 
+#if CHAR_MIN
+
+#   ifndef  VWBC_REPR
+#   define  VWBC_REPR   REPR_VWBI
+#   endif
+
+#   ifndef  VDBC_REPR
+#   define  VDBC_REPR   REPR_VDBI
+#   endif
+
+#   ifndef  VQBC_REPR
+#   define  VQBC_REPR   REPR_VQBI
+#   endif
+
+#else
+
+#   ifndef  VWBC_REPR
+#   define  VWBC_REPR   REPR_VWBU
+#   endif
+
+#   ifndef  VDBC_REPR
+#   define  VDBC_REPR   REPR_VDBU
+#   endif
+
+#   ifndef  VQBC_REPR
+#   define  VQBC_REPR   REPR_VQBU
+#   endif
+
+#endif
+
+
 #if _ENTER_EXTVEC_VW_REPR
 {
 #endif
@@ -5301,6 +5344,10 @@ types. Length (M) is encoded in 4 bits using the following:
 #ifndef     VWBI_REPR
 #define     VWBI_REPR   REPR_BI4
 #define     VWBI_TYPE   struct Bi4
+#endif
+
+#ifndef     VWBC_TYPE
+#define     VWBC_TYPE   struct Bc4
 #endif
 
 #ifndef     VWHU_REPR
@@ -5333,7 +5380,6 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     VWWF_TYPE   struct Wf1
 #endif
 
-
 #if _LEAVE_EXTVEC_VW_REPR
 }
 #endif
@@ -5357,6 +5403,9 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     VDBI_TYPE   struct Bi8
 #endif
 
+#ifndef     VDBC_TYPE
+#define     VDBC_TYPE   struct Bc8
+#endif
 
 #ifndef     VDHU_REPR
 #define     VDHU_REPR   REPR_HU4
@@ -5426,6 +5475,10 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     VQBI_TYPE   struct Bi16
 #endif
 
+#ifndef     VQBC_TYPE
+#define     VQBC_TYPE   struct Bc16
+#endif
+
 
 #ifndef     VQHU_REPR
 #define     VQHU_REPR   REPR_HU8
@@ -5474,138 +5527,6 @@ types. Length (M) is encoded in 4 bits using the following:
 #endif
 
 #if _LEAVE_EXTVEC_VQ_REPR
-}
-#endif
-
-#if _ENTER_EXTVEC_VO_REPR
-{
-#endif
-
-#ifndef     VOBU_REPR
-#define     VOBU_REPR   REPR_BU32
-#define     VOBU_TYPE   struct Bu32
-#endif
-
-#ifndef     VOBI_REPR
-#define     VOBI_REPR   REPR_BI32
-#define     VOBI_TYPE   struct Bi32
-#endif
-
-
-#ifndef     VOHU_REPR
-#define     VOHU_REPR   REPR_HU16
-#define     VOHU_TYPE   struct Hu16
-#endif
-
-#ifndef     VOHI_REPR
-#define     VOHI_REPR   REPR_HI16
-#define     VOHI_TYPE   struct Hi16
-#endif
-
-#ifndef     VOHF_REPR
-#define     VOHF_REPR   REPR_HF16
-#define     VOHF_TYPE   struct Hf16
-#endif
-
-
-#ifndef     VOWU_REPR
-#define     VOWU_REPR   REPR_WU8
-#define     VOWU_TYPE   struct Wu8
-#endif
-
-#ifndef     VOWI_REPR
-#define     VOWI_REPR   REPR_WI8
-#define     VOWI_TYPE   struct Wi8
-#endif
-
-#ifndef     VOWF_REPR
-#define     VOWF_REPR   REPR_WF8
-#define     VOWF_TYPE   struct Wf8
-#endif
-
-
-#ifndef     VODU_REPR
-#define     VODU_REPR   REPR_DU4
-#define     VODU_TYPE   struct Du4
-#endif
-
-#ifndef     VODI_REPR
-#define     VODI_REPR   REPR_DI4
-#define     VODI_TYPE   struct Di4
-#endif
-
-#ifndef     VODF_REPR
-#define     VODF_REPR   REPR_DF4
-#define     VODF_TYPE   struct Df4
-#endif
-
-#if _LEAVE_EXTVEC_VO_REPR
-}
-#endif
-
-#if _ENTER_EXTVEC_VS_REPR
-{
-#endif
-
-#ifndef     VSBU_REPR
-#define     VSBU_REPR   REPR_BU64
-#define     VSBU_TYPE   struct Bu64
-#endif
-
-#ifndef     VSBI_REPR
-#define     VSBI_REPR   REPR_BI64
-#define     VSBI_TYPE   struct Bi64
-#endif
-
-
-#ifndef     VSHU_REPR
-#define     VSHU_REPR   REPR_HU32
-#define     VSHU_TYPE   struct Hu32
-#endif
-
-#ifndef     VSHI_REPR
-#define     VSHI_REPR   REPR_HI32
-#define     VSHI_TYPE   struct Hi32
-#endif
-
-#ifndef     VSHF_REPR
-#define     VSHF_REPR   REPR_HF32
-#define     VSHF_TYPE   struct Hf32
-#endif
-
-
-#ifndef     VSWU_REPR
-#define     VSWU_REPR   REPR_WU16
-#define     VSWU_TYPE   struct Wu16
-#endif
-
-#ifndef     VSWI_REPR
-#define     VSWI_REPR   REPR_WI16
-#define     VSWI_TYPE   struct Wi16
-#endif
-
-#ifndef     VSWF_REPR
-#define     VSWF_REPR   REPR_WF16
-#define     VSWF_TYPE   struct Wf16
-#endif
-
-
-#ifndef     VSDU_REPR
-#define     VSDU_REPR   REPR_DU8
-#define     VSDU_TYPE   struct Du8
-#endif
-
-#ifndef     VSDI_REPR
-#define     VSDI_REPR   REPR_DI8
-#define     VSDI_TYPE   struct Di8
-#endif
-
-#ifndef     VSDF_REPR
-#define     VSDF_REPR   REPR_DF8
-#define     VSDF_TYPE   struct Df8
-#endif
-
-#if _LEAVE_EXTVEC_VS_REPR
 }
 #endif
 
@@ -5838,7 +5759,6 @@ struct Whi1 {
         struct {VWHI_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Whi2 {
     union {
 #   if defined(VWHI_M2TYPE)
@@ -5847,7 +5767,6 @@ struct Whi2 {
         struct {VWHI_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Whi3 {
     union {
 #   if defined(VWHI_M3TYPE)
@@ -5856,7 +5775,6 @@ struct Whi3 {
         struct {VWHI_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Whi4 {
     union {
 #   if defined(VWHI_M4TYPE)
@@ -5880,7 +5798,6 @@ struct Whf1 {
         struct {VWHF_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Whf2 {
     union {
 #   if defined(VWHF_M2TYPE)
@@ -5889,7 +5806,6 @@ struct Whf2 {
         struct {VWHF_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Whf3 {
     union {
 #   if defined(VWHF_M3TYPE)
@@ -5898,7 +5814,6 @@ struct Whf3 {
         struct {VWHF_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Whf4 {
     union {
 #   if defined(VWHF_M4TYPE)
@@ -5923,7 +5838,6 @@ struct Wwu1 {
         struct {VWWU_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Wwu2 {
     union {
 #   if defined(VWWU_M2TYPE)
@@ -5932,7 +5846,6 @@ struct Wwu2 {
         struct {VWWU_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Wwu3 {
     union {
 #   if defined(VWWU_M3TYPE)
@@ -5941,7 +5854,6 @@ struct Wwu3 {
         struct {VWWU_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Wwu4 {
     union {
 #   if defined(VWWU_M4TYPE)
@@ -5965,7 +5877,6 @@ struct Wwi1 {
         struct {VWWI_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Wwi2 {
     union {
 #   if defined(VWWI_M2TYPE)
@@ -5974,7 +5885,6 @@ struct Wwi2 {
         struct {VWWI_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Wwi3 {
     union {
 #   if defined(VWWI_M3TYPE)
@@ -5983,7 +5893,6 @@ struct Wwi3 {
         struct {VWWI_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Wwi4 {
     union {
 #   if defined(VWWI_M4TYPE)
@@ -6007,7 +5916,6 @@ struct Wwf1 {
         struct {VWWF_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Wwf2 {
     union {
 #   if defined(VWWF_M2TYPE)
@@ -6016,7 +5924,6 @@ struct Wwf2 {
         struct {VWWF_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Wwf3 {
     union {
 #   if defined(VWWF_M3TYPE)
@@ -6025,7 +5932,6 @@ struct Wwf3 {
         struct {VWWF_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Wwf4 {
     union {
 #   if defined(VWWF_M4TYPE)
@@ -6137,7 +6043,6 @@ struct Dyu1 {
         struct {VDYU_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dyu2 {
     union {
 #   if defined(VDYU_M2TYPE)
@@ -6146,7 +6051,6 @@ struct Dyu2 {
         struct {VDYU_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dyu3 {
     union {
 #   if defined(VDYU_M3TYPE)
@@ -6155,7 +6059,6 @@ struct Dyu3 {
         struct {VDYU_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dyu4 {
     union {
 #   if defined(VDYU_M4TYPE)
@@ -6179,7 +6082,6 @@ struct Dbu1 {
         struct {VDBU_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dbu2 {
     union {
 #   if defined(VDBU_M2TYPE)
@@ -6188,7 +6090,6 @@ struct Dbu2 {
         struct {VDBU_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dbu3 {
     union {
 #   if defined(VDBU_M3TYPE)
@@ -6197,7 +6098,6 @@ struct Dbu3 {
         struct {VDBU_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dbu4 {
     union {
 #   if defined(VDBU_M4TYPE)
@@ -6221,7 +6121,6 @@ struct Dbi1 {
         struct {VDBI_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dbi2 {
     union {
 #   if defined(VDBI_M2TYPE)
@@ -6230,7 +6129,6 @@ struct Dbi2 {
         struct {VDBI_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dbi3 {
     union {
 #   if defined(VDBI_M3TYPE)
@@ -6239,7 +6137,6 @@ struct Dbi3 {
         struct {VDBI_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dbi4 {
     union {
 #   if defined(VDBI_M4TYPE)
@@ -6263,7 +6160,6 @@ struct Dbc1 {
         struct {VDBC_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dbc2 {
     union {
 #   if defined(VDBC_M2TYPE)
@@ -6272,7 +6168,6 @@ struct Dbc2 {
         struct {VDBC_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dbc3 {
     union {
 #   if defined(VDBC_M3TYPE)
@@ -6281,7 +6176,6 @@ struct Dbc3 {
         struct {VDBC_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dbc4 {
     union {
 #   if defined(VDBC_M4TYPE)
@@ -6305,7 +6199,6 @@ struct Dhu1 {
         struct {VDHU_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dhu2 {
     union {
 #   if defined(VDHU_M2TYPE)
@@ -6314,7 +6207,6 @@ struct Dhu2 {
         struct {VDHU_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dhu3 {
     union {
 #   if defined(VDHU_M3TYPE)
@@ -6323,7 +6215,6 @@ struct Dhu3 {
         struct {VDHU_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dhu4 {
     union {
 #   if defined(VDHU_M4TYPE)
@@ -6347,7 +6238,6 @@ struct Dhi1 {
         struct {VDHI_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dhi2 {
     union {
 #   if defined(VDHI_M2TYPE)
@@ -6356,7 +6246,6 @@ struct Dhi2 {
         struct {VDHI_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dhi3 {
     union {
 #   if defined(VDHI_M3TYPE)
@@ -6365,7 +6254,6 @@ struct Dhi3 {
         struct {VDHI_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dhi4 {
     union {
 #   if defined(VDHI_M4TYPE)
@@ -6389,7 +6277,6 @@ struct Dhf1 {
         struct {VDHF_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dhf2 {
     union {
 #   if defined(VDHF_M2TYPE)
@@ -6398,7 +6285,6 @@ struct Dhf2 {
         struct {VDHF_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dhf3 {
     union {
 #   if defined(VDHF_M3TYPE)
@@ -6407,7 +6293,6 @@ struct Dhf3 {
         struct {VDHF_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dhf4 {
     union {
 #   if defined(VDHF_M4TYPE)
@@ -6432,7 +6317,6 @@ struct Dwu1 {
         struct {VDWU_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dwu2 {
     union {
 #   if defined(VDWU_M2TYPE)
@@ -6441,7 +6325,6 @@ struct Dwu2 {
         struct {VDWU_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dwu3 {
     union {
 #   if defined(VDWU_M3TYPE)
@@ -6450,7 +6333,6 @@ struct Dwu3 {
         struct {VDWU_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dwu4 {
     union {
 #   if defined(VDWU_M4TYPE)
@@ -6474,7 +6356,6 @@ struct Dwi1 {
         struct {VDWI_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dwi2 {
     union {
 #   if defined(VDWI_M2TYPE)
@@ -6483,7 +6364,6 @@ struct Dwi2 {
         struct {VDWI_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dwi3 {
     union {
 #   if defined(VDWI_M3TYPE)
@@ -6492,7 +6372,6 @@ struct Dwi3 {
         struct {VDWI_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dwi4 {
     union {
 #   if defined(VDWI_M4TYPE)
@@ -6516,7 +6395,6 @@ struct Dwf1 {
         struct {VDWF_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Dwf2 {
     union {
 #   if defined(VDWF_M2TYPE)
@@ -6525,7 +6403,6 @@ struct Dwf2 {
         struct {VDWF_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Dwf3 {
     union {
 #   if defined(VDWF_M3TYPE)
@@ -6534,7 +6411,6 @@ struct Dwf3 {
         struct {VDWF_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Dwf4 {
     union {
 #   if defined(VDWF_M4TYPE)
@@ -6558,7 +6434,6 @@ struct Ddu1 {
         struct {VDDU_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Ddu2 {
     union {
 #   if defined(VDDU_M2TYPE)
@@ -6567,7 +6442,6 @@ struct Ddu2 {
         struct {VDDU_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Ddu3 {
     union {
 #   if defined(VDDU_M3TYPE)
@@ -6576,7 +6450,6 @@ struct Ddu3 {
         struct {VDDU_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Ddu4 {
     union {
 #   if defined(VDDU_M4TYPE)
@@ -6600,7 +6473,6 @@ struct Ddi1 {
         struct {VDDI_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Ddi2 {
     union {
 #   if defined(VDDI_M2TYPE)
@@ -6609,7 +6481,6 @@ struct Ddi2 {
         struct {VDDI_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Ddi3 {
     union {
 #   if defined(VDDI_M3TYPE)
@@ -6618,7 +6489,6 @@ struct Ddi3 {
         struct {VDDI_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Ddi4 {
     union {
 #   if defined(VDDI_M4TYPE)
@@ -6642,7 +6512,6 @@ struct Ddf1 {
         struct {VDDF_MTYPE MY_NV1(V,);};
     };
 };
-
 struct Ddf2 {
     union {
 #   if defined(VDDF_M2TYPE)
@@ -6651,7 +6520,6 @@ struct Ddf2 {
         struct {VDDF_MTYPE MY_NV2(V,);};
     };
 };
-
 struct Ddf3 {
     union {
 #   if defined(VDDF_M3TYPE)
@@ -6660,7 +6528,6 @@ struct Ddf3 {
         struct {VDDF_MTYPE MY_NV3(V,);};
     };
 };
-
 struct Ddf4 {
     union {
 #   if defined(VDDF_M4TYPE)
@@ -7273,6 +7140,8 @@ struct Qdf4 {
 };
 #endif
 
+#if 0 // Vqq*
+
 #if  defined(VQQU_MTYPE)
 typedef      VQQU_MTYPE Qqu;
 struct Qqu1 {
@@ -7381,6 +7250,8 @@ struct Qqf4 {
 };
 #endif
 
+#endif // Vqq*
+
 #if defined(TST_HA_V128_SIZES)
 
 #   if 0
@@ -7488,1170 +7359,6 @@ ASSERT(0x40 == sizeof(struct Qdf4));
 }
 #endif
 
-#if _ENTER_EXTVEC_HOVA_REPR
-{
-#endif
-
-#if  defined(VOYU_MTYPE)
-typedef      VOYU_MTYPE Oyu;
-struct Oyu1 {
-    union {
-#   if defined(VOYU_M1TYPE)
-        VOYU_M1TYPE   M;
-#   endif
-        struct {VOYU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Oyu2 {
-    union {
-#   if defined(VOYU_M2TYPE)
-        VOYU_M2TYPE   M;
-#   endif
-        struct {VOYU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Oyu3 {
-    union {
-#   if defined(VOYU_M3TYPE)
-        VOYU_M3TYPE   M;
-#   endif
-        struct {VOYU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Oyu4 {
-    union {
-#   if defined(VOYU_M4TYPE)
-        VOYU_M4TYPE   M;
-#   endif
-        struct {VOYU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOBU_MTYPE)
-typedef      VOBU_MTYPE Obu;
-struct Obu1 {
-    union {
-#   if defined(VOBU_M1TYPE)
-        VOBU_M1TYPE   M;
-#   endif
-        struct {VOBU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Obu2 {
-    union {
-#   if defined(VOBU_M2TYPE)
-        VOBU_M2TYPE   M;
-#   endif
-        struct {VOBU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Obu3 {
-    union {
-#   if defined(VOBU_M3TYPE)
-        VOBU_M3TYPE   M;
-#   endif
-        struct {VOBU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Obu4 {
-    union {
-#   if defined(VOBU_M4TYPE)
-        VOBU_M4TYPE   M;
-#   endif
-        struct {VOBU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOBI_MTYPE)
-typedef      VOBI_MTYPE Obi;
-struct Obi1 {
-    union {
-#   if defined(VOBI_M1TYPE)
-        VOBI_M1TYPE   M;
-#   endif
-        struct {VOBI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Obi2 {
-    union {
-#   if defined(VOBI_M2TYPE)
-        VOBI_M2TYPE   M;
-#   endif
-        struct {VOBI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Obi3 {
-    union {
-#   if defined(VOBI_M3TYPE)
-        VOBI_M3TYPE   M;
-#   endif
-        struct {VOBI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Obi4 {
-    union {
-#   if defined(VOBI_M4TYPE)
-        VOBI_M4TYPE   M;
-#   endif
-        struct {VOBI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOBC_MTYPE)
-typedef      VOBC_MTYPE Obc;
-struct Obc1 {
-    union {
-#   if defined(VOBC_M1TYPE)
-        VOBC_M1TYPE   M;
-#   endif
-        struct {VOBC_MTYPE MY_NV1(V,);};
-    };
-};
-struct Obc2 {
-    union {
-#   if defined(VOBC_M2TYPE)
-        VOBC_M2TYPE   M;
-#   endif
-        struct {VOBC_MTYPE MY_NV2(V,);};
-    };
-};
-struct Obc3 {
-    union {
-#   if defined(VOBC_M3TYPE)
-        VOBC_M3TYPE   M;
-#   endif
-        struct {VOBC_MTYPE MY_NV3(V,);};
-    };
-};
-struct Obc4 {
-    union {
-#   if defined(VOBC_M4TYPE)
-        VOBC_M4TYPE   M;
-#   endif
-        struct {VOBC_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOHU_MTYPE)
-typedef      VOHU_MTYPE Ohu;
-struct Ohu1 {
-    union {
-#   if defined(VOHU_M1TYPE)
-        VOHU_M1TYPE   M;
-#   endif
-        struct {VOHU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Ohu2 {
-    union {
-#   if defined(VOHU_M2TYPE)
-        VOHU_M2TYPE   M;
-#   endif
-        struct {VOHU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Ohu3 {
-    union {
-#   if defined(VOHU_M3TYPE)
-        VOHU_M3TYPE   M;
-#   endif
-        struct {VOHU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Ohu4 {
-    union {
-#   if defined(VOHU_M4TYPE)
-        VOHU_M4TYPE   M;
-#   endif
-        struct {VOHU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOHI_MTYPE)
-typedef      VOHI_MTYPE Ohi;
-struct Ohi1 {
-    union {
-#   if defined(VOHI_M1TYPE)
-        VOHI_M1TYPE   M;
-#   endif
-        struct {VOHI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Ohi2 {
-    union {
-#   if defined(VOHI_M2TYPE)
-        VOHI_M2TYPE   M;
-#   endif
-        struct {VOHI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Ohi3 {
-    union {
-#   if defined(VOHI_M3TYPE)
-        VOHI_M3TYPE   M;
-#   endif
-        struct {VOHI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Ohi4 {
-    union {
-#   if defined(VOHI_M4TYPE)
-        VOHI_M4TYPE   M;
-#   endif
-        struct {VOHI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOHF_MTYPE)
-typedef      VOHF_MTYPE Ohf;
-struct Ohf1 {
-    union {
-#   if defined(VOHF_M1TYPE)
-        VOHF_M1TYPE   M;
-#   endif
-        struct {VOHF_MTYPE MY_NV1(V,);};
-    };
-};
-struct Ohf2 {
-    union {
-#   if defined(VOHF_M2TYPE)
-        VOHF_M2TYPE   M;
-#   endif
-        struct {VOHF_MTYPE MY_NV2(V,);};
-    };
-};
-struct Ohf3 {
-    union {
-#   if defined(VOHF_M3TYPE)
-        VOHF_M3TYPE   M;
-#   endif
-        struct {VOHF_MTYPE MY_NV3(V,);};
-    };
-};
-struct Ohf4 {
-    union {
-#   if defined(VOHF_M4TYPE)
-        VOHF_M4TYPE   M;
-#   endif
-        struct {VOHF_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOWU_MTYPE)
-typedef      VOWU_MTYPE Owu;
-struct Owu1 {
-    union {
-#   if defined(VOWU_M1TYPE)
-        VOWU_M1TYPE   M;
-#   endif
-        struct {VOWU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Owu2 {
-    union {
-#   if defined(VOWU_M2TYPE)
-        VOWU_M2TYPE   M;
-#   endif
-        struct {VOWU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Owu3 {
-    union {
-#   if defined(VOWU_M3TYPE)
-        VOWU_M3TYPE   M;
-#   endif
-        struct {VOWU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Owu4 {
-    union {
-#   if defined(VOWU_M4TYPE)
-        VOWU_M4TYPE   M;
-#   endif
-        struct {VOWU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOWI_MTYPE)
-typedef      VOWI_MTYPE Owi;
-struct Owi1 {
-    union {
-#   if defined(VOWI_M1TYPE)
-        VOWI_M1TYPE   M;
-#   endif
-        struct {VOWI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Owi2 {
-    union {
-#   if defined(VOWI_M2TYPE)
-        VOWI_M2TYPE   M;
-#   endif
-        struct {VOWI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Owi3 {
-    union {
-#   if defined(VOWI_M3TYPE)
-        VOWI_M3TYPE   M;
-#   endif
-        struct {VOWI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Owi4 {
-    union {
-#   if defined(VOWI_M4TYPE)
-        VOWI_M4TYPE   M;
-#   endif
-        struct {VOWI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VOWF_MTYPE)
-typedef      VOWF_MTYPE Owf;
-struct Owf1 {
-    union {
-#   if defined(VOWF_M1TYPE)
-        VOWF_M1TYPE   M;
-#   endif
-        struct {VOWF_MTYPE MY_NV1(V,);};
-    };
-};
-struct Owf2 {
-    union {
-#   if defined(VOWF_M2TYPE)
-        VOWF_M2TYPE   M;
-#   endif
-        struct {VOWF_MTYPE MY_NV2(V,);};
-    };
-};
-struct Owf3 {
-    union {
-#   if defined(VOWF_M3TYPE)
-        VOWF_M3TYPE   M;
-#   endif
-        struct {VOWF_MTYPE MY_NV3(V,);};
-    };
-};
-struct Owf4 {
-    union {
-#   if defined(VOWF_M4TYPE)
-        VOWF_M4TYPE   M;
-#   endif
-        struct {VOWF_MTYPE MY_NV4(V,);};
-    };
-};
-
-#endif
-
-
-#if  defined(VODU_MTYPE)
-typedef      VODU_MTYPE Odu;
-struct Odu1 {
-    union {
-#   if defined(VODU_M1TYPE)
-        VODU_M1TYPE   M;
-#   endif
-        struct {VODU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Odu2 {
-    union {
-#   if defined(VODU_M2TYPE)
-        VODU_M2TYPE   M;
-#   endif
-        struct {VODU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Odu3 {
-    union {
-#   if defined(VODU_M3TYPE)
-        VODU_M3TYPE   M;
-#   endif
-        struct {VODU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Odu4 {
-    union {
-#   if defined(VODU_M4TYPE)
-        VODU_M4TYPE   M;
-#   endif
-        struct {VODU_MTYPE MY_NV4(V,);};
-    };
-};
-
-#endif
-
-#if  defined(VODI_MTYPE)
-typedef      VODI_MTYPE Odi;
-struct Odi1 {
-    union {
-#   if defined(VODI_M1TYPE)
-        VODI_M1TYPE   M;
-#   endif
-        struct {VODI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Odi2 {
-    union {
-#   if defined(VODI_M2TYPE)
-        VODI_M2TYPE   M;
-#   endif
-        struct {VODI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Odi3 {
-    union {
-#   if defined(VODI_M3TYPE)
-        VODI_M3TYPE   M;
-#   endif
-        struct {VODI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Odi4 {
-    union {
-#   if defined(VODI_M4TYPE)
-        VODI_M4TYPE   M;
-#   endif
-        struct {VODI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VODF_MTYPE)
-typedef      VODF_MTYPE Odf;
-struct Odf1 {
-    union {
-#   if defined(VODF_M1TYPE)
-        VODF_M1TYPE   M;
-#   endif
-        struct {VODF_MTYPE MY_NV1(V,);};
-    };
-};
-struct Odf2 {
-    union {
-#   if defined(VODF_M2TYPE)
-        VODF_M2TYPE   M;
-#   endif
-        struct {VODF_MTYPE MY_NV2(V,);};
-    };
-};
-struct Odf3 {
-    union {
-#   if defined(VODF_M3TYPE)
-        VODF_M3TYPE   M;
-#   endif
-        struct {VODF_MTYPE MY_NV3(V,);};
-    };
-};
-struct Odf4 {
-    union {
-#   if defined(VODF_M4TYPE)
-        VODF_M4TYPE   M;
-#   endif
-        struct {VODF_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if _ENTER_EXTVEC_HOVA_REPR_TEST
-{
-#endif
-
-#ifdef TST_HA_V256_SIZES
-#ifdef VOBU_MTYPE
-ASSERT((1*32) == sizeof(       Obu));
-ASSERT((1*32) == sizeof(struct Obu1));
-ASSERT((2*32) == sizeof(struct Obu2));
-ASSERT((3*32) == sizeof(struct Obu3));
-ASSERT((4*32) == sizeof(struct Obu4));
-#endif
-
-#   if defined(VOBI_MTYPE)
-ASSERT((1*32) == sizeof(       Obi));
-ASSERT((1*32) == sizeof(struct Obi1));
-ASSERT((2*32) == sizeof(struct Obi2));
-ASSERT((3*32) == sizeof(struct Obi3));
-ASSERT((4*32) == sizeof(struct Obi4));
-#   endif
-
-
-#   if defined(VOHU_MTYPE)
-ASSERT((1*32) == sizeof(       Ohu));
-ASSERT((1*32) == sizeof(struct Ohu1));
-ASSERT((2*32) == sizeof(struct Ohu2));
-ASSERT((3*32) == sizeof(struct Ohu3));
-ASSERT((4*32) == sizeof(struct Ohu4));
-#   endif
-
-#   if defined(VOHI_MTYPE)
-ASSERT((1*32) == sizeof(       Ohi));
-ASSERT((1*32) == sizeof(struct Ohi1));
-ASSERT((2*32) == sizeof(struct Ohi2));
-ASSERT((3*32) == sizeof(struct Ohi3));
-ASSERT((4*32) == sizeof(struct Ohi4));
-#   endif
-
-#   if defined(VOHF_MTYPE)
-ASSERT((1*32) == sizeof(       Ohf));
-ASSERT((1*32) == sizeof(struct Ohf1));
-ASSERT((2*32) == sizeof(struct Ohf2));
-ASSERT((3*32) == sizeof(struct Ohf3));
-ASSERT((4*32) == sizeof(struct Ohf4));
-#   endif
-
-
-#   if defined(VOWU_MTYPE)
-ASSERT((1*32) == sizeof(       Owu));
-ASSERT((1*32) == sizeof(struct Owu1));
-ASSERT((2*32) == sizeof(struct Owu2));
-ASSERT((3*32) == sizeof(struct Owu3));
-ASSERT((4*32) == sizeof(struct Owu4));
-#   endif
-
-#   if defined(VOWI_MTYPE)
-ASSERT((1*32) == sizeof(       Owi));
-ASSERT((1*32) == sizeof(struct Owi1));
-ASSERT((2*32) == sizeof(struct Owi2));
-ASSERT((3*32) == sizeof(struct Owi3));
-ASSERT((4*32) == sizeof(struct Owi4));
-#   endif
-
-#   if defined(VOWF_MTYPE)
-ASSERT((1*32) == sizeof(       Owf));
-ASSERT((1*32) == sizeof(struct Owf1));
-ASSERT((2*32) == sizeof(struct Owf2));
-ASSERT((3*32) == sizeof(struct Owf3));
-ASSERT((4*32) == sizeof(struct Owf4));
-#   endif
-
-#   if defined(VODU_MTYPE)
-ASSERT((1*32) == sizeof(       Odu));
-ASSERT((1*32) == sizeof(struct Odu1));
-ASSERT((2*32) == sizeof(struct Odu2));
-ASSERT((3*32) == sizeof(struct Odu3));
-ASSERT((4*32) == sizeof(struct Odu4));
-#   endif
-
-#   if defined(VODI_MTYPE)
-ASSERT((1*32) == sizeof(       Odi));
-ASSERT((1*32) == sizeof(struct Odi1));
-ASSERT((2*32) == sizeof(struct Odi2));
-ASSERT((3*32) == sizeof(struct Odi3));
-ASSERT((4*32) == sizeof(struct Odi4));
-#   endif
-
-#   if defined(VODF_MTYPE)
-ASSERT((1*32) == sizeof(       Odf));
-ASSERT((1*32) == sizeof(struct Odf1));
-ASSERT((2*32) == sizeof(struct Odf2));
-ASSERT((3*32) == sizeof(struct Odf3));
-ASSERT((4*32) == sizeof(struct Odf4));
-#   endif
-
-#endif // defined(TST_HA_V256_SIZES)
-
-#if _LEAVE_EXTVEC_HOVA_REPR_TEST
-}
-#endif
-
-#if _LEAVE_EXTVEC_HOVA_REPR
-}
-#endif
-
-#if _ENTER_EXTVEC_HSVA_REPR
-{
-#endif
-
-#if  defined(VSYU_MTYPE)
-typedef      VSYU_MTYPE Syu;
-struct Syu1 {
-    union {
-#   if defined(VSYU_M1TYPE)
-        VSYU_M1TYPE   M;
-#   endif
-        struct {VSYU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Syu2 {
-    union {
-#   if defined(VSYU_M2TYPE)
-        VSYU_M2TYPE   M;
-#   endif
-        struct {VSYU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Syu3 {
-    union {
-#   if defined(VSYU_M3TYPE)
-        VSYU_M3TYPE   M;
-#   endif
-        struct {VSYU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Syu4 {
-    union {
-#   if defined(VSYU_M4TYPE)
-        VSYU_M4TYPE   M;
-#   endif
-        struct {VSYU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSBU_MTYPE)
-typedef      VSBU_MTYPE Sbu;
-struct Sbu1 {
-    union {
-#   if defined(VSBU_M1TYPE)
-        VSBU_M1TYPE   M;
-#   endif
-        struct {VSBU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Sbu2 {
-    union {
-#   if defined(VSBU_M2TYPE)
-        VSBU_M2TYPE   M;
-#   endif
-        struct {VSBU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Sbu3 {
-    union {
-#   if defined(VSBU_M3TYPE)
-        VSBU_M3TYPE   M;
-#   endif
-        struct {VSBU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Sbu4 {
-    union {
-#   if defined(VSBU_M4TYPE)
-        VSBU_M4TYPE   M;
-#   endif
-        struct {VSBU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSBI_MTYPE)
-typedef      VSBI_MTYPE Sbi;
-struct Sbi1 {
-    union {
-#   if defined(VSBI_M1TYPE)
-        VSBI_M1TYPE   M;
-#   endif
-        struct {VSBI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Sbi2 {
-    union {
-#   if defined(VSBI_M2TYPE)
-        VSBI_M2TYPE   M;
-#   endif
-        struct {VSBI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Sbi3 {
-    union {
-#   if defined(VSBI_M3TYPE)
-        VSBI_M3TYPE   M;
-#   endif
-        struct {VSBI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Sbi4 {
-    union {
-#   if defined(VSBI_M4TYPE)
-        VSBI_M4TYPE   M;
-#   endif
-        struct {VSBI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSBC_MTYPE)
-typedef      VSBC_MTYPE Sbc;
-struct Sbc1 {
-    union {
-#   if defined(VSBC_M1TYPE)
-        VSBC_M1TYPE   M;
-#   endif
-        struct {VSBC_MTYPE MY_NV1(V,);};
-    };
-};
-struct Sbc2 {
-    union {
-#   if defined(VSBC_M2TYPE)
-        VSBC_M2TYPE   M;
-#   endif
-        struct {VSBC_MTYPE MY_NV2(V,);};
-    };
-};
-struct Sbc3 {
-    union {
-#   if defined(VSBC_M3TYPE)
-        VSBC_M3TYPE   M;
-#   endif
-        struct {VSBC_MTYPE MY_NV3(V,);};
-    };
-};
-struct Sbc4 {
-    union {
-#   if defined(VSBC_M4TYPE)
-        VSBC_M4TYPE   M;
-#   endif
-        struct {VSBC_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-
-#if  defined(VSHU_MTYPE)
-typedef      VSHU_MTYPE Shu;
-struct Shu1 {
-    union {
-#   if defined(VSHU_M1TYPE)
-        VSHU_M1TYPE   M;
-#   endif
-        struct {VSHU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Shu2 {
-    union {
-#   if defined(VSHU_M2TYPE)
-        VSHU_M2TYPE   M;
-#   endif
-        struct {VSHU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Shu3 {
-    union {
-#   if defined(VSHU_M3TYPE)
-        VSHU_M3TYPE   M;
-#   endif
-        struct {VSHU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Shu4 {
-    union {
-#   if defined(VSHU_M4TYPE)
-        VSHU_M4TYPE   M;
-#   endif
-        struct {VSHU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSHI_MTYPE)
-typedef      VSHI_MTYPE Shi;
-struct Shi1 {
-    union {
-#   if defined(VSHI_M1TYPE)
-        VSHI_M1TYPE   M;
-#   endif
-        struct {VSHI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Shi2 {
-    union {
-#   if defined(VSHI_M2TYPE)
-        VSHI_M2TYPE   M;
-#   endif
-        struct {VSHI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Shi3 {
-    union {
-#   if defined(VSHI_M3TYPE)
-        VSHI_M3TYPE   M;
-#   endif
-        struct {VSHI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Shi4 {
-    union {
-#   if defined(VSHI_M4TYPE)
-        VSHI_M4TYPE   M;
-#   endif
-        struct {VSHI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSHF_MTYPE)
-typedef      VSHF_MTYPE Shf;
-struct Shf1 {
-    union {
-#   if defined(VSHF_M1TYPE)
-        VSHF_M1TYPE   M;
-#   endif
-        struct {VSHF_MTYPE MY_NV1(V,);};
-    };
-};
-struct Shf2 {
-    union {
-#   if defined(VSHF_M2TYPE)
-        VSHF_M2TYPE   M;
-#   endif
-        struct {VSHF_MTYPE MY_NV2(V,);};
-    };
-};
-struct Shf3 {
-    union {
-#   if defined(VSHF_M3TYPE)
-        VSHF_M3TYPE   M;
-#   endif
-        struct {VSHF_MTYPE MY_NV3(V,);};
-    };
-};
-struct Shf4 {
-    union {
-#   if defined(VSHF_M4TYPE)
-        VSHF_M4TYPE   M;
-#   endif
-        struct {VSHF_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-
-#if  defined(VSWU_MTYPE)
-typedef      VSWU_MTYPE Swu;
-struct Swu1 {
-    union {
-#   if defined(VSWU_M1TYPE)
-        VSWU_M1TYPE   M;
-#   endif
-        struct {VSWU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Swu2 {
-    union {
-#   if defined(VSWU_M2TYPE)
-        VSWU_M2TYPE   M;
-#   endif
-        struct {VSWU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Swu3 {
-    union {
-#   if defined(VSWU_M3TYPE)
-        VSWU_M3TYPE   M;
-#   endif
-        struct {VSWU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Swu4 {
-    union {
-#   if defined(VSWU_M4TYPE)
-        VSWU_M4TYPE   M;
-#   endif
-        struct {VSWU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSWI_MTYPE)
-typedef      VSWI_MTYPE Swi;
-struct Swi1 {
-    union {
-#   if defined(VSWI_M1TYPE)
-        VSWI_M1TYPE   M;
-#   endif
-        struct {VSWI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Swi2 {
-    union {
-#   if defined(VSWI_M2TYPE)
-        VSWI_M2TYPE   M;
-#   endif
-        struct {VSWI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Swi3 {
-    union {
-#   if defined(VSWI_M3TYPE)
-        VSWI_M3TYPE   M;
-#   endif
-        struct {VSWI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Swi4 {
-    union {
-#   if defined(VSWI_M4TYPE)
-        VSWI_M4TYPE   M;
-#   endif
-        struct {VSWI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSWF_MTYPE)
-typedef      VSWF_MTYPE Swf;
-struct Swf1 {
-    union {
-#   if defined(VSWF_M1TYPE)
-        VSWF_M1TYPE   M;
-#   endif
-        struct {VSWF_MTYPE MY_NV1(V,);};
-    };
-};
-struct Swf2 {
-    union {
-#   if defined(VSWF_M2TYPE)
-        VSWF_M2TYPE   M;
-#   endif
-        struct {VSWF_MTYPE MY_NV2(V,);};
-    };
-};
-struct Swf3 {
-    union {
-#   if defined(VSWF_M3TYPE)
-        VSWF_M3TYPE   M;
-#   endif
-        struct {VSWF_MTYPE MY_NV3(V,);};
-    };
-};
-struct Swf4 {
-    union {
-#   if defined(VSWF_M4TYPE)
-        VSWF_M4TYPE   M;
-#   endif
-        struct {VSWF_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-
-#if  defined(VSDU_MTYPE)
-typedef      VSDU_MTYPE Sdu;
-struct Sdu1 {
-    union {
-#   if defined(VSDU_M1TYPE)
-        VSDU_M1TYPE   M;
-#   endif
-        struct {VSDU_MTYPE MY_NV1(V,);};
-    };
-};
-struct Sdu2 {
-    union {
-#   if defined(VSDU_M2TYPE)
-        VSDU_M2TYPE   M;
-#   endif
-        struct {VSDU_MTYPE MY_NV2(V,);};
-    };
-};
-struct Sdu3 {
-    union {
-#   if defined(VSDU_M3TYPE)
-        VSDU_M3TYPE   M;
-#   endif
-        struct {VSDU_MTYPE MY_NV3(V,);};
-    };
-};
-struct Sdu4 {
-    union {
-#   if defined(VSDU_M4TYPE)
-        VSDU_M4TYPE   M;
-#   endif
-        struct {VSDU_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSDI_MTYPE)
-typedef      VSDI_MTYPE Sdi;
-struct Sdi1 {
-    union {
-#   if defined(VSDI_M1TYPE)
-        VSDI_M1TYPE   M;
-#   endif
-        struct {VSDI_MTYPE MY_NV1(V,);};
-    };
-};
-struct Sdi2 {
-    union {
-#   if defined(VSDI_M2TYPE)
-        VSDI_M2TYPE   M;
-#   endif
-        struct {VSDI_MTYPE MY_NV2(V,);};
-    };
-};
-struct Sdi3 {
-    union {
-#   if defined(VSDI_M3TYPE)
-        VSDI_M3TYPE   M;
-#   endif
-        struct {VSDI_MTYPE MY_NV3(V,);};
-    };
-};
-struct Sdi4 {
-    union {
-#   if defined(VSDI_M4TYPE)
-        VSDI_M4TYPE   M;
-#   endif
-        struct {VSDI_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if  defined(VSDF_MTYPE)
-typedef      VSDF_MTYPE Sdf;
-struct Sdf1 {
-    union {
-#   if defined(VSDF_M1TYPE)
-        VSDF_M1TYPE   M;
-#   endif
-        struct {VSDF_MTYPE MY_NV1(V,);};
-    };
-};
-struct Sdf2 {
-    union {
-#   if defined(VSDF_M2TYPE)
-        VSDF_M2TYPE   M;
-#   endif
-        struct {VSDF_MTYPE MY_NV2(V,);};
-    };
-};
-struct Sdf3 {
-    union {
-#   if defined(VSDF_M3TYPE)
-        VSDF_M3TYPE   M;
-#   endif
-        struct {VSDF_MTYPE MY_NV3(V,);};
-    };
-};
-struct Sdf4 {
-    union {
-#   if defined(VSDF_M4TYPE)
-        VSDF_M4TYPE   M;
-#   endif
-        struct {VSDF_MTYPE MY_NV4(V,);};
-    };
-};
-#endif
-
-#if defined(TST_HA_V512_SIZES)
-
-#   if 0
-//      <ENTERTST=HA_V512_SIZES>
-    {
-#   endif
-
-#   if defined(VSBU_MTYPE)
-ASSERT((1*64) == sizeof(       Sbu));
-ASSERT((1*64) == sizeof(struct Sbu1));
-ASSERT((2*64) == sizeof(struct Sbu2));
-ASSERT((3*64) == sizeof(struct Sbu3));
-ASSERT((4*64) == sizeof(struct Sbu4));
-#   endif
-
-#   if defined(VSBI_MTYPE)
-ASSERT((1*64) == sizeof(       Sbi));
-ASSERT((1*64) == sizeof(struct Sbi1));
-ASSERT((2*64) == sizeof(struct Sbi2));
-ASSERT((3*64) == sizeof(struct Sbi3));
-ASSERT((4*64) == sizeof(struct Sbi4));
-#   endif
-
-
-#   if defined(VSHU_MTYPE)
-ASSERT((1*64) == sizeof(       Shu));
-ASSERT((1*64) == sizeof(struct Shu1));
-ASSERT((2*64) == sizeof(struct Shu2));
-ASSERT((3*64) == sizeof(struct Shu3));
-ASSERT((4*64) == sizeof(struct Shu4));
-#   endif
-
-#   if defined(VSHI_MTYPE)
-ASSERT((1*64) == sizeof(       Shi));
-ASSERT((1*64) == sizeof(struct Shi1));
-ASSERT((2*64) == sizeof(struct Shi2));
-ASSERT((3*64) == sizeof(struct Shi3));
-ASSERT((4*64) == sizeof(struct Shi4));
-#   endif
-
-#   if defined(VSHF_MTYPE)
-ASSERT((1*64) == sizeof(       Shf));
-ASSERT((1*64) == sizeof(struct Shf1));
-ASSERT((2*64) == sizeof(struct Shf2));
-ASSERT((3*64) == sizeof(struct Shf3));
-ASSERT((4*64) == sizeof(struct Shf4));
-#   endif
-
-
-#   if defined(VSWU_MTYPE)
-ASSERT((1*64) == sizeof(       Swu));
-ASSERT((1*64) == sizeof(struct Swu1));
-ASSERT((2*64) == sizeof(struct Swu2));
-ASSERT((3*64) == sizeof(struct Swu3));
-ASSERT((4*64) == sizeof(struct Swu4));
-#   endif
-
-#   if defined(VSWI_MTYPE)
-ASSERT((1*64) == sizeof(       Swi));
-ASSERT((1*64) == sizeof(struct Swi1));
-ASSERT((2*64) == sizeof(struct Swi2));
-ASSERT((3*64) == sizeof(struct Swi3));
-ASSERT((4*64) == sizeof(struct Swi4));
-#   endif
-
-#   if defined(VSWF_MTYPE)
-ASSERT((1*64) == sizeof(       Swf));
-ASSERT((1*64) == sizeof(struct Swf1));
-ASSERT((2*64) == sizeof(struct Swf2));
-ASSERT((3*64) == sizeof(struct Swf3));
-ASSERT((4*64) == sizeof(struct Swf4));
-#   endif
-
-
-#   if defined(VSDU_MTYPE)
-ASSERT((1*64) == sizeof(       Sdu));
-ASSERT((1*64) == sizeof(struct Sdu1));
-ASSERT((2*64) == sizeof(struct Sdu2));
-ASSERT((3*64) == sizeof(struct Sdu3));
-ASSERT((4*64) == sizeof(struct Sdu4));
-#   endif
-
-#   if defined(VSDI_MTYPE)
-ASSERT((1*64) == sizeof(       Sdi));
-ASSERT((1*64) == sizeof(struct Sdi1));
-ASSERT((2*64) == sizeof(struct Sdi2));
-ASSERT((3*64) == sizeof(struct Sdi3));
-ASSERT((4*64) == sizeof(struct Sdi4));
-#   endif
-
-#   if defined(VSDF_MTYPE)
-ASSERT((1*64) == sizeof(       Sdf));
-ASSERT((1*64) == sizeof(struct Sdf1));
-ASSERT((2*64) == sizeof(struct Sdf2));
-ASSERT((3*64) == sizeof(struct Sdf3));
-ASSERT((4*64) == sizeof(struct Sdf4));
-#   endif
-
-#   if 0
-    }
-//      <LEAVETST=HA_V512_SIZES>
-#   endif
-
-#endif // defined(TST_HA_V512_SIZES)
-
-#if _LEAVE_EXTVEC_HSVA_REPR
-}
-#endif
-
 #if _ENTER_EXTVEC_TYPEDEFS
 {
 #endif
@@ -8694,37 +7401,12 @@ typedef VQWF_TYPE   Vqwf;
 typedef VQDU_TYPE   Vqdu;
 typedef VQDI_TYPE   Vqdi;
 typedef VQDF_TYPE   Vqdf;
+
+#if 0
 typedef VQQU_TYPE   Vqqu;
 typedef VQQI_TYPE   Vqqi;
 typedef VQQF_TYPE   Vqqf;
-
-typedef VOYU_TYPE   Voyu;
-typedef VOBU_TYPE   Vobu;
-typedef VOBI_TYPE   Vobi;
-typedef VOBC_TYPE   Vobc;
-typedef VOHU_TYPE   Vohu;
-typedef VOHI_TYPE   Vohi;
-typedef VOHF_TYPE   Vohf;
-typedef VOWU_TYPE   Vowu;
-typedef VOWI_TYPE   Vowi;
-typedef VOWF_TYPE   Vowf;
-typedef VODU_TYPE   Vodu;
-typedef VODI_TYPE   Vodi;
-typedef VODF_TYPE   Vodf;
-
-typedef VSYU_TYPE   Vsyu;
-typedef VSBU_TYPE   Vsbu;
-typedef VSBI_TYPE   Vsbi;
-typedef VSBC_TYPE   Vsbc;
-typedef VSHU_TYPE   Vshu;
-typedef VSHI_TYPE   Vshi;
-typedef VSHF_TYPE   Vshf;
-typedef VSWU_TYPE   Vswu;
-typedef VSWI_TYPE   Vswi;
-typedef VSWF_TYPE   Vswf;
-typedef VSDU_TYPE   Vsdu;
-typedef VSDI_TYPE   Vsdi;
-typedef VSDF_TYPE   Vsdf;
+#endif
 
 typedef union Vwba {uint8_t  U[ 4];int8_t  I[ 4];char    C[ 4];} Vwba;
 typedef union Vwha {uint16_t U[ 2];int16_t I[ 2];flt16_t F[ 2];} Vwha;
@@ -8739,17 +7421,9 @@ typedef union Vqba {BYTE_UTYPE U[16];BYTE_ITYPE I[16];      char C[16];} Vqba;
 typedef union Vqha {HALF_UTYPE U[ 8];HALF_ITYPE I[ 8];HALF_FTYPE F[ 8];} Vqha;
 typedef union Vqwa {WORD_UTYPE U[ 4];WORD_ITYPE I[ 4];WORD_FTYPE F[ 4];} Vqwa;
 typedef union Vqda {DWRD_UTYPE U[ 2];DWRD_ITYPE I[ 2];DWRD_FTYPE F[ 2];} Vqda;
+#if 0
 typedef union Vqqa {QUAD_UTYPE U[ 1];QUAD_ITYPE I[ 1];QUAD_FTYPE F[ 1];} Vqqa;
-
-typedef union Voba {uint8_t  U[32]; int8_t  I[32]; char C[32];} Voba;
-typedef union Voha {uint16_t U[16]; int16_t I[16]; flt16_t F[16];} Voha;
-typedef union Vowa {uint32_t U[ 8]; int32_t I[ 8]; float F[ 8];} Vowa;
-typedef union Voda {uint64_t U[ 4]; int64_t I[ 4]; double F[ 4];} Voda;
-
-typedef union Vsba {uint8_t  U[64]; int8_t  I[64]; char C[64];} Vsba;
-typedef union Vsha {uint16_t U[32]; int16_t I[32]; flt16_t F[32];} Vsha;
-typedef union Vswa {uint32_t U[16]; int32_t I[16];  float F[16];} Vswa;
-typedef union Vsda {uint64_t U[ 8]; int64_t I[ 8]; double F[ 8];} Vsda;
+#endif
 
 #if defined(VWBU_MTYPE) || defined(VWBI_MTYPE)
 
@@ -8769,7 +7443,6 @@ union Vwbm {
 #   endif
 
 };
-
 union Vwb1 {
 
 #   if defined(VWBU_MTYPE)
@@ -8785,7 +7458,6 @@ union Vwb1 {
 #   endif
 
 };
-
 union Vwb2 {
 
 #   if defined(VWBU_MTYPE)
@@ -8801,7 +7473,6 @@ union Vwb2 {
 #   endif
 
 };
-
 union Vwb3 {
 
 #   if defined(VWBU_MTYPE)
@@ -8817,7 +7488,6 @@ union Vwb3 {
 #   endif
 
 };
-
 union Vwb4 {
 #   if defined(VWBU_MTYPE)
     struct Wbu4    U;
@@ -8854,7 +7524,6 @@ union Vwhm {
 #   endif
 
 };
-
 union Vwh1 {
 
 #   if defined(VWHU_MTYPE)
@@ -8870,7 +7539,6 @@ union Vwh1 {
 #   endif
 
 };
-
 union Vwh2 {
 
 #   if defined(VWHU_MTYPE)
@@ -8886,7 +7554,6 @@ union Vwh2 {
 #   endif
 
 };
-
 union Vwh3 {
 #   if defined(VWHU_MTYPE)
     struct Whu3    U;
@@ -8901,7 +7568,6 @@ union Vwh3 {
 #   endif
 
 };
-
 union Vwh4 {
 #   if defined(VWHU_MTYPE)
     struct Whu4    U;
@@ -8937,7 +7603,6 @@ union Vwwm {
 #   endif
 
 };
-
 union Vww1 {
 #   if defined(VWWU_MTYPE)
     struct Wwu1    U;
@@ -8952,7 +7617,6 @@ union Vww1 {
 #   endif
 
 };
-
 union Vww2 {
 #   if defined(VWWU_MTYPE)
     struct Wwu2    U;
@@ -8964,7 +7628,6 @@ union Vww2 {
     struct Wwf2    F;
 #   endif
 };
-
 union Vww3 {
 #   if defined(VWWU_MTYPE)
     struct Wwu3    U;
@@ -8976,7 +7639,6 @@ union Vww3 {
     struct Wwf3    F;
 #   endif
 };
-
 union Vww4 {
 #   if defined(VWWU_MTYPE)
     struct Wwu4    U;
@@ -9009,7 +7671,6 @@ typedef  union Vwb {
     };
 
 } Vwb;
-
 typedef  union Vwh {
     Vwha        A;
     Vwhu        U;
@@ -9026,7 +7687,6 @@ typedef  union Vwh {
     };
 
 } Vwh;
-
 typedef  union Vww {
     Vwwa        A;
     Vwwu        U;
@@ -9041,7 +7701,6 @@ typedef  union Vww {
     };
 
 } Vww;
-
 typedef  union Vw {
     Vwyu    Y;
     Vwb     B;
@@ -9069,7 +7728,6 @@ union Vdbm {
 #   endif
 
 };
-
 union Vdb1 {
 
 #   if defined(VDBU_MTYPE)
@@ -9085,7 +7743,6 @@ union Vdb1 {
 #   endif
 
 };
-
 union Vdb2 {
 
 #   if defined(VDBU_MTYPE)
@@ -9101,7 +7758,6 @@ union Vdb2 {
 #   endif
 
 };
-
 union Vdb3 {
 
 #   if defined(VDBU_MTYPE)
@@ -9117,7 +7773,6 @@ union Vdb3 {
 #   endif
 
 };
-
 union Vdb4 {
 
 #   if defined(VDBU_MTYPE)
@@ -9154,7 +7809,6 @@ union Vdhm {
 #   endif
 
 };
-
 union Vdh1 {
 
 #   if defined(VDHU_MTYPE)
@@ -9170,7 +7824,6 @@ union Vdh1 {
 #   endif
 
 };
-
 union Vdh2 {
 
 #   if defined(VDHU_MTYPE)
@@ -9186,7 +7839,6 @@ union Vdh2 {
 #   endif
 
 };
-
 union Vdh3 {
 #   if defined(VDHU_MTYPE)
     struct Dhu3    U;
@@ -9201,7 +7853,6 @@ union Vdh3 {
 #   endif
 
 };
-
 union Vdh4 {
 #   if defined(VDHU_MTYPE)
     struct Dhu4    U;
@@ -9238,7 +7889,6 @@ union Vdwm {
 #   endif
 
 };
-
 union Vdw1 {
 #   if defined(VDWU_MTYPE)
     struct Dwu1    U;
@@ -9253,7 +7903,6 @@ union Vdw1 {
 #   endif
 
 };
-
 union Vdw2 {
 
 #   if defined(VDWU_MTYPE)
@@ -9269,7 +7918,6 @@ union Vdw2 {
 #   endif
 
 };
-
 union Vdw3 {
 
 #   if defined(VDWU_MTYPE)
@@ -9285,7 +7933,6 @@ union Vdw3 {
 #   endif
 
 };
-
 union Vdw4 {
 
 #   if defined(VDWU_MTYPE)
@@ -9323,7 +7970,6 @@ union Vddm {
 #   endif
 
 };
-
 union Vdd1 {
     union Vddm      M;
 #   if defined(VDDU_MTYPE)
@@ -9339,7 +7985,6 @@ union Vdd1 {
 #   endif
 
 };
-
 union Vdd2 {
 
 #   if defined(VDDU_MTYPE)
@@ -9355,7 +8000,6 @@ union Vdd2 {
 #   endif
 
 };
-
 union Vdd3 {
 
 #   if defined(VDDU_MTYPE)
@@ -9371,7 +8015,6 @@ union Vdd3 {
 #   endif
 
 };
-
 union Vdd4 {
 
 #   if defined(VDDU_MTYPE)
@@ -9426,7 +8069,6 @@ typedef  union Vdb {
     };
 
 } Vdb;
-
 typedef  union Vdh {
 
     Vdha    A;
@@ -9461,7 +8103,6 @@ typedef  union Vdh {
     };
 
 } Vdh;
-
 typedef  union Vdw {
     Vdwa    A;
     Vdwu    U;
@@ -9493,7 +8134,6 @@ typedef  union Vdw {
     };
 
 } Vdw;
-
 typedef  union Vdd {
     Vdda    A;
     Vddu    U;
@@ -9509,7 +8149,6 @@ typedef  union Vdd {
     };
 
 } Vdd;
-
 typedef  union Vd {
     struct {Vw Lo, Hi;};
     Vdyu    Y;
@@ -9538,7 +8177,6 @@ union Vqb1 {
 #   endif
 
 };
-
 union Vqb2 {
 
 #   if defined(VQBU_MTYPE)
@@ -9554,7 +8192,6 @@ union Vqb2 {
 #   endif
 
 };
-
 union Vqb3 {
 
 #   if defined(VQBU_MTYPE)
@@ -9570,7 +8207,6 @@ union Vqb3 {
 #   endif
 
 };
-
 union Vqb4 {
 
 #   if defined(VQBU_MTYPE)
@@ -9608,7 +8244,6 @@ union Vqh1 {
 #   endif
 
 };
-
 union Vqh2 {
 
 #   if defined(VQHU_MTYPE)
@@ -9624,7 +8259,6 @@ union Vqh2 {
 #   endif
 
 };
-
 union Vqh3 {
 
 #   if defined(VQHU_MTYPE)
@@ -9640,7 +8274,6 @@ union Vqh3 {
 #   endif
 
 };
-
 union Vqh4 {
 #   if defined(VQHU_MTYPE)
     struct Qhu4    U;
@@ -9674,7 +8307,6 @@ union Vqw1 {
 #   endif
 
 };
-
 union Vqw2 {
 
 #   if defined(VQWU_MTYPE)
@@ -9690,7 +8322,6 @@ union Vqw2 {
 #   endif
 
 };
-
 union Vqw3 {
 #   if defined(VQWU_MTYPE)
     struct Qwu3    U;
@@ -9702,7 +8333,6 @@ union Vqw3 {
     struct Qwf3    F;
 #   endif
 };
-
 union Vqw4 {
 #   if defined(VQWU_MTYPE)
     struct Qwu4    U;
@@ -9736,7 +8366,6 @@ union Vqd1 {
 #   endif
 
 };
-
 union Vqd2 {
 
 #   if defined(VQDU_MTYPE)
@@ -9752,7 +8381,6 @@ union Vqd2 {
 #   endif
 
 };
-
 union Vqd3 {
 
 #   if defined(VQDU_MTYPE)
@@ -9768,7 +8396,6 @@ union Vqd3 {
 #   endif
 
 };
-
 union Vqd4 {
 
 #   if defined(VQDU_MTYPE)
@@ -9787,6 +8414,7 @@ union Vqd4 {
 
 #endif
 
+#if 0
 #if defined(VQQU_MTYPE) || defined(VQQI_MTYPE) || defined(VQQF_MTYPE)
 
 #   define  VQQ_M1TYPE   union Vqq1
@@ -9806,7 +8434,6 @@ union Vqqm {
 #   endif
 
 };
-
 union Vqq1 {
 
 #   if defined(VQQU_MTYPE)
@@ -9822,7 +8449,6 @@ union Vqq1 {
 #   endif
 
 };
-
 union Vqq2 {
 
 #   if defined(VQQU_MTYPE)
@@ -9838,7 +8464,6 @@ union Vqq2 {
 #   endif
 
 };
-
 union Vqq3 {
 
 #   if defined(VQQU_MTYPE)
@@ -9854,7 +8479,6 @@ union Vqq3 {
 #   endif
 
 };
-
 union Vqq4 {
 
 #   if defined(VQQU_MTYPE)
@@ -9871,6 +8495,7 @@ union Vqq4 {
 
 };
 
+#endif
 #endif
 
 typedef  union Vqb {
@@ -10045,6 +8670,7 @@ typedef  union Vqd {
 
 } Vqd;
 
+#if 0
 typedef  union Vqq {
     Vqqa    A;
     Vqqu    U;
@@ -10062,6 +8688,7 @@ typedef  union Vqq {
     };
 
 } Vqq;
+#endif
 
 typedef  union Vq {
     struct {Vd Lo, Hi;};
@@ -10070,1032 +8697,8 @@ typedef  union Vq {
     Vqh     H;
     Vqw     W;
     Vqd     D;
-    Vqq     Q;
+    //Vqq     Q;
 } Vq;
-
-
-#if defined(VOBU_MTYPE) || defined(VOBI_MTYPE)
-
-#   define  VOB_M1TYPE   union Vob1
-
-union Vob1 {
-
-#   if defined(VOBU_MTYPE)
-    struct Obu1    U;
-#   endif
-
-#   if defined(VOBI_MTYPE)
-    struct Obi1    I;
-#   endif
-
-#   if defined(VOBC_MTYPE)
-    struct Obc1    C;
-#   endif
-
-};
-
-union Vob2 {
-
-#   if defined(VOBU_MTYPE)
-    struct Obu2    U;
-#   endif
-
-#   if defined(VOBI_MTYPE)
-    struct Obi2    I;
-#   endif
-
-#   if defined(VOBC_MTYPE)
-    struct Obc2    I;
-#   endif
-
-};
-
-union Vob3 {
-
-#   if defined(VOBU_MTYPE)
-    struct Obu3    U;
-#   endif
-
-#   if defined(VOBI_MTYPE)
-    struct Obi3    I;
-#   endif
-
-#   if defined(VOBI_MTYPE)
-    struct Obc3    C;
-#   endif
-
-};
-
-union Vob4 {
-
-#   if defined(VOBU_MTYPE)
-    struct Obu4    U;
-#   endif
-
-#   if defined(VOBI_MTYPE)
-    struct Obi4    I;
-#   endif
-
-#   if defined(VOBC_MTYPE)
-    struct Obc4    I;
-#   endif
-
-};
-
-#endif
-
-
-#if defined(VOHU_MTYPE) || defined(VOHI_MTYPE) || defined(VOHF_MTYPE)
-
-#   define  VOH_M1TYPE   union Voh1
-
-union Voh1 {
-
-#   if defined(VOHU_MTYPE)
-    struct Ohu1    U;
-#   endif
-
-#   if defined(VOHI_MTYPE)
-    struct Ohi1    I;
-#   endif
-
-#   if defined(VOHF_MTYPE)
-    struct Ohf1    F;
-#   endif
-
-};
-
-union Voh2 {
-
-#   if defined(VOHU_MTYPE)
-    struct Ohu2    U;
-#   endif
-
-#   if defined(VOHI_MTYPE)
-    struct Ohi2    I;
-#   endif
-
-#   if defined(VOHF_MTYPE)
-    struct Ohf2    F;
-#   endif
-
-};
-
-union Voh3 {
-
-#   if defined(VOHU_MTYPE)
-    struct Ohu3    U;
-#   endif
-
-#   if defined(VOHI_MTYPE)
-    struct Ohi3    I;
-#   endif
-
-#   if defined(VOHF_MTYPE)
-    struct Ohf3    F;
-#   endif
-
-};
-
-union Voh4 {
-
-#   if defined(VOHU_MTYPE)
-    struct Ohu4    U;
-#   endif
-
-#   if defined(VOHI_MTYPE)
-    struct Ohi4    I;
-#   endif
-
-#   if defined(VOHF_MTYPE)
-    struct Ohf4    F;
-#   endif
-
-};
-
-#endif
-
-
-#if defined(VOWU_MTYPE) || defined(VOWI_MTYPE) || defined(VOWF_MTYPE)
-
-#   define  VOW_M1TYPE   union Vow1
-
-union Vow1 {
-
-#   if defined(VOWU_MTYPE)
-    struct Owu1    U;
-#   endif
-
-#   if defined(VOWI_MTYPE)
-    struct Owi1    I;
-#   endif
-
-#   if defined(VOWF_MTYPE)
-    struct Owf1    F;
-#   endif
-
-};
-
-union Vow2 {
-
-#   if defined(VOWU_MTYPE)
-    struct Owu2    U;
-#   endif
-
-#   if defined(VOWI_MTYPE)
-    struct Owi2    I;
-#   endif
-
-#   if defined(VOWF_MTYPE)
-    struct Owf2    F;
-#   endif
-
-};
-
-union Vow3 {
-
-#   if defined(VOWU_MTYPE)
-    struct Owu3    U;
-#   endif
-
-#   if defined(VOWI_MTYPE)
-    struct Owi3    I;
-#   endif
-
-#   if defined(VOWF_MTYPE)
-    struct Owf3    F;
-#   endif
-
-};
-
-union Vow4 {
-
-#   if defined(VOWU_MTYPE)
-    struct Owu4    U;
-#   endif
-
-#   if defined(VOWI_MTYPE)
-    struct Owi4    I;
-#   endif
-
-#   if defined(VOWF_MTYPE)
-    struct Owf4    F;
-#   endif
-
-};
-
-#endif
-
-
-#if defined(VODU_MTYPE) || defined(VODI_MTYPE) || defined(VODF_MTYPE)
-
-#   define  VOD_M1TYPE   union Vod1
-
-union Vod1 {
-
-#   if defined(VODU_MTYPE)
-    struct Odu1    U;
-#   endif
-
-#   if defined(VODI_MTYPE)
-    struct Odi1    I;
-#   endif
-
-#   if defined(VODF_MTYPE)
-    struct Odf1    F;
-#   endif
-
-};
-
-union Vod2 {
-
-#   if defined(VODU_MTYPE)
-    struct Odu2    U;
-#   endif
-
-#   if defined(VODI_MTYPE)
-    struct Odi2    I;
-#   endif
-
-#   if defined(VODF_MTYPE)
-    struct Odf2    F;
-#   endif
-
-};
-
-union Vod3 {
-
-#   if defined(VODU_MTYPE)
-    struct Odu3    U;
-#   endif
-
-#   if defined(VODI_MTYPE)
-    struct Odi3    I;
-#   endif
-
-#   if defined(VODF_MTYPE)
-    struct Odf3    F;
-#   endif
-
-};
-
-union Vod4 {
-
-#   if defined(VODU_MTYPE)
-    struct Odu4    U;
-#   endif
-
-#   if defined(VODI_MTYPE)
-    struct Odi4    I;
-#   endif
-
-#   if defined(VODF_MTYPE)
-    struct Odf4    F;
-#   endif
-
-};
-
-#endif
-
-typedef  union Vob {
-
-    Voba    A;
-    Vobu    U;
-    Vobi    I;
-    Vobc    C;
-
-#   if defined(VDB_M1TYPE)
-    union Vdb4  M4;
-#   endif
-
-#   if defined(VQB_M1TYPE)
-    union Vqb2  M2;
-#   endif
-
-#   if defined(VOB_M1TYPE)
-    union Vob1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint8_t U0;  int8_t I0;  char C0;};
-                union {uint8_t U1;  int8_t I1;  char C1;};
-                union {uint8_t U2;  int8_t I2;  char C2;};
-                union {uint8_t U3;  int8_t I3;  char C3;};
-                union {uint8_t U4;  int8_t I4;  char C4;};
-                union {uint8_t U5;  int8_t I5;  char C5;};
-                union {uint8_t U6;  int8_t I6;  char C6;};
-                union {uint8_t U7;  int8_t I7;  char C7;};
-                union {uint8_t U8;  int8_t I8;  char C8;};
-                union {uint8_t U9;  int8_t I9;  char C9;};
-                union {uint8_t U10; int8_t I10; char C10;};
-                union {uint8_t U11; int8_t I11; char C11;};
-                union {uint8_t U12; int8_t I12; char C12;};
-                union {uint8_t U13; int8_t I13; char C13;};
-                union {uint8_t U14; int8_t I14; char C14;};
-                union {uint8_t U15; int8_t I15; char C15;};
-            };
-            Vqb     Lo;
-        };
-        union {
-            struct {
-                union {uint8_t U16; int8_t I16; char C16;};
-                union {uint8_t U17; int8_t I17; char C17;};
-                union {uint8_t U18; int8_t I18; char C18;};
-                union {uint8_t U19; int8_t I19; char C19;};
-                union {uint8_t U20; int8_t I20; char C20;};
-                union {uint8_t U21; int8_t I21; char C21;};
-                union {uint8_t U22; int8_t I22; char C22;};
-                union {uint8_t U23; int8_t I23; char C23;};
-                union {uint8_t U24; int8_t I24; char C24;};
-                union {uint8_t U25; int8_t I25; char C25;};
-                union {uint8_t U26; int8_t I26; char C26;};
-                union {uint8_t U27; int8_t I27; char C27;};
-                union {uint8_t U28; int8_t I28; char C28;};
-                union {uint8_t U29; int8_t I29; char C29;};
-                union {uint8_t U30; int8_t I30; char C30;};
-                union {uint8_t U31; int8_t I31; char C31;};
-            };
-            Vqb     Hi;
-        };
-    };
-
-} Vob;
-
-typedef  union Voh {
-
-    Voha    A;
-    Vohu    U;
-    Vohi    I;
-    Vohf    F;
-
-#   if defined(VDH_M1TYPE)
-    union Vdh4  M4;
-#   endif
-
-#   if defined(VQH_M1TYPE)
-    union Vqh2  M2;
-#   endif
-
-#   if defined(VOH_M1TYPE)
-    union Voh1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint16_t U0; int16_t I0; flt16_t F0;};
-                union {uint16_t U1; int16_t I1; flt16_t F1;};
-                union {uint16_t U2; int16_t I2; flt16_t F2;};
-                union {uint16_t U3; int16_t I3; flt16_t F3;};
-                union {uint16_t U4; int16_t I4; flt16_t F4;};
-                union {uint16_t U5; int16_t I5; flt16_t F5;};
-                union {uint16_t U6; int16_t I6; flt16_t F6;};
-                union {uint16_t U7; int16_t I7; flt16_t F7;};
-            };
-            Vqh Lo;
-        };
-
-        union {
-            struct {
-                union {uint16_t U8;  int16_t I8; flt16_t F8;};
-                union {uint16_t U9;  int16_t I9; flt16_t F9;};
-                union {uint16_t U10; int16_t I10; flt16_t F10;};
-                union {uint16_t U11; int16_t I11; flt16_t F11;};
-                union {uint16_t U12; int16_t I12; flt16_t F12;};
-                union {uint16_t U13; int16_t I13; flt16_t F13;};
-                union {uint16_t U14; int16_t I14; flt16_t F14;};
-                union {uint16_t U15; int16_t I15; flt16_t F15;};
-            };
-            Vqh Hi;
-        };
-
-    };
-
-} Voh;
-
-typedef  union Vow {
-
-    Vowa        A;
-    Vowu        U;
-    Vowi        I;
-    Vowf        F;
-
-#   if defined(VDW_M1TYPE)
-    union Vdw4  M4;
-#   endif
-
-#   if defined(VQW_M1TYPE)
-    union Vqw2  M2;
-#   endif
-
-#   if defined(VOW_M1TYPE)
-    union Vow1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint32_t U0; int32_t I0; float F0;};
-                union {uint32_t U1; int32_t I1; float F1;};
-                union {uint32_t U2; int32_t I2; float F2;};
-                union {uint32_t U3; int32_t I3; float F3;};
-            };
-            Vqw Lo;
-        };
-
-        union {
-            struct {
-                union {uint32_t U4; int32_t I4; float F4;};
-                union {uint32_t U5; int32_t I5; float F5;};
-                union {uint32_t U6; int32_t I6; float F6;};
-                union {uint32_t U7; int32_t I7; float F7;};
-            };
-            Vqw Hi;
-        };
-    };
-
-} Vow;
-
-typedef  union Vod {
-
-    Voda    A;
-    Vodu    U;
-    Vodi    I;
-    Vodf    F;
-
-#   if defined(VDD_M1TYPE)
-    union Vdd4  M4;
-#   endif
-
-#   if defined(VQD_M1TYPE)
-    union Vqd2  M2;
-#   endif
-
-#   if defined(VOD_M1TYPE)
-    union Vod1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint64_t U0; int64_t I0; double F0;};
-                union {uint64_t U1; int64_t I1; double F1;};
-            };
-            Vqd Lo;
-        };
-        union {
-            struct {
-                union {uint64_t U2; int64_t I2; double F2;};
-                union {uint64_t U3; int64_t I3; double F3;};
-            };
-            Vqd Hi;
-        };
-    };
-
-} Vod;
-
-typedef  union Vo {
-
-    struct {Vq Lo, Hi;};
-    Voyu    Y;
-    Vob     B;
-    Voh     H;
-    Vow     W;
-    Vod     D;
-
-} Vo;
-
-#if defined(VSBU_MTYPE) || defined(VSBI_MTYPE)
-#   define  VSB_M1TYPE   union Vsb1
-
-union Vsb1 {
-
-#   if defined(VSBU_MTYPE)
-    struct Sbu1    U;
-#   endif
-
-#   if defined(VSBI_MTYPE)
-    struct Sbi1    I;
-#   endif
-
-};
-
-union Vsb2 {
-
-#   if defined(VSBU_MTYPE)
-    struct Sbu2    U;
-#   endif
-
-#   if defined(VSBI_MTYPE)
-    struct Sbi2    I;
-#   endif
-
-};
-
-union Vsb3 {
-
-#   if defined(VSBU_MTYPE)
-    struct Sbu3    U;
-#   endif
-
-#   if defined(VSBI_MTYPE)
-    struct Sbi3    I;
-#   endif
-
-};
-
-union Vsb4 {
-
-#   if defined(VSBU_MTYPE)
-    struct Sbu4    U;
-#   endif
-
-#   if defined(VSBI_MTYPE)
-    struct Sbi4    I;
-#   endif
-
-};
-
-#endif
-
-#if defined(VSHU_MTYPE) || defined(VSHI_MTYPE) || defined(VSHF_MTYPE)
-#   define  VSH_M1TYPE   union Vsh1
-
-union Vsh1 {
-
-#   if defined(VSHU_MTYPE)
-    struct Shu1    U;
-#   endif
-
-#   if defined(VSHI_MTYPE)
-    struct Shi1    I;
-#   endif
-
-#   if defined(VSHF_MTYPE)
-    struct Shf1    F;
-#   endif
-
-};
-
-union Vsh2 {
-
-#   if defined(VSHU_MTYPE)
-    struct Shu2    U;
-#   endif
-
-#   if defined(VSHI_MTYPE)
-    struct Shi2    I;
-#   endif
-
-#   if defined(VSHF_MTYPE)
-    struct Shf2    F;
-#   endif
-
-};
-
-union Vsh3 {
-
-#   if defined(VSHU_MTYPE)
-    struct Shu3    U;
-#   endif
-
-#   if defined(VSHI_MTYPE)
-    struct Shi3    I;
-#   endif
-
-#   if defined(VSHF_MTYPE)
-    struct Shf3    F;
-#   endif
-
-};
-
-union Vsh4 {
-
-#   if defined(VSHU_MTYPE)
-    struct Shu4    U;
-#   endif
-
-#   if defined(VSHI_MTYPE)
-    struct Shi4    I;
-#   endif
-
-#   if defined(VSHF_MTYPE)
-    struct Shf4    F;
-#   endif
-
-};
-
-#endif
-
-
-#if defined(VSWU_MTYPE) || defined(VSWI_MTYPE) || defined(VSWF_MTYPE)
-#   define  VSW_M1TYPE   union Vsw1
-
-union Vsw1 {
-
-#   if defined(VSWU_MTYPE)
-    struct Swu1    U;
-#   endif
-
-#   if defined(VSWI_MTYPE)
-    struct Swi1    I;
-#   endif
-
-#   if defined(VSWF_MTYPE)
-    struct Swf1    F;
-#   endif
-
-};
-
-union Vsw2 {
-
-#   if defined(VSWU_MTYPE)
-    struct Swu2    U;
-#   endif
-
-#   if defined(VSWI_MTYPE)
-    struct Swi2    I;
-#   endif
-
-#   if defined(VSWF_MTYPE)
-    struct Swf2    F;
-#   endif
-
-};
-
-union Vsw3 {
-
-#   if defined(VSWU_MTYPE)
-    struct Swu3    U;
-#   endif
-
-#   if defined(VSWI_MTYPE)
-    struct Swi3    I;
-#   endif
-
-#   if defined(VSWF_MTYPE)
-    struct Swf3    F;
-#   endif
-
-};
-
-union Vsw4 {
-
-#   if defined(VSWU_MTYPE)
-    struct Swu4    U;
-#   endif
-
-#   if defined(VSWI_MTYPE)
-    struct Swi4    I;
-#   endif
-
-#   if defined(VSWF_MTYPE)
-    struct Swf4    F;
-#   endif
-
-};
-
-#endif
-
-
-#if defined(VSDU_MTYPE) || defined(VSDI_MTYPE) || defined(VSDF_MTYPE)
-#   define  VSD_M1TYPE   union Vsd1
-
-union Vsd1 {
-
-#   if defined(VSDU_MTYPE)
-    struct Sdu1    U;
-#   endif
-
-#   if defined(VSDI_MTYPE)
-    struct Sdi1    I;
-#   endif
-
-#   if defined(VSDF_MTYPE)
-    struct Sdf1    F;
-#   endif
-
-};
-
-union Vsd2 {
-
-#   if defined(VSDU_MTYPE)
-    struct Sdu2    U;
-#   endif
-
-#   if defined(VSDI_MTYPE)
-    struct Sdi2    I;
-#   endif
-
-#   if defined(VSDF_MTYPE)
-    struct Sdf2    F;
-#   endif
-
-};
-
-union Vsd3 {
-
-#   if defined(VSDU_MTYPE)
-    struct Sdu3    U;
-#   endif
-
-#   if defined(VSDI_MTYPE)
-    struct Sdi3    I;
-#   endif
-
-#   if defined(VSDF_MTYPE)
-    struct Sdf3    F;
-#   endif
-
-};
-
-union Vsd4 {
-
-#   if defined(VSDU_MTYPE)
-    struct Sdu4    U;
-#   endif
-
-#   if defined(VSDI_MTYPE)
-    struct Sdi4    I;
-#   endif
-
-#   if defined(VSDF_MTYPE)
-    struct Sdf4    F;
-#   endif
-
-};
-
-#endif
-
-typedef  union Vsb {
-
-    Vsba        A;
-    Vsbu        U;
-    Vsbi        I;
-    Vsbc        C;
-
-#   if defined(VQB_M1TYPE)
-    union Vqb4  M4;
-#   endif
-
-#   if defined(VOB_M1TYPE)
-    union Vob2  M2;
-#   endif
-
-#   if defined(VSB_M1TYPE)
-    union Vsb1  M1;
-#   endif
-
-    struct {
-
-        union {
-            struct {
-                union {uint8_t U0;  int8_t I0;  char C0;};
-                union {uint8_t U1;  int8_t I1;  char C1;};
-                union {uint8_t U2;  int8_t I2;  char C2;};
-                union {uint8_t U3;  int8_t I3;  char C3;};
-                union {uint8_t U4;  int8_t I4;  char C4;};
-                union {uint8_t U5;  int8_t I5;  char C5;};
-                union {uint8_t U6;  int8_t I6;  char C6;};
-                union {uint8_t U7;  int8_t I7;  char C7;};
-                union {uint8_t U8;  int8_t I8;  char C8;};
-                union {uint8_t U9;  int8_t I9;  char C9;};
-                union {uint8_t U10; int8_t I10; char C10;};
-                union {uint8_t U11; int8_t I11; char C11;};
-                union {uint8_t U12; int8_t I12; char C12;};
-                union {uint8_t U13; int8_t I13; char C13;};
-                union {uint8_t U14; int8_t I14; char C14;};
-                union {uint8_t U15; int8_t I15; char C15;};
-                union {uint8_t U16; int8_t I16; char C16;};
-                union {uint8_t U17; int8_t I17; char C17;};
-                union {uint8_t U18; int8_t I18; char C18;};
-                union {uint8_t U19; int8_t I19; char C19;};
-                union {uint8_t U20; int8_t I20; char C20;};
-                union {uint8_t U21; int8_t I21; char C21;};
-                union {uint8_t U22; int8_t I22; char C22;};
-                union {uint8_t U23; int8_t I23; char C23;};
-                union {uint8_t U24; int8_t I24; char C24;};
-                union {uint8_t U25; int8_t I25; char C25;};
-                union {uint8_t U26; int8_t I26; char C26;};
-                union {uint8_t U27; int8_t I27; char C27;};
-                union {uint8_t U28; int8_t I28; char C28;};
-                union {uint8_t U29; int8_t I29; char C29;};
-                union {uint8_t U30; int8_t I30; char C30;};
-                union {uint8_t U31; int8_t I31; char C31;};
-            };
-            Vob Lo;
-        };
-
-        union {
-            struct {
-                union {uint8_t U32; int8_t I32; char C32;};
-                union {uint8_t U33; int8_t I33; char C33;};
-                union {uint8_t U34; int8_t I34; char C34;};
-                union {uint8_t U35; int8_t I35; char C35;};
-                union {uint8_t U36; int8_t I36; char C36;};
-                union {uint8_t U37; int8_t I37; char C37;};
-                union {uint8_t U38; int8_t I38; char C38;};
-                union {uint8_t U39; int8_t I39; char C39;};
-                union {uint8_t U40; int8_t I40; char C40;};
-                union {uint8_t U41; int8_t I41; char C41;};
-                union {uint8_t U42; int8_t I42; char C42;};
-                union {uint8_t U43; int8_t I43; char C43;};
-                union {uint8_t U44; int8_t I44; char C44;};
-                union {uint8_t U45; int8_t I45; char C45;};
-                union {uint8_t U46; int8_t I46; char C46;};
-                union {uint8_t U47; int8_t I47; char C47;};
-                union {uint8_t U48; int8_t I48; char C48;};
-                union {uint8_t U49; int8_t I49; char C49;};
-                union {uint8_t U50; int8_t I50; char C50;};
-                union {uint8_t U51; int8_t I51; char C51;};
-                union {uint8_t U52; int8_t I52; char C52;};
-                union {uint8_t U53; int8_t I53; char C53;};
-                union {uint8_t U54; int8_t I54; char C54;};
-                union {uint8_t U55; int8_t I55; char C55;};
-                union {uint8_t U56; int8_t I56; char C56;};
-                union {uint8_t U57; int8_t I57; char C57;};
-                union {uint8_t U58; int8_t I58; char C58;};
-                union {uint8_t U59; int8_t I59; char C59;};
-                union {uint8_t U60; int8_t I60; char C60;};
-                union {uint8_t U61; int8_t I61; char C61;};
-                union {uint8_t U62; int8_t I62; char C62;};
-                union {uint8_t U63; int8_t I63; char C63;};
-            };
-            Vob Hi;
-        };
-
-    };
-
-} Vsb;
-
-typedef  union Vsh {
-
-    Vsha        A;
-    Vshu        U;
-    Vshi        I;
-    Vshf        F;
-
-#   if defined(VQH_M1TYPE)
-    union Vqh4  M4;
-#   endif
-
-#   if defined(VOH_M1TYPE)
-    union Voh2  M2;
-#   endif
-
-#   if defined(VSH_M1TYPE)
-    union Vsh1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint16_t U0;  int16_t I0;  flt16_t F0;};
-                union {uint16_t U1;  int16_t I1;  flt16_t F1;};
-                union {uint16_t U2;  int16_t I2;  flt16_t F2;};
-                union {uint16_t U3;  int16_t I3;  flt16_t F3;};
-                union {uint16_t U4;  int16_t I4;  flt16_t F4;};
-                union {uint16_t U5;  int16_t I5;  flt16_t F5;};
-                union {uint16_t U6;  int16_t I6;  flt16_t F6;};
-                union {uint16_t U7;  int16_t I7;  flt16_t F7;};
-                union {uint16_t U8;  int16_t I8;  flt16_t F8;};
-                union {uint16_t U9;  int16_t I9;  flt16_t F9;};
-                union {uint16_t U10; int16_t I10; flt16_t F10;};
-                union {uint16_t U11; int16_t I11; flt16_t F11;};
-                union {uint16_t U12; int16_t I12; flt16_t F12;};
-                union {uint16_t U13; int16_t I13; flt16_t F13;};
-                union {uint16_t U14; int16_t I14; flt16_t F14;};
-                union {uint16_t U15; int16_t I15; flt16_t F15;};
-            };
-            Voh Lo;
-        };
-        union {
-            struct {
-                union {uint16_t U16; int16_t I16; flt16_t F16;};
-                union {uint16_t U17; int16_t I17; flt16_t F17;};
-                union {uint16_t U18; int16_t I18; flt16_t F18;};
-                union {uint16_t U19; int16_t I19; flt16_t F19;};
-                union {uint16_t U20; int16_t I20; flt16_t F20;};
-                union {uint16_t U21; int16_t I21; flt16_t F21;};
-                union {uint16_t U22; int16_t I22; flt16_t F22;};
-                union {uint16_t U23; int16_t I23; flt16_t F23;};
-                union {uint16_t U24; int16_t I24; flt16_t F24;};
-                union {uint16_t U25; int16_t I25; flt16_t F25;};
-                union {uint16_t U26; int16_t I26; flt16_t F26;};
-                union {uint16_t U27; int16_t I27; flt16_t F27;};
-                union {uint16_t U28; int16_t I28; flt16_t F28;};
-                union {uint16_t U29; int16_t I29; flt16_t F29;};
-                union {uint16_t U30; int16_t I30; flt16_t F30;};
-                union {uint16_t U31; int16_t I31; flt16_t F31;};
-            };
-            Voh Hi;
-        };
-    };
-
-} Vsh;
-
-typedef  union Vsw {
-
-    Vswa        A;
-    Vswu        U;
-    Vswi        I;
-    Vswf        F;
-
-#   if defined(VQW_M1TYPE)
-    union Vqw4  M4;
-#   endif
-
-#   if defined(VOW_M1TYPE)
-    union Vow2  M2;
-#   endif
-
-#   if defined(VSW_M1TYPE)
-    union Vsw1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {unsigned U0; int I0; float F0;};
-                union {unsigned U1; int I1; float F1;};
-                union {unsigned U2; int I2; float F2;};
-                union {unsigned U3; int I3; float F3;};
-                union {unsigned U4; int I4; float F4;};
-                union {unsigned U5; int I5; float F5;};
-                union {unsigned U6; int I6; float F6;};
-                union {unsigned U7; int I7; float F7;};
-            };
-            Vow Lo;
-        };
-        union {
-            struct {
-                union {unsigned U8;  int I8;  float F8;};
-                union {unsigned U9;  int I9;  float F9;};
-                union {unsigned U10; int I10; float F10;};
-                union {unsigned U11; int I11; float F11;};
-                union {unsigned U12; int I12; float F12;};
-                union {unsigned U13; int I13; float F13;};
-                union {unsigned U14; int I14; float F14;};
-                union {unsigned U15; int I15; float F15;};
-            };
-            Vow Hi;
-        };
-    };
-
-} Vsw;
-
-typedef  union Vsd {
-
-    Vsda    A;
-    Vsdu    U;
-    Vsdi    I;
-    Vsdf    F;
-
-#   if defined(VQD_M1TYPE)
-    union Vqd4  M4;
-#   endif
-
-#   if defined(VOD_M1TYPE)
-    union Vod2  M2;
-#   endif
-
-#   if defined(VSD_M1TYPE)
-    union Vsd1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint64_t U0; int64_t I0; double F0;};
-                union {uint64_t U1; int64_t I1; double F1;};
-                union {uint64_t U2; int64_t I2; double F2;};
-                union {uint64_t U3; int64_t I3; double F3;};
-            };
-            Vod Lo;
-        };
-        union {
-            struct {
-                union {uint64_t U4; int64_t I4; double F4;};
-                union {uint64_t U5; int64_t I5; double F5;};
-                union {uint64_t U6; int64_t I6; double F6;};
-                union {uint64_t U7; int64_t I7; double F7;};
-            };
-            Vod Hi;
-        };
-    };
-
-} Vsd;
-
-typedef  union Vs {
-    struct {Vo Lo, Hi;};
-    Vsyu    Y;
-    Vsb     B;
-    Vsh     H;
-    Vsw     W;
-    Vsd     D;
-} Vs;
 
 #if _LEAVE_EXTVEC_TYPEDEFS
 }
@@ -11116,6 +8719,7 @@ INLINE(Vwwu,VWWU_ASWU) (Vwwu v) {return v;}
 INLINE(Vwwi,VWWI_ASWI) (Vwwi v) {return v;}
 INLINE(Vwwf,VWWF_ASWF) (Vwwf v) {return v;}
 
+#if 0
 #define     VWYU_ASYU(V)    _Generic(V,Vwyu:V)
 
 #define     VWBU_ASBU(V)    _Generic(V,Vwbu:V)
@@ -11129,6 +8733,7 @@ INLINE(Vwwf,VWWF_ASWF) (Vwwf v) {return v;}
 #define     VWWU_ASWU(V)    _Generic(V,Vwwu:V)
 #define     VWWI_ASWI(V)    _Generic(V,Vwwi:V)
 #define     VWWF_ASWF(V)    _Generic(V,Vwwf:V)
+#endif
 
 INLINE(Vdyu,VDYU_ASYU) (Vdyu v) {return v;}
 INLINE(Vdbu,VDBU_ASBU) (Vdbu v) {return v;}
@@ -11185,62 +8790,6 @@ INLINE(Vqdf,VQDF_ASDF) (Vqdf v) {return v;}
 #define     VQDU_ASDU(V)    _Generic(V,Vqdu:V)
 #define     VQDI_ASDI(V)    _Generic(V,Vqdi:V)
 #define     VQDF_ASDF(V)    _Generic(V,Vqdf:V)
-
-INLINE(Voyu,VOYU_ASYU) (Voyu v) {return v;}
-INLINE(Vobu,VOBU_ASBU) (Vobu v) {return v;}
-INLINE(Vobi,VOBI_ASBI) (Vobi v) {return v;}
-INLINE(Vobc,VOBC_ASBC) (Vobc v) {return v;}
-INLINE(Vohu,VOHU_ASHU) (Vohu v) {return v;}
-INLINE(Vohi,VOHI_ASHI) (Vohi v) {return v;}
-INLINE(Vohf,VOHF_ASHF) (Vohf v) {return v;}
-INLINE(Vowu,VOWU_ASWU) (Vowu v) {return v;}
-INLINE(Vowi,VOWI_ASWI) (Vowi v) {return v;}
-INLINE(Vowf,VOWF_ASWF) (Vowf v) {return v;}
-INLINE(Vodu,VODU_ASDU) (Vodu v) {return v;}
-INLINE(Vodi,VODI_ASDI) (Vodi v) {return v;}
-INLINE(Vodf,VODF_ASDF) (Vodf v) {return v;}
-
-#define     VOYU_ASYU(V)    _Generic(V,Voyu:V)
-#define     VOBU_ASBU(V)    _Generic(V,Vobu:V)
-#define     VOBI_ASBI(V)    _Generic(V,Vobi:V)
-#define     VOBC_ASBC(V)    _Generic(V,Vobc:V)
-#define     VOHU_ASHU(V)    _Generic(V,Vohu:V)
-#define     VOHI_ASHI(V)    _Generic(V,Vohi:V)
-#define     VOHF_ASHF(V)    _Generic(V,Vohf:V)
-#define     VOWU_ASWU(V)    _Generic(V,Vowu:V)
-#define     VOWI_ASWI(V)    _Generic(V,Vowi:V)
-#define     VOWF_ASWF(V)    _Generic(V,Vowf:V)
-#define     VODU_ASDU(V)    _Generic(V,Vodu:V)
-#define     VODI_ASDI(V)    _Generic(V,Vodi:V)
-#define     VODF_ASDF(V)    _Generic(V,Vodf:V)
-
-INLINE(Vsyu,VSYU_ASYU) (Vsyu v) {return v;}
-INLINE(Vsbu,VSBU_ASBU) (Vsbu v) {return v;}
-INLINE(Vsbi,VSBI_ASBI) (Vsbi v) {return v;}
-INLINE(Vsbc,VSBC_ASBC) (Vsbc v) {return v;}
-INLINE(Vshu,VSHU_ASHU) (Vshu v) {return v;}
-INLINE(Vshi,VSHI_ASHI) (Vshi v) {return v;}
-INLINE(Vshf,VSHF_ASHF) (Vshf v) {return v;}
-INLINE(Vswu,VSWU_ASWU) (Vswu v) {return v;}
-INLINE(Vswi,VSWI_ASWI) (Vswi v) {return v;}
-INLINE(Vswf,VSWF_ASWF) (Vswf v) {return v;}
-INLINE(Vsdu,VSDU_ASDU) (Vsdu v) {return v;}
-INLINE(Vsdi,VSDI_ASDI) (Vsdi v) {return v;}
-INLINE(Vsdf,VSDF_ASDF) (Vsdf v) {return v;}
-
-#define     VSYU_ASYU(V)    _Generic(V,Vsyu:V)
-#define     VSBU_ASBU(V)    _Generic(V,Vsbu:V)
-#define     VSBI_ASBI(V)    _Generic(V,Vsbi:V)
-#define     VSBC_ASBC(V)    _Generic(V,Vsbc:V)
-#define     VSHU_ASHU(V)    _Generic(V,Vshu:V)
-#define     VSHI_ASHI(V)    _Generic(V,Vshi:V)
-#define     VSHF_ASHF(V)    _Generic(V,Vshf:V)
-#define     VSWU_ASWU(V)    _Generic(V,Vswu:V)
-#define     VSWI_ASWI(V)    _Generic(V,Vswi:V)
-#define     VSWF_ASWF(V)    _Generic(V,Vswf:V)
-#define     VSDU_ASDU(V)    _Generic(V,Vsdu:V)
-#define     VSDI_ASDI(V)    _Generic(V,Vsdi:V)
-#define     VSDF_ASDF(V)    _Generic(V,Vsdf:V)
 
 #define     VWYU_ASTU   VWYU_ASYU
 #define     VWBU_ASTU   VWBU_ASBU
@@ -14958,15 +12507,13 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_ZNES      INT64_BASE(ZNES)
 #define     INT64_ZNEY      INT64_BASE(ZNEY)
 
-#ifdef SPC_ARM_NEON
-#include "a64op.h"
+#if MY_ISA == ISA_ARM
+#   include "a64op.h"
+
+#elif MY_ISA == ISA_X86
+#   include "x64op.h"
+
 #endif
-
-#ifdef SPC_X86_SSE2
-#include "x64op.h"
-#endif
-
-
 
 /*
     catldbu(l, r) takes two Df1 HVAs and returns a Qdf1.
@@ -29296,8 +26843,7 @@ FUNCOF(             \
 #if _ENTER_UZPR
 {
 #endif
-/*  UnZiP (extract odds)
-*/
+/*  UnZiP (extract odds) */
 
 #define     uzpr(...)    (uzpr_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     uzpr_funcof(X,...)  \
@@ -30106,7 +27652,6 @@ FUNCOF_AK(          \
 #if _LEAVE_XORT
 }
 #endif
-
 
 
 #if _ENTER_ZEQY
@@ -31318,6 +28863,7 @@ void TEST_ARM_PERS(void)
 
 int wtfclang(void) {return 0;}
 
+#if 0 // NO OUTS
 
 int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
 {
@@ -31425,6 +28971,10 @@ int         outfqdu(Vqdu src, FILE *dst, char const *fmt)
     return fprintf(dst, fmt, d[0], d[1]);
 }
 #define     outfqdi(src, ...) outfqdu(VQDI_ASTU(src), __VA_ARGS__)
+
+#endif
+
+#if 0 // NO TOAY
 
 void *toayyu(_Bool v, char s[1], size_t n[1])
 {
@@ -31607,8 +29157,152 @@ void *toadbu(uint8_t v, char s[UINT8_DIG])
     return s;
 }
 
+#endif // NO TOAY
+#if 0
+
+#include <ctype.h>
+#include <string.h>
+#include <time.h>
+char const *volatile testupr_src;
+char const *volatile testupr_dst;
+
+
+    size_t 
+    my_strlen(char const str[])
+    {
+    
+        size_t      off = 0x7&(uintptr_t) str;
+        size_t      len = 0;
+        Vdbc        vec = ldrd(str-off);
+        uint64_t    bar;
+        if (off)
+        {
+            str = str-off;
+            vec = orrs(vec, asbc(unosddu((8*off))));
+        }
+        for (;;)
+        {
+            vec = zeqs(vec);
+            bar = astv(asdu(vec));
+            if (bar)
+                break;
+            len += 8;
+            vec = ldrd(str+len);
+        }
+        return (len-off)+(cszl(bar)/8);
+    }
+
+    char * 
+    av_strupr (char str[])
+    {
+        char *ret = str;
+        for (;*str;str++) 
+        {
+            *str = toupper(*str);
+        }
+        return ret;
+    }
+
+    char * 
+    my_strupr (char str[])
+    {
+        size_t      off = 0x7&(uintptr_t) str;
+        char       *ret = str;
+        Vdbc        vec;
+        Vdbc        end;
+        uint64_t    bar;
+        int ctr = 0;
+        if (off)
+        {
+            str -= off;
+            for (; off < 8; off++)
+            {
+                if (!str[off]) 
+                    return ret;
+                str[off] -= (32&cbnsbc(str[off], 'a', 'z'));
+            }
+            str += 8;
+        }
+        for (;;str+=8)
+        {
+            vec = ldrdacbc(str);
+            end = zeqsdbc(vec);
+            bar = astvddu(asdudbc(end));
+            if (ctr++ > 100)
+            {
+                printf("oops\n");
+                return ret;
+            }
+            if (bar)
+            {
+                for (off=0; str[off] && (off < 8); off++)
+                {
+                    str[off] -= (32&cbnsbc(str[off], 'a', 'z'));
+                }
+                break;
+            }
+            vec = subldbc(
+                vec, 
+                andsdbc(
+                    dupdbc(32),
+                    cbnsdbc(vec, 'a', 'z')
+                )
+            );
+            (void) strdabc(str, vec);
+        }
+        return  ret;
+    }
+    
+
+
+void testupr(int t, long n)
+{
+    struct timespec bt, at;
+    (void) clock_gettime(CLOCK_MONOTONIC, &bt);
+    char str[257] = {0};
+
+    if (t)
+    {
+        for (int i=0; i < n; i++)
+        {
+            testupr_dst = av_strupr(strcpy(str, testupr_src));
+        }
+    }
+    else
+    {
+        for (int i=0; i < n; i++)
+        {
+            testupr_dst = my_strupr(strcpy(str, testupr_src));
+        }
+        
+    }
+
+    printf(
+        "done with test on str[%zu] = \"%s\"\n",
+        strlen(str),
+        str
+    );
+    (void) clock_gettime(CLOCK_MONOTONIC, &at);
+    printf(
+        "tv_sec=%"  INT64_DFMT ", "
+        "tv_nsec=%" INT64_DFMT "\n", 
+        ((int64_t) (at.tv_sec -bt.tv_sec)),
+        ((int64_t) (at.tv_nsec-bt.tv_nsec))
+    );
+    
+}
+
+#endif
+
+Vdhu test_addldhu(Vdhu a, Vdhu b)
+{
+    return addl(a, b);
+}
+
 int main(int argc, char *argv[], char *envp[])
 {
+
+#if 0
 
     if (0)
     {
@@ -31782,6 +29476,7 @@ int main(int argc, char *argv[], char *envp[])
             (shll(-1073741824, 1))
         );
     }
+
     if (0)
     {
         printf(
@@ -31795,6 +29490,7 @@ int main(int argc, char *argv[], char *envp[])
             (int) vshld_n_s64(+2147483647, 1)
         );
     }
+
     if (0)
     {
         uchar x;
@@ -31808,6 +29504,7 @@ int main(int argc, char *argv[], char *envp[])
         (void) inve(&x);
         printf("x = %hhu\n", swptabu(&x, 255));
     }
+
     if (0)
     {
         int x[16];
@@ -31815,15 +29512,58 @@ int main(int argc, char *argv[], char *envp[])
         (void) strw(x+0, newlwwi(12345678));
         printf("x = {%d}\n", *x);
     }
+
     if (0)
     {
         int a = 555;
         int b = xeqt(&a, 555, 69);
         printf("a=%i, b=%i\n", a, b);
     }
-    if (1)
+
+    if (0)
     {
         printf("1.1+2.2 = %g\n",sumf(newlqdf(1.1,2.2)));
     }
+
+    if (0)
+    {
+        char const src[] = "0123456789abcdef";
+        printf(
+            "my_strlen(\"%s\"+7) => %zu\n", src,
+            (my_strlen(src+7))
+        );
+        printf(
+            "my_strlen(\"%s\"+13) => %zu\n", src,
+            (my_strlen(src+13))
+        );
+    }
+    
+    if (0)
+    {
+        char txt[] = "How y'all doing 69?";
+        (void) my_strupr(txt+3);
+        printf(
+            "my_strupr(txt+3) => \"%s\"\n",
+            txt
+        );
+    }
+    
+    if (1) 
+    {
+        int arg = argc > 1 ? atoi(argv[1]) : 0;
+        if (arg < 0)
+        {
+            return 0;
+        }
+        testupr_src = memset(
+            ((char[256]){0}),
+            'a',
+            32
+        );
+        testupr(arg, 100000);
+    }
+
+#endif
+    Vqwi boo = newlqwi('b','o', 'o', 'b');
 }
 
