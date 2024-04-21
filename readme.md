@@ -1,4 +1,11 @@
-# USAGE
+# HISTORY
+
+## 2024-04-20
+* started adding notes
+* added avgl to readme.md
+
+
+# ABOUT
 
 Perhaps this isn't self explanatory after all... To use, save
 a copy of all of the ".h" files in the top level include
@@ -12,11 +19,12 @@ This will automatically include several standard library
 headers and detect the target architecture based on whatever
 well known feature test macros are available. Once we know
 the target and what supplementary processor features are
-available, one of the target specific headers will be 
-included. 
+available, one or more of the target specific headers will be 
+included. E.g. arm's intrinsics are defined in <arm_acle.h>
+and <arm_neon.h> while x86 has <immintrin.h> and the dozens 
+of extension specific headers it implicitly includes.
 
 
-# ABOUT
 
 ungop - pronounced "ungop" - is the name of an abstract
 complex instruction set architecture specification, which
@@ -552,7 +560,7 @@ is found at the same position as its least significant byte:
     Bqb: Bf Be Bd Bc Bb Ba B9 B8 B7 B6 B5 B4 B3 B2 B1 B0
 
 
-# OP INDEX
+# INDEX
 
 Finally, the following is a complete instruction listing,
 including a brief description. For more details, see the
@@ -588,6 +596,21 @@ Key:
     FLOATING(x) means the result is a float of equal width
     as x 
 
+    Square brackets are a slice notation subdividing the
+    binary representation. 
+
+        bits[START:STOP]
+
+    Thus, bits[1:13] means a sequence of bits starting at 
+    bit 1 and ending with 12, since perhaps confusingly, 
+    STOP is exclusive. Put another way, bitswu[1:13] is 
+    semantically identical to
+    
+        (bitswu>>1)&unoswu((12-1))
+    
+    and also
+    
+        bfg1wu(bitswu, 1, (12-1))
     
 
 ### •***· «unprefixed/misc»
@@ -672,6 +695,10 @@ Key:
     •aswu(a) => ((WORD_TYPE){a}).U
     •aswi(a) => ((WORD_TYPE){a}).I
     •aswf(a) => ((WORD_TYPE){a}).F
+
+### •avg· «AVeraGe»
+
+    •avgl(a, b) => (a+b)>>1
 
 ### •bfg· «BitField Get»
 
