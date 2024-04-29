@@ -1118,7 +1118,7 @@ Key:
 ### •veq· «Vector EQuality match»
 
     •veqs(a, b) => VECTORIZE(CEQS, a, DUP(b))
-    •veqy(a, b) => VECTORIZE(CEQS, a, DUP(b))
+    •veqy(a, b) => VECTORIZE(CEQY, a, DUP(b))
 
 ### •xeq· «eXchange if EQual»
 
