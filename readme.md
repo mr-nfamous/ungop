@@ -95,7 +95,6 @@ are used and how:
 
     'b':
         *   8 bit / 1 byte
-        *   Big/network endian
 
     'c':
         *   char
@@ -125,6 +124,7 @@ are used and how:
     'l':
         *   Lower / leftmost / lsb
         *   Truncated
+        *   Lil endian
 
     'm':
         *   Multiple parameters
@@ -144,6 +144,7 @@ are used and how:
 
     'r':
         *   Upper/rightmost/msb
+        *   Big/network endian
 
     's':
         *   512 bit / 64 byte
@@ -191,180 +192,114 @@ reference implementation and their type specific suffix:
 
 ## Arithmetic types
 
-    suffix  C type
+    suffix ewidth   C type
 
-    yu      bool
-    bu      uint8_t
-    bi      int8_t
-    bc      char
-    hu      uint16_t
-    hi      int16_t
-    hf      flt16_t [†]
-    wu      uint32_t
-    wi      int32_t
-    wf      float
-    du      uint64_t
-    di      int64_t
-    df      double
-    qu      QUAD_UTYPE [‡]
-    qi      QUAD_ITYPE [‡]
-    qf      QUAD_FTYPE [‡]
-    lu      ulong or ullong [‡‡]
-    li      long or llong [‡‡]
+    yu      1       bool
+
+    bu      8       uint8_t
+    bi      8       int8_t
+    bc      8       char
+
+    hu      16      uint16_t
+    hi      16      int16_t
+    hf      16      flt16_t [†]
+
+    wu      32      uint32_t
+    wi      32      int32_t
+    wf      32      float 
+
+    du      64      uint64_t
+    di      64      int64_t
+    df      64      double
+
+    qu      128     QUAD_UTYPE [‡]
+    qi      128     QUAD_ITYPE [‡]
+    qf      128     QUAD_FTYPE [‡]
+
+    lu      32|64   ulong or ullong [‡‡]
+    li      32|64   long or llong [‡‡]
 
 
 ## 32 bit SIMD vector types
 
-    suffix  C type
+    suffix  ewidth  C type
 
-    wyu     Vwyu (32 × bool)
-    wbu     Vwbu (4 × uint8_t)
-    wbi     Vwbi (4 × int8_t)
-    wbc     Vwbc (4 × char)
-    whu     Vwhu (2 × uint16_t)
-    whi     Vwhi (2 × int16_t)
-    whf     Vwhf (2 × flt16_t)
-    wwu     Vwwu (1 × uint32_t)
-    wwi     Vwwi (1 × int32_t)
-    wwf     Vwwf (1 × float)
+    wyu     1       Vwyu (32 × bool)
+
+    wbu     8       Vwbu (4 × uint8_t)
+    wbi     8       Vwbi (4 × int8_t)
+    wbc     8       Vwbc (4 × char)
+
+    whu     16      Vwhu (2 × uint16_t)
+    whi     16      Vwhi (2 × int16_t)
+    whf     16      Vwhf (2 × flt16_t)
+
+    wwu     32      Vwwu (1 × uint32_t)
+    wwi     32      Vwwi (1 × int32_t)
+    wwf     32      Vwwf (1 × float)
 
 
 ## 64 bit SIMD vector types (13)
 
-    suffix  C type
+    suffix  ewidth  C type
 
-    dyu     Vdyu (64 × bool)
+    dyu     1       Vdyu (64 × bool)
 
-    dbu     Vdbu (8 × uint8_t)
-    dbi     Vdbi (8 × int8_t)
-    dbc     Vdbc (8 × char)
+    dbu     8       Vdbu (8 × uint8_t)
+    dbi     8       Vdbi (8 × int8_t)
+    dbc     8       Vdbc (8 × char)
 
-    dhu     Vdhu (4 × uint16_t)
-    dhi     Vdhi (4 × int16_t)
-    dhf     Vdhf (4 × flt16_t)
+    dhu     16      Vdhu (4 × uint16_t)
+    dhi     16      Vdhi (4 × int16_t)
+    dhf     16      Vdhf (4 × flt16_t)
 
-    dwu     Vdwu (2 × uint32_t)
-    dwi     Vdwi (2 × int32_t)
-    dwf     Vdwf (2 × float)
+    dwu     32      Vdwu (2 × uint32_t)
+    dwi     32      Vdwi (2 × int32_t)
+    dwf     32      Vdwf (2 × float)
 
-    ddu     Vddu (1 × uint64_t)
-    ddi     Vddi (1 × int64_t)
-    ddf     Vddf (1 × double)
+    ddu     64      Vddu (1 × uint64_t)
+    ddi     64      Vddi (1 × int64_t)
+    ddf     64      Vddf (1 × double)
 
 
 ## 128 bit SIMD vector types (16)
 
-    suffix  C type
+    suffix  ewidth  C type
 
-    qyu     Vqyu (128 × bool)
+    qyu     1       Vqyu (128 × bool)
 
-    qbu     Vqbu (16 × uint8_t)
-    qbi     Vqbi (16 × int8_t)
-    qbc     Vqbc (16 × char)
+    qbu     8       Vqbu (16 × uint8_t)
+    qbi     8       Vqbi (16 × int8_t)
+    qbc     8       Vqbc (16 × char)
 
-    qhu     Vqhu (8 × uint16_t)
-    qhi     Vqhi (8 × int16_t)
-    qhf     Vqhf (8 × flt16_t)
+    qhu     16      Vqhu (8 × uint16_t)
+    qhi     16      Vqhi (8 × int16_t)
+    qhf     16      Vqhf (8 × flt16_t)
 
-    qwu     Vqwu (4 × uint32_t)
-    qwi     Vqwi (4 × int32_t)
-    qwf     Vqwf (4 × float)
+    qwu     32      Vqwu (4 × uint32_t)
+    qwi     32      Vqwi (4 × int32_t)
+    qwf     32      Vqwf (4 × float)
 
-    qdu     Vqdu (2 × uint64_t)
-    qdi     Vqdi (2 × int64_t)
-    qdf     Vqdf (2 × double)
+    qdu     64      Vqdu (2 × uint64_t)
+    qdi     64      Vqdi (2 × int64_t)
+    qdf     64      Vqdf (2 × double)
 
-    qqu     Vqqu (1 × QUAD_UTYPE) ‡‡‡
-    qqi     Vqqi (1 × QUAD_ITYPE) ‡‡‡
-    qqf     Vqqf (1 × QUAD_FTYPE) ‡‡‡
+    qqu     128     Vqqu (1 × QUAD_UTYPE) ‡‡‡
+    qqi     128     Vqqi (1 × QUAD_ITYPE) ‡‡‡
+    qqf     128     Vqqf (1 × QUAD_FTYPE) ‡‡‡
 
-
-## 256 bit SIMD vector types (unused at present)
-
-    suffix  type
-
-    oyu     Voyu (256 × bool)
-
-    obu     Vobu (32 × uint8_t)
-    obi     Vobi (32 × int8_t)
-    obc     Vobc (32 × char)
-
-    ohu     Vohu (16 × uint16_t)
-    ohi     Vohi (16 × int16_t)
-    ohf     Vohf (16 × flt16_t)
-
-    owu     Vowu (8 × uint32_t)
-    owi     Vowi (8 × int32_t)
-    owf     Vowf (8 × float)
-
-    odu     Vodu (4 × uint64_t)
-    odi     Vodi (4 × int64_t)
-    odf     Vodf (4 × double)
-
-    oqu     Voqu (2 × QUAD_UTYPE) ‡‡‡
-    oqi     Voqi (2 × QUAD_ITYPE) ‡‡‡
-    oqf     Voqf (2 × QUAD_FTYPE) ‡‡‡
-
-    oou     Voou (1 × OCTA_UTYPE) ‡‡‡‡
-    ooi     Vooi (1 × OCTA_ITYPE) ‡‡‡‡
-    oof     Voof (1 × OCTA_FTYPE) ‡‡‡‡
-
-## 512 bit SIMD vector types (unused at present)
-
-    suffix  type
-
-    syu     Vsyu (512 × bool)
-
-    sbu     Vsbu (64 × uint8_t)
-    sbi     Vsbi (64 × int8_t)
-    sbc     Vsbc (64 × char)
-
-    shu     Vshu (32 × uint16_t)
-    shi     Vshi (32 × int16_t)
-    shf     Vshf (32 × flt16_t)
-
-    swu     Vswu (16 × uint32_t)
-    swi     Vswi (16 × int32_t)
-    swf     Vswf (16 × float)
-
-    sdu     Vsdu (8 × uint64_t)
-    sdi     Vsdi (8 × int64_t)
-    sdf     Vsdf (8 × double)
-
-    squ     Vsqu (4 × QUAD_UTYPE) ‡‡‡
-    sqi     Vsqi (4 × QUAD_ITYPE) ‡‡‡
-    sqf     Vsqf (4 × QUAD_FTYPE) ‡‡‡
-
-    sou     Vsou (2 × OCTA_UTYPE) ‡‡‡‡
-    soi     Vsoi (2 × OCTA_ITYPE) ‡‡‡‡
-    sof     Vsof (2 × OCTA_FTYPE) ‡‡‡‡
-
-    ssu     Vssu (1 × SEXD_UTYPE) ‡‡‡‡
-    ssi     Vssi (1 × SEXD_ITYPE) ‡‡‡‡
-    ssf     Vssf (1 × SEXD_FTYPE) ‡‡‡‡
-
-
-    † flt16_t is defined as a half precision ieee 754 float.
+    † flt16_t is defined as a half precision IEEE 754 float.
     If the target ABI has a dedicated C type, that's what
     it will be a typedef of. E.g. arm's __fp16 or when the
     AVX-512FP16 x86 extension is supported, _Float16.
     Otherwise, flt16_t will be a unique, single element
     homogeneous 16 bit unsigned integer aggregate type.
 
-    ‡ 128 bit operations are provisionally available. That
-    is, if the target supports __int128 or a binary128 based
-    long double, operations are available for those types.
-    Otherwise, the corresponding int type will be defined as
-    a unique, two element 64 bit integer aggregate, while
-    the float type will be a unique floating point aggregate
-    type composed of two doubles. In both cases, the Lo
-    member may be used to access the value's least
-    significant 64 bits and the Hi member its most
-    significant 64 bits. 128 bit operations are *not*
-    available in the generic API.
+    ‡ 128 bit operations are provisionally available via the
+    QUAD_UTYPE, QUAD_ITYPE, and QUAD_FTYPE types.
 
     ‡‡ Hosted 64 bit C implementations will have either a 32
-    bit int AND long or 64 bit long and llong. the 'lu' and
+    bit int AND long or 64 bit long AND llong. The 'lu' and
     'li' suffixes are reserved in the former for long and in
     the latter for llong. This allows values of these types
     to be compatible with the generic operation. However, be
@@ -372,16 +307,13 @@ reference implementation and their type specific suffix:
     results in a value of a different size, its type is
     always the lowest ranked type with that width. E.g. if
     long and llong are both 64 bit, the return type of
-    add2wi is long since it has lower rank than long long.
+    add2wi is long since it has lower rank than llong.
     When the result width doesn't change, the return type is
     always identical unless otherwise specified. E.g. xorslu
     on the same LP64 based target returns a ullong.
 
     ‡‡‡ The 128 bit numeric types presently have no SIMD
     vector implementations.
-
-    ‡‡‡‡ The 256 and 512 bit numeric types presently have
-    no implementations at all.
 
 
 The arithmetic types can be, and are, grouped by the generic
@@ -395,14 +327,11 @@ machinery into sets:
     *s      signed ints AND floats      (S as in signed)
     *r      real numbers                (R like the symbol)
 
-Note that char is always included if one of the 8 bit
-integers is. That is, for targets with a signed char, "bz"
-will include char and unsigned char. This profoundly
-simplifies the implementation of generic 8 bit integer ops,
-especially considering MSVC, which incorrectly doesn't
-consider `char`, `unsigned char`, and `signed char` as three
-distinct types.
-
+Note that on implementations with signed char, char ops are
+always available when int8_t ops are and vice versa for 
+unsigned char and uint8_t. This is to accommodate MSVC, 
+which incorrectly fails to consider all 3 char types as 
+unique for _Generic.
 
 Some operations take a memory address as the first operator.
 In this case, the type suffix is simply prefixed by "ac"
@@ -519,7 +448,7 @@ is found at the same position as its least significant byte:
 
     Ltt = little endian
     Btt = big endian
-    idx = C array index
+    idx = C bytearray index
 
     Lwb: B0 B1 B2 B3
     Lwh: H0___ H1___
