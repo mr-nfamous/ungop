@@ -1,6 +1,6 @@
 # HISTORY
 
-## 2024-04-20
+2024-04-20
 * started adding notes
 * added avgl to readme.md
 
@@ -546,7 +546,6 @@ Key:
 
     •void      => the zero constant (not a callable)
     •pass()    => forfeit calling thread's CPU time
-    •unos(n)   => generate N sequential 1 bits
     •sign(s)   => extract sign bit of signed
     •expo(f)   => extract exponent of float
     •mant(f)   => extract mantissa of float
@@ -1039,6 +1038,11 @@ Key:
     •tsts(a, b) => ((a&b) != 0) ? -1 : 0
     •tsty(a, b) => ((a&b) != 0) ? +1 : 0
 
+### •uno· «Generate consecutive '1' bits»
+
+    •unol(N) => from lsb to msb
+    •unor(N) => from msb to lsb
+
 ### •uzp· «UnZiP (deinterleave)»
 
     •uzpl(a, b) => extract evens
@@ -1071,12 +1075,6 @@ Key:
     •zeqs(a) => (0 == a) ? -1 : 0
     •zeqy(a) => (0 == a) ? +1 : 0
 
-### •zip· «interleave»
-
-    •zipl(a, b) => KEEPLOW(ZIP(a, b))
-    •zipr(a, b) => KEEPHIGH(ZIP(a, b))
-    •zipp(a, b) => ZIP(a, b)
-
 ### •zge· «Zero Greater than or Equal»
 
     •zges(a) => (0 >= a) ? -1 : 0
@@ -1102,6 +1100,11 @@ Key:
     •znes(a) => (0 != a) ? -1 : 0
     •zney(a) => (0 != a) ? +1 : 0
 
+### •zip· «interleave»
+
+    •zipl(a, b) => KEEPLOW(ZIP(a, b))
+    •zipr(a, b) => KEEPHIGH(ZIP(a, b))
+    •zipp(a, b) => ZIP(a, b)
 
 #Highlights 
 
