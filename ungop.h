@@ -13,10 +13,25 @@ clang
 
 CHANGES:
 
-    23-04-17
-    * created anyop.h
-    * deleted some more 256/512 bit vector types
-    
+24-04-17
+* created anyop.h
+* deleted some more 256/512 bit vector types
+
+24-04-20
+* deleted extraneous dupl ops
+
+24-04-23
+* fixed ldrw defs
+* added missing lun1
+* fixed lunw, lund, and lunq (they didn't work w/ floats)
+* added add2 defs
+
+24-04-25
+* fix razwwwf, razdwwf, and razfwwf defs
+
+24-04-28
+* (re)add sirr
+
 */
 
 #if _ENTER_EXTDEF
@@ -4781,7 +4796,6 @@ types. Length (M) is encoded in 4 bits using the following:
 {
 #endif
 
-#undef SPC_ARM_NEON
 
 #if defined(SPC_ARM_NEON)
 
@@ -10444,14 +10458,14 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT8_LDRTAC    UINT8_BASE(LDRTAC)
 #define     UINT8_LDRWAC    UINT8_BASE(LDRWAC)
 
-#define     UINT8_LUNBAC    UINT8_BASE(LUNBAC)
-#define     UINT8_LUNDAC    UINT8_BASE(LUNDAC)
-#define     UINT8_LUNLAC    UINT8_BASE(LUNLAC)
 #define     UINT8_LUNNAC    UINT8_BASE(LUNNAC)
-#define     UINT8_LUNOAC    UINT8_BASE(LUNOAC)
-#define     UINT8_LUNQAC    UINT8_BASE(LUNQAC)
-#define     UINT8_LUNSAC    UINT8_BASE(LUNSAC)
+#define     UINT8_LUNLAC    UINT8_BASE(LUNLAC)
+#define     UINT8_LUNRAC    UINT8_BASE(LUNRAC)
 #define     UINT8_LUNWAC    UINT8_BASE(LUNWAC)
+#define     UINT8_LUNDAC    UINT8_BASE(LUNDAC)
+#define     UINT8_LUNQAC    UINT8_BASE(LUNQAC)
+#define     UINT8_LUNOAC    UINT8_BASE(LUNOAC)
+#define     UINT8_LUNSAC    UINT8_BASE(LUNSAC)
 
 #define     UINT8_FAM2      UINT8_BASE(FAM2)
 #define     UINT8_FAML      UINT8_BASE(FAML)
@@ -10509,6 +10523,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT8_SILL      UINT8_BASE(SILL)
 #define     UINT8_SILR      UINT8_BASE(SILR)
 
+#define     UINT8_SIRL      UINT8_BASE(SIRL)
+#define     UINT8_SIRR      UINT8_BASE(SIRR)
+
 #define     UINT8_STR1A     UINT8_BASE(STR1A)
 #define     UINT8_STRDA     UINT8_BASE(STRDA)
 #define     UINT8_STREA     UINT8_BASE(STREA)
@@ -10527,6 +10544,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT8_SUBEA     UINT8_BASE(SUBEA)
 #define     UINT8_SUBTA     UINT8_BASE(SUBTA)
 
+#define     UINT8_SUNNA     UINT8_BASE(SUNNA)
+#define     UINT8_SUNLA     UINT8_BASE(SUNLA)
+#define     UINT8_SUNRA     UINT8_BASE(SUNRA)
 #define     UINT8_SUNWA     UINT8_BASE(SUNWA)
 #define     UINT8_SUNDA     UINT8_BASE(SUNDA)
 #define     UINT8_SUNQA     UINT8_BASE(SUNQA)
@@ -10712,14 +10732,14 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT8_LDRTAC     INT8_BASE(LDRTAC)
 #define     INT8_LDRWAC     INT8_BASE(LDRWAC)
 
-#define     INT8_LUNBAC     INT8_BASE(LUNBAC)
-#define     INT8_LUNDAC     INT8_BASE(LUNDAC)
-#define     INT8_LUNLAC     INT8_BASE(LUNLAC)
 #define     INT8_LUNNAC     INT8_BASE(LUNNAC)
-#define     INT8_LUNOAC     INT8_BASE(LUNOAC)
-#define     INT8_LUNQAC     INT8_BASE(LUNQAC)
-#define     INT8_LUNSAC     INT8_BASE(LUNSAC)
+#define     INT8_LUNLAC     INT8_BASE(LUNLAC)
+#define     INT8_LUNRAC     INT8_BASE(LUNRAC)
 #define     INT8_LUNWAC     INT8_BASE(LUNWAC)
+#define     INT8_LUNDAC     INT8_BASE(LUNDAC)
+#define     INT8_LUNQAC     INT8_BASE(LUNQAC)
+#define     INT8_LUNOAC     INT8_BASE(LUNOAC)
+#define     INT8_LUNSAC     INT8_BASE(LUNSAC)
 
 #define     INT8_FAM2       INT8_BASE(FAM2)
 #define     INT8_FAML       INT8_BASE(FAML)
@@ -10777,6 +10797,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT8_SILL       INT8_BASE(SILL)
 #define     INT8_SILR       INT8_BASE(SILR)
 
+#define     INT8_SIRL       INT8_BASE(SIRL)
+#define     INT8_SIRR       INT8_BASE(SIRR)
+
 #define     INT8_STR1A      INT8_BASE(STR1A)
 #define     INT8_STRDA      INT8_BASE(STRDA)
 #define     INT8_STREA      INT8_BASE(STREA)
@@ -10798,6 +10821,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT8_SUBEA      INT8_BASE(SUBEA)
 #define     INT8_SUBTA      INT8_BASE(SUBTA)
 
+#define     INT8_SUNNA      INT8_BASE(SUNNA)
+#define     INT8_SUNRA      INT8_BASE(SUNRA)
+#define     INT8_SUNLA      INT8_BASE(SUNLA)
 #define     INT8_SUNWA      INT8_BASE(SUNWA)
 #define     INT8_SUNDA      INT8_BASE(SUNDA)
 #define     INT8_SUNQA      INT8_BASE(SUNQA)
@@ -10989,14 +11015,14 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT16_LDRTAC   UINT16_BASE(LDRTAC)
 #define     UINT16_LDRWAC   UINT16_BASE(LDRWAC)
 
-#define     UINT16_LUNBAC   UINT16_BASE(LUNBAC)
-#define     UINT16_LUNDAC   UINT16_BASE(LUNDAC)
-#define     UINT16_LUNLAC   UINT16_BASE(LUNLAC)
 #define     UINT16_LUNNAC   UINT16_BASE(LUNNAC)
-#define     UINT16_LUNOAC   UINT16_BASE(LUNOAC)
-#define     UINT16_LUNQAC   UINT16_BASE(LUNQAC)
-#define     UINT16_LUNSAC   UINT16_BASE(LUNSAC)
+#define     UINT16_LUNLAC   UINT16_BASE(LUNLAC)
+#define     UINT16_LUNRAC   UINT16_BASE(LUNRAC)
 #define     UINT16_LUNWAC   UINT16_BASE(LUNWAC)
+#define     UINT16_LUNDAC   UINT16_BASE(LUNDAC)
+#define     UINT16_LUNQAC   UINT16_BASE(LUNQAC)
+#define     UINT16_LUNOAC   UINT16_BASE(LUNOAC)
+#define     UINT16_LUNSAC   UINT16_BASE(LUNSAC)
 
 #define     UINT16_FAM2     UINT16_BASE(FAM2)
 #define     UINT16_FAML     UINT16_BASE(FAML)
@@ -11059,6 +11085,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT16_SILL     UINT16_BASE(SILL)
 #define     UINT16_SILR     UINT16_BASE(SILR)
 
+#define     UINT16_SIRL     UINT16_BASE(SIRL)
+#define     UINT16_SIRR     UINT16_BASE(SIRR)
+
 #define     UINT16_STR1A    UINT16_BASE(STR1A)
 #define     UINT16_STRDA    UINT16_BASE(STRDA)
 #define     UINT16_STREA    UINT16_BASE(STREA)
@@ -11080,6 +11109,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT16_SUBEA    UINT16_BASE(SUBEA)
 #define     UINT16_SUBTA    UINT16_BASE(SUBTA)
 
+#define     UINT16_SUNNA    UINT16_BASE(SUNNA)
+#define     UINT16_SUNLA    UINT16_BASE(SUNLA)
+#define     UINT16_SUNRA    UINT16_BASE(SUNRA)
 #define     UINT16_SUNWA    UINT16_BASE(SUNWA)
 #define     UINT16_SUNDA    UINT16_BASE(SUNDA)
 #define     UINT16_SUNQA    UINT16_BASE(SUNQA)
@@ -11269,14 +11301,14 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT16_LDRTAC    INT16_BASE(LDRTAC)
 #define     INT16_LDRWAC    INT16_BASE(LDRWAC)
 
-#define     INT16_LUNBAC    INT16_BASE(LUNBAC)
-#define     INT16_LUNDAC    INT16_BASE(LUNDAC)
-#define     INT16_LUNLAC    INT16_BASE(LUNLAC)
 #define     INT16_LUNNAC    INT16_BASE(LUNNAC)
-#define     INT16_LUNOAC    INT16_BASE(LUNOAC)
-#define     INT16_LUNQAC    INT16_BASE(LUNQAC)
-#define     INT16_LUNSAC    INT16_BASE(LUNSAC)
+#define     INT16_LUNLAC    INT16_BASE(LUNLAC)
+#define     INT16_LUNRAC    INT16_BASE(LUNRAC)
 #define     INT16_LUNWAC    INT16_BASE(LUNWAC)
+#define     INT16_LUNDAC    INT16_BASE(LUNDAC)
+#define     INT16_LUNQAC    INT16_BASE(LUNQAC)
+#define     INT16_LUNOAC    INT16_BASE(LUNOAC)
+#define     INT16_LUNSAC    INT16_BASE(LUNSAC)
 
 #define     INT16_FAM2      INT16_BASE(FAM2)
 #define     INT16_FAML      INT16_BASE(FAML)
@@ -11336,6 +11368,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT16_SILL      INT16_BASE(SILL)
 #define     INT16_SILR      INT16_BASE(SILR)
 
+#define     INT16_SIRL      INT16_BASE(SIRL)
+#define     INT16_SIRR      INT16_BASE(SIRR)
+
 #define     INT16_STR1A     INT16_BASE(STR1A)
 #define     INT16_STRDA     INT16_BASE(STRDA)
 #define     INT16_STREA     INT16_BASE(STREA)
@@ -11357,6 +11392,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT16_SUBEA     INT16_BASE(SUBEA)
 #define     INT16_SUBTA     INT16_BASE(SUBTA)
 
+#define     INT16_SUNNA     INT16_BASE(SUNNA)
+#define     INT16_SUNLA     INT16_BASE(SUNLA)
+#define     INT16_SUNRA     INT16_BASE(SUNRA)
 #define     INT16_SUNWA     INT16_BASE(SUNWA)
 #define     INT16_SUNDA     INT16_BASE(SUNDA)
 #define     INT16_SUNQA     INT16_BASE(SUNQA)
@@ -11546,14 +11584,14 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT32_LDRTAC   UINT32_BASE(LDRTAC)
 #define     UINT32_LDRWAC   UINT32_BASE(LDRWAC)
 
-#define     UINT32_LUNBAC   UINT32_BASE(LUNBAC)
-#define     UINT32_LUNDAC   UINT32_BASE(LUNDAC)
-#define     UINT32_LUNLAC   UINT32_BASE(LUNLAC)
 #define     UINT32_LUNNAC   UINT32_BASE(LUNNAC)
-#define     UINT32_LUNOAC   UINT32_BASE(LUNOAC)
-#define     UINT32_LUNQAC   UINT32_BASE(LUNQAC)
-#define     UINT32_LUNSAC   UINT32_BASE(LUNSAC)
+#define     UINT32_LUNLAC   UINT32_BASE(LUNLAC)
+#define     UINT32_LUNRAC   UINT32_BASE(LUNRAC)
 #define     UINT32_LUNWAC   UINT32_BASE(LUNWAC)
+#define     UINT32_LUNDAC   UINT32_BASE(LUNDAC)
+#define     UINT32_LUNQAC   UINT32_BASE(LUNQAC)
+#define     UINT32_LUNOAC   UINT32_BASE(LUNOAC)
+#define     UINT32_LUNSAC   UINT32_BASE(LUNSAC)
 
 #define     UINT32_FAM2     UINT32_BASE(FAM2)
 #define     UINT32_FAML     UINT32_BASE(FAML)
@@ -11615,6 +11653,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT32_SILL     UINT32_BASE(SILL)
 #define     UINT32_SILR     UINT32_BASE(SILR)
 
+#define     UINT32_SIRL     UINT32_BASE(SIRL)
+#define     UINT32_SIRR     UINT32_BASE(SIRR)
+
 #define     UINT32_STR1A    UINT32_BASE(STR1A)
 #define     UINT32_STRDA    UINT32_BASE(STRDA)
 #define     UINT32_STREA    UINT32_BASE(STREA)
@@ -11636,6 +11677,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT32_SUBEA    UINT32_BASE(SUBEA)
 #define     UINT32_SUBTA    UINT32_BASE(SUBTA)
 
+#define     UINT32_SUNNA    UINT32_BASE(SUNNA)
+#define     UINT32_SUNLA    UINT32_BASE(SUNLA)
+#define     UINT32_SUNRA    UINT32_BASE(SUNRA)
 #define     UINT32_SUNWA    UINT32_BASE(SUNWA)
 #define     UINT32_SUNDA    UINT32_BASE(SUNDA)
 #define     UINT32_SUNQA    UINT32_BASE(SUNQA)
@@ -11826,14 +11870,14 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT32_LDRTAC    INT32_BASE(LDRTAC)
 #define     INT32_LDRWAC    INT32_BASE(LDRWAC)
 
-#define     INT32_LUNBAC    INT32_BASE(LUNBAC)
-#define     INT32_LUNDAC    INT32_BASE(LUNDAC)
-#define     INT32_LUNLAC    INT32_BASE(LUNLAC)
 #define     INT32_LUNNAC    INT32_BASE(LUNNAC)
-#define     INT32_LUNOAC    INT32_BASE(LUNOAC)
-#define     INT32_LUNQAC    INT32_BASE(LUNQAC)
-#define     INT32_LUNSAC    INT32_BASE(LUNSAC)
+#define     INT32_LUNLAC    INT32_BASE(LUNLAC)
+#define     INT32_LUNRAC    INT32_BASE(LUNRAC)
 #define     INT32_LUNWAC    INT32_BASE(LUNWAC)
+#define     INT32_LUNDAC    INT32_BASE(LUNDAC)
+#define     INT32_LUNQAC    INT32_BASE(LUNQAC)
+#define     INT32_LUNOAC    INT32_BASE(LUNOAC)
+#define     INT32_LUNSAC    INT32_BASE(LUNSAC)
 
 #define     INT32_FAM2      INT32_BASE(FAM2)
 #define     INT32_FAML      INT32_BASE(FAML)
@@ -11892,6 +11936,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT32_SILL      INT32_BASE(SILL)
 #define     INT32_SILR      INT32_BASE(SILR)
 
+#define     INT32_SIRL      INT32_BASE(SIRL)
+#define     INT32_SIRR      INT32_BASE(SIRR)
+
 #define     INT32_STR1A     INT32_BASE(STR1A)
 #define     INT32_STRDA     INT32_BASE(STRDA)
 #define     INT32_STREA     INT32_BASE(STREA)
@@ -11913,6 +11960,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT32_SUBEA     INT32_BASE(SUBEA)
 #define     INT32_SUBTA     INT32_BASE(SUBTA)
 
+#define     INT32_SUNNA     INT32_BASE(SUNNA)
+#define     INT32_SUNLA     INT32_BASE(SUNLA)
+#define     INT32_SUNRA     INT32_BASE(SUNRA)
 #define     INT32_SUNWA     INT32_BASE(SUNWA)
 #define     INT32_SUNDA     INT32_BASE(SUNDA)
 #define     INT32_SUNQA     INT32_BASE(SUNQA)
@@ -12100,14 +12150,15 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT64_LDRQAC   UINT64_BASE(LDRQAC)
 #define     UINT64_LDRSAC   UINT64_BASE(LDRSAC)
 #define     UINT64_LDRTAC   UINT64_BASE(LDRTAC)
-#define     UINT64_LUNBAC   UINT64_BASE(LUNBAC)
-#define     UINT64_LUNDAC   UINT64_BASE(LUNDAC)
-#define     UINT64_LUNLAC   UINT64_BASE(LUNLAC)
+
 #define     UINT64_LUNNAC   UINT64_BASE(LUNNAC)
-#define     UINT64_LUNOAC   UINT64_BASE(LUNOAC)
-#define     UINT64_LUNQAC   UINT64_BASE(LUNQAC)
-#define     UINT64_LUNSAC   UINT64_BASE(LUNSAC)
+#define     UINT64_LUNLAC   UINT64_BASE(LUNLAC)
+#define     UINT64_LUNRAC   UINT64_BASE(LUNRAC)
 #define     UINT64_LUNWAC   UINT64_BASE(LUNWAC)
+#define     UINT64_LUNDAC   UINT64_BASE(LUNDAC)
+#define     UINT64_LUNQAC   UINT64_BASE(LUNQAC)
+#define     UINT64_LUNOAC   UINT64_BASE(LUNOAC)
+#define     UINT64_LUNSAC   UINT64_BASE(LUNSAC)
 
 #define     UINT64_FAM2     UINT64_BASE(FAM2)
 #define     UINT64_FAML     UINT64_BASE(FAML)
@@ -12169,6 +12220,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT64_SILL     UINT64_BASE(SILL)
 #define     UINT64_SILR     UINT64_BASE(SILR)
 
+#define     UINT64_SIRL     UINT64_BASE(SIRL)
+#define     UINT64_SIRR     UINT64_BASE(SIRR)
+
 #define     UINT64_STR1A    UINT64_BASE(STR1A)
 #define     UINT64_STRDA    UINT64_BASE(STRDA)
 #define     UINT64_STREA    UINT64_BASE(STREA)
@@ -12191,6 +12245,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT64_SUBTA    UINT64_BASE(SUBTA)
 
 
+#define     UINT64_SUNNA    UINT64_BASE(SUNNA)
+#define     UINT64_SUNLA    UINT64_BASE(SUNLA)
+#define     UINT64_SUNRA    UINT64_BASE(SUNRA)
 #define     UINT64_SUNWA    UINT64_BASE(SUNWA)
 #define     UINT64_SUNDA    UINT64_BASE(SUNDA)
 #define     UINT64_SUNQA    UINT64_BASE(SUNQA)
@@ -12376,14 +12433,15 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_LDRQAC    INT64_BASE(LDRQAC)
 #define     INT64_LDRSAC    INT64_BASE(LDRSAC)
 #define     INT64_LDRTAC    INT64_BASE(LDRTAC)
-#define     INT64_LUNBAC    INT64_BASE(LUNBAC)
-#define     INT64_LUNDAC    INT64_BASE(LUNDAC)
-#define     INT64_LUNLAC    INT64_BASE(LUNLAC)
+
 #define     INT64_LUNNAC    INT64_BASE(LUNNAC)
-#define     INT64_LUNOAC    INT64_BASE(LUNOAC)
-#define     INT64_LUNQAC    INT64_BASE(LUNQAC)
-#define     INT64_LUNSAC    INT64_BASE(LUNSAC)
+#define     INT64_LUNLAC    INT64_BASE(LUNLAC)
+#define     INT64_LUNRAC    INT64_BASE(LUNRAC)
 #define     INT64_LUNWAC    INT64_BASE(LUNWAC)
+#define     INT64_LUNDAC    INT64_BASE(LUNDAC)
+#define     INT64_LUNQAC    INT64_BASE(LUNQAC)
+#define     INT64_LUNOAC    INT64_BASE(LUNOAC)
+#define     INT64_LUNSAC    INT64_BASE(LUNSAC)
 
 #define     INT64_FAM2      INT64_BASE(FAM2)
 #define     INT64_FAML      INT64_BASE(FAML)
@@ -12442,6 +12500,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_SILL      INT64_BASE(SILL)
 #define     INT64_SILR      INT64_BASE(SILR)
 
+#define     INT64_SIRL      INT64_BASE(SIRL)
+#define     INT64_SIRR      INT64_BASE(SIRR)
+
 #define     INT64_STR1A     INT64_BASE(STR1A)
 #define     INT64_STRDA     INT64_BASE(STRDA)
 #define     INT64_STREA     INT64_BASE(STREA)
@@ -12463,6 +12524,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_SUBEA     INT64_BASE(SUBEA)
 #define     INT64_SUBTA     INT64_BASE(SUBTA)
 
+#define     INT64_SUNNA     INT64_BASE(SUNNA)
+#define     INT64_SUNLA     INT64_BASE(SUNLA)
+#define     INT64_SUNRA     INT64_BASE(SUNRA)
 #define     INT64_SUNWA     INT64_BASE(SUNWA)
 #define     INT64_SUNDA     INT64_BASE(SUNDA)
 #define     INT64_SUNQA     INT64_BASE(SUNQA)
@@ -13125,7 +13189,6 @@ FUNCOF_AK(          \
 }
 #endif
 
-
 #if _ENTER_ADDL
 {
 #endif
@@ -13206,6 +13269,96 @@ FUNCOF(             \
 }
 #endif
 
+#if _ENTER_ADD2
+{
+#endif
+/*  ADD (widened sum)
+
+Add each N bit integer element in the first operand to the
+corresponding N bit integer element in the second operand,
+producing a N×2 bit sum.
+
+HINT: use add2 if it's important to detect overflow.
+
+    Vdhu a = ...;
+    Vdhu b = ...;
+    Vqwu c = add2dhu(a, b);
+    a = uzplqhu(ashuqwu(c)); // gets lo 16 bits of each elem
+    a = uzprqhu(ashuqwu(c)); // gets hi 16 bits
+    
+    uint32_t x = ...;
+    uint32_t y = ...;
+    uint64_t z = add2wu(x, y);
+    if (getrdu(z)) // equal to (z>>32)
+        ...
+        
+*/
+
+#define     add2(A, B) (add2_funcof(A,B)(A,B))
+#define     add2_funcof(A, ...)  \
+FUNCOF(             \
+    add2, (   A   ),\
+    BWZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BWZ,  /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     add2bu   UINT8_ADD2
+#define     add2bi    INT8_ADD2
+#define     add2bc    CHAR_ADD2
+#define     add2hu  UINT16_ADD2
+#define     add2hi   INT16_ADD2
+#define     add2wu  UINT32_ADD2
+#define     add2wi   INT32_ADD2
+#define     add2du  UINT64_ADD2
+#define     add2di   INT64_ADD2
+#if   DWRD_NLONG == 2
+#   define  add2lu   ULONG_ADD2
+#   define  add2li    LONG_ADD2
+#elif QUAD_NLLONG == 2
+#   define  add2lu  ULLONG_ADD2
+#   define  add2li   LLONG_ADD2
+#else
+#   define  add2qu  ULLONG_ADD2
+#   define  add2qi   LLONG_ADD2
+#endif
+
+#define     add2wbu   VWBU_ADD2
+#define     add2wbi   VWBI_ADD2
+#define     add2wbc   VWBC_ADD2
+#define     add2whu   VWHU_ADD2
+#define     add2whi   VWHI_ADD2
+#define     add2wwu   VWWU_ADD2
+#define     add2wwi   VWWI_ADD2
+
+#define     add2dbu   VDBU_ADD2
+#define     add2dbi   VDBI_ADD2
+#define     add2dbc   VDBC_ADD2
+#define     add2dhu   VDHU_ADD2
+#define     add2dhi   VDHI_ADD2
+#define     add2dwu   VDWU_ADD2
+#define     add2dwi   VDWI_ADD2
+#define     add2ddu   VDDU_ADD2
+#define     add2ddi   VDDI_ADD2
+
+#define     add2qyu   VQYU_ADD2
+#define     add2qbu   VQBU_ADD2
+#define     add2qbi   VQBI_ADD2
+#define     add2qbc   VQBC_ADD2
+#define     add2qhu   VQHU_ADD2
+#define     add2qhi   VQHI_ADD2
+#define     add2qwu   VQWU_ADD2
+#define     add2qwi   VQWI_ADD2
+#define     add2qdu   VQDU_ADD2
+#define     add2qdi   VQDI_ADD2
+#if _LEAVE_ADD2
+}
+#endif
+
 #if _ENTER_ADDS
 {
 #endif
@@ -13240,7 +13393,7 @@ had been used instead.
 FUNCOF(             \
     adds, (   A   ),\
     YDZ,  /* TGK */ \
-    NONE, /* TGW */ \
+    YWZ,  /* TGW */ \
     YDZ,  /* TGD */ \
     YDZ,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -13488,7 +13641,7 @@ FUNCOF(             \
     YDR,  /* TGK */ \
     HWR,  /* TGW */ \
     WDR,  /* TGD */ \
-    DR, /* TGQ */ \
+    DR,   /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -14397,13 +14550,16 @@ FUNCOF(             \
 
 Reinterpret 8 bit scalar representation as int8_t or a
 vector as the equivalent width int8_t vector
+
+2024-04-19
+* fixed TGK=BU not being TGK=BR
 */
 
 #define     asbi(X) (asbi_funcof(X)(X))
 #define     asbi_funcof(X)  \
 FUNCOF(             \
     asbi, (   X   ),\
-    BU,   /* TGK */ \
+    BR,   /* TGK */ \
     YWR,  /* TGW */ \
     YDR,  /* TGD */ \
     YDR,  /* TGQ */ \
@@ -15386,6 +15542,9 @@ and the value to store.
 Like with bfg1, the vector variants use the entire vector
 as the allocation unit, which allows manipulating the
 vector's binary representation across lane boundaries.
+
+TODO: arm implementation needs massive overhaul
+
 */
 
 #define     bfs1(...)  (bfs1_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -15395,7 +15554,7 @@ FUNCOF(             \
     BDZ,  /* TGK */ \
     YWZ,  /* TGW */ \
     YDZ,  /* TGD */ \
-    YDZ,  /* TGQ */ \
+    NONE, /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -16075,9 +16234,9 @@ FUNCOF(             \
 FUNCOF(             \
     clty, (   A   ),\
     YDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -16401,9 +16560,9 @@ FUNCOF(             \
 FUNCOF(             \
     cgty, (   A   ),\
     YDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -17132,7 +17291,7 @@ FUNCOF(             \
 #if _ENTER_CSZL
 {
 #endif
-/*  Count sequential zero digits from lo to hi */
+/*  Count Zequential Zeros (lo to hi) */
 
 #define     cszl(...) (cszl_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cszl_funcof(X, ...)  \
@@ -18725,6 +18884,7 @@ FUNCOF(             \
 }
 #endif
 
+
 #if _ENTER_DCRL
 {
 #endif
@@ -18798,6 +18958,198 @@ FUNCOF(             \
 #define     dcrlqdu   VQDU_DCRL
 #define     dcrlqdi   VQDI_DCRL
 #if _LEAVE_DCRL
+}
+#endif
+
+#if _ENTER_DCR1
+{
+#endif
+/*  DeCRement (atomic subtract 1 w/ memory_order_relaxed)
+
+Atomically exchange the contents of the variable pointed
+to by the operand with its previous value minus 1.
+*/
+
+#define     dcr1(...)  (dcr1_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     dcr1_funcof(A, ...) \
+FUNCOF_AK(          \
+    dcr1, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     dcr1ayu    BOOL_DCR1A
+#define     dcr1abu   UINT8_DCR1A
+#define     dcr1abi    INT8_DCR1A
+#define     dcr1abc    CHAR_DCR1A
+#define     dcr1ahu  UINT16_DCR1A
+#define     dcr1ahi   INT16_DCR1A
+#define     dcr1awu  UINT32_DCR1A
+#define     dcr1awi   INT32_DCR1A
+#define     dcr1adu  UINT64_DCR1A
+#define     dcr1adi   INT64_DCR1A
+#if DWRD_NLONG == 2
+#   define  dcr1alu   ULONG_DCR1A
+#   define  dcr1ali    LONG_DCR1A
+#elif QUAD_NLLONG == 2
+#   define  dcr1alu  ULLONG_DCR1A
+#   define  dcr1ali   LLONG_DCR1A
+#else
+#   define  dcr1aqu  ULLONG_DCR1A
+#   define  dcr1aqi   LLONG_DCR1A
+#endif
+
+#if _LEAVE_DCR1
+}
+#endif
+
+#if _ENTER_DCRA
+{
+#endif
+/*  DeCRement (atomic subtract 1 w/ memory_order_acquire)
+
+Atomically exchange the contents of the variable pointed
+to by the operand with its previous value minus 1.
+*/
+
+#define     dcra(...)  (dcra_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     dcra_funcof(A, ...) \
+FUNCOF_AK(          \
+    dcra, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     dcraayu    BOOL_DCRAA
+#define     dcraabu   UINT8_DCRAA
+#define     dcraabi    INT8_DCRAA
+#define     dcraabc    CHAR_DCRAA
+#define     dcraahu  UINT16_DCRAA
+#define     dcraahi   INT16_DCRAA
+#define     dcraawu  UINT32_DCRAA
+#define     dcraawi   INT32_DCRAA
+#define     dcraadu  UINT64_DCRAA
+#define     dcraadi   INT64_DCRAA
+#if DWRD_NLONG == 2
+#   define  dcraalu   ULONG_DCRAA
+#   define  dcraali    LONG_DCRAA
+#elif QUAD_NLLONG == 2
+#   define  dcraalu  ULLONG_DCRAA
+#   define  dcraali   LLONG_DCRAA
+#else
+#   define  dcraaqu  ULLONG_DCRAA
+#   define  dcraaqi   LLONG_DCRAA
+#endif
+
+#if _LEAVE_DCRA
+}
+#endif
+
+#if _ENTER_DCRE
+{
+#endif
+/*  DeCRement (atomic subtract 1 w/ memory_order_release)
+
+Atomically exchange the contents of the variable pointed
+to by the operand with its previous value minus 1.
+*/
+
+#define     dcre(...)  (dcre_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     dcre_funcof(A, ...) \
+FUNCOF_AK(          \
+    dcre, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     dcreayu    BOOL_DCREA
+#define     dcreabu   UINT8_DCREA
+#define     dcreabi    INT8_DCREA
+#define     dcreabc    CHAR_DCREA
+#define     dcreahu  UINT16_DCREA
+#define     dcreahi   INT16_DCREA
+#define     dcreawu  UINT32_DCREA
+#define     dcreawi   INT32_DCREA
+#define     dcreadu  UINT64_DCREA
+#define     dcreadi   INT64_DCREA
+#if DWRD_NLONG == 2
+#   define  dcrealu   ULONG_DCREA
+#   define  dcreali    LONG_DCREA
+#elif QUAD_NLLONG == 2
+#   define  dcrealu  ULLONG_DCREA
+#   define  dcreali   LLONG_DCREA
+#else
+#   define  dcreaqu  ULLONG_DCREA
+#   define  dcreaqi   LLONG_DCREA
+#endif
+
+#if _LEAVE_DCRE
+}
+#endif
+
+#if _ENTER_DCRT
+{
+#endif
+/*  DeCRement (atomic subtract 1 w/ memory_order_seq_cst)
+
+Atomically exchange the contents of the variable pointed
+to by the operand with its previous value minus 1.
+*/
+
+#define     dcrt(...)  (dcrt_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     dcrt_funcof(A, ...) \
+FUNCOF_AK(          \
+    dcrt, (   A   ),\
+    NONE, /* TGK */ \
+    YDZ,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     dcrtayu    BOOL_DCRTA
+#define     dcrtabu   UINT8_DCRTA
+#define     dcrtabi    INT8_DCRTA
+#define     dcrtabc    CHAR_DCRTA
+#define     dcrtahu  UINT16_DCRTA
+#define     dcrtahi   INT16_DCRTA
+#define     dcrtawu  UINT32_DCRTA
+#define     dcrtawi   INT32_DCRTA
+#define     dcrtadu  UINT64_DCRTA
+#define     dcrtadi   INT64_DCRTA
+#if DWRD_NLONG == 2
+#   define  dcrtalu   ULONG_DCRTA
+#   define  dcrtali    LONG_DCRTA
+#elif QUAD_NLLONG == 2
+#   define  dcrtalu  ULLONG_DCRTA
+#   define  dcrtali   LLONG_DCRTA
+#else
+#   define  dcrtaqu  ULLONG_DCRTA
+#   define  dcrtaqi   LLONG_DCRTA
+#endif
+
+#if _LEAVE_DCRT
 }
 #endif
 
@@ -19278,7 +19630,13 @@ FUNCOF_AC(                      \
 #define     dupwhi       INT16_DUPW
 #define     dupwachi     INT16_DUPWAC
 #define     dupwhf       FLT16_DUPW
-#define     dupwhfac     FLT16_DUPWAC
+#define     dupwachf     FLT16_DUPWAC
+#define     dupwwu      UINT32_DUPW
+#define     dupwacwu    UINT32_DUPWAC
+#define     dupwwi       INT32_DUPW
+#define     dupwacwi     INT32_DUPWAC
+#define     dupwwf         FLT_DUPW
+#define     dupwacwf       FLT_DUPWAC
 
 #define     dupwwyu       VWYU_DUPW
 #define     dupwwbu       VWBU_DUPW
@@ -19534,20 +19892,6 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define      duplacyu   BOOL_DUPLAC
-#define      duplacbu  UINT8_DUPLAC
-#define      duplacbi   INT8_DUPLAC
-#define      duplacbc   CHAR_DUPLAC
-#define      duplachu UINT16_DUPLAC
-#define      duplachi  INT16_DUPLAC
-#define      duplachf  FLT16_DUPLAC
-#define      duplacwu UINT32_DUPLAC
-#define      duplacwi  INT32_DUPLAC
-#define      duplacwf    FLT_DUPLAC
-#define      duplacdu UINT64_DUPLAC
-#define      duplacdi  INT64_DUPLAC
-#define      duplacdf    DBL_DUPLAC
-
 #define      duplwyu    VWYU_DUPL
 #define      duplwbu    VWBU_DUPL
 #define      duplwbi    VWBI_DUPL
@@ -19596,7 +19940,7 @@ FUNCOF(             \
 #endif
 /*  Fused Add Multiply (truncated)
 
-For elements A, B, and C in the three operands, respectively,
+For integers A, B, and C in each operand, respectively,
 compute the truncated result of A+B*C.
 */
 
@@ -19605,7 +19949,7 @@ compute the truncated result of A+B*C.
 FUNCOF(             \
     faml, (   A   ),\
     YDZ,  /* TGK */ \
-    NONE, /* TGW */ \
+    YWZ,  /* TGW */ \
     YDZ,  /* TGD */ \
     YDZ,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -19641,10 +19985,8 @@ FUNCOF(             \
 #define     famlwbc   VWBC_FAML
 #define     famlwhu   VWHU_FAML
 #define     famlwhi   VWHI_FAML
-#define     famlwhf   VWHF_FAML
 #define     famlwwu   VWWU_FAML
 #define     famlwwi   VWWI_FAML
-#define     famlwwf   VWWF_FAML
 
 #define     famldyu   VDYU_FAML
 #define     famldbu   VDBU_FAML
@@ -19652,13 +19994,10 @@ FUNCOF(             \
 #define     famldbc   VDBC_FAML
 #define     famldhu   VDHU_FAML
 #define     famldhi   VDHI_FAML
-#define     famldhf   VDHF_FAML
 #define     famldwu   VDWU_FAML
 #define     famldwi   VDWI_FAML
-#define     famldwf   VDWF_FAML
 #define     famlddu   VDDU_FAML
 #define     famlddi   VDDI_FAML
-#define     famlddf   VDDF_FAML
 
 #define     famlqyu   VQYU_FAML
 #define     famlqbu   VQBU_FAML
@@ -19666,41 +20005,10 @@ FUNCOF(             \
 #define     famlqbc   VQBC_FAML
 #define     famlqhu   VQHU_FAML
 #define     famlqhi   VQHI_FAML
-#define     famlqhf   VQHF_FAML
 #define     famlqwu   VQWU_FAML
 #define     famlqwi   VQWI_FAML
-#define     famlqwf   VQWF_FAML
 #define     famlqdu   VQDU_FAML
 #define     famlqdi   VQDI_FAML
-#define     famlqdf   VQDF_FAML
-
-#define     famloyu   VOYU_FAML
-#define     famlobu   VOBU_FAML
-#define     famlobi   VOBI_FAML
-#define     famlobc   VOBC_FAML
-#define     famlohu   VOHU_FAML
-#define     famlohi   VOHI_FAML
-#define     famlohf   VOHF_FAML
-#define     famlowu   VOWU_FAML
-#define     famlowi   VOWI_FAML
-#define     famlowf   VOWF_FAML
-#define     famlodu   VODU_FAML
-#define     famlodi   VODI_FAML
-#define     famlodf   VODF_FAML
-
-#define     famlsyu   VSYU_FAML
-#define     famlsbu   VSBU_FAML
-#define     famlsbi   VSBI_FAML
-#define     famlsbc   VSBC_FAML
-#define     famlshu   VSHU_FAML
-#define     famlshi   VSHI_FAML
-#define     famlshf   VSHF_FAML
-#define     famlswu   VSWU_FAML
-#define     famlswi   VSWI_FAML
-#define     famlswf   VSWF_FAML
-#define     famlsdu   VSDU_FAML
-#define     famlsdi   VSDI_FAML
-#define     famlsdf   VSDF_FAML
 #if _LEAVE_FAML
 }
 #endif
@@ -19708,10 +20016,14 @@ FUNCOF(             \
 #if _ENTER_FAM2
 {
 #endif
-/*  Fused Add Multiply (saturated)
+/*  Fused Add Multiply (widened accumulator)
 
 For elements A, B, and C in the three operands, respectively,
-compute the saturated result of A+B*C.
+compute the saturated result of A+B*C. A is twice as wide
+as B or C.
+
+If the element type of A is too small to store the result
+of A+B*C, the result is implementation defined.
 */
 
 #define     fam2(...) (fam2_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -20673,18 +20985,18 @@ FUNCOF_AC(                  \
     default: NULL   \
 )
 
-#define     ldrwacbu     UINT8_LDRDAC
-#define     ldrwacbi      INT8_LDRDAC
-#define     ldrwacbc      CHAR_LDRDAC
-#define     ldrwachu    UINT16_LDRDAC
-#define     ldrwachi     INT16_LDRDAC
-#define     ldrwachf     FLT16_LDRDAC
-#define     ldrwacwu    UINT32_LDRDAC
-#define     ldrwacwi     INT32_LDRDAC
-#define     ldrwacwf       FLT_LDRDAC
+#define     ldrwacbu     UINT8_LDRWAC
+#define     ldrwacbi      INT8_LDRWAC
+#define     ldrwacbc      CHAR_LDRWAC
+#define     ldrwachu    UINT16_LDRWAC
+#define     ldrwachi     INT16_LDRWAC
+#define     ldrwachf     FLT16_LDRWAC
+#define     ldrwacwu    UINT32_LDRWAC
+#define     ldrwacwi     INT32_LDRWAC
+#define     ldrwacwf       FLT_LDRWAC
 #if (DWRD_NLONG == 2)
-#define     ldrwaclu     ULONG_LDRDAC
-#define     ldrwacli      LONG_LDRDAC
+#define     ldrwaclu     ULONG_LDRWAC
+#define     ldrwacli      LONG_LDRWAC
 #endif
 
 #if _LEAVE_LDRW
@@ -20780,14 +21092,71 @@ FUNCOF_AC(                  \
 #endif
 
 
+#if _ENTER_LUN1
+{
+#endif
+/*  Load UNaligned (into 1 multilane vector lane)
+
+Given a vector V, lane K, and packed data S, set V[K]=*S.
+
+*/
+
+#define     lun1(...)  (lun1_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     lun1_funcof(S, ...) \
+FUNCOF(             \
+    lun1, (   S   ),\
+    NONE, /* TGK */ \
+    YHR,  /* TGW */ \
+    YWR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     lun1wyu VWYU_LUN1
+#define     lun1wbu VWBU_LUN1
+#define     lun1wbi VWBI_LUN1
+#define     lun1wbc VWBC_LUN1
+#define     lun1whu VWHU_LUN1
+#define     lun1whi VWHI_LUN1
+#define     lun1whf VWHF_LUN1
+
+#define     lun1dyu VDYU_LUN1
+#define     lun1dbu VDBU_LUN1
+#define     lun1dbi VDBI_LUN1
+#define     lun1dbc VDBC_LUN1
+#define     lun1dhu VDHU_LUN1
+#define     lun1dhi VDHI_LUN1
+#define     lun1dhf VDHF_LUN1
+#define     lun1dwu VDWU_LUN1
+#define     lun1dwi VDWI_LUN1
+#define     lun1dwf VDWF_LUN1
+
+#define     lun1qyu VQYU_LUN1
+#define     lun1qbu VQBU_LUN1
+#define     lun1qbi VQBI_LUN1
+#define     lun1qbc VQBC_LUN1
+#define     lun1qhu VQHU_LUN1
+#define     lun1qhi VQHI_LUN1
+#define     lun1qhf VQHF_LUN1
+#define     lun1qwu VQWU_LUN1
+#define     lun1qwi VQWI_LUN1
+#define     lun1qwf VQWF_LUN1
+#define     lun1qdu VQDU_LUN1
+#define     lun1qdi VQDI_LUN1
+#define     lun1qdf VQDF_LUN1
+#if _LEAVE_LUN1
+}
+#endif
+
 #if _ENTER_LUNN
 {
 #endif
 /*  Load UNaligned (native endian)
 
-    A better name for this might have been "load packed",
-    since its primary use case is loading packed scalars
-    from e.g. a memory mapped image file.
+Load a contiguous sequence of bytes then interpret that
+string as a value of the result type.
 */
 
 #define     lunn(...) (lunn_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -20795,7 +21164,7 @@ FUNCOF_AC(                  \
 FUNCOF_AC(          \
     lunn, (   A   ),\
     NONE, /* TGK */ \
-    YDZ,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -20833,20 +21202,21 @@ FUNCOF_AC(          \
 }
 #endif
 
-#if _ENTER_LUNW
+#if _ENTER_LUNL
 {
 #endif
-/*  Load UNaligned Word vector (native endian)
+/*  Load UNaligned (lil endian)
 
-    Load 4 bytes into a 32 bit vector.
+Load a contiguous sequence of bytes, interpreting it as a
+lil endian represented value.
 */
 
-#define     lunw(...) (lunw_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     lunw_funcof(A, ...) \
+#define     lunl(...) (lunl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     lunl_funcof(A, ...) \
 FUNCOF_AC(          \
-    lunw, (   A   ),\
+    lunl, (   A   ),\
     NONE, /* TGK */ \
-    BWZ,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -20855,6 +21225,108 @@ FUNCOF_AC(          \
     default: NULL   \
 )
 
+#define     lunlacyu   BOOL_LUNLAC
+#define     lunlacbu  UINT8_LUNLAC
+#define     lunlacbi   INT8_LUNLAC
+#define     lunlacbc   CHAR_LUNLAC
+#define     lunlachu UINT16_LUNLAC
+#define     lunlachi  INT16_LUNLAC
+#define     lunlachf  FLT16_LUNLAC
+#define     lunlacwu UINT32_LUNLAC
+#define     lunlacwi  INT32_LUNLAC
+#define     lunlacwf    FLT_LUNLAC
+#define     lunlacdu UINT64_LUNLAC
+#define     lunlacdi  INT64_LUNLAC
+#define     lunlacdf    DBL_LUNLAC
+#define     lunlacap   ADDR_LUNLAC
+#if   DWRD_NLONG == 2
+#   define  lunlaclu  ULONG_LUNLAC
+#   define  lunlacli   LONG_LUNLAC
+#elif QUAD_NLLONG == 2
+#   define  lunlaclu ULLONG_LUNLAC
+#   define  lunlacli  LLONG_LUNLAC
+#else
+#   define  lunlacqu ULLONG_LUNLAC
+#   define  lunlacqi  LLONG_LUNLAC
+#endif
+
+#if _LEAVE_LUNL
+}
+#endif
+
+#if _ENTER_LUNR
+{
+#endif
+/*  Load UNaligned (big endian)
+
+Load a contiguous sequence of bytes, interpreting it as a
+big endian represented value.
+*/
+
+#define     lunr(...) (lunr_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     lunr_funcof(A, ...) \
+FUNCOF_AC(          \
+    lunr, (   A   ),\
+    NONE, /* TGK */ \
+    YDR,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     lunracyu   BOOL_LUNRAC
+#define     lunracbu  UINT8_LUNRAC
+#define     lunracbi   INT8_LUNRAC
+#define     lunracbc   CHAR_LUNRAC
+#define     lunrachu UINT16_LUNRAC
+#define     lunrachi  INT16_LUNRAC
+#define     lunrachf  FLT16_LUNRAC
+#define     lunracwu UINT32_LUNRAC
+#define     lunracwi  INT32_LUNRAC
+#define     lunracwf    FLT_LUNRAC
+#define     lunracdu UINT64_LUNRAC
+#define     lunracdi  INT64_LUNRAC
+#define     lunracdf    DBL_LUNRAC
+#define     lunracap   ADDR_LUNRAC
+#if   DWRD_NLONG == 2
+#   define  lunraclu  ULONG_LUNRAC
+#   define  lunracli   LONG_LUNRAC
+#elif QUAD_NLLONG == 2
+#   define  lunraclu ULLONG_LUNRAC
+#   define  lunracli  LLONG_LUNRAC
+#else
+#   define  lunracqu ULLONG_LUNRAC
+#   define  lunracqi  LLONG_LUNRAC
+#endif
+
+#if _LEAVE_LUNR
+}
+#endif
+
+#if _ENTER_LUNW
+{
+#endif
+/*  Load UNaligned Word vector (native endian) 
+*/
+
+#define     lunw(...) (lunw_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     lunw_funcof(A, ...) \
+FUNCOF_AC(          \
+    lunw, (   A   ),\
+    NONE, /* TGK */ \
+    YWR,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     lunwacyu   BOOL_LUNWAC
 #define     lunwacbu  UINT8_LUNWAC
 #define     lunwacbi   INT8_LUNWAC
 #define     lunwacbc   CHAR_LUNWAC
@@ -20877,8 +21349,6 @@ FUNCOF_AC(          \
 {
 #endif
 /*  Load UNaligned Doubleword vector (native endian)
-
-    Load 8 bytes into a 64 bit vector.
 */
 
 #define     lund(...) (lund_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -20886,7 +21356,7 @@ FUNCOF_AC(          \
 FUNCOF_AC(          \
     lund, (   A   ),\
     NONE, /* TGK */ \
-    BDZ,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -20895,6 +21365,7 @@ FUNCOF_AC(          \
     default: NULL   \
 )
 
+#define     lundacyu   BOOL_LUNDAC
 #define     lundacbu  UINT8_LUNDAC
 #define     lundacbi   INT8_LUNDAC
 #define     lundacbc   CHAR_LUNDAC
@@ -20926,8 +21397,6 @@ FUNCOF_AC(          \
 {
 #endif
 /*  Load UNaligned (nat endian Quadword vector)
-
-Load 16 bytes into a 128 bit vector.
 */
 
 #define     lunq(...) (lunq_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -20935,7 +21404,7 @@ Load 16 bytes into a 128 bit vector.
 FUNCOF_AC(          \
     lunq, (   A   ),\
     NONE, /* TGK */ \
-    BDZ,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -20944,6 +21413,7 @@ FUNCOF_AC(          \
     default: NULL   \
 )
 
+#define     lunqacyu   BOOL_LUNQAC
 #define     lunqacbu  UINT8_LUNQAC
 #define     lunqacbi   INT8_LUNQAC
 #define     lunqacbc   CHAR_LUNQAC
@@ -20990,7 +21460,7 @@ than the second.
 FUNCOF(             \
     maxl, (   A   ),\
     YDR,  /* TGK */ \
-    NONE, /* TGW */ \
+    YWR,  /* TGW */ \
     YDR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -21074,7 +21544,7 @@ FUNCOF(             \
 FUNCOF(             \
     maxv, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
+    YHR,  /* TGW */ \
     YWR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -21136,7 +21606,7 @@ the second.
 FUNCOF(             \
     minl, (   A   ),\
     YDR,  /* TGK */ \
-    NONE, /* TGW */ \
+    YWR,  /* TGW */ \
     YDR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -21226,7 +21696,7 @@ with the min/max in lane 0 and the index in lane 1.
 FUNCOF(             \
     minv, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
+    YHR,  /* TGW */ \
     YWR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -21241,7 +21711,6 @@ FUNCOF(             \
 #define     minvwhu   VWHU_MINV
 #define     minvwhi   VWHI_MINV
 #define     minvwhf   VWHF_MINV
-
 
 #define     minvdyu   VDYU_MINV
 #define     minvdbu   VDBU_MINV
@@ -21488,28 +21957,24 @@ result's element width is 2N.
 #define     mul2_funcof(A, ...)  \
 FUNCOF(             \
     mul2,   (   A   ),  \
-    BDR,  /* TGK */ \
-    NONE, /* TGW */ \
-    BDR,  /* TGD */ \
+    BWZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BWZ,  /* TGD */ \
     NONE, /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
-#define     mul2yu    BOOL_MUL2
 #define     mul2bu   UINT8_MUL2
 #define     mul2bi    INT8_MUL2
 #define     mul2bc    CHAR_MUL2
 #define     mul2hu  UINT16_MUL2
 #define     mul2hi   INT16_MUL2
-#define     mul2hf   FLT16_MUL2
 #define     mul2wu  UINT32_MUL2
 #define     mul2wi   INT32_MUL2
-#define     mul2wf     FLT_MUL2
 #define     mul2du  UINT64_MUL2
 #define     mul2di   INT64_MUL2
-#define     mul2df     DBL_MUL2
 #if   DWRD_NLONG == 2
 #   define  mul2lu   ULONG_MUL2
 #   define  mul2li    LONG_MUL2
@@ -21527,35 +21992,19 @@ FUNCOF(             \
 #define     mul2wbc   VWBC_MUL2
 #define     mul2whu   VWHU_MUL2
 #define     mul2whi   VWHI_MUL2
-#define     mul2whf   VWHF_MUL2
 #define     mul2wwu   VWWU_MUL2
 #define     mul2wwi   VWWI_MUL2
-#define     mul2wwf   VWWF_MUL2
 
-#define     mul2dyu   VDYU_MUL2
 #define     mul2dbu   VDBU_MUL2
 #define     mul2dbi   VDBI_MUL2
 #define     mul2dbc   VDBC_MUL2
 #define     mul2dhu   VDHU_MUL2
 #define     mul2dhi   VDHI_MUL2
-#define     mul2dhf   VDHF_MUL2
 #define     mul2dwu   VDWU_MUL2
 #define     mul2dwi   VDWI_MUL2
-#define     mul2dwf   VDWF_MUL2
 #define     mul2ddu   VDDU_MUL2
 #define     mul2ddi   VDDI_MUL2
-#define     mul2ddf   VDDF_MUL2
 
-#define     mul2qyu   VQYU_MUL2
-#define     mul2qbu   VQBU_MUL2
-#define     mul2qbi   VQBI_MUL2
-#define     mul2qbc   VQBC_MUL2
-#define     mul2qhu   VQHU_MUL2
-#define     mul2qhi   VQHI_MUL2
-#define     mul2qhf   VQHF_MUL2
-#define     mul2qwu   VQWU_MUL2
-#define     mul2qwi   VQWI_MUL2
-#define     mul2qwf   VQWF_MUL2
 #if _LEAVE_MUL2
 }
 #endif
@@ -21886,16 +22335,15 @@ FUNCOF(             \
 #define     negl_funcof(X)  \
 FUNCOF(             \
     negl, (   X   ),\
-    YDR,  /* TGK */ \
-    YWR,  /* TGW */ \
-    YDR,  /* TGD */ \
-    YDR,  /* TGQ */ \
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
-#define     neglyu    BOOL_NEGL
 #define     neglbu   UINT8_NEGL
 #define     neglbi    INT8_NEGL
 #define     neglbc    CHAR_NEGL
@@ -21909,55 +22357,46 @@ FUNCOF(             \
 #define     negldi   INT64_NEGL
 #define     negldf     DBL_NEGL
 #if DWRD_NLONG == 2
-#   define  negllu  ULONG_NEGL
-#   define  neglli   LONG_NEGL
+#   define  negllu   ULONG_NEGL
+#   define  neglli    LONG_NEGL
 #elif QUAD_NLLONG == 2
-#   define  negllu ULLONG_NEGL
-#   define  neglli  LLONG_NEGL
+#   define  negllu  ULLONG_NEGL
+#   define  neglli   LLONG_NEGL
 #else
-#   define  neglqu ULLONG_NEGL
-#   define  neglqi  LLONG_NEGL
-#   define  neglqf   LDBL_NEGL
+#   define  neglqu  ULLONG_NEGL
+#   define  neglqi   LLONG_NEGL
+#   define  neglqf    LDBL_NEGL
 #endif
 
-#define     neglwyu  VWYU_NEGL
-#define     neglwbu  VWBU_NEGL
-#define     neglwbi  VWBI_NEGL
-#define     neglwbc  VWBC_NEGL
-#define     neglwhu  VWHU_NEGL
-#define     neglwhi  VWHI_NEGL
-#define     neglwhf  VWHF_NEGL
-#define     neglwwu  VWWU_NEGL
-#define     neglwwi  VWWI_NEGL
-#define     neglwwf  VWWF_NEGL
+#define     neglwbu   VWBU_NEGL
+#define     neglwbi   VWBI_NEGL
+#define     neglwbc   VWBC_NEGL
+#define     neglwhu   VWHU_NEGL
+#define     neglwhi   VWHI_NEGL
+#define     neglwhf   VWHF_NEGL
+#define     neglwwu   VWWU_NEGL
+#define     neglwwi   VWWI_NEGL
+#define     neglwwf   VWWF_NEGL
 
-#define     negldyu  VDYU_NEGL
-#define     negldbu  VDBU_NEGL
-#define     negldbi  VDBI_NEGL
-#define     negldbc  VDBC_NEGL
-#define     negldhu  VDHU_NEGL
-#define     negldhi  VDHI_NEGL
-#define     negldhf  VDHF_NEGL
-#define     negldwu  VDWU_NEGL
-#define     negldwi  VDWI_NEGL
-#define     negldwf  VDWF_NEGL
-#define     neglddu  VDDU_NEGL
-#define     neglddi  VDDI_NEGL
-#define     neglddf  VDDF_NEGL
+#define     negldbu   VDBU_NEGL
+#define     negldbi   VDBI_NEGL
+#define     negldbc   VDBC_NEGL
+#define     negldhu   VDHU_NEGL
+#define     negldhi   VDHI_NEGL
+#define     negldwu   VDWU_NEGL
+#define     negldwi   VDWI_NEGL
+#define     neglddu   VDDU_NEGL
+#define     neglddi   VDDI_NEGL
 
-#define     neglqyu  VQYU_NEGL
-#define     neglqbu  VQBU_NEGL
-#define     neglqbi  VQBI_NEGL
-#define     neglqbc  VQBC_NEGL
-#define     neglqhu  VQHU_NEGL
-#define     neglqhi  VQHI_NEGL
-#define     neglqhf  VQHF_NEGL
-#define     neglqwu  VQWU_NEGL
-#define     neglqwi  VQWI_NEGL
-#define     neglqwf  VQWF_NEGL
-#define     neglqdu  VQDU_NEGL
-#define     neglqdi  VQDI_NEGL
-#define     neglqdf  VQDF_NEGL
+#define     neglqbu   VQBU_NEGL
+#define     neglqbi   VQBI_NEGL
+#define     neglqbc   VQBC_NEGL
+#define     neglqhu   VQHU_NEGL
+#define     neglqhi   VQHI_NEGL
+#define     neglqwu   VQWU_NEGL
+#define     neglqwi   VQWI_NEGL
+#define     neglqdu   VQDU_NEGL
+#define     neglqdi   VQDI_NEGL
 #if _LEAVE_NEGL
 }
 #endif
@@ -23144,27 +23583,86 @@ FUNCOF(             \
 }
 #endif
 
+#if _ENTER_REVH
+{
+#endif
+/*  REVerse (halforder)
+
+Reverse the halfwords in each 32 bit or wider element of
+the operand.
+*/
+
+#define     revh(X)     (revh_funcof(X)(X))
+#define     revh_funcof(X)  \
+FUNCOF(             \
+    revh, (   X   ),\
+    WDR,  /* TGK */ \
+    WR,   /* TGW */ \
+    WDR,  /* TGD */ \
+    WDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     revhwu  UINT32_REVH
+#define     revhwi   INT32_REVH
+#define     revhwf     FLT_REVH
+#define     revhdu  UINT64_REVH
+#define     revhdi   INT64_REVH
+#define     revhdf     DBL_REVH
+#if DWRD_NLONG == 2
+#   define  revhlu   ULONG_REVH
+#   define  revhli    LONG_REVH
+#elif QUAD_NLLONG == 2
+#   define  revhlu  ULLONG_REVH
+#   define  revhli   LLONG_REVH
+#endif
+
+#define     revhwwu   VWWU_REVH
+#define     revhwwi   VWWI_REVH
+#define     revhwwf   VWWF_REVH
+
+#define     revhdwu   VDWU_REVH
+#define     revhdwi   VDWI_REVH
+#define     revhdwf   VDWF_REVH
+#define     revhddu   VDDU_REVH
+#define     revhddi   VDDI_REVH
+#define     revhddf   VDDF_REVH
+
+#define     revhqwu   VQWU_REVH
+#define     revhqwi   VQWI_REVH
+#define     revhqwf   VQWF_REVH
+#define     revhqdu   VQDU_REVH
+#define     revhqdi   VQDI_REVH
+#define     revhqdf   VQDF_REVH
+#if _LEAVE_REVH
+}
+#endif
+
 
 #if _ENTER_RAZB
 {
 #endif
-/*  Round each floating point element in the operand to
-    the nearest integer then convert the result to int8_t.
-    Ties round away from zero, i.e. towards ±∞.
+/*  Round Away from Zero (as 8 bit int)
 
-    If rounded values are greater than INT8_MAX or less
-    than INT8_MIN, the result is implementation defined.
+Round each floating point element in the operand to
+the nearest integer then convert the result to int8_t.
+Ties round away from zero, i.e. towards ±∞.
 
-    If any element is NaN, the result is undefined.
+If rounded values are greater than INT8_MAX or less
+than INT8_MIN, the result is implementation defined.
+
+If any element is NaN, the result is undefined.
 */
 
 #define     razb(...) (razb_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     razb_funcof(X, ...)  \
 FUNCOF(             \
     razb, (   X   ),\
-    HDF,  /* TGK */ \
+    BDF,  /* TGK */ \
     NONE, /* TGW */ \
-    HF, /* TGD */ \
+    HF,   /* TGD */ \
     HWF,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
@@ -23179,7 +23677,6 @@ FUNCOF(             \
 #endif
 
 #define     razbdhf   VDHF_RAZB
-
 #define     razbqhf   VQHF_RAZB
 #define     razbqwf   VQWF_RAZB
 #if _LEAVE_RAZB
@@ -23204,7 +23701,7 @@ FUNCOF(             \
 FUNCOF(             \
     razh, (   X   ),\
     HDF,  /* TGK */ \
-    HF, /* TGW */ \
+    HF,   /* TGW */ \
     HWF,  /* TGD */ \
     HDF,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -23282,9 +23779,8 @@ FUNCOF(             \
 #endif
 
 #define     razwwhf   VWHF_RAZW
-#define     razwwwf   VWHF_RAZW
+#define     razwwwf   VWWF_RAZW
 
-// TGD=HDF
 #define     razwdhf   VDHF_RAZW
 #define     razwdwf   VDWF_RAZW
 #define     razwddf   VDDF_RAZW
@@ -23317,7 +23813,7 @@ FUNCOF(             \
     HDF,  /* TGK */ \
     HWF,  /* TGW */ \
     WDF,  /* TGD */ \
-    DF, /* TGQ */ \
+    DF,   /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -23331,7 +23827,7 @@ FUNCOF(             \
 #endif
 
 #define     razdwhf   VWHF_RAZD
-#define     razdwwf   VWHF_RAZD
+#define     razdwwf   VWWF_RAZD
 
 #define     razddhf   VDHF_RAZD
 #define     razddwf   VDWF_RAZD
@@ -23374,7 +23870,7 @@ FUNCOF(             \
 #endif
 
 #define     razfwhf   VWHF_RAZF
-#define     razfwwf   VWHF_RAZF
+#define     razfwwf   VWWF_RAZF
 
 #define     razfdhf   VDHF_RAZF
 #define     razfdwf   VDWF_RAZF
@@ -23451,7 +23947,7 @@ FUNCOF(             \
 FUNCOF(             \
     rotr, (   A   ),\
     BDU,  /* TGK */ \
-    NONE, /* TGW */ \
+    BWU,  /* TGW */ \
     BDU,  /* TGD */ \
     BDU,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -23513,7 +24009,7 @@ implementation defined.
 FUNCOF(             \
     rovl, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
+    BWU,  /* TGW */ \
     BDU,  /* TGD */ \
     BDU,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -23561,7 +24057,7 @@ implementation defined.
 FUNCOF(             \
     rovr, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
+    BWU,  /* TGW */ \
     BDU,  /* TGD */ \
     BDU,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -23611,7 +24107,7 @@ FUNCOF(             \
     rtnb, (   X   ),\
     HDF,  /* TGK */ \
     NONE, /* TGW */ \
-    HF, /* TGD */ \
+    HF,   /* TGD */ \
     HWF,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
@@ -24197,12 +24693,14 @@ FUNCOF(             \
 #if _ENTER_SET1
 {
 #endif
-/*  Replace a single vector element */
+/*  Replace a single vector element 
+
+*/
 
 #define     set1(...)    (set1_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     set1_funcof(D, ...) \
 FUNCOF(             \
-    set1,   (   D   ),      \
+    set1, (   D   ),\
     NONE, /* TGK */ \
     YHR,  /* TGW */ \
     YWR,  /* TGD */ \
@@ -24392,6 +24890,8 @@ For floats, which are generally implemented by adding the
 shift amount to its exponent bitfield, the result is
 undefined if it exceeds the maximum exponent possible for
 a normal class float.
+
+TODO: actually implement for floats 
 */
 
 #define     shll(...) (shll_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -24637,7 +25137,7 @@ twice as wide as the element size of A.
 #define     shl2(...) (shl2_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     shl2_funcof(A, ...)  \
 FUNCOF(             \
-    shl2,   (   A   ),  \
+    shl2, (   A   ),\
     BWZ,  /* TGK */ \
     BWZ,  /* TGW */ \
     BWZ,  /* TGD */ \
@@ -24766,6 +25266,7 @@ FUNCOF(             \
 }
 #endif
 
+
 #if _ENTER_SILL
 {
 #endif
@@ -24779,7 +25280,6 @@ in.
 
     sill(a,b,c) => (a<<c)|(b[:c])
 
-// TODO: implement the 32 bit vector variants
 */
 
 #define     sill(...) (sill_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -24787,7 +25287,7 @@ in.
 FUNCOF(             \
     sill, (   A   ),\
     YDU,  /* TGK */ \
-    NONE, /* TGW */ \
+    YWU,  /* TGW */ \
     YDU,  /* TGD */ \
     YDU,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -24842,13 +25342,12 @@ FUNCOF(             \
 
 Shift the binary representation of each element in the
 first operand A left by the number of bits specified by
-the third operand C. The least significant C bits of the
+the third operand C. The most significant C bits of the
 corresponding element of the second operand B are shifted
 in.
 
     silr(a,b,c) => (a<<c)|(b[-c:])
 
-// TODO: implement the 32 bit vector variants
 */
 
 #define     silr(...) (silr_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -24856,7 +25355,7 @@ in.
 FUNCOF(             \
     silr, (   A   ),\
     YDU,  /* TGK */ \
-    NONE, /* TGW */ \
+    YWU,  /* TGW */ \
     YDU,  /* TGD */ \
     YDU,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -24904,19 +25403,166 @@ FUNCOF(             \
 }
 #endif
 
+
+
+#if _ENTER_SIRR
+{
+#endif
+/*  Shift/Insert Right (from hi)
+
+Shift the binary representation of each element in the
+first operand A right by the number of bits specified by
+the third operand C. The most significant C bits of the
+corresponding element of the second operand B are shifted
+in.
+
+    sirr(a,b,c) => (a>>c)|(b[-c:])
+
+If C is less than 0 or greater than the element width, the
+result is undefined.
+
+TODO: debate implementing ops for signed ints. If the answer
+is "no", delete the reserved signed scalar op defines
+*/
+
+#define     sirr(...) (sirr_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     sirr_funcof(A, ...)  \
+FUNCOF(             \
+    sirr, (   A   ),\
+    YDU,  /* TGK */ \
+    YWU,  /* TGW */ \
+    YDU,  /* TGD */ \
+    YDU,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     sirryu    BOOL_SIRR
+#define     sirrbu   UINT8_SIRR
+#define     sirrbc    CHAR_SIRR
+#define     sirrhu  UINT16_SIRR
+#define     sirrwu  UINT32_SIRR
+#define     sirrdu  UINT64_SIRR
+#if   DWRD_NLONG == 2
+#   define  sirrlu   ULONG_SIRR
+#   define  sirrli    LONG_SIRR
+#elif QUAD_NLLONG == 2
+#   define  sirrlu  ULLONG_SIRR
+#   define  sirrli   LLONG_SIRR
+#else
+#   define  sirrqu  ULLONG_SIRR
+#   define  sirrqi   LLONG_SIRR
+#endif
+
+#define     sirrwyu   VWYU_SIRR
+#define     sirrwbu   VWBU_SIRR
+#define     sirrwbc   VWBC_SIRR
+#define     sirrwhu   VWHU_SIRR
+#define     sirrwwu   VWWU_SIRR
+
+#define     sirrdyu   VDYU_SIRR
+#define     sirrdbu   VDBU_SIRR
+#define     sirrdbc   VDBC_SIRR
+#define     sirrdhu   VDHU_SIRR
+#define     sirrdwu   VDWU_SIRR
+#define     sirrddu   VDDU_SIRR
+
+#define     sirrqyu   VQYU_SIRR
+#define     sirrqbu   VQBU_SIRR
+#define     sirrqbc   VQBC_SIRR
+#define     sirrqhu   VQHU_SIRR
+#define     sirrqwu   VQWU_SIRR
+#define     sirrqdu   VQDU_SIRR
+#if _LEAVE_SIRR
+}
+#endif
+
+
+#if _ENTER_SIRL
+{
+#endif
+/*  Shift/Insert Right (from hi)
+
+Shift the binary representation of each element in the
+first operand A right by the number of bits specified by
+the third operand C. The most significant C bits of the
+corresponding element of the second operand B are shifted
+in.
+
+    sirl(a,b,c) => (a>>c)|(b[-c:])
+
+If C is less than 0 or greater than the element width, the
+result is undefined.
+
+TODO: debate implementing ops for signed ints. If the answer
+is "no", delete the reserved signed scalar op defines
+*/
+
+#define     sirl(...) (sirl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     sirl_funcof(A, ...)  \
+FUNCOF(             \
+    sirl, (   A   ),\
+    YDU,  /* TGK */ \
+    YWU,  /* TGW */ \
+    YDU,  /* TGD */ \
+    YDU,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     sirlyu    BOOL_SIRL
+#define     sirlbu   UINT8_SIRL
+#define     sirlbc    CHAR_SIRL
+#define     sirlhu  UINT16_SIRL
+#define     sirlwu  UINT32_SIRL
+#define     sirldu  UINT64_SIRL
+#if   DWRD_NLONG == 2
+#   define  sirllu   ULONG_SIRL
+#   define  sirlli    LONG_SIRL
+#elif QUAD_NLLONG == 2
+#   define  sirllu  ULLONG_SIRL
+#   define  sirlli   LLONG_SIRL
+#else
+#   define  sirlqu  ULLONG_SIRL
+#   define  sirlqi   LLONG_SIRL
+#endif
+
+#define     sirlwyu   VWYU_SIRL
+#define     sirlwbu   VWBU_SIRL
+#define     sirlwbc   VWBC_SIRL
+#define     sirlwhu   VWHU_SIRL
+#define     sirlwwu   VWWU_SIRL
+
+#define     sirldyu   VDYU_SIRL
+#define     sirldbu   VDBU_SIRL
+#define     sirldbc   VDBC_SIRL
+#define     sirldhu   VDHU_SIRL
+#define     sirldwu   VDWU_SIRL
+#define     sirlddu   VDDU_SIRL
+
+#define     sirlqyu   VQYU_SIRL
+#define     sirlqbu   VQBU_SIRL
+#define     sirlqbc   VQBC_SIRL
+#define     sirlqhu   VQHU_SIRL
+#define     sirlqwu   VQWU_SIRL
+#define     sirlqdu   VQDU_SIRL
+#if _LEAVE_SIRL
+}
+#endif
+
 #if _ENTER_SPRL
 {
 #endif
 /*  Shift Pair Right (left fill)
 
-Shift the binary representation of a 2 or more element vector
-right by a multiple of the element size. An equivalent length
-slice of elements is taken from the lower end of a second
-vector and inserted into the opened space.
+Concatenate two N bit multielement vectors then shift the
+N×2 bit intermediate result right by a multiple of its 
+element size. The lower N bits of the intermediate result
+are kept.
 
     sprldhu(a, b, c) => (a>>(c*16))|b[:c*16]
-
-// TODO: implement the 32 bit vector variants
 
 */
 
@@ -24925,9 +25571,9 @@ vector and inserted into the opened space.
 FUNCOF(             \
     sprl, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
-    YWU,  /* TGD */ \
-    YDU,  /* TGQ */ \
+    YHR,  /* TGW */ \
+    YWR,  /* TGD */ \
+    YDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -24968,6 +25614,7 @@ FUNCOF(             \
 #if _LEAVE_SPRL
 }
 #endif
+
 
 #if _ENTER_STR1
 {
@@ -25140,11 +25787,11 @@ address isn't 4 byte aligned, the result is undefined.
 
 #define     strw(...)  (strw_funcof(__VA_ARGS__)(__VA_ARGS__))
 
-#define     strw_funcof(D, S, ...)  \
+#define     strw_funcof(D, ...)  \
 FUNCOF_AK(                  \
     strw, (   D   ),\
     NONE, /* TGK */ \
-    BWR,  /* TGA */ \
+    YWR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -25153,6 +25800,7 @@ FUNCOF_AK(                  \
     default: NULL   \
 )
 
+#define     strwayu   BOOL_STRWA
 #define     strwabu  UINT8_STRWA
 #define     strwabi   INT8_STRWA
 #define     strwabc   CHAR_STRWA
@@ -25181,11 +25829,11 @@ address isn't 8 byte aligned, the result is undefined.
 */
 
 #define     strd(D, S)  (strd_funcof(D,S)(D,S))
-#define     strd_funcof(D,...)  \
+#define     strd_funcof(D, ...)  \
 FUNCOF_AK(                  \
     strd, (   D   ),\
     NONE, /* TGK */ \
-    BDR,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -25194,6 +25842,7 @@ FUNCOF_AK(                  \
     default: NULL   \
 )
 
+#define     strdayu   BOOL_STRDA
 #define     strdabu  UINT8_STRDA
 #define     strdabi   INT8_STRDA
 #define     strdabc   CHAR_STRDA
@@ -25228,11 +25877,11 @@ address isn't 16 byte aligned, the result is undefined.
 */
 
 #define     strq(...)  (strq_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     strq_funcof(D,...)  \
+#define     strq_funcof(D, ...)  \
 FUNCOF_AK(                  \
     strq, (   D   ),\
     NONE, /* TGK */ \
-    BDR,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -25241,6 +25890,7 @@ FUNCOF_AK(                  \
     default: NULL   \
 )
 
+#define     strqayu   BOOL_STRQA
 #define     strqabu  UINT8_STRQA
 #define     strqabi   INT8_STRQA
 #define     strqabc   CHAR_STRQA
@@ -25553,8 +26203,6 @@ FUNCOF_AK(          \
 #if _LEAVE_SUBT
 }
 #endif
-
-
 
 #if _ENTER_SUBH
 {
@@ -25973,6 +26621,146 @@ FUNCOF(             \
 }
 #endif
 
+#if _ENTER_SUNN
+{
+#endif
+/*  Store UNaligned (nat endian)
+
+Store packed scalar value in native byteorder.
+
+*/
+
+#define     sunn(D, S)  (sunn_funcof(D,S)(D,S))
+#define     sunn_funcof(D, S, ...)  \
+FUNCOF_AK(                  \
+    sunn, (   D   ),\
+    NONE, /* TGK */ \
+    YDR,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     sunnayu   BOOL_SUNNA
+#define     sunnabu  UINT8_SUNNA
+#define     sunnabi   INT8_SUNNA
+#define     sunnabc   CHAR_SUNNA
+#define     sunnahu UINT16_SUNNA
+#define     sunnahi  INT16_SUNNA
+#define     sunnahf  FLT16_SUNNA
+#define     sunnawu UINT32_SUNNA
+#define     sunnawi  INT32_SUNNA
+#define     sunnawf    FLT_SUNNA
+#define     sunnadu UINT64_SUNNA
+#define     sunnadi  INT64_SUNNA
+#define     sunnadf    DBL_SUNNA
+#if   DWRD_NLONG == 2
+#   define  sunnalu  ULONG_SUNNA
+#   define  sunnali   LONG_SUNNA
+#elif QUAD_NLLONG == 2
+#   define  sunnalu ULLONG_SUNNA
+#   define  sunnali  LLONG_SUNNA
+#endif
+
+#if _LEAVE_SUNN
+}
+#endif
+
+#if _ENTER_SUNL
+{
+#endif
+/*  Store UNaligned (lil endian)
+
+Store packed scalar value in lil endian byteorder.
+*/
+
+#define     sunl(D, S)  (sunl_funcof(D,S)(D,S))
+#define     sunl_funcof(D, S, ...)  \
+FUNCOF_AK(                  \
+    sunl, (   D   ),\
+    NONE, /* TGK */ \
+    YDR,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     sunlayu   BOOL_SUNLA
+#define     sunlabu  UINT8_SUNLA
+#define     sunlabi   INT8_SUNLA
+#define     sunlabc   CHAR_SUNLA
+#define     sunlahu UINT16_SUNLA
+#define     sunlahi  INT16_SUNLA
+#define     sunlahf  FLT16_SUNLA
+#define     sunlawu UINT32_SUNLA
+#define     sunlawi  INT32_SUNLA
+#define     sunlawf    FLT_SUNLA
+#define     sunladu UINT64_SUNLA
+#define     sunladi  INT64_SUNLA
+#define     sunladf    DBL_SUNLA
+#if   DWRD_NLONG == 2
+#   define  sunlalu  ULONG_SUNLA
+#   define  sunlali   LONG_SUNLA
+#elif QUAD_NLLONG == 2
+#   define  sunlalu ULLONG_SUNLA
+#   define  sunlali  LLONG_SUNLA
+#endif
+
+#if _LEAVE_SUNL
+}
+#endif
+
+#if _ENTER_SUNR
+{
+#endif
+/*  Store UNaligned (big endian)
+
+Store packed scalar value in big endian byteorder.
+*/
+
+#define     sunr(D, S)  (sunr_funcof(D,S)(D,S))
+#define     sunr_funcof(D,S,...)  \
+FUNCOF_AK(                  \
+    sunr, (   D   ),\
+    NONE, /* TGK */ \
+    YDR,  /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     sunrayu   BOOL_SUNRA
+#define     sunrabi   INT8_SUNRA
+#define     sunrabc   CHAR_SUNRA
+#define     sunrahu UINT16_SUNRA
+#define     sunrahi  INT16_SUNRA
+#define     sunrahf  FLT16_SUNRA
+#define     sunrawu UINT32_SUNRA
+#define     sunrawi  INT32_SUNRA
+#define     sunrawf    FLT_SUNRA
+#define     sunradu UINT64_SUNRA
+#define     sunradi  INT64_SUNRA
+#define     sunradf    DBL_SUNRA
+#if   DWRD_NLONG == 2
+#   define  sunralu  ULONG_SUNRA
+#   define  sunrali   LONG_SUNRA
+#elif QUAD_NLLONG == 2
+#   define  sunralu ULLONG_SUNRA
+#   define  sunrali  LLONG_SUNRA
+#endif
+
+#if _LEAVE_SUNR
+}
+#endif
 
 #if _ENTER_SUNW
 {
@@ -25987,7 +26775,7 @@ Store a 32 bit vector at an arbitrary address.
 FUNCOF_AK(                  \
     sunw, (   D   ),\
     NONE, /* TGK */ \
-    BWR,  /* TGA */ \
+    YWR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -26027,7 +26815,7 @@ Store a 64 bit vector at an arbitrary address.
 FUNCOF_AK(                  \
     sund, (   A   ),\
     NONE, /* TGK */ \
-    BDR,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -26069,7 +26857,7 @@ FUNCOF_AK(                  \
 FUNCOF_AK(                  \
     sunq, (   A   ),\
     NONE, /* TGK */ \
-    BDR,  /* TGA */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -26351,7 +27139,7 @@ FUNCOF(             \
 */
 
 #define     swp1(...)  (swp1_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     swp1_funcof(A, B) \
+#define     swp1_funcof(A, ...) \
 FUNCOF_AK(          \
     swp1, (   A   ),\
     NONE, /* TGK */ \
@@ -26364,32 +27152,31 @@ FUNCOF_AK(          \
     default: NULL   \
 )
 
-#define     swp1aac    ADDR_SWP1A
-#define     swp1ayu    BOOL_SWP1A
-#define     swp1abu   UINT8_SWP1A
-#define     swp1abi    INT8_SWP1A
-#define     swp1abc    CHAR_SWP1A
-#define     swp1ahu  UINT16_SWP1A
-#define     swp1ahi   INT16_SWP1A
-#define     swp1awu  UINT32_SWP1A
-#define     swp1awi   INT32_SWP1A
-#define     swp1adu  UINT64_SWP1A
-#define     swp1adi   INT64_SWP1A
+#define     swp1aac   ADDR_SWP1A
+#define     swp1ayu   BOOL_SWP1A
+#define     swp1abu  UINT8_SWP1A
+#define     swp1abi   INT8_SWP1A
+#define     swp1abc   CHAR_SWP1A
+#define     swp1ahu UINT16_SWP1A
+#define     swp1ahi  INT16_SWP1A
+#define     swp1awu UINT32_SWP1A
+#define     swp1awi  INT32_SWP1A
+#define     swp1adu UINT64_SWP1A
+#define     swp1adi  INT64_SWP1A
 #if DWRD_NLONG == 2
-#   define  swp1lu   ULONG_SWP1A
-#   define  swp1li    LONG_SWP1A
+#   define  swp1alu  ULONG_SWP1A
+#   define  swp1ali   LONG_SWP1A
 #elif QUAD_NLLONG == 2
-#   define  swp1lu  ULLONG_SWP1A
-#   define  swp1li   LLONG_SWP1A
+#   define  swp1alu ULLONG_SWP1A
+#   define  swp1ali  LLONG_SWP1A
 #else
-#   define  swp1qu  ULLONG_SWP1A
-#   define  swp1qi   LLONG_SWP1A
+#   define  swp1aqu ULLONG_SWP1A
+#   define  swp1aqi  LLONG_SWP1A
 #endif
 
 #if _LEAVE_SWP1
 }
 #endif
-
 
 #if _ENTER_SWPA
 {
@@ -26721,7 +27508,7 @@ it is obvious what the difference between them would be.
 #define     unos(T, ...)    (unos_funcof(T)(__VA_ARGS__))
 #define     unos_funcof(T, ...) \
 FUNCOF(             \
-    unos,   ((T){0}),           \
+    unos, ((T){0}), \
     YDZ,  /* TGK */ \
     YWZ,  /* TGW */ \
     YDZ,  /* TGD */ \
@@ -26797,8 +27584,8 @@ TODO: implement uzp for integers
 FUNCOF(             \
     uzpl, (   X   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
-    YDR,  /* TGD */ \
+    BHR,  /* TGW */ \
+    BWR,  /* TGD */ \
     BDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
@@ -26825,6 +27612,7 @@ FUNCOF(             \
 #define     uzpldwf VDWF_UZPL
 
 #define     uzplqyu VQYU_UZPL
+#define     uzplqbu VQBU_UZPL
 #define     uzplqbi VQBI_UZPL
 #define     uzplqbc VQBC_UZPL
 #define     uzplqhu VQHU_UZPL
@@ -26850,7 +27638,7 @@ FUNCOF(             \
 FUNCOF(             \
     uzpr, (   X   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
+    BHR,  /* TGW */ \
     BWR,  /* TGD */ \
     BDR,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -26897,12 +27685,10 @@ FUNCOF(             \
 #endif
 /*  Vector EQuality match (boolean)
 
-If any element in the first operand equals the second
-operand, return true, otherwise return false.
+Test if any element in the multielement first operand A is
+equal to the second operand B.
 
-Any comparison with NaN generates an undefined result.
-
-TODO: implement 32 bit variants
+Any NaN comparisons produce an undefined result.
 */
 
 #define     veqy(...) (veqy_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -26910,7 +27696,7 @@ TODO: implement 32 bit variants
 FUNCOF(             \
     veqy, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
+    YHR,  /* TGW */ \
     YWR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -26925,9 +27711,6 @@ FUNCOF(             \
 #define     veqywhu   VWHU_VEQY
 #define     veqywhi   VWHI_VEQY
 #define     veqywhf   VWHF_VEQY
-#define     veqywwu   VWWU_VEQY
-#define     veqywwi   VWWI_VEQY
-#define     veqywwf   VWWF_VEQY
 
 #define     veqydyu   VDYU_VEQY
 #define     veqydbu   VDBU_VEQY
@@ -26939,9 +27722,6 @@ FUNCOF(             \
 #define     veqydwu   VDWU_VEQY
 #define     veqydwi   VDWI_VEQY
 #define     veqydwf   VDWF_VEQY
-#define     veqyddu   VDDU_VEQY
-#define     veqyddi   VDDI_VEQY
-#define     veqyddf   VDDF_VEQY
 
 #define     veqyqyu   VQYU_VEQY
 #define     veqyqbu   VQBU_VEQY
@@ -26972,7 +27752,8 @@ operand.
 
 Any comparison with NaN generates an undefined result.
 
-TODO: implement 32 bit variants
+TODO: debate renaming the current implementation of veqs
+and making veqs return a saturated scalar
 */
 
 #define     veqs(...) (veqs_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -26980,7 +27761,7 @@ TODO: implement 32 bit variants
 FUNCOF(             \
     veqs, (   A   ),\
     NONE, /* TGK */ \
-    NONE, /* TGW */ \
+    YHR,  /* TGW */ \
     YWR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -26995,9 +27776,6 @@ FUNCOF(             \
 #define     veqswhu   VWHU_VEQS
 #define     veqswhi   VWHI_VEQS
 #define     veqswhf   VWHF_VEQS
-#define     veqswwu   VWWU_VEQS
-#define     veqswwi   VWWI_VEQS
-#define     veqswwf   VWWF_VEQS
 
 #define     veqsdyu   VDYU_VEQS
 #define     veqsdbu   VDBU_VEQS
@@ -27009,9 +27787,6 @@ FUNCOF(             \
 #define     veqsdwu   VDWU_VEQS
 #define     veqsdwi   VDWI_VEQS
 #define     veqsdwf   VDWF_VEQS
-#define     veqsddu   VDDU_VEQS
-#define     veqsddi   VDDI_VEQS
-#define     veqsddf   VDDF_VEQS
 
 #define     veqsqyu   VQYU_VEQS
 #define     veqsqbu   VQBU_VEQS
@@ -28140,10 +28915,10 @@ Comparisons of NaN are undefined.
 #define     zney_funcof(A, ...)  \
 FUNCOF(             \
     zney, (   A   ),\
-    YDR,  /* TGK */ \
-    YWR,  /* TGW */ \
-    YDR,  /* TGD */ \
-    YDR,  /* TGQ */ \
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -28863,7 +29638,6 @@ void TEST_ARM_PERS(void)
 
 int wtfclang(void) {return 0;}
 
-#if 0 // NO OUTS
 
 int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
 {
@@ -28877,6 +29651,7 @@ int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
 
 #define     outfwbi(src, ...) outfwbu(VWBI_ASTU(src), __VA_ARGS__)
 #define     outfwbc(src, ...) outfwbu(VWBC_ASTU(src), __VA_ARGS__)
+#if 0 // NO OUTS
 
 int         outfwhu(Vwhu src, FILE *dst, char const *fmt)
 {
@@ -28974,7 +29749,7 @@ int         outfqdu(Vqdu src, FILE *dst, char const *fmt)
 
 #endif
 
-#if 0 // NO TOAY
+#if 1 // NO TOAY
 
 void *toayyu(_Bool v, char s[1], size_t n[1])
 {
@@ -29297,273 +30072,5 @@ void testupr(int t, long n)
 Vdhu test_addldhu(Vdhu a, Vdhu b)
 {
     return addl(a, b);
-}
-
-int main(int argc, char *argv[], char *envp[])
-{
-
-#if 0
-
-    if (0)
-    {
-        printf(
-            "sillbu(0x0f, 0x0e, 4) => %u\n",
-            (sillbu(0x0f, 0x0e, 4))
-        );
-    }
-
-#if 0
-
-    if (0)
-    {
-        outfwbu(
-            subl(seqwbu('a', 1), dupwbu(32)),
-            stdout,
-            "{" DUP4("'%c'", ", ") "}\n"
-        );
-/*
-    seqw    v0.wbu, 'A', 1d
-    dupw    v1.wbu, 1d
-    addl    v0.wbu, v0.wbu, v1.wbu
-
-*/
-
-    }
-
-#endif
-
-    if (0)
-    {
-        outfwbi(
-            mull(seqwbi(0, 64), dupwbi(2)),
-            stdout,
-            "{" DUP4("%" INT8_DFMT , ", ") "}\n"
-        );
-
-    }
-
-    if (0)
-    {
-        printf(
-            "cvws(0xfeedf00du) => %d\n",
-            (cvws(0xfeedf00du))
-        );
-    }
-
-    if (0)
-    {
-        printf(
-            "cgts(0xff, 0xfe) => %i\n",
-            (cgts(0xff, 0xfe))
-        );
-    }
-
-    if (0)
-    {
-        printf(
-            "%g\n",
-            cvdf( ((uint8_t) 69) )
-        );
-
-    }
-
-    if (0)
-    {
-
-        printf(
-            "0x%" UINT16_XFMT "\n",
-            getr(0xdeadbeef)
-        );
-    }
-
-    if (0)
-    {
-        int next = 0;
-        int prev = invt(&next);
-        printf("next=%i, prev=%i\n",next,prev);
-    }
-
-    if (0)
-    {
-        printf("mod2(31u, 8) => %hu\n", mod2(31u, 8));
-    }
-
-    if (0)
-    {
-        printf("rtnf(+1.99) => %g\n", rtnf(+1.99));
-        printf("rtnf(-1.99) => %g\n", rtnf(-1.99));
-    }
-
-    if (0)
-    {
-        outfqwu(
-            zlty(newlqwu(0,1,2,3)),
-            stdout,
-            "{" DUP4("%" UINT32_DFMT, ", ") "}\n"
-        );
-    }
-
-    if (0)
-    {
-        outfqwi(
-            abss(newlqwi(-1, INT_MIN, +1, INT_MAX)),
-            stdout,
-            "{" DUP4("%" INT32_DFMT, ", ") "}\n"
-        );
-    }
-
-    if (0)
-    {
-        uint32x2_t a = newldwu(100, 100);
-        uint32x2_t b = newldwu(200, 200);
-        a = vhadd_u32(a, b);
-        outfdwu(a, stdout, "{" DUP2("%" UINT32_DFMT,",") "}\n");
-    }
-
-    if (0)
-    {
-        int64x2_t a = newlqdi(+200,-200);
-        int64x2_t b = newlqdi(-100,-100);
-        a = avglqdi(a, b);
-        outfqdi(a, stdout, "{" DUP2("%" INT64_DFMT,",") "}\n");
-    }
-
-    if (0)
-    {
-        uint32_t a = 69;
-        uint32_t b = subt(&a, 9);
-        printf(
-            "a=%" UINT32_DFMT ", "
-            "b=%" UINT32_DFMT "\n",
-            a, b
-        );
-    }
-
-    if (0)
-    {
-        printf("dcrl(70u) => %u\n", dcrl(70u));
-    }
-
-    if (0)
-    {
-        uint32_t var = 0xdead0000u;
-        uint32_t old = orr1awu(&var, 0xbeefu);
-        printf(
-            "var=0x%08x, old=0x%08x\n",
-            var, old
-        );
-    }
-
-    if (0)
-    {
-        printf("icrl(68u) => %uu\n", icrl(68u));
-        Vwhu smfd = newlwhu(0xdeac, 0xbeee);
-        smfd = astu(icrl(smfd));
-        outfwhu(
-            smfd,
-            stdout,
-            "{" DUP2("0x%hx", ", ") "}\n"
-        );
-
-    }
-
-    if (0)
-    {
-        printf(
-            "shll(+2147483647, 1) => %i, "
-            "shll(-1073741824, 1) => %i\n",
-            (shll(+2147483647, 1)),
-            (shll(-1073741824, 1))
-        );
-    }
-
-    if (0)
-    {
-        printf(
-            "vshld_s64(+2147483647, 1) => "
-            "%d\n",
-            (int) vshld_s64(+2147483647, 1)
-        );
-        printf(
-            "vshld_n_s64(+2147483647, 1) => "
-            "%d\n",
-            (int) vshld_n_s64(+2147483647, 1)
-        );
-    }
-
-    if (0)
-    {
-        uchar x;
-        str1(&x, 0);
-        (void) xort(&x, 0);
-        (void) addt(&x, 1);
-        (void) orrt(&x, 2);
-        (void) andt(&x, 3);
-        (void) subt(&x, 4);
-        (void) icra(&x);
-        (void) inve(&x);
-        printf("x = %hhu\n", swptabu(&x, 255));
-    }
-
-    if (0)
-    {
-        int x[16];
-        (void) sunq(x+1, dupqwi(0));
-        (void) strw(x+0, newlwwi(12345678));
-        printf("x = {%d}\n", *x);
-    }
-
-    if (0)
-    {
-        int a = 555;
-        int b = xeqt(&a, 555, 69);
-        printf("a=%i, b=%i\n", a, b);
-    }
-
-    if (0)
-    {
-        printf("1.1+2.2 = %g\n",sumf(newlqdf(1.1,2.2)));
-    }
-
-    if (0)
-    {
-        char const src[] = "0123456789abcdef";
-        printf(
-            "my_strlen(\"%s\"+7) => %zu\n", src,
-            (my_strlen(src+7))
-        );
-        printf(
-            "my_strlen(\"%s\"+13) => %zu\n", src,
-            (my_strlen(src+13))
-        );
-    }
-    
-    if (0)
-    {
-        char txt[] = "How y'all doing 69?";
-        (void) my_strupr(txt+3);
-        printf(
-            "my_strupr(txt+3) => \"%s\"\n",
-            txt
-        );
-    }
-    
-    if (1) 
-    {
-        int arg = argc > 1 ? atoi(argv[1]) : 0;
-        if (arg < 0)
-        {
-            return 0;
-        }
-        testupr_src = memset(
-            ((char[256]){0}),
-            'a',
-            32
-        );
-        testupr(arg, 100000);
-    }
-
-#endif
-    Vqwi boo = newlqwi('b','o', 'o', 'b');
 }
 

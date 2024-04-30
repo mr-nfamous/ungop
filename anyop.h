@@ -548,7 +548,7 @@ INLINE(uchar,SCHAR_ABSU)  (schar a)
 INLINE(uchar, CHAR_ABSU)   (char a)
 {
 #if CHAR_MIN
-    return  SCHAR_ASBU(a);
+    return  SCHAR_ABSU(a);
 #else
     return  a;
 #endif
