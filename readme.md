@@ -4,6 +4,14 @@
 * started adding notes
 * added avgl to readme.md
 
+2024-05-14
+* added cvwv, cvdv, cvqv
+* added mvwu, mvwi, mvwf
+* added mvdu, mvdi, mvdf
+* added mvqu, mvqi, mvqf
+* added cplw, cpld, cplq
+* added cprw, cprd, cprq
+* added cpmw, cpmd, cpmq
 
 # ABOUT
 
@@ -13,7 +21,7 @@ directory of your project. Then, put:
 
     #include "ungop.h"
     
-somewhere at or very near the top of each translation unit.
+somewhere, preferably at the top, of each translation unit.
 
 This will automatically include several standard library 
 headers and detect the target architecture based on whatever
@@ -23,7 +31,6 @@ available, one or more of the target specific headers will be
 included. E.g. arm's intrinsics are defined in <arm_acle.h>
 and <arm_neon.h> while x86 has <immintrin.h> and the dozens 
 of extension specific headers it implicitly includes.
-
 
 
 ungop - pronounced "ungop" - is the name of an abstract
@@ -730,6 +737,7 @@ Key:
 
 ### •cvw· «Convert to Word»
 
+    •cvwy(a) => (Vwyu) a
     •cvwu(a) => TRUNCATE((uint32_t) a)
     •cvwi(a) => TRUNCATE( (int32_t) a)
     •cvwz(a) => SATURATE((uint32_t) a)
@@ -846,6 +854,24 @@ Key:
     •mulh(a, b) => (flt16_t) a*b
     •mulw(a, b) => (float) a*b
     •muld(a, b) => (double) a*b
+
+### •cpl· «CoPy L to r»
+
+    •cplw(s,m,d) => word
+    •cpld(s,m,d) => dwrd
+    •cplq(s,m,d) => quad
+
+### •cpr· «CoPy R to l»
+
+    •cplw(s,m,d) => word
+    •cpld(s,m,d) => dwrd
+    •cplq(s,m,d) => quad
+
+### •cpm· «CoPy Many»
+
+    •cpmw(s,m,d)
+    •cpmd(s,m,d)
+    •cpmq(s,m,d)
 
 ### •neg· «NEGate»
 
