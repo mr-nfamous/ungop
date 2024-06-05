@@ -862,23 +862,17 @@ Key:
     •mulw(a, b) => (float) a*b
     •muld(a, b) => (double) a*b
 
-### •cpl· «CoPy L to r»
+### •mvw· «MoVe Word»
 
-    •cplw(s,m,d) => word
-    •cpld(s,m,d) => dwrd
-    •cplq(s,m,d) => quad
+    •mvwl(x) => to/from lo
 
-### •cpr· «CoPy R to l»
+### •mvd· «MoVe Doubleword»
 
-    •cplw(s,m,d) => word
-    •cpld(s,m,d) => dwrd
-    •cplq(s,m,d) => quad
+    •mvdl(x) => to/from lo
 
-### •cpm· «CoPy Many»
+### •mvq· «MoVe Quadword»
 
-    •cpmw(s,m,d)
-    •cpmd(s,m,d)
-    •cpmq(s,m,d)
+    •mvql(x) => to/from lo
 
 ### •neg· «NEGate»
 
