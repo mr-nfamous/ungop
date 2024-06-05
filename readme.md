@@ -9,6 +9,8 @@
 * added mvwu, mvwi, mvwf
 * added mvdu, mvdi, mvdf
 * added mvqu, mvqi, mvqf
+* Use mv**(x) to reinterpret scalars as vectors and viceversa
+
 * added cplw, cpld, cplq
 * added cprw, cprd, cprq
 * added cpmw, cpmd, cpmq
@@ -566,6 +568,7 @@ Key:
     •absw(x) => (float) |x|
     •absd(x) => (double) |x|
 
+
 ### •add· «ADDition»
 
     •addl(a,b) => TRUNCATE(a+b)
@@ -711,6 +714,11 @@ Key:
     •cszl(a) => least to most aka "trailing zeros"
     •cszr(a) => most to least aka "leading zeros"
 
+### •cvy· «Convert to Bool»
+
+    •cvyu(a) => 
+
+
 ### •cvb· «Convert to Byte»
 
     •cvbc(a) => TRUNCATE(   (char) a)
@@ -737,7 +745,6 @@ Key:
 
 ### •cvw· «Convert to Word»
 
-    •cvwy(a) => (Vwyu) a
     •cvwu(a) => TRUNCATE((uint32_t) a)
     •cvwi(a) => TRUNCATE( (int32_t) a)
     •cvwz(a) => SATURATE((uint32_t) a)
@@ -881,10 +888,11 @@ Key:
     •negw(a) => (float) -a
     •negd(a) => (double) -a
 
-### •new· «vector constant ctor»
+### •new· «vector ctor»
 
-    •newl(...) => {*}
-    •newr(...) => {revs(*)}
+    •neww(...) => 32 bit
+    •newd(...) => 64 bit
+    •newq(...) => 64 bit
 
 ### •orr· «bitwise ORR»
 
