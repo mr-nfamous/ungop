@@ -14,23 +14,70 @@ clang
 CHANGES:
 
 24-04-17
-* created anyop.h
-* deleted some more 256/512 bit vector types
+*   Created <anyop.h> for targets without hardware SIMD
+*   Deleted some more 256/512 bit vector types
 
 24-04-20
-* deleted extraneous dupl ops
+*   Deleted extraneous 'dupl' ops
 
 24-04-23
-* fixed ldrw defs
-* added missing lun1
-* fixed lunw, lund, and lunq (they didn't work w/ floats)
-* added add2 defs
+*   fixed ldrw defs
+*   added missing lun1
+*   fixed lunw, lund, and lunq (they didn't work w/ floats)
+*   added add2 defs
 
 24-04-25
-* fix razwwwf, razdwwf, and razfwwf defs
+*   fixed razwwwf, razdwwf, and razfwwf defs
 
 24-04-28
-* (re)add sirr
+*   (re)add sirr
+
+24-04-30
+*   Deleted all Vx_Ky macros
+*   Deleted more of the remaining VO* and VS* references
+*   renamed unos to unol
+*   added unor
+
+24-05-19
+*   fixed REPR_DF (wtf?)
+
+24-05-20
+*   Significant overhaul to the REPR system. Fixed some of 
+    the definitions for x86. Specifically, Vqyu is now a 
+    __m128i typedef and the other 128 bit integer vectors 
+    have a REPR like (REPR_VQYU|REPR_M1).
+*   Deleted even more VO* and VS* definitions
+*   Deleted the type generic vector union types
+
+24-05-30
+*   MINOR MAJOR CHANGES. 
+*   delete newr && replace newl with neww, newd, and newq 
+*   replace pers with vector variants for neww, newd, newq
+*   delete bfc1
+*   change bfg/bfs to allow slicing by lane width multiple 
+*   rename bfgl to bfgl and bfs1 to bfsl
+*   add rtz* for round with ties toward zero
+*   TODO: add flt to int conversions that round nonintegrals
+        fca +1.1 to +2, -1.1 to -2 = toward ±inf (fk zero)
+        fcp +1.1 to +2, -1.1 to -1 = toward +inf (ceil)
+        fcn +1.1 to +1, -1.1 to -2 = toward -inf (floor)
+        fcz +1.1 to +1, -1.1 to -1 = toward zero (trunc)
+  
+24-05-31
+*   Make veqy and veqs available for singletons
+
+24-06-04
+*   Changed lvalue parameter types of:
+    'uchar' to 'unsigned'
+    'schar' to 'signed'
+    'char' to 'int'
+    'ushort' to 'unsigned'
+    'short' to 'signed'
+
+24-06-05..24-06-
+*   Transferring relevant ops from <a64op.h> to <allop.h>
+*   Applying lvalue parameter type changes and making too
+    many small corrections to document
 
 */
 
@@ -83,100 +130,81 @@ This used to be a file <extdef.h>
 #undef  UNUSED
 #undef  UNREACHABLE
 
-#define Rc(...) int const
-#define Wc(...) unsigned const
-#define Lc(...) unsigned long const
+#define MY_REQS(T,X,Y) _Generic(X,T:Y)
+/*
+Use to ensure a value is of an exact type. E.g. UCHAR_REQS 
+will throw a compiler error if the operand is not exactly
+unsigned char.
+*/
 
-#define     MY_REQS(T,X,Y) _Generic(X,T:Y)
+#define    BOOL_REQS(X) MY_REQS(   BOOL_TYPE,(X),(X))
+#define    CHAR_REQS(X) MY_REQS(   CHAR_TYPE,(X),(X))
+#define   UCHAR_REQS(X) MY_REQS(  UCHAR_TYPE,(X),(X))
+#define   SCHAR_REQS(X) MY_REQS(  SCHAR_TYPE,(X),(X))
+#define   USHRT_REQS(X) MY_REQS(  USHRT_TYPE,(X),(X))
+#define    SHRT_REQS(X) MY_REQS(   SHRT_TYPE,(X),(X))
+#define    UINT_REQS(X) MY_REQS(   UINT_TYPE,(X),(X))
+#define     INT_REQS(X) MY_REQS(    INT_TYPE,(X),(X))
+#define   ULONG_REQS(X) MY_REQS(  ULONG_TYPE,(X),(X))
+#define    LONG_REQS(X) MY_REQS(   LONG_TYPE,(X),(X))
+#define  ULLONG_REQS(X) MY_REQS( ULLONG_TYPE,(X),(X))
+#define   LLONG_REQS(X) MY_REQS(   LONG_TYPE,(X),(X))
+#define   FLT16_REQS(X) MY_REQS(  FLT16_TYPE,(X),(X))
+#define     FLT_REQS(X) MY_REQS(    FLT_TYPE,(X),(X))
+#define     DBL_REQS(X) MY_REQS(    DBL_TYPE,(X),(X))
+#define   UINT8_REQS(X) MY_REQS(  UINT8_TYPE,(X),(X))
+#define  UINT16_REQS(X) MY_REQS( UINT16_TYPE,(X),(X))
+#define  UINT32_REQS(X) MY_REQS( UINT32_TYPE,(X),(X))
+#define  UINT64_REQS(X) MY_REQS( UINT64_TYPE,(X),(X))
+#define UINTMAX_REQS(X) MY_REQS(UINTMAX_TYPE,(X),(X))
+#define UINTPTR_REQS(X) MY_REQS(UINTPTR_TYPE,(X),(X))
+#define    SIZE_REQS(X) MY_REQS(   SIZE_TYPE,(X),(X))
+#define    INT8_REQS(X) MY_REQS(   INT8_TYPE,(X),(X))
+#define   INT16_REQS(X) MY_REQS(  INT16_TYPE,(X),(X))
+#define   INT32_REQS(X) MY_REQS(  INT32_TYPE,(X),(X))
+#define   INT64_REQS(X) MY_REQS(  INT64_TYPE,(X),(X))
+#define  INTPTR_REQS(X) MY_REQS( INTPTR_TYPE,(X),(X))
+#define  INTMAX_REQS(X) MY_REQS( INTMAX_TYPE,(X),(X))
+#define PTRDIFF_REQS(X) MY_REQS(PTRDIFF_TYPE,(X),(X))
 
-#define     BOOL_REQS(X)    MY_REQS(   BOOL_TYPE,(X),(X))
-#define     CHAR_REQS(X)    MY_REQS(   CHAR_TYPE,(X),(X))
-#define     UCHAR_REQS(X)   MY_REQS(  UCHAR_TYPE,(X),(X))
-#define     SCHAR_REQS(X)   MY_REQS(  SCHAR_TYPE,(X),(X))
-#define     USHRT_REQS(X)   MY_REQS(  USHRT_TYPE,(X),(X))
-#define     SHRT_REQS(X)    MY_REQS(   SHRT_TYPE,(X),(X))
-#define     UINT_REQS(X)    MY_REQS(   UINT_TYPE,(X),(X))
-#define     INT_REQS(X)     MY_REQS(    INT_TYPE,(X),(X))
-#define     ULONG_REQS(X)   MY_REQS(  ULONG_TYPE,(X),(X))
-#define     LONG_REQS(X)    MY_REQS(   LONG_TYPE,(X),(X))
-#define     ULLONG_REQS(X)  MY_REQS( ULLONG_TYPE,(X),(X))
-#define     LLONG_REQS(X)   MY_REQS(   LONG_TYPE,(X),(X))
-#define     FLT16_REQS(X)   MY_REQS(  FLT16_TYPE,(X),(X))
-#define     FLT_REQS(X)     MY_REQS(    FLT_TYPE,(X),(X))
-#define     DBL_REQS(X)     MY_REQS(    DBL_TYPE,(X),(X))
+#define    VWYU_REQS(X) MY_REQS(VWYU_TYPE,(X),(X))
+#define    VWBU_REQS(X) MY_REQS(VWBU_TYPE,(X),(X))
+#define    VWBI_REQS(X) MY_REQS(VWBI_TYPE,(X),(X))
+#define    VWBC_REQS(X) MY_REQS(VWBC_TYPE,(X),(X))
+#define    VWHU_REQS(X) MY_REQS(VWHU_TYPE,(X),(X))
+#define    VWHI_REQS(X) MY_REQS(VWHI_TYPE,(X),(X))
+#define    VWHF_REQS(X) MY_REQS(VWHF_TYPE,(X),(X))
+#define    VWWU_REQS(X) MY_REQS(VWWU_TYPE,(X),(X))
+#define    VWWI_REQS(X) MY_REQS(VWWI_TYPE,(X),(X))
+#define    VWWF_REQS(X) MY_REQS(VWWF_TYPE,(X),(X))
 
-#define     UINT8_REQS(X)   MY_REQS(  UINT8_TYPE,(X),(X))
-#define     UINT16_REQS(X)  MY_REQS( UINT16_TYPE,(X),(X))
-#define     UINT32_REQS(X)  MY_REQS( UINT32_TYPE,(X),(X))
-#define     UINT64_REQS(X)  MY_REQS( UINT64_TYPE,(X),(X))
-#define     UINTMAX_REQS(X) MY_REQS(UINTMAX_TYPE,(X),(X))
-#define     UINTPTR_REQS(X) MY_REQS(UINTPTR_TYPE,(X),(X))
-#define     SIZE_REQS(X)    MY_REQS(   SIZE_TYPE,(X),(X))
+#define    VDYU_REQS(X) MY_REQS(VDYU_TYPE,(X),(X))
+#define    VDBU_REQS(X) MY_REQS(VDBU_TYPE,(X),(X))
+#define    VDBI_REQS(X) MY_REQS(VDBI_TYPE,(X),(X))
+#define    VDBC_REQS(X) MY_REQS(VDBC_TYPE,(X),(X))
+#define    VDHU_REQS(X) MY_REQS(VDHU_TYPE,(X),(X))
+#define    VDHI_REQS(X) MY_REQS(VDHI_TYPE,(X),(X))
+#define    VDHF_REQS(X) MY_REQS(VDHF_TYPE,(X),(X))
+#define    VDWU_REQS(X) MY_REQS(VDWU_TYPE,(X),(X))
+#define    VDWI_REQS(X) MY_REQS(VDWI_TYPE,(X),(X))
+#define    VDWF_REQS(X) MY_REQS(VDWF_TYPE,(X),(X))
+#define    VDDU_REQS(X) MY_REQS(VDDU_TYPE,(X),(X))
+#define    VDDI_REQS(X) MY_REQS(VDDI_TYPE,(X),(X))
+#define    VDDF_REQS(X) MY_REQS(VDDF_TYPE,(X),(X))
 
-#define     INT8_REQS(X)    MY_REQS(    INT8_TYPE,(X),(X))
-#define     INT16_REQS(X)   MY_REQS(   INT16_TYPE,(X),(X))
-#define     INT32_REQS(X)   MY_REQS(   INT32_TYPE,(X),(X))
-#define     INT64_REQS(X)   MY_REQS(   INT64_TYPE,(X),(X))
-#define     INTPTR_REQS(X)  MY_REQS( INTPTR_TYPE,(X),(X))
-#define     INTMAX_REQS(X)  MY_REQS(  INTMAX_TYPE,(X),(X))
-#define     PTRDIFF_REQS(X) MY_REQS( PTRDIFF_TYPE,(X),(X))
-
-#define     VWBU_REQS(X)    MY_REQS(VWBU_TYPE,(X),(X))
-#define     VWBI_REQS(X)    MY_REQS(VWBI_TYPE,(X),(X))
-#define     VWHU_REQS(X)    MY_REQS(VWHU_TYPE,(X),(X))
-#define     VWHI_REQS(X)    MY_REQS(VWHI_TYPE,(X),(X))
-#define     VWHF_REQS(X)    MY_REQS(VWHF_TYPE,(X),(X))
-#define     VWWU_REQS(X)    MY_REQS(VWWU_TYPE,(X),(X))
-#define     VWWI_REQS(X)    MY_REQS(VWWI_TYPE,(X),(X))
-#define     VWWF_REQS(X)    MY_REQS(VWWF_TYPE,(X),(X))
-
-#define     VDBU_REQS(X)    MY_REQS(VDBU_TYPE,(X),(X))
-#define     VDBI_REQS(X)    MY_REQS(VDBI_TYPE,(X),(X))
-#define     VDHU_REQS(X)    MY_REQS(VDHU_TYPE,(X),(X))
-#define     VDHI_REQS(X)    MY_REQS(VDHI_TYPE,(X),(X))
-#define     VDHF_REQS(X)    MY_REQS(VDHF_TYPE,(X),(X))
-#define     VDWU_REQS(X)    MY_REQS(VDWU_TYPE,(X),(X))
-#define     VDWI_REQS(X)    MY_REQS(VDWI_TYPE,(X),(X))
-#define     VDWF_REQS(X)    MY_REQS(VDWF_TYPE,(X),(X))
-#define     VDDU_REQS(X)    MY_REQS(VDDU_TYPE,(X),(X))
-#define     VDDI_REQS(X)    MY_REQS(VDDI_TYPE,(X),(X))
-#define     VDDF_REQS(X)    MY_REQS(VDDF_TYPE,(X),(X))
-
-#define     VQBU_REQS(X)    MY_REQS(VQBU_TYPE,(X),(X))
-#define     VQBI_REQS(X)    MY_REQS(VQBI_TYPE,(X),(X))
-#define     VQHU_REQS(X)    MY_REQS(VQHU_TYPE,(X),(X))
-#define     VQHI_REQS(X)    MY_REQS(VQHI_TYPE,(X),(X))
-#define     VQHF_REQS(X)    MY_REQS(VQHF_TYPE,(X),(X))
-#define     VQWU_REQS(X)    MY_REQS(VQWU_TYPE,(X),(X))
-#define     VQWI_REQS(X)    MY_REQS(VQWI_TYPE,(X),(X))
-#define     VQWF_REQS(X)    MY_REQS(VQWF_TYPE,(X),(X))
-#define     VQDU_REQS(X)    MY_REQS(VQDU_TYPE,(X),(X))
-#define     VQDI_REQS(X)    MY_REQS(VQDI_TYPE,(X),(X))
-#define     VQDF_REQS(X)    MY_REQS(VQDF_TYPE,(X),(X))
-
-#define     VOBU_REQS(X)    MY_REQS(VOBU_TYPE,(X),(X))
-#define     VOBI_REQS(X)    MY_REQS(VOBI_TYPE,(X),(X))
-#define     VOHU_REQS(X)    MY_REQS(VOHU_TYPE,(X),(X))
-#define     VOHI_REQS(X)    MY_REQS(VOHI_TYPE,(X),(X))
-#define     VOHF_REQS(X)    MY_REQS(VOHF_TYPE,(X),(X))
-#define     VOWU_REQS(X)    MY_REQS(VOWU_TYPE,(X),(X))
-#define     VOWI_REQS(X)    MY_REQS(VOWI_TYPE,(X),(X))
-#define     VOWF_REQS(X)    MY_REQS(VOWF_TYPE,(X),(X))
-#define     VODU_REQS(X)    MY_REQS(VODU_TYPE,(X),(X))
-#define     VODI_REQS(X)    MY_REQS(VODI_TYPE,(X),(X))
-#define     VODF_REQS(X)    MY_REQS(VODF_TYPE,(X),(X))
-
-#define     VSBU_REQS(X)    MY_REQS(VSBU_TYPE,(X),(X))
-#define     VSBI_REQS(X)    MY_REQS(VSBI_TYPE,(X),(X))
-#define     VSHU_REQS(X)    MY_REQS(VSHU_TYPE,(X),(X))
-#define     VSHI_REQS(X)    MY_REQS(VSHI_TYPE,(X),(X))
-#define     VSHF_REQS(X)    MY_REQS(VSHF_TYPE,(X),(X))
-#define     VSWU_REQS(X)    MY_REQS(VSWU_TYPE,(X),(X))
-#define     VSWI_REQS(X)    MY_REQS(VSWI_TYPE,(X),(X))
-#define     VSWF_REQS(X)    MY_REQS(VSWF_TYPE,(X),(X))
-#define     VSDU_REQS(X)    MY_REQS(VSDU_TYPE,(X),(X))
-#define     VSDI_REQS(X)    MY_REQS(VSDI_TYPE,(X),(X))
-#define     VSDF_REQS(X)    MY_REQS(VSDF_TYPE,(X),(X))
+#define VQYU_REQS(X)    MY_REQS(VQYU_TYPE,(X),(X))
+#define VQBU_REQS(X)    MY_REQS(VQBU_TYPE,(X),(X))
+#define VQBI_REQS(X)    MY_REQS(VQBI_TYPE,(X),(X))
+#define VQBC_REQS(X)    MY_REQS(VQBC_TYPE,(X),(X))
+#define VQHU_REQS(X)    MY_REQS(VQHU_TYPE,(X),(X))
+#define VQHI_REQS(X)    MY_REQS(VQHI_TYPE,(X),(X))
+#define VQHF_REQS(X)    MY_REQS(VQHF_TYPE,(X),(X))
+#define VQWU_REQS(X)    MY_REQS(VQWU_TYPE,(X),(X))
+#define VQWI_REQS(X)    MY_REQS(VQWI_TYPE,(X),(X))
+#define VQWF_REQS(X)    MY_REQS(VQWF_TYPE,(X),(X))
+#define VQDU_REQS(X)    MY_REQS(VQDU_TYPE,(X),(X))
+#define VQDI_REQS(X)    MY_REQS(VQDI_TYPE,(X),(X))
+#define VQDF_REQS(X)    MY_REQS(VQDF_TYPE,(X),(X))
 
 #ifndef MY_STDIO_H
 #include  <stdio.h>
@@ -257,13 +285,13 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 #endif
 
 #if defined(_MSC_VER)
-#   define  INLINE(T, F)    static T __forceinline  F
-#   define  PUBLIC(T, F)    extern T __vectorcall   F
-#   define  INTRIN(T, F)    static T F
+#   define  INLINE(T, F) static T __forceinline F
+#   define  PUBLIC(T, F) extern T __vectorcall  F
+#   define  INTRIN(T, F) static T F
 #else
-#   define  INLINE(T, F)    static inline T F
-#   define  PUBLIC(T, F)    extern T F
-#   define  INTRIN(T, F)    static T F
+#   define  INLINE(T, F) static inline T F
+#   define  PUBLIC(T, F) extern T F
+#   define  INTRIN(T, F) static T F
 #endif
 
 #if defined(_MSC_VER)
@@ -296,12 +324,13 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 {
 #endif
 
-#define ISA_X86     1
-#define ISA_ARM     3
-#define ISA_RV      5
-#define ISA_PPC     6
-#define ISA_MIPS    7
-#define ISA_IA64    8
+#define ISA_ANY  (255)
+#define ISA_X86  (1)
+#define ISA_ARM  (3)
+#define ISA_RV   (5)
+#define ISA_PPC  (6)
+#define ISA_MIPS (7)
+#define ISA_IA64 (164)
 
 #if defined(__x86_64__)
 #   define  MY_ISA  ISA_X86
@@ -312,12 +341,11 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 
 #elif defined(__riscv)
 #   define  MY_ISA  ISA_RV
-
 #   if  defined(__ILP32__)
 #       define  SPC_RV_I32
 #   elif  defined(__LP64__)
 #       define  SPC_RV_I64
-#   elif  (ULLONG_MAX>>63) > 18446744073709551615ull
+#   elif  (ULLONG_MAX>>63) > 18446744073709551614ull
 #       define  SPC_RV_I128
 #   else
 #       error "unknown risc-v ISA"
@@ -344,33 +372,33 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 #   endif
 
 #elif defined(_M_ARM64EC)
-#   define  MY_ISA      ISA_X86
+#   define  MY_ISA  ISA_X86
 #   define  SPC_X86_X64
 
 #elif defined(_M_X64) || defined(_M_AMD64)
-#   define  MY_ISA      ISA_X86
+#   define  MY_ISA  ISA_X86
 #   define  SPC_X86_X64
 
 #elif defined(_M_IA64)
-#   define  MY_ISA      ISA_IA64
+#   define  MY_ISA  ISA_IA64
 
 #elif defined(_M_IX86)
-#   define  MY_ISA      ISA_X86
+#   define  MY_ISA  ISA_X86
 
 #elif defined(_M_ARM64)
-#   define  MY_ISA      ISA_ARM
+#   define  MY_ISA  ISA_ARM
 
 #elif defined(_M_ARM)
-#   define  MY_ISA      ISA_ARM
+#   define  MY_ISA  ISA_ARM
 
 #elif defined(_M_ARMV7VE)
-#   define  MY_ISA      ISA_ARM
+#   define  MY_ISA  ISA_ARM
 
 #elif defined(_M_ALPHA)
-#   define  MY_ISA      ISA_ALPHA
+#   define  MY_ISA  ISA_ALPHA
 
 #elif defined(_M_PPC)
-#   define  MY_ISA      ISA_PPC
+#   define  MY_ISA  ISA_PPC
 
 #elif defined(_M_MRX000)
 #   error "wtf is this"
@@ -427,7 +455,7 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 #       define  SPC_ARM_V9  (0)
 #   endif
 
-#   define  SPC_ARM_V7   (7)
+#   define  SPC_ARM_V7      (7)
 #   define  SPC_ARM_ACLE
 #   define  SPC_ARM_NEON
 #   define  SPC_ARM_PROFILE  __ARM_ARCH_PROFILE
@@ -440,11 +468,11 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 #   define  SPC_ARM_LDREX   (0)
 #   endif
 
-#   define  SPC_ARM_LDREX_B ((0x01&SPC_ARM_LDREX) != 0)
-#   define  SPC_ARM_LDREX_H ((0x02&SPC_ARM_LDREX) != 0)
-#   define  SPC_ARM_LDREX_W ((0x04&SPC_ARM_LDREX) != 0)
-#   define  SPC_ARM_LDREX_D ((0x08&SPC_ARM_LDREX) != 0)
-#   define  SPC_ARM_LDREX_Q ((0x10&SPC_ARM_LDREX) != 0)
+#   define  SPC_ARM_LDREX_B ((0x01&SPC_ARM_LDREX)!=0)
+#   define  SPC_ARM_LDREX_H ((0x02&SPC_ARM_LDREX)!=0)
+#   define  SPC_ARM_LDREX_W ((0x04&SPC_ARM_LDREX)!=0)
+#   define  SPC_ARM_LDREX_D ((0x08&SPC_ARM_LDREX)!=0)
+#   define  SPC_ARM_LDREX_Q ((0x10&SPC_ARM_LDREX)!=0)
 
 #   ifdef   __ARM_FEATURE_FP16_SCALAR_ARITHMETIC
 #   define  SPC_ARM_FP16_MATH   __ARM_FEATURE_FP16_SCALAR_ARITHMETIC
@@ -675,8 +703,8 @@ vmulx_f16,      vmulxq_f16
 #endif
 
 #if defined(__AVX512FP16__)
-#   ifndef  SPC_X86_AVX512FP16
-#   define  SPC_X86_AVX512FP16
+#   ifndef  SPC_X86_FP16
+#   define  SPC_X86_FP16
 #   endif
 #endif
 
@@ -1015,7 +1043,6 @@ _F(_8,__VA_ARGS__)__VA_ARGS__ _F(_8,__VA_ARGS__)
 
 #define MY_DUFF(_F, _P, _N, ...) _F(_P,_N,__VA_ARGS__)
 
-
 #define MY_DUP32(...)   MY_DUFF(MY_DUF2,DUP16,__VA_ARGS__)
 #define MY_DUP64(...)   MY_DUFF(MY_DUF4,DUP16,__VA_ARGS__)
 #define MY_DUP128(...)  MY_DUFF(MY_DUF8,DUP16,__VA_ARGS__)
@@ -1219,7 +1246,6 @@ N+X*C(20),N+X*C(21),N+X*C(22)
 N+X*C(16),N+X*C(17),N+X*C(18),N+X*C(19),    \
 N+X*C(20),N+X*C(21),N+X*C(22),N+X*C(23)
 
-
 #define     SEQC25(C, N, X)                 \
 N+X*C( 0),N+X*C( 1),N+X*C( 2),N+X*C( 3),    \
 N+X*C( 4),N+X*C( 5),N+X*C( 6),N+X*C( 7),    \
@@ -1228,7 +1254,6 @@ N+X*C(12),N+X*C(13),N+X*C(14),N+X*C(15),    \
 N+X*C(16),N+X*C(17),N+X*C(18),N+X*C(19),    \
 N+X*C(20),N+X*C(21),N+X*C(22),N+X*C(23),    \
 N+X*C(24)
-
 
 #define     SEQC26(C, N, X)             \
 N+X*C( 0),N+X*C( 1),N+X*C( 2),N+X*C( 3),\
@@ -1264,7 +1289,6 @@ N+X*C(20),N+X*C(21),N+X*C(22),N+X*C(23),\
 N+X*C(24),N+X*C(25),N+X*C(26),N+X*C(27),\
 N+X*C(28),N+X*C(29),N+X*C(30),N+X*C(31)
 
-
 #define     SEQC64(C, N, X) SEQC32(C,N,X),\
 N+X*C( 0),N+X*C( 1),N+X*C( 2),N+X*C( 3),\
 N+X*C( 4),N+X*C( 5),N+X*C( 6),N+X*C( 7),\
@@ -1283,12 +1307,10 @@ N+X*C(52),N+X*C(53),N+X*C(54),N+X*C(55),\
 N+X*C(56),N+X*C(57),N+X*C(58),N+X*C(59),\
 N+X*C(60),N+X*C(61),N+X*C(62),N+X*C(63)
 
-
-#define     MY_SEQI(_) _
-
-#define     SEQI1(N,X) SEQC1(MY_SEQI,N,X)
-#define     SEQI2(N,X) SEQC2(MY_SEQI,N,X)
-#define     SEQI4(N,X) SEQC4(MY_SEQI,N,X)
+#define MY_SEQI(_) _
+#define SEQI1(N,X) SEQC1(MY_SEQI,N,X)
+#define SEQI2(N,X) SEQC2(MY_SEQI,N,X)
+#define SEQI4(N,X) SEQC4(MY_SEQI,N,X)
 
 #define HALF_BYTEMASK(k)   (UINT16_C(0xff)<<((k)<<3))
 #define WORD_BYTEMASK(k)   (UINT32_C(0x00ff)<<((k)<<3))
@@ -1296,6 +1318,14 @@ N+X*C(60),N+X*C(61),N+X*C(62),N+X*C(63)
 #define DWRD_BYTEMASK(k)   (UINT64_C(0x000000ff)<<((k)<<3))
 #define DWRD_HALFMASK(k)   (UINT64_C(0x0000ffff)<<((k)<<4))
 #define DWRD_WORDMASK(k)   (UINT64_C(0xffffffff)<<((k)<<5))
+
+#define NDIG_MAX (65535)
+#define NDIG_MIN (0)
+#define NDIG_C(C) (C)
+#define MY_CALL1(F, ...)    F(__VA_ARGS__)
+#define MY_CALL2(F, ...)    MY_CALL1(F, __VA_ARGS__)
+#define MY_CALL3(F, ...)    MY_CALL2(F, __VA_ARGS__)
+#define MY_CALL4(F, ...)    MY_CALL3(F, __VA_ARGS__)
 
 typedef unsigned char        uchar;
 typedef   signed char        schar;
@@ -1305,14 +1335,6 @@ typedef unsigned int          uint;
 typedef unsigned long        ulong;
 typedef unsigned long long  ullong;
 typedef   signed long long   llong;
-
-#define NDIG_MAX (65535)
-#define NDIG_MIN (0)
-#define NDIG_C(C) (C)
-#define MY_CALL1(F, ...)    F(__VA_ARGS__)
-#define MY_CALL2(F, ...)    MY_CALL1(F, __VA_ARGS__)
-#define MY_CALL3(F, ...)    MY_CALL2(F, __VA_ARGS__)
-#define MY_CALL4(F, ...)    MY_CALL3(F, __VA_ARGS__)
 
 #endif // EOF
 
@@ -1353,6 +1375,15 @@ typedef   signed long long   llong;
 
 #ifndef MY_EXTDEF_H
 #include  "extdef.h"
+#endif
+
+#define     Rc(...) int const
+#define     Wc(...) unsigned const
+#define     Lc(...) unsigned long const
+#if INTMAX_MAX == LONG_MAX
+#   define  Jc(...) long const
+#else
+#   define  Jc(...) long long const
 #endif
 
 #define DEFINE_GBM(S,W,K,M) ((M>>(K-W))<<S)
@@ -1401,68 +1432,82 @@ typedef   signed long long   llong;
 {
 #endif
 
-/*  Directed rounding modes:
+/*  
 
-    * DR_ZERO
-        Toward zero, aka 'trunc'
-        -2.1 => -2.0
-        -1.9 => -1.0
-        +1.9 => +1.0
-        +2.1 => +2.0
+Directed rounding modes, used primarily for 'rnd', which
+takes the number to round an a second bitfield operand used
+to control rounding behavior.
 
-    * DR_NEXT
-        Toward the integer furthest from zero, i.e. to ±∞
-        -2.1 => -3.0
-        -1.9 => -2.0
-        +1.9 => +2.0
-        +2.1 => +3.0
+    * DR_FENV 
+        Use the current C fenv rounding mode. I.e., makes 
+        the operation similar to nearbyint from <math.h>.
+        In practice, this will almost always be identical
+        to DR_EVEN, since that's what IEE 754 recommends.
 
-    * DR_PINF
-        Toward +∞, aka 'ceil'
-        -2.1 => -2.0
-        -1.9 => -1.0
-        +1.9 => +2.0
-        +2.1 => +3.0
+    * DR_ODD (rto's mode)
+        Toward the nearest odd integer
+        -2.1 => [-3].. -2 
+        -1.9 =>  -2 ..[-1]
+        +1.1 => [+1].. +2 
+        +2.1 =>  +2 ..[+3]
 
-    * DR_NINF
-        Toward -∞, aka 'floor'
-        -2.1 => -3.0
-        -1.9 => -2.0
-        +1.9 => +1.0
-        +2.1 => +2.0
+    * DR_EVEN (rte's mode)
+        Toward the nearest even integer
+        -2.1 =>  -3   [-2]
+        -1.9 => [-2].. -1 
+        +1.1 =>  +1 ..[+2]
+        +2.1 => [+2].. +3
 
-    * DR_EVEN
-        Toward the closest even integer
-        -2.1 => -2.0
-        -1.9 => -2.0
-        +1.1 => +2.0
-        +2.1 => +2.0
+    * DR_AWAY (raz's mode)
+        Away from zero, i.e. to ±∞.
+        -2.1 => [-3].. -2 
+        -1.9 => [-2].. -1 
+        +1.1 =>  +1 ..[+2]
+        +2.1 =>  +2 ..[+3]
 
-    * DR_ODD
-        Toward the closest odd integer
-        -1.9 => -1.0
-        -2.1 => -3.0
-        +1.9 => +1.0
-        +2.1 => +3.0
+    * DR_ZERO (rtz's mode)
+        Toward zero, aka 'trunc' or FE_TOWARDZERO
+        -2.1 =>  -3 ..[-2]
+        -1.9 =>  -2 ..[-1]
+        +1.1 => [+1].. +2 
+        +2.1 => [+2].. +3 
 
-    * DR_NEAR
-        Toward the nearest integer. May be combined with
-        one of the others to control what happens on ties.
-        Alone, ties are broken according to the current
-        floating point environment.
+    * DR_NEXT (rtp's mode)
+        Toward +∞, aka 'ceil' or FE_UPWARD
+        -2.1 =>  -3 ..[-2]
+        -1.9 =>  -2 ..[-1]
+        +1.1 =>  +1 ..[+2]
+        +2.1 =>  +2 ..[+3]
+
+    * DR_PREV (rtn's mode)
+        Toward -∞, aka 'floor' of FE_DOWNWARD
+        -2.1 => [-3].. -2
+        -1.9 => [-2].. -1
+        +1.1 => [+1].. +2
+        +2.1 => [+2].. +3
+
+    * DR_MODE
+        Bit mask excluding DR_NEXT
+
+By default, rnd rounds any noninteger float to the *next*
+integer on the number line, according to whichever one of
+the previous was specified. If DR_NEAR is also specified, 
+it rounds toward the *nearest* integer on the number line
+and the previously mentioned mode only applies when both
+the next and previous integers are equidistant, i.e. the
+fractional part of the float is exactly ½.
 
 */
 
-#define DR_NONE (0)
-#define DR_ODD  (0b0001)
-#define DR_EVEN (0b0010)
-#define DR_NINF (0b0011)
-#define DR_PINF (0b0100)
-#define DR_NEXT (0b0101)
-#define DR_ZERO (0b0110)
-#define DR_DONT (0b0111)
-
-#define DR_NEAR (0b1000)
+#define DR_FENV (0b0000) // 0
+#define DR_ODD  (0b0001) // 1
+#define DR_EVEN (0b0010) // 2
+#define DR_ZERO (0b0011) // 3
+#define DR_NEXT (0b0100) // 4
+#define DR_PREV (0b0101) // 5
+#define DR_AWAY (0b0110) // 6
+#define DR_MODE (0b0111) // 7
+#define DR_NEAR (0b1000) // 8
 
 #if _LEAVE_EXTNUM_DR
 }
@@ -1770,32 +1815,32 @@ typedef   signed long long   llong;
 #   define  INT128X_SN      QUAD_SNI
 #   define  QUAD_I          INT128X_
 #   define  QUAD_U          UINT128X_
-#   define  QUAD_ITYPE      __int128
+#   define  QUAD_ITYPE      signed __int128
 #   define  QUAD_UTYPE      unsigned __int128
 #endif
 
-#define BOOL_ENDIAN         MY_ENDIAN
-#define UCHAR_ENDIAN        MY_ENDIAN
-#define SCHAR_ENDIAN        MY_ENDIAN
-#define USHRT_ENDIAN        MY_ENDIAN
-#define SHRT_ENDIAN         MY_ENDIAN
-#define UINT_ENDIAN         MY_ENDIAN
-#define INT_ENDIAN          MY_ENDIAN
-#define ULONG_ENDIAN        MY_ENDIAN
-#define LONG_ENDIAN         MY_ENDIAN
-#define ULLONG_ENDIAN       MY_ENDIAN
-#define LLONG_ENDIAN        MY_ENDIAN
+#define   BOOL_ENDIAN  MY_ENDIAN
+#define  UCHAR_ENDIAN  MY_ENDIAN
+#define  SCHAR_ENDIAN  MY_ENDIAN
+#define  USHRT_ENDIAN  MY_ENDIAN
+#define   SHRT_ENDIAN  MY_ENDIAN
+#define   UINT_ENDIAN  MY_ENDIAN
+#define    INT_ENDIAN  MY_ENDIAN
+#define  ULONG_ENDIAN  MY_ENDIAN
+#define   LONG_ENDIAN  MY_ENDIAN
+#define ULLONG_ENDIAN  MY_ENDIAN
+#define  LLONG_ENDIAN  MY_ENDIAN
 
-#ifndef FLT16_ENDIAN
-#define FLT16_ENDIAN        MY_ENDIAN
+#ifndef  FLT16_ENDIAN
+#define  FLT16_ENDIAN  MY_ENDIAN
 #endif
 
-#ifndef FLT_ENDIAN
-#define FLT_ENDIAN          MY_ENDIAN
+#ifndef    FLT_ENDIAN
+#define    FLT_ENDIAN  MY_ENDIAN
 #endif
 
-#ifndef DBL_ENDIAN
-#define DBL_ENDIAN          MY_ENDIAN
+#ifndef    DBL_ENDIAN
+#define    DBL_ENDIAN  MY_ENDIAN
 #endif
 
 #define BOOL_(_)            BOOL_##_
@@ -1992,7 +2037,6 @@ typedef   signed long long   llong;
 #define INT8_DFMT           INT8_BASE(DFMT)
 #define INT8_ENDIAN         INT8_BASE(ENDIAN)
 
-
 #define UINT16_(_)          UINT16_##_
 #define UINT16_SN           HALF_SNU
 #define UINT16_TYPE         uint16_t
@@ -2010,7 +2054,6 @@ typedef   signed long long   llong;
 #define UINT16_SIGNEDNESS   UINT16_BASE(SIGNEDNESS)
 #define UINT16_ENDIAN       UINT16_BASE(ENDIAN)
 
-
 #define INT16_(_)           INT16_##_
 #define INT16_SN            HALF_SNI
 #define INT16_TYPE          int16_t
@@ -2024,7 +2067,6 @@ typedef   signed long long   llong;
 #define INT16_SIGNEDNESS    INT16_BASE(SIGNEDNESS)
 #define INT16_UFMT          INT16_BASE(DFMT)
 #define INT16_ENDIAN        INT16_BASE(ENDIAN)
-
 
 #define UINT32_(_)          UINT32_##_
 #define UINT32_SN           WORD_SNU
@@ -2043,7 +2085,6 @@ typedef   signed long long   llong;
 #define UINT32_SIGNEDNESS   UINT32_BASE(SIGNEDNESS)
 #define UINT32_ENDIAN       UINT_BASE(ENDIAN)
 
-
 #define INT32_(_)           INT32_##_
 #define INT32_SN            WORD_SNI
 #define INT32_TYPE          int32_t
@@ -2057,7 +2098,6 @@ typedef   signed long long   llong;
 #define INT32_SIGNEDNESS    INT32_BASE(SIGNEDNESS)
 #define INT32_DFMT          INT32_BASE(DFMT)
 #define INT32_ENDIAN        INT32_BASE(ENDIAN)
-
 
 #define UINT64_(_)          UINT64_##_
 #define UINT64_SN           DWRD_SNU
@@ -2076,7 +2116,6 @@ typedef   signed long long   llong;
 #define UINT64_SIGNEDNESS   UINT64_BASE(SIGNEDNESS)
 #define UINT64_ENDIAN       UINT64_BASE(ENDIAN)
 
-
 #define INT64_(_)           INT64_##_
 #define INT64_SN            DWRD_SNI
 #define INT64_TYPE          int64_t
@@ -2090,7 +2129,6 @@ typedef   signed long long   llong;
 #define INT64_SIGNEDNESS    INT64_BASE(SIGNEDNESS)
 #define INT64_DFMT          INT64_BASE(DFMT)
 #define INT64_ENDIAN        INT64_BASE(ENDIAN)
-
 
 #ifndef SIZE_MAX
 #error "SIZE_MAX is gone"
@@ -2208,7 +2246,7 @@ typedef   signed long long   llong;
 #define FLT16_WIDTH         FLT16_STG(WIDTH)
 #define FLT16_SIGNEDNESS    (1)
 
-#if defined(SPC_X86_AVX512FP16)
+#if defined(SPC_X86_FP16)
 #   define  FLT16_MTYPE _Float16
 #   define  FLT16_C_DEF _Float16: C
 #endif
@@ -2495,20 +2533,11 @@ typedef QUAD_FTYPE flt128_t;
 {
 #endif
 
-typedef struct Yu8      {_Bool MY_NV8(K,:1);}   Yu8;
-typedef struct Yu16     {_Bool MY_NV16(K,:1);}  Yu16;
-typedef struct Yu32     {_Bool MY_NV32(K,:1);}  Yu32;
-typedef struct Yu64     {_Bool MY_NV64(K,:1);}  Yu64;
-typedef struct Yu128    {_Bool MY_NV128(K,:1);}  Yu128;
-
-typedef struct Bc1  {char MY_NV1(K,);}      Bc1;
-typedef struct Bc2  {char MY_NV2(K,);}      Bc2;
-typedef struct Bc3  {char MY_NV3(K,);}      Bc3;
-typedef struct Bc4  {char MY_NV4(K,);}      Bc4;
-typedef struct Bc8  {char MY_NV8(K,);}      Bc8;
-typedef struct Bc16 {char MY_NV16(K,);}     Bc16;
-typedef struct Bc32 {char MY_NV32(K,);}     Bc32;
-typedef struct Bc64 {char MY_NV64(K,);}     Bc64;
+typedef struct Yu8   {_Bool MY_NV8(K,:1);}   Yu8;
+typedef struct Yu16  {_Bool MY_NV16(K,:1);}  Yu16;
+typedef struct Yu32  {_Bool MY_NV32(K,:1);}  Yu32;
+typedef struct Yu64  {_Bool MY_NV64(K,:1);}  Yu64;
+typedef struct Yu128 {_Bool MY_NV128(K,:1);}  Yu128;
 
 typedef struct Bu1  {uint8_t MY_NV1(K,);}   Bu1;
 typedef struct Bu2  {uint8_t MY_NV2(K,);}   Bu2;
@@ -2527,6 +2556,15 @@ typedef struct Bi8  {int8_t MY_NV8(K,);}    Bi8;
 typedef struct Bi16 {int8_t MY_NV16(K,);}   Bi16;
 typedef struct Bi32 {int8_t MY_NV32(K,);}   Bi32;
 typedef struct Bi64 {int8_t MY_NV64(K,);}   Bi64;
+
+typedef struct Bc1  {char MY_NV1(K,);}      Bc1;
+typedef struct Bc2  {char MY_NV2(K,);}      Bc2;
+typedef struct Bc3  {char MY_NV3(K,);}      Bc3;
+typedef struct Bc4  {char MY_NV4(K,);}      Bc4;
+typedef struct Bc8  {char MY_NV8(K,);}      Bc8;
+typedef struct Bc16 {char MY_NV16(K,);}     Bc16;
+typedef struct Bc32 {char MY_NV32(K,);}     Bc32;
+typedef struct Bc64 {char MY_NV64(K,);}     Bc64;
 
 typedef struct Hu1  {uint16_t MY_NV1(K,);}  Hu1;
 typedef struct Hu2  {uint16_t MY_NV2(K,);}  Hu2;
@@ -2582,11 +2620,11 @@ typedef struct Di3  {int64_t MY_NV3(K,);}   Di3;
 typedef struct Di4  {int64_t MY_NV4(K,);}   Di4;
 typedef struct Di8  {int64_t MY_NV8(K,);}   Di8;
 
-typedef struct Df1  {double MY_NV1(K, );}   Df1;
-typedef struct Df2  {double MY_NV2(K, );}   Df2;
-typedef struct Df3  {double MY_NV3(K, );}   Df3;
-typedef struct Df4  {double MY_NV4(K, );}   Df4;
-typedef struct Df8  {double MY_NV8(K, );}   Df8;
+typedef struct Df1  {double MY_NV1(K,);}   Df1;
+typedef struct Df2  {double MY_NV2(K,);}   Df2;
+typedef struct Df3  {double MY_NV3(K,);}   Df3;
+typedef struct Df4  {double MY_NV4(K,);}   Df4;
+typedef struct Df8  {double MY_NV8(K,);}   Df8;
 
 typedef struct Qu1  {QUAD_UTYPE MY_NV1(K,);}    Qu1;
 typedef struct Qu2  {QUAD_UTYPE MY_NV2(K,);}    Qu2;
@@ -2599,12 +2637,13 @@ typedef struct Qi2  {QUAD_ITYPE MY_NV2(K, );}   Qi2;
 typedef struct Qi3  {QUAD_ITYPE MY_NV3(K, );}   Qi3;
 typedef struct Qi4  {QUAD_ITYPE MY_NV4(K, );}   Qi4;
 typedef struct Qi8  {QUAD_ITYPE MY_NV8(K, );}   Qi8;
+//.....||.....\\//.....||.....\\//.....||.....\\//.....||.....\\
 
-typedef struct Qf1  {QUAD_FTYPE MY_NV1(K, );}   Qf1;
-typedef struct Qf2  {QUAD_FTYPE MY_NV2(K, );}   Qf2;
-typedef struct Qf3  {QUAD_FTYPE MY_NV3(K, );}   Qf3;
-typedef struct Qf4  {QUAD_FTYPE MY_NV4(K, );}   Qf4;
-typedef struct Qf8  {QUAD_FTYPE MY_NV8(K, );}   Qf8;
+typedef struct Qf1 {QUAD_FTYPE MY_NV1(K,);} Qf1;
+typedef struct Qf2 {QUAD_FTYPE MY_NV2(K,);} Qf2;
+typedef struct Qf3 {QUAD_FTYPE MY_NV3(K,);} Qf3;
+typedef struct Qf4 {QUAD_FTYPE MY_NV4(K,);} Qf4;
+typedef struct Qf8 {QUAD_FTYPE MY_NV8(K,);} Qf8;
 
 #if _LEAVE_EXTNUM_HOMOGENOUS_AGGREGATES
 }
@@ -2622,7 +2661,9 @@ any throwaway union used for scalar type punning.
 
 *   Individual bits can be referenced using the Y
     members. ((Dwrd){.U=x}).Y37 is equivalent to
-    (((uint64_t) x)>>37)&1
+    (((uint64_t) x)>>37)&1. Since the first member is the
+    Y member bitfield, the undesignated initializer is the
+    binary representation and roughly equivalent to newl
 
 *   The M.U, M.I, and M.F members contain packed
     versions of the U, I, F members. However, the lun*
@@ -2633,26 +2674,28 @@ any throwaway union used for scalar type punning.
 */
 
 typedef union Byte {
-    char        C[1];
-    uint8_t     U;
-    int8_t      I;
-    _Bool       Y;
-    union       {Bu1 U; Bi1 I; Bc1 C;} M1;
-    struct      {bool       MY_NV8(Y,:1),:0;};
-    struct      {char       MY_NV1(C,);};
-    struct      {uint8_t    MY_NV1(U,);};
-    struct      {int8_t     MY_NV1(I,);};
+    struct  {bool     MY_NV8(Y,:1),:0;};
+    char    C[1];
+    uint8_t U;
+    int8_t  I;
+    _Bool   Y;
+    union   {Bu1 U; Bi1 I; Bc1 C;} M1;
+    union   {Yu8 U;} M8;
+    struct  {char     MY_NV1(C,);};
+    struct  {uint8_t  MY_NV1(U,);};
+    struct  {int8_t   MY_NV1(I,);};
 } Byte;
 
 typedef union Half {
+    struct      {bool   MY_NV16(Y, :1), :0; };
     char        C[2];
     Byte        B[2];
     union       {Hu1 U; Hi1 I; Hf1 F;} M1;
     union       {Bu2 U; Bi2 I; Bc2 C;} M2;
+    union       {Yu16 U;} M16;
     uint16_t    U;
     int16_t     I;
     flt16_t     F;
-    struct      {bool   MY_NV16(Y, :1), :0; };
     struct      {char   MY_NV2( C,  );      };
     struct      {Byte   MY_NV2( B,  );      };
     struct      {Byte   MY_PAIR(Lo, Hi,  ); };
@@ -2672,14 +2715,14 @@ typedef union Half {
     union {
 #if defined(_MSC_VER)
 #   pragma pack(push,1)
-        uint16_t    U;
-        int16_t     I;
-        flt16_t     F;
+        uint16_t U;
+        int16_t  I;
+        flt16_t  F;
 #   pragma pack(pop)
 #else
-        uint16_t    U __attribute__((packed));
-        int16_t     I __attribute__((packed));
-        flt16_t     F __attribute__((packed));
+        uint16_t U __attribute__((packed));
+        int16_t  I __attribute__((packed));
+        flt16_t  F __attribute__((packed));
 #endif
 
     } M;
@@ -2687,20 +2730,21 @@ typedef union Half {
 } Half;
 
 typedef union Word {
-    char           C[4];
-    Byte        B[4];
-    Half        H[2];
-    union       {Wu1 U; Wi1 I; Wf1 F;} M1;
-    union       {Hu2 U; Hi2 I; Hf2 F;} M2;
-    union       {Bu4 U; Bi4 I; Bc4 C;} M4;
-    uint32_t    U;
-    int32_t     I;
-    float       F;
     struct      {bool   MY_NV32(Y, :1), :0; };
     struct      {char   MY_NV4( C,  );      };
     struct      {Byte   MY_NV4( B,  );      };
     struct      {Half   MY_NV2( H,  );      };
     struct      {Half   MY_PAIR(Lo, Hi,  ); };
+    char        C[4];
+    Byte        B[4];
+    Half        H[2];
+    union       {Wu1 U; Wi1 I; Wf1 F;}  M1;
+    union       {Hu2 U; Hi2 I; Hf2 F;}  M2;
+    union       {Bu4 U; Bi4 I; Bc4 C;}  M4;
+    union       {Yu32 U;}               M32;
+    uint32_t    U;
+    int32_t     I;
+    float       F;
 #if WORD_NPTR
     void        *A[WORD_NPTR];
 #   if WORD_NPTR == 2
@@ -2736,6 +2780,12 @@ typedef union Word {
 } Word;
 
 typedef union Dwrd {
+    struct      {bool   MY_NV64(Y, :1), :0; };
+    struct      {char   MY_NV8( C,  );      };
+    struct      {Byte   MY_NV8( B,  );      };
+    struct      {Half   MY_NV4( H,  );      };
+    struct      {Word   MY_NV2( W,  );      };
+    struct      {Word   MY_PAIR(Lo, Hi,  ); };
     char        C[8];
     Byte        B[8];
     Half        H[4];
@@ -2744,15 +2794,10 @@ typedef union Dwrd {
     union       {Wu2 U; Wi2 I; Wf2 F;} M2;
     union       {Hu4 U; Hi4 I; Hf4 F;} M4;
     union       {Bu8 U; Bi8 I; Bc8 C;} M8;
+    union       {Yu64 U;} M64;
     uint64_t    U;
     int64_t     I;
     double      F;
-    struct      {bool   MY_NV64(Y, :1), :0; };
-    struct      {char   MY_NV8( C,  );      };
-    struct      {Byte   MY_NV8( B,  );      };
-    struct      {Half   MY_NV4( H,  );      };
-    struct      {Word   MY_NV2( W,  );      };
-    struct      {Word   MY_PAIR(Lo, Hi,  ); };
 #if DWRD_NPTR
     void    *A[DWRD_NPTR];
 #   if   DWRD_NPTR == 4
@@ -2789,19 +2834,6 @@ typedef union Dwrd {
 } Dwrd;
 
 typedef union Quad {
-    char        C[16];
-    Byte        B[16];
-    Half        H[ 8];
-    Word        W[ 4];
-    Dwrd        D[ 2];
-    union       {Qu1  U; Qi1  I; Qf1  F;} M1;
-    union       {Du2  U; Di2  I; Df2  F;} M2;
-    union       {Wu4  U; Wi4  I; Wf4  F;} M4;
-    union       {Hu8  U; Hi8  I; Hf8  F;} M8;
-    union       {Bu16 U; Bi16 I; Bc16 C;} M16;
-    QUAD_UTYPE  U;
-    QUAD_ITYPE  I;
-    QUAD_FTYPE  F;
     struct  {bool   MY_NV128(Y, :1), :0;};
     struct  {char   MY_NV16( C, );      };
     struct  {Byte   MY_NV16( B, );      };
@@ -2809,16 +2841,30 @@ typedef union Quad {
     struct  {Word   MY_NV4(  W, );      };
     struct  {Dwrd   MY_NV2(  D, );      };
     struct  {Dwrd   MY_PAIR(Lo, Hi,  ); };
+    char    C[16];
+    Byte    B[16];
+    Half    H[ 8];
+    Word    W[ 4];
+    Dwrd    D[ 2];
+    union   {Qu1  U; Qi1  I; Qf1  F;} M1;
+    union   {Du2  U; Di2  I; Df2  F;} M2;
+    union   {Wu4  U; Wi4  I; Wf4  F;} M4;
+    union   {Hu8  U; Hi8  I; Hf8  F;} M8;
+    union   {Bu16 U; Bi16 I; Bc16 C;} M16;
+    union   {Yu128 U;} M128;
+    QUAD_UTYPE  U;
+    QUAD_ITYPE  I;
+    QUAD_FTYPE  F;
 
     void    *A[QUAD_NPTR];
 #   if   QUAD_NPTR == 8
-    struct  {void   MY_NV8(*A,  );      };
+    struct  {void   MY_NV8(*A,);};
 #   elif DWRD_NPTR == 4
-    struct  {void   MY_NV4(*A,  );      };
+    struct  {void   MY_NV4(*A,);};
 #   elif DWRD_NPTR == 2
-    struct  {void   MY_NV2(*A,  );      };
+    struct  {void   MY_NV2(*A,);};
 #   else
-    struct  {void   MY_NV1(*A,  );      };
+    struct  {void   MY_NV1(*A,);};
 #   endif
 
     union {
@@ -3130,112 +3176,101 @@ implementation defined.
 #include      <limits.h>
 #endif
 
-//                      (  mmmmzzzcckkkttt)
-// Type                               (ttt)
-//                      (0b111111100000000)
-#define     REPR_ZL     (0b000000000000000) // LIL_ENDIAN integer
-#define     REPR_ZB     (0b000000000000001) // BIG_ENDIAN integer
+//                     76543210
+//                    (ecckkktt)
+// Etype              (######tt)
+#define REPR_U      (0b00000000) // unsigned int
+#define REPR_I      (0b00000001) // signed int
+#define REPR_F      (0b00000011) // {Mant,Expo,Sign}
 
-#define     REPR_IL     (0b000000000000010) // LIL_ENDIAN signed int
-#define     REPR_IB     (0b000000000000011) // BIG_ENDIAN signed int
+//                    (ecckkktt)
+// Esize (log2)       (###kkk>>)
+#define REPR_K1     (0b00000000) // (1<<0) = 1 bit
+#define REPR_K2     (0b00000100) // (1<<1) = 2 bit
+#define REPR_K4     (0b00001000) // (1<<2) = 4 bit
+#define REPR_K8     (0b00001100) // (1<<3) = 8 bit
+#define REPR_K16    (0b00010000) // (1<<4) = 16 bit
+#define REPR_K32    (0b00010100) // (1<<5) = 32 bit
+#define REPR_K64    (0b00011000) // (1<<6) = 64 bit
+#define REPR_K128   (0b00011100) // (1<<7) = 128 bit
 
-#define     REPR_FLZL   (0b000000000000100) // le: Mant,Expo,Sign
-#define     REPR_FBZL   (0b000000000000110) // le: Sign,Expo,Mant
-#define     REPR_FLZB   (0b000000000000101) // be: Mant,Expo,Sign
-#define     REPR_FBZB   (0b000000000000111) // be: Sign,Expo,Mant
+//                    (ecckkktt)
+// Category           (#cc>>>>>)
+#define REPR_K      (0b00000000) // scalar
+#define REPR_V      (0b00100000) // vector
+#define REPR_M      (0b01000000) // hva
+#define REPR_X      (0b01100000) //
 
-// log2 element size              (kkk)
-//                                00111000
-#define     REPR_K1     (0b000000000000000) // (1<<0) = 1 bit
-#define     REPR_K2     (0b000000000001000) // (1<<1) = 2 bit
-#define     REPR_K4     (0b000000000010000) // (1<<2) = 4 bit
-#define     REPR_K8     (0b000000000011000) // (1<<3) = 8 bit
-#define     REPR_K16    (0b000000000100000) // (1<<4) = 16 bit
-#define     REPR_K32    (0b000000000101000) // (1<<5) = 32 bit
-#define     REPR_K64    (0b000000000110000) // (1<<6) = 64 bit
-#define     REPR_K128   (0b000000000111000) // (1<<7) = 128 bit
+//                    (ecckkktt)
+// Byteorder          (e>>>>>>>)
+#define  REPR_L     (0b00000000) // LIL_ENDIAN ints
+#define  REPR_R     (0b10000000) // BIG_ENDIAN ints
 
-// Category                      (cc)
-//                                11000000
-#define     REPR_K      (0b000000000000000) // scalar
-#define     REPR_VL     (0b000000001000000) // lilvec
-#define     REPR_VB     (0b000000010000000) // bigvec
-#define     REPR_A      (0b000000011000000) // hva
+//                    (_mmmmzzz>>>>>>>>)
+// Sizeof (log2)      (#####zzz>>>>>>>>)
+#define REPR_SZB    (0b0000000000000000) // 1 byte
+#define REPR_SZH    (0b0000000100000000) // 2 byte
+#define REPR_SZW    (0b0000001000000000) // 4 byte
+#define REPR_SZD    (0b0000001100000000) // 8 byte
+#define REPR_SZQ    (0b0000010000000000) // 16 byte
+#define REPR_SZO    (0b0000010100000000) // 32 byte
+#define REPR_SZS    (0b0000011000000000) // 64 byte
+#define REPR_SZV    (0b0000011100000000) // custom size
 
-#if MY_ENDIAN == ENDIAN_BIG
-#   define  REPR_U      REPR_ZB     // be unsigned
-#   define  REPR_I      REPR_IB     // be signed
-#   define  REPR_FL     REPR_FLZB   // le flt_be.Mant
-#   define  REPR_FB     REPR_FBZB   // be flt_be.Mant
-#else
-#   define  REPR_U      REPR_ZL
-#   define  REPR_I      REPR_IL
-#   define  REPR_FL     REPR_FLZL
-#   define  REPR_FB     REPR_FBZL
-#endif
-
-#if MY_VECTOR_ENDIAN == ENDIAN_BIG
-#   define  REPR_V      REPR_VB
-#else
-#   define  REPR_V      REPR_VL
-#endif
-
-//                      (0b111111100000000)
-//                      (      zzz        )
-// Object log2 size           (zzz)
-#define     REPR_SZB    (0b000000000000000) // 1 byte
-#define     REPR_SZH    (0b000000100000000) // 2 byte
-#define     REPR_SZW    (0b000001000000000) // 4 byte
-#define     REPR_SZD    (0b000001100000000) // 8 byte
-#define     REPR_SZQ    (0b000010000000000) // 16 byte
-#define     REPR_SZO    (0b000010100000000) // 32 byte
-#define     REPR_SZS    (0b000011000000000) // 64 byte
-#define     REPR_SZV    (0b000011100000000) // custom size
-
-#define     REPR_SZL    ((INT_MAX==LONG_MAX)?REPR_SZW:REPR_SZD)
-#define     REPR_SZLL   ((ULLONG_MAX>>64)?REPR_SZD:REPR_SZQ)
 
 /*  Homogeneous aggregate length (HAL)
 
-All typecodes with a nonzero HAL are homogeneous aggregate
-types. Length (M) is encoded in 4 bits using the following:
+Homogeneous aggregates are arrays or structs with an
+internal representation equivalent to an array.
 
-    M = 8 << (MAX(8, x)-8)
+E.g. struct Hu3 in:
+
+    struct Hu3 {uint16_t K0, K1, K2;};
+
+has the same in memory layout as uint16_t[3] 
+
+To extract the HAL from a REPR code X, use:
+
+    m = (X>>11)
+    m = (m<8) ? m : (8<<(m-8))
 */
 
-//                      (  mmmm           )
-#define     REPR_M0     (0b000000000000000) // nohomo aggr
-#define     REPR_M1     (0b000100000000000)
-#define     REPR_M2     (0b001000000000000)
-#define     REPR_M3     (0b001100000000000)
-#define     REPR_M4     (0b010000000000000)
-#define     REPR_M5     (0b010100000000000)
-#define     REPR_M6     (0b011000000000000)
-#define     REPR_M7     (0b011100000000000)
-#define     REPR_M8     (0b100000000000000)
-#define     REPR_M16    (0b100100000000000)
-#define     REPR_M32    (0b101000000000000)
-#define     REPR_M64    (0b101100000000000)
-#define     REPR_M128   (0b110000000000000)
-#define     REPR_M256   (0b110100000000000)
-#define     REPR_M512   (0b111000000000000)
-#define     REPR_M1024  (0b111100000000000)
-
-//                      (  mmmmzzzcckkkttt)
+//                    (_mmmmzzz>>>>>>>>)
+// HAL                (#mmmm>>>>>>>>>>>)
+#define REPR_M0     (0b0000000000000000) // nohomo aggr
+#define REPR_M1     (0b0000100000000000)
+#define REPR_M2     (0b0001000000000000)
+#define REPR_M3     (0b0001100000000000)
+#define REPR_M4     (0b0010000000000000)
+#define REPR_M5     (0b0010100000000000)
+#define REPR_M6     (0b0011000000000000)
+#define REPR_M7     (0b0011100000000000)
+#define REPR_M8     (0b0100000000000000)
+#define REPR_M16    (0b0100100000000000)
+#define REPR_M32    (0b0101000000000000)
+#define REPR_M64    (0b0101100000000000)
+#define REPR_M128   (0b0110000000000000)
+#define REPR_M256   (0b0110100000000000)
+#define REPR_M512   (0b0111000000000000)
+#define REPR_M1024  (0b0111100000000000)
 
 #if INT_MAX == LONG_MAX
-#   define  REPR_KL    REPR_K32
+#   define  REPR_KL     REPR_K32
+#   define  REPR_SZL    REPR_SZW
 #else
 #   define  REPR_KL    REPR_K64
+#   define  REPR_SZL    REPR_SZD
 #endif
 
-#if (ULLONG_MAX>>63) > 1
-#   define  REPR_KLL    REPR_K128
-#else
+#if (ULLONG_MAX>>63) == 1ULL
 #   define  REPR_KLL    REPR_K64
+#   define  REPR_SZLL   REPR_SZD
+#else
+#   define  REPR_KLL    REPR_K128
+#   define  REPR_SZLL   REPR_SZQ
 #endif
 
-#define     REPR_YU     (REPR_U|REPR_K1)
+#define     REPR_YU     (REPR_U |REPR_K1)
 #define     REPR_YU1    (REPR_YU|REPR_M1)
 #define     REPR_YU2    (REPR_YU|REPR_M2)
 #define     REPR_YU3    (REPR_YU|REPR_M3)
@@ -3245,7 +3280,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_YU32   (REPR_YU|REPR_M32)
 #define     REPR_YU64   (REPR_YU|REPR_M64)
 
-#define     REPR_BU     (REPR_U|REPR_K8)
+#define     REPR_BU     (REPR_U |REPR_K8)
 #define     REPR_BU1    (REPR_BU|REPR_M1)
 #define     REPR_BU2    (REPR_BU|REPR_M2)
 #define     REPR_BU3    (REPR_BU|REPR_M3)
@@ -3255,7 +3290,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_BU32   (REPR_BU|REPR_M32)
 #define     REPR_BU64   (REPR_BU|REPR_M64)
 
-#define     REPR_BI     (REPR_I|REPR_K8)
+#define     REPR_BI     (REPR_I |REPR_K8)
 #define     REPR_BI1    (REPR_BI|REPR_M1)
 #define     REPR_BI2    (REPR_BI|REPR_M2)
 #define     REPR_BI3    (REPR_BI|REPR_M3)
@@ -3264,8 +3299,10 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_BI16   (REPR_BI|REPR_M16)
 #define     REPR_BI32   (REPR_BI|REPR_M32)
 #define     REPR_BI64   (REPR_BI|REPR_M64)
-
-#define     REPR_HU     (REPR_U|REPR_K16)
+/*
+CHAR_REPR is either REPR_BI or REPR_BU
+*/
+#define     REPR_HU     (REPR_U |REPR_K16)
 #define     REPR_HU1    (REPR_HU|REPR_M1)
 #define     REPR_HU2    (REPR_HU|REPR_M2)
 #define     REPR_HU3    (REPR_HU|REPR_M3)
@@ -3274,7 +3311,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_HU16   (REPR_HU|REPR_M16)
 #define     REPR_HU32   (REPR_HU|REPR_M32)
 
-#define     REPR_HI     (REPR_I|REPR_K16)
+#define     REPR_HI     (REPR_I |REPR_K16)
 #define     REPR_HI1    (REPR_HI|REPR_M1)
 #define     REPR_HI2    (REPR_HI|REPR_M2)
 #define     REPR_HI3    (REPR_HI|REPR_M3)
@@ -3283,12 +3320,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_HI16   (REPR_HI|REPR_M16)
 #define     REPR_HI32   (REPR_HI|REPR_M32)
 
-#if FLT16_ENDIAN == ENDIAN_BIG
-#   define  REPR_HF     (REPR_FB|REPR_K16)
-#else
-#   define  REPR_HF     (REPR_FL|REPR_K16)
-#endif
-
+#define     REPR_HF     (REPR_F |REPR_K16)
 #define     REPR_HF1    (REPR_HF|REPR_M1)
 #define     REPR_HF2    (REPR_HF|REPR_M2)
 #define     REPR_HF3    (REPR_HF|REPR_M3)
@@ -3297,8 +3329,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_HF16   (REPR_HF|REPR_M16)
 #define     REPR_HF32   (REPR_HF|REPR_M32)
 
-
-#define     REPR_WU     (REPR_U|REPR_K32)
+#define     REPR_WU     (REPR_U |REPR_K32)
 #define     REPR_WU1    (REPR_WU|REPR_M1)
 #define     REPR_WU2    (REPR_WU|REPR_M2)
 #define     REPR_WU3    (REPR_WU|REPR_M3)
@@ -3306,7 +3337,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_WU8    (REPR_WU|REPR_M8)
 #define     REPR_WU16   (REPR_WU|REPR_M16)
 
-#define     REPR_WI     (REPR_I|REPR_K32)
+#define     REPR_WI     (REPR_I |REPR_K32)
 #define     REPR_WI1    (REPR_WI|REPR_M1)
 #define     REPR_WI2    (REPR_WI|REPR_M2)
 #define     REPR_WI3    (REPR_WI|REPR_M3)
@@ -3314,12 +3345,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_WI8    (REPR_WI|REPR_M8)
 #define     REPR_WI16   (REPR_WI|REPR_M16)
 
-#if FLT16_ENDIAN == ENDIAN_BIG
-#   define  REPR_WF     (REPR_FB|REPR_K32)
-#else
-#   define  REPR_WF     (REPR_FL|REPR_K32)
-#endif
-
+#define     REPR_WF     (REPR_F |REPR_K32)
 #define     REPR_WF1    (REPR_WF|REPR_M1)
 #define     REPR_WF2    (REPR_WF|REPR_M2)
 #define     REPR_WF3    (REPR_WF|REPR_M3)
@@ -3327,7 +3353,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_WF8    (REPR_WF|REPR_M8)
 #define     REPR_WF16   (REPR_WF|REPR_M16)
 
-#define     REPR_DU     (REPR_U|REPR_K64)
+#define     REPR_DU     (REPR_U |REPR_K64)
 #define     REPR_DU1    (REPR_DU|REPR_M1)
 #define     REPR_DU2    (REPR_DU|REPR_M2)
 #define     REPR_DU3    (REPR_DU|REPR_M3)
@@ -3341,17 +3367,33 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_DI4    (REPR_DI|REPR_M4)
 #define     REPR_DI8    (REPR_DI|REPR_M8)
 
-#if FLT16_ENDIAN == ENDIAN_BIG
-#   define  REPR_DF     (REPR_FB|REPR_K32)
-#else
-#   define  REPR_DF     (REPR_FL|REPR_K32)
-#endif
-
+#define     REPR_DF     (REPR_F |REPR_K64)
 #define     REPR_DF1    (REPR_DF|REPR_M1)
 #define     REPR_DF2    (REPR_DF|REPR_M2)
 #define     REPR_DF3    (REPR_DF|REPR_M3)
 #define     REPR_DF4    (REPR_DF|REPR_M4)
 #define     REPR_DF8    (REPR_DF|REPR_M8)
+
+#define     REPR_QU     (REPR_U |REPR_K128)
+#define     REPR_QU1    (REPR_QU|REPR_M1)
+#define     REPR_QU2    (REPR_QU|REPR_M2)
+#define     REPR_QU3    (REPR_QU|REPR_M3)
+#define     REPR_QU4    (REPR_QU|REPR_M4)
+#define     REPR_QU8    (REPR_QU|REPR_M8)
+
+#define     REPR_QI     (REPR_I |REPR_K128)
+#define     REPR_QI1    (REPR_QI|REPR_M1)
+#define     REPR_QI2    (REPR_QI|REPR_M2)
+#define     REPR_QI3    (REPR_QI|REPR_M3)
+#define     REPR_QI4    (REPR_QI|REPR_M4)
+#define     REPR_QI8    (REPR_QI|REPR_M8)
+
+#define     REPR_QF     (REPR_F |REPR_K128)
+#define     REPR_QF1    (REPR_QF|REPR_M1)
+#define     REPR_QF2    (REPR_QF|REPR_M2)
+#define     REPR_QF3    (REPR_QF|REPR_M3)
+#define     REPR_QF4    (REPR_QF|REPR_M4)
+#define     REPR_QF8    (REPR_QF|REPR_M8)
 
 #define     REPR_VW     (REPR_V|REPR_SZW)
 #define     REPR_VD     (REPR_V|REPR_SZD)
@@ -3360,44 +3402,82 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_VS     (REPR_V|REPR_SZS)
 
 #define     REPR_VWYU   (REPR_VW|REPR_YU)
-#define     REPR_VDYU   (REPR_VD|REPR_YU)
-#define     REPR_VQYU   (REPR_VQ|REPR_YU)
-#define     REPR_VOYU   (REPR_VO|REPR_YU)
-#define     REPR_VSYU   (REPR_VS|REPR_YU)
-
+#define     REPR_VWYU1  (REPR_VWYU|REPR_M1)
 #define     REPR_VWBU   (REPR_VW|REPR_BU)
+#define     REPR_VWBU1  (REPR_VWBU|REPR_M1)
 #define     REPR_VWBI   (REPR_VW|REPR_BI)
+#define     REPR_VWBI1  (REPR_VWBI|REPR_M1)
 #define     REPR_VWHU   (REPR_VW|REPR_HU)
+#define     REPR_VWHU1  (REPR_VWHU|REPR_M1)
 #define     REPR_VWHI   (REPR_VW|REPR_HI)
+#define     REPR_VWHI1  (REPR_VWHI|REPR_M1)
 #define     REPR_VWHF   (REPR_VW|REPR_HF)
+#define     REPR_VWHF1  (REPR_VWHF|REPR_M1)
 #define     REPR_VWWU   (REPR_VW|REPR_WU)
+#define     REPR_VWWU1  (REPR_VWWU|REPR_M1)
 #define     REPR_VWWI   (REPR_VW|REPR_WI)
+#define     REPR_VWWI1  (REPR_VWWI|REPR_M1)
 #define     REPR_VWWF   (REPR_VW|REPR_WF)
+#define     REPR_VWWF1  (REPR_VWWF|REPR_M1)
 
+#define     REPR_VDYU   (REPR_VD|REPR_YU)
+#define     REPR_VDYU1  (REPR_VDYU|REPR_M1)
 #define     REPR_VDBU   (REPR_VD|REPR_BU)
+#define     REPR_VDBU1  (REPR_VDBU|REPR_M1)
 #define     REPR_VDBI   (REPR_VD|REPR_BI)
+#define     REPR_VDBI1  (REPR_VDBI|REPR_M1)
 #define     REPR_VDHU   (REPR_VD|REPR_HU)
+#define     REPR_VDHU1  (REPR_VDHU|REPR_M1)
 #define     REPR_VDHI   (REPR_VD|REPR_HI)
+#define     REPR_VDHI1  (REPR_VDHI|REPR_M1)
 #define     REPR_VDHF   (REPR_VD|REPR_HF)
+#define     REPR_VDHF1  (REPR_VDHF|REPR_M1)
 #define     REPR_VDWU   (REPR_VD|REPR_WU)
+#define     REPR_VDWU1  (REPR_VDWU|REPR_M1)
 #define     REPR_VDWI   (REPR_VD|REPR_WI)
+#define     REPR_VDWI1  (REPR_VDWI|REPR_M1)
 #define     REPR_VDWF   (REPR_VD|REPR_WF)
+#define     REPR_VDWF1  (REPR_VDWF|REPR_M1)
 #define     REPR_VDDU   (REPR_VD|REPR_DU)
+#define     REPR_VDDU1  (REPR_VDDU|REPR_M1)
 #define     REPR_VDDI   (REPR_VD|REPR_DI)
+#define     REPR_VDDI1  (REPR_VDDI|REPR_M1)
 #define     REPR_VDDF   (REPR_VD|REPR_DF)
+#define     REPR_VDDF1  (REPR_VDDF|REPR_M1)
+
+#define     REPR_VQYU   (REPR_VQ|REPR_YU)
+#define     REPR_VQYU1  (REPR_VQYU|REPR_M1)
 
 #define     REPR_VQBU   (REPR_VQ|REPR_BU)
+#define     REPR_VQBU1  (REPR_VQBU|REPR_M1)
 #define     REPR_VQBI   (REPR_VQ|REPR_BI)
+#define     REPR_VQBI1  (REPR_VQBI|REPR_M1)
 #define     REPR_VQHU   (REPR_VQ|REPR_HU)
+#define     REPR_VQHU1  (REPR_VQHU|REPR_M1)
 #define     REPR_VQHI   (REPR_VQ|REPR_HI)
+#define     REPR_VQHI1  (REPR_VQHI|REPR_M1)
 #define     REPR_VQHF   (REPR_VQ|REPR_HF)
+#define     REPR_VQHF1  (REPR_VQHF|REPR_M1)
 #define     REPR_VQWU   (REPR_VQ|REPR_WU)
+#define     REPR_VQWU1  (REPR_VQWU|REPR_M1)
 #define     REPR_VQWI   (REPR_VQ|REPR_WI)
+#define     REPR_VQWI1  (REPR_VQWI|REPR_M1)
 #define     REPR_VQWF   (REPR_VQ|REPR_WF)
+#define     REPR_VQWF1  (REPR_VQWF|REPR_M1)
 #define     REPR_VQDU   (REPR_VQ|REPR_DU)
+#define     REPR_VQDU1  (REPR_VQDU|REPR_M1)
 #define     REPR_VQDI   (REPR_VQ|REPR_DI)
+#define     REPR_VQDI1  (REPR_VQDI|REPR_M1)
 #define     REPR_VQDF   (REPR_VQ|REPR_DF)
+#define     REPR_VQDF1  (REPR_VQDF|REPR_M1)
+#define     REPR_VQQU   (REPR_VQ|REPR_QU)
+#define     REPR_VQQU1  (REPR_VQQU|REPR_M1)
+#define     REPR_VQQI   (REPR_VQ|REPR_QI)
+#define     REPR_VQQI1  (REPR_VQQI|REPR_M1)
+#define     REPR_VQQF   (REPR_VQ|REPR_QF)
+#define     REPR_VQQF1  (REPR_VQQF|REPR_M1)
 
+#define     REPR_VOYU   (REPR_VO|REPR_YU)
 #define     REPR_VOBU   (REPR_VO|REPR_BU)
 #define     REPR_VOBI   (REPR_VO|REPR_BI)
 #define     REPR_VOHU   (REPR_VO|REPR_HU)
@@ -3410,6 +3490,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_VODI   (REPR_VO|REPR_DI)
 #define     REPR_VODF   (REPR_VO|REPR_DF)
 
+#define     REPR_VSYU   (REPR_VS|REPR_YU)
 #define     REPR_VSBU   (REPR_VS|REPR_BU)
 #define     REPR_VSBI   (REPR_VS|REPR_BI)
 #define     REPR_VSHU   (REPR_VS|REPR_HU)
@@ -3422,74 +3503,152 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     REPR_VSDI   (REPR_VS|REPR_DI)
 #define     REPR_VSDF   (REPR_VS|REPR_DF)
 
-#define     BOOL_REPR   REPR_YU
+#if MY_ENDIAN == ENDIAN_BIG
+#   define  BYTE_REPRU  (REPR_R|REPR_BU)
+#   define  BYTE_REPRU1 (REPR_R|REPR_BU1)
 
-#define     UCHAR_REPR  REPR_BU
-#define     SCHAR_REPR  REPR_BI
+#   define  BYTE_REPRI  (REPR_R|REPR_BI)
+#   define  BYTE_REPRI1 (REPR_R|REPR_BI1)
 
-#define     USHRT_REPR  REPR_HU
-#define     SHRT_REPR   REPR_HI
+#   define  HALF_REPRU  (REPR_R|REPR_HU)
+#   define  HALF_REPRU1 (REPR_R|REPR_HU1)
 
-#define     UINT_REPR   REPR_WU
-#define     INT_REPR    REPR_WI
+#   define  HALF_REPRI  (REPR_R|REPR_HI)
+#   define  HALF_REPRI1 (REPR_R|REPR_HI1)
 
-#if REPR_KL == REPR_K32
-#   define  ULONG_REPR  REPR_WU
-#   define  LONG_REPR   REPR_WI
+#   define  HALF_REPRF  (REPR_R|REPR_HF)
+#   define  HALF_REPRF1 (REPR_R|REPR_HF1)
+
+#   define  WORD_REPRU  (REPR_R|REPR_WU)
+#   define  WORD_REPRU1 (REPR_R|REPR_WU1)
+
+#   define  WORD_REPRI  (REPR_R|REPR_WI)
+#   define  WORD_REPRI1 (REPR_R|REPR_WI1)
+
+#   define  WORD_REPRF  (REPR_R|REPR_WF)
+#   define  WORD_REPRF1 (REPR_R|REPR_WF1)
+
+#   define  DWRD_REPRU  (REPR_R|REPR_DU)
+#   define  DWRD_REPRU1 (REPR_R|REPR_DU1)
+
+#   define  DWRD_REPRI  (REPR_R|REPR_DI)
+#   define  DWRD_REPRI1 (REPR_R|REPR_DI1)
+
+#   define  DWRD_REPRF  (REPR_R|REPR_DF)
+#   define  DWRD_REPRF1 (REPR_R|REPR_DF1)
+
+#   define  QUAD_REPRU  (REPR_R|REPR_QU)
+#   define  QUAD_REPRU1 (REPR_R|REPR_QU1)
+
+#   define  QUAD_REPRI  (REPR_R|REPR_QI)
+#   define  QUAD_REPRI1 (REPR_R|REPR_QI1)
+
+#   define  QUAD_REPRF  (REPR_R|REPR_QF)
+#   define  QUAD_REPRF1 (REPR_R|REPR_QF1)
 #else
-#   define  ULONG_REPR  REPR_DU
-#   define  LONG_REPR   REPR_DI
+
+#   define  BYTE_REPRU  (REPR_L|REPR_BU)
+#   define  BYTE_REPRU1 (REPR_L|REPR_BU1)
+
+#   define  BYTE_REPRI  (REPR_L|REPR_BI)
+#   define  BYTE_REPRI1 (REPR_L|REPR_BI1)
+
+#   define  HALF_REPRU  (REPR_L|REPR_HU)
+#   define  HALF_REPRU1 (REPR_L|REPR_HU1)
+
+#   define  HALF_REPRI  (REPR_L|REPR_HI)
+#   define  HALF_REPRI1 (REPR_L|REPR_HI1)
+
+#   define  HALF_REPRF  (REPR_L|REPR_HF)
+#   define  HALF_REPRF1 (REPR_L|REPR_HF1)
+
+#   define  WORD_REPRU  (REPR_L|REPR_WU)
+#   define  WORD_REPRU1 (REPR_L|REPR_WU1)
+
+#   define  WORD_REPRI  (REPR_L|REPR_WI)
+#   define  WORD_REPRI1 (REPR_L|REPR_WI1)
+
+#   define  WORD_REPRF  (REPR_L|REPR_WF)
+#   define  WORD_REPRF1 (REPR_L|REPR_WF1)
+
+#   define  DWRD_REPRU  (REPR_L|REPR_DU)
+#   define  DWRD_REPRU1 (REPR_L|REPR_DU1)
+
+#   define  DWRD_REPRI  (REPR_L|REPR_DI)
+#   define  DWRD_REPRI1 (REPR_L|REPR_DI1)
+
+#   define  DWRD_REPRF  (REPR_L|REPR_DF)
+#   define  DWRD_REPRF1 (REPR_L|REPR_DF1)
+
+#   define  QUAD_REPRU  (REPR_L|REPR_QU)
+#   define  QUAD_REPRU1 (REPR_L|REPR_QU1)
+
+#   define  QUAD_REPRI  (REPR_L|REPR_QI)
+#   define  QUAD_REPRI1 (REPR_L|REPR_QI1)
+
+#   define  QUAD_REPRF  (REPR_L|REPR_QF)
+#   define  QUAD_REPRF1 (REPR_L|REPR_QF1)
 #endif
 
-#if REPR_KLL == REPR_K64
-#   define  ULLONG_REPR REPR_DU
-#   define  LLONG_REPR  REPR_DI
+#define     BOOL_REPR  REPR_U
+#define     UCHAR_REPR  CHAR_STG(REPRU)
+#define     SCHAR_REPR  CHAR_STG(REPRI)
+#if CHAR_MIN
+#   define   CHAR_REPR  CHAR_STG(REPRI)
 #else
-#   define  ULLONG_REPR REPR_QU
-#   define  LLONG_REPR  REPR_QI
+#   define   CHAR_REPR  CHAR_STG(REPRU)
 #endif
+
+#define     USHRT_REPR  SHRT_STG(REPRU)
+#define      SHRT_REPR  SHRT_STG(REPRI)
+#define      UINT_REPR   INT_STG(REPRU)
+#define       INT_REPR   INT_STG(REPRI)
+#define     ULONG_REPR  LONG_STG(REPRU)
+#define      LONG_REPR  LONG_STG(REPRI)
+#define    ULLONG_REPR LLONG_STG(REPRU)
+#define     LLONG_REPR LLONG_STG(REPRI)
 
 #if defined(FLT16_MTYPE)
-#   define  FLT16_REPR  REPR_HF
+#   define  FLT16_REPR  FLT16_STG(REPRF)
 #else
-#   define  FLT16_REPR  REPR_HU1
+#   define  FLT16_REPR  HALF_REPRU1
 #endif
 
-#define     FLT_REPR        REPR_WF
-#define     DBL_REPR        REPR_DF
+#define     FLT_REPR    FLT_STG(REPRF)
+#define     DBL_REPR    DBL_STG(REPRF)
 
-#define     UINT8_REPR      REPR_BU
-#define     INT8_REPR       REPR_BI
+#define     UINT8_REPR  BYTE_REPRU
+#define     INT8_REPR   BYTE_REPRI
 
-#define     UINT16_REPR     REPR_HU
-#define     INT16_REPR      REPR_HI
+#define     UINT16_REPR  HALF_REPRU
+#define     INT16_REPR   HALF_REPRI
 
-#define     UINT32_REPR     REPR_WU
-#define     INT32_REPR      REPR_WI
+#define     UINT32_REPR  WORD_REPRU
+#define     INT32_REPR   WORD_REPRI
 
-#define     UINT64_REPR     REPR_DU
-#define     INT64_REPR      REPR_DI
+#define     UINT64_REPR  DWRD_REPRU
+#define     INT64_REPR   DWRD_REPRI
 
 #if UINTMAX_MAX == UINT64_MAX
-#   define  UINTMAX_REPR    REPR_DU
-#   define  INTMAX_REPR     REPR_DI
+#   define  UINTMAX_REPR  DWRD_REPRU
+#   define  INTMAX_REPR   DWRD_REPRI
 #else
-#   define  UINTMAX_REPR    REPR_QU
-#   define  INTMAX_REPR     REPR_QI
+#   define  UINTMAX_REPR  QUAD_REPRU
+#   define  INTMAX_REPR   QUAD_REPRI
 #endif
 
 #if ADDR_WIDTH == 16
-#   define  UINTPTR_REPR    REPR_HU
-#   define  INTPTR_REPR     REPR_HI
+#   define  UINTPTR_REPR  UINT16_REPR
+#   define  INTPTR_REPR    INT16_REPR
 #elif ADDR_WIDTH == 32
-#   define  UINTPTR_REPR    REPR_WU
-#   define  INTPTR_REPR     REPR_WI
+#   define  UINTPTR_REPR  UINT32_REPR
+#   define  INTPTR_REPR    INT32_REPR
 #elif ADDR_WIDTH == 64
-#   define  UINTPTR_REPR    REPR_DU
-#   define  INTPTR_REPR     REPR_DI
+#   define  UINTPTR_REPR  UINT64_REPR
+#   define  INTPTR_REPR    INT64_REPR
 #elif ADDR_WIDTH == 128
-#   define  UINTPTR_REPR    REPR_QU
-#   define  INTPTR_REPR     REPR_QI
+#   define  UINTPTR_REPR  UINT128_REPR
+#   define  INTPTR_REPR    INT128_REPR
 #endif
 
 #endif // EOF("extrepr.h")
@@ -3514,767 +3673,292 @@ types. Length (M) is encoded in 4 bits using the following:
 #endif
 
 #define     VWYU_(_)    VWYU_##_
-#define     VDYU_(_)    VDYU_##_
-#define     VQYU_(_)    VOYU_##_
-#define     VOYU_(_)    VOYU_##_
-#define     VSYU_(_)    VSYU_##_
-
 #define     VWBU_(_)    VWBU_##_
-#define     VDBU_(_)    VDBU_##_
-#define     VQBU_(_)    VQBU_##_
-#define     VOBU_(_)    VOBU_##_
-#define     VSBU_(_)    VSBU_##_
-
 #define     VWBI_(_)    VWBI_##_
-#define     VDBI_(_)    VDBI_##_
-#define     VQBI_(_)    VQBI_##_
-#define     VOBI_(_)    VOBI_##_
-#define     VSBI_(_)    VSBI_##_
-
 #define     VWBC_(_)    VWBC_##_
-#define     VDBC_(_)    VDBC_##_
-#define     VQBC_(_)    VQBC_##_
-#define     VOBC_(_)    VOBC_##_
-#define     VSBC_(_)    VSBC_##_
-
-
 #define     VWHU_(_)    VWHU_##_
-#define     VDHU_(_)    VDHU_##_
-#define     VQHU_(_)    VQHU_##_
-#define     VOHU_(_)    VOHU_##_
-#define     VSHU_(_)    VSHU_##_
-
 #define     VWHI_(_)    VWHI_##_
-#define     VDHI_(_)    VDHI_##_
-#define     VQHI_(_)    VQHI_##_
-#define     VOHI_(_)    VOHI_##_
-#define     VSHI_(_)    VSHI_##_
-
 #define     VWHF_(_)    VWHF_##_
-#define     VDHF_(_)    VDHF_##_
-#define     VQHF_(_)    VQHF_##_
-#define     VOHF_(_)    VOHF_##_
-#define     VSHF_(_)    VSHF_##_
-
 #define     VWWU_(_)    VWWU_##_
-#define     VDWU_(_)    VDWU_##_
-#define     VQWU_(_)    VQWU_##_
-#define     VOWU_(_)    VOWU_##_
-#define     VSWU_(_)    VSWU_##_
-
 #define     VWWI_(_)    VWWI_##_
-#define     VDWI_(_)    VDWI_##_
-#define     VQWI_(_)    VQWI_##_
-#define     VOWI_(_)    VOWI_##_
-#define     VSWI_(_)    VSWI_##_
-
 #define     VWWF_(_)    VWWF_##_
+
+#define     VDYU_(_)    VDYU_##_
+#define     VDBU_(_)    VDBU_##_
+#define     VDBI_(_)    VDBI_##_
+#define     VDBC_(_)    VDBC_##_
+#define     VDHU_(_)    VDHU_##_
+#define     VDHI_(_)    VDHI_##_
+#define     VDHF_(_)    VDHF_##_
+#define     VDWU_(_)    VDWU_##_
+#define     VDWI_(_)    VDWI_##_
 #define     VDWF_(_)    VDWF_##_
-#define     VQWF_(_)    VQWF_##_
-#define     VOWF_(_)    VOWF_##_
-#define     VSWF_(_)    VSWF_##_
-
 #define     VDDU_(_)    VDDU_##_
-#define     VQDU_(_)    VQDU_##_
-#define     VODU_(_)    VODU_##_
-#define     VSDU_(_)    VSDU_##_
-
 #define     VDDI_(_)    VDDI_##_
-#define     VQDI_(_)    VQDI_##_
-#define     VODI_(_)    VODI_##_
-#define     VSDI_(_)    VSDI_##_
-
 #define     VDDF_(_)    VDDF_##_
+
+#define     VQYU_(_)    VQYU_##_
+#define     VQBU_(_)    VQBU_##_
+#define     VQBI_(_)    VQBI_##_
+#define     VQBC_(_)    VQBC_##_
+#define     VQHU_(_)    VQHU_##_
+#define     VQHI_(_)    VQHI_##_
+#define     VQHF_(_)    VQHF_##_
+#define     VQWU_(_)    VQWU_##_
+#define     VQWI_(_)    VQWI_##_
+#define     VQWF_(_)    VQWF_##_
+#define     VQDU_(_)    VQDU_##_
+#define     VQDI_(_)    VQDI_##_
 #define     VQDF_(_)    VQDF_##_
-#define     VODF_(_)    VODF_##_
-#define     VSDF_(_)    VSDF_##_
+#define     VQQU_(_)    VQQU_##_
+#define     VQQI_(_)    VQQI_##_
+#define     VQQF_(_)    VQQF_##_
 
 #if CHAR_MIN
 #   define  VWBC_BASE   VWBI_
 #   define  VDBC_BASE   VDBI_
 #   define  VQBC_BASE   VQBI_
-#   define  VOBC_BASE   VOBI_
-#   define  VSBC_BASE   VSBI_
 #else
 #   define  VWBC_BASE   VWBU_
 #   define  VDBC_BASE   VDBU_
 #   define  VQBC_BASE   VQBU_
-#   define  VOBC_BASE   VOBU_
-#   define  VSBC_BASE   VSBU_
 #endif
 
+#define     VWYU_STG    WORD_
 #define     VWBU_STG    WORD_
-#define     VDBU_STG    DWRD_
-#define     VQBU_STG    QUAD_
-#define     VOBU_STG    OCTA_
-#define     VSBU_STG    SEXD_
-
 #define     VWBI_STG    WORD_
-#define     VDBI_STG    DWRD_
-#define     VQBI_STG    QUAD_
-#define     VOBI_STG    OCTA_
-#define     VSBI_STG    SEXD_
-
-#define     VWBC_STG    VWBC_BASE(STG)
-#define     VDBC_STG    VDBC_BASE(STG)
-#define     VQBC_STG    VQBC_BASE(STG)
-#define     VOBC_STG    VOBC_BASE(STG)
-#define     VSBC_STG    VSBC_BASE(STG)
-
+#define     VWBC_STG    WORD_
 #define     VWHU_STG    WORD_
-#define     VDHU_STG    DWRD_
-#define     VQHU_STG    QUAD_
-#define     VOHU_STG    OCTA_
-#define     VSHU_STG    SEXD_
-
 #define     VWHI_STG    WORD_
-#define     VDHI_STG    DWRD_
-#define     VQHI_STG    QUAD_
-#define     VOHI_STG    OCTA_
-#define     VSHI_STG    SEXD_
-
 #define     VWHF_STG    WORD_
-#define     VDHF_STG    DWRD_
-#define     VQHI_STG    QUAD_
-#define     VOHI_STG    OCTA_
-#define     VSHI_STG    SEXD_
-
 #define     VWWU_STG    WORD_
-#define     VDWU_STG    DWRD_
-#define     VQWU_STG    QUAD_
-#define     VOWU_STG    OCTA_
-#define     VSWU_STG    SEXD_
-
 #define     VWWI_STG    WORD_
-#define     VDWI_STG    DWRD_
-#define     VQWI_STG    QUAD_
-#define     VOWI_STG    OCTA_
-#define     VSWI_STG    SEXD_
-
 #define     VWWF_STG    WORD_
+
+#define     VDYU_STG    DWRD_
+#define     VDBU_STG    DWRD_
+#define     VDBI_STG    DWRD_
+#define     VDBC_STG    DWRD_
+#define     VDHU_STG    DWRD_
+#define     VDHI_STG    DWRD_
+#define     VDHF_STG    DWRD_
+#define     VDWU_STG    DWRD_
+#define     VDWI_STG    DWRD_
 #define     VDWF_STG    DWRD_
-#define     VQWI_STG    QUAD_
-#define     VOWI_STG    OCTA_
-#define     VSWI_STG    SEXD_
-
 #define     VDDU_STG    DWRD_
-#define     VQDU_STG    QUAD_
-#define     VODU_STG    OCTA_
-#define     VSDU_STG    SEXD_
-
 #define     VDDI_STG    DWRD_
-#define     VQDI_STG    QUAD_
-#define     VODI_STG    OCTA_
-#define     VSDI_STG    SEXD_
-
 #define     VDDF_STG    DWRD_
+
+#define     VQYU_STG    QUAD_
+#define     VQBU_STG    QUAD_
+#define     VQBI_STG    QUAD_
+#define     VQBC_STG    QUAD_
+#define     VQHU_STG    QUAD_
+#define     VQHI_STG    QUAD_
+#define     VQHI_STG    QUAD_
+#define     VQWU_STG    QUAD_
+#define     VQWI_STG    QUAD_
+#define     VQWI_STG    QUAD_
+#define     VQDU_STG    QUAD_
+#define     VQDI_STG    QUAD_
 #define     VQDF_STG    QUAD_
-#define     VODF_STG    OCTA_
-#define     VSDF_STG    SEXD_
-
-#define     VWYU_K      BOOL_
-#define     VDYU_K      BOOL_
-#define     VQYU_K      BOOL_
-#define     VOYU_K      BOOL_
-#define     VSYU_K      BOOL_
-
-#define     VWBU_K      BYTE_U
-#define     VDBU_K      BYTE_U
-#define     VQBU_K      BYTE_U
-#define     VOBU_K      BYTE_U
-#define     VQBU_K      BYTE_U
-
-#define     VWBI_K      BYTE_I
-#define     VDBI_K      BYTE_I
-#define     VQBI_K      BYTE_I
-#define     VOBI_K      BYTE_I
-#define     VSBI_K      BYTE_I
+#define     VQQU_STG    QUAD_
+#define     VQQI_STG    QUAD_
+#define     VQQF_STG    QUAD_
 
 #if CHAR_MIN
 #   define  VWBC_K      BYTE_I
 #   define  VDBC_K      BYTE_I
 #   define  VQBC_K      BYTE_I
-#   define  VOBC_K      BYTE_I
-#   define  VSBC_K      BYTE_I
 #else
 #   define  VWBC_K      BYTE_U
 #   define  VDBC_K      BYTE_U
 #   define  VQBC_K      BYTE_U
-#   define  VOBC_K      BYTE_U
-#   define  VSBC_K      BYTE_U
 #endif
 
+#define     VWYU_K      BOOL_
+#define     VWBU_K      BYTE_U
+#define     VWBI_K      BYTE_I
 #define     VWHU_K      HALF_U
-#define     VDHU_K      HALF_U
-#define     VQHU_K      HALF_U
-#define     VOHU_K      HALF_U
-#define     VSHU_K      HALF_U
-
 #define     VWHI_K      HALF_I
-#define     VDHI_K      HALF_I
-#define     VQHI_K      HALF_I
-#define     VOHI_K      HALF_I
-#define     VSHI_K      HALF_I
-
 #define     VWHF_K      HALF_F
-#define     VDHF_K      HALF_F
-#define     VQHF_K      HALF_F
-#define     VOHF_K      HALF_F
-#define     VSHF_K      HALF_F
-
 #define     VWWU_K      WORD_U
-#define     VDWU_K      WORD_U
-#define     VQWU_K      WORD_U
-#define     VOWU_K      WORD_U
-#define     VSWU_K      WORD_U
-
 #define     VWWI_K      WORD_I
-#define     VDWI_K      WORD_I
-#define     VQWI_K      WORD_I
-#define     VOWI_K      WORD_I
-#define     VSWI_K      WORD_I
-
 #define     VWWF_K      WORD_F
+
+#define     VDYU_K      BOOL_
+#define     VDBU_K      BYTE_U
+#define     VDBI_K      BYTE_I
+#define     VDHU_K      HALF_U
+#define     VDHI_K      HALF_I
+#define     VDHF_K      HALF_F
+#define     VDWU_K      WORD_U
+#define     VDWI_K      WORD_I
 #define     VDWF_K      WORD_F
-#define     VQWF_K      WORD_F
-#define     VOWF_K      WORD_F
-#define     VSWF_K      WORD_F
-
 #define     VDDU_K      DWRD_U
-#define     VQDU_K      DWRD_U
-#define     VODU_K      DWRD_U
-#define     VSDU_K      DWRD_U
-
 #define     VDDI_K      DWRD_I
-#define     VQDI_K      DWRD_I
-#define     VODI_K      DWRD_I
-#define     VSDI_K      DWRD_I
-
 #define     VDDF_K      DWRD_F
+
+#define     VQYU_K      BOOL_
+#define     VQBU_K      BYTE_U
+#define     VQBI_K      BYTE_I
+#define     VQHU_K      HALF_U
+#define     VQHI_K      HALF_I
+#define     VQHF_K      HALF_F
+#define     VQWU_K      WORD_U
+#define     VQWI_K      WORD_I
+#define     VQWF_K      WORD_F
+#define     VQDU_K      DWRD_U
+#define     VQDI_K      DWRD_I
 #define     VQDF_K      DWRD_F
-#define     VODF_K      DWRD_F
-#define     VSDF_K      DWRD_F
+#define     VQQU_K      QUAD_U
+#define     VQQI_K      QUAD_I
+#define     VQQF_K      QUAD_F
+
+#if defined(_MSC_VER) && CHAR_MIN
+#   define  VWBU_KTYPE unsigned char
+#   define  VDBU_KTYPE unsigned char
+#   define  VQBU_KTYPE unsigned char
+#   define  VWBI_KTYPE char
+#   define  VDBI_KTYPE char
+#   define  VQBI_KTYPE char
+#elif CHAR_MIN
+#   define  VWBU_KTYPE unsigned char
+#   define  VDBU_KTYPE unsigned char
+#   define  VQBU_KTYPE unsigned char
+#   define  VWBI_KTYPE signed char
+#   define  VDBI_KTYPE signed char
+#   define  VQBI_KTYPE signed char
+#else
+#   define  VWBU_KTYPE char
+#   define  VDBU_KTYPE char
+#   define  VQBU_KTYPE char
+#   define  VWBI_KTYPE signed char
+#   define  VDBI_KTYPE signed char
+#   define  VQBI_KTYPE signed char
+#endif
 
 #define     VWYU_KTYPE  _Bool
-#define     VDYU_KTYPE  _Bool
-#define     VQYU_KTYPE  _Bool
-#define     VOYU_KTYPE  _Bool
-#define     VSYU_KTYPE  _Bool
-
-#if CHAR_MIN || !defined(_MSC_VER)
-#   define  VWBU_KTYPE  unsigned char
-#   define  VDBU_KTYPE  unsigned char
-#   define  VQBU_KTYPE  unsigned char
-#   define  VOBU_KTYPE  unsigned char
-#   define  VSBU_KTYPE  unsigned char
-#else
-#   define  VWBU_KTYPE  char
-#   define  VDBU_KTYPE  char
-#   define  VQBU_KTYPE  char
-#   define  VOBU_KTYPE  char
-#   define  VSBU_KTYPE  char
-#endif
-
-#if CHAR_MIN && defined(_MSC_VER)
-#   define  VWBI_KTYPE  char
-#   define  VDBI_KTYPE  char
-#   define  VQBI_KTYPE  char
-#   define  VOBI_KTYPE  char
-#   define  VSBI_KTYPE  char
-#else
-#   define  VWBI_KTYPE  signed char
-#   define  VDBI_KTYPE  signed char
-#   define  VQBI_KTYPE  signed char
-#   define  VOBI_KTYPE  signed char
-#   define  VSBI_KTYPE  signed char
-#endif
-
 #define     VWHU_KTYPE  unsigned short
-#define     VDHU_KTYPE  unsigned short
-#define     VQHU_KTYPE  unsigned short
-#define     VOHU_KTYPE  unsigned short
-#define     VSHU_KTYPE  unsigned short
-
 #define     VWHI_KTYPE  short
-#define     VDHI_KTYPE  short
-#define     VQHI_KTYPE  short
-#define     VOHI_KTYPE  short
-#define     VSHI_KTYPE  short
-
 #define     VWHF_KTYPE  flt16_t
-#define     VDHF_KTYPE  flt16_t
-#define     VQHF_KTYPE  flt16_t
-#define     VOHF_KTYPE  flt16_t
-#define     VSHF_KTYPE  flt16_t
-
 #define     VWWU_KTYPE  unsigned int
-#define     VDWU_KTYPE  unsigned int
-#define     VQWU_KTYPE  unsigned int
-#define     VOWU_KTYPE  unsigned int
-#define     VSWU_KTYPE  unsigned int
-
 #define     VWWI_KTYPE  int
-#define     VDWI_KTYPE  int
-#define     VQWI_KTYPE  int
-#define     VOWI_KTYPE  int
-#define     VSWI_KTYPE  int
-
 #define     VWWF_KTYPE  float
+
+#define     VDYU_KTYPE  _Bool
+#define     VDHU_KTYPE  unsigned short
+#define     VDHI_KTYPE  short
+#define     VDHF_KTYPE  flt16_t
+#define     VDWU_KTYPE  unsigned int
+#define     VDWI_KTYPE  int
 #define     VDWF_KTYPE  float
+
+#define     VQYU_KTYPE  _Bool
+#define     VQHU_KTYPE  unsigned short
+#define     VQHI_KTYPE  short
+#define     VQHF_KTYPE  flt16_t
+#define     VQWU_KTYPE  unsigned int
+#define     VQWI_KTYPE  int
 #define     VQWF_KTYPE  float
-#define     VOWF_KTYPE  float
-#define     VSWF_KTYPE  float
 
-#if DWRD_NLONG == 2
-#   define  VDDU_KTYPE  unsigned long long
-#   define  VQDU_KTYPE  unsigned long long
-#   define  VODU_KTYPE  unsigned long long
-#   define  VSDU_KTYPE  unsigned long long
-
-#   define  VDDI_KTYPE  long long
-#   define  VQDI_KTYPE  long long
-#   define  VODI_KTYPE  long long
-#   define  VSDI_KTYPE  long long
-#else
+#if DWRD_NLONG == 1
 #   define  VDDU_KTYPE  unsigned long
-#   define  VQDU_KTYPE  unsigned long
-#   define  VODU_KTYPE  unsigned long
-#   define  VSDU_KTYPE  unsigned long
-
 #   define  VDDI_KTYPE  long
+#   define  VQDU_KTYPE  unsigned long
 #   define  VQDI_KTYPE  long
-#   define  VODI_KTYPE  long
-#   define  VSDI_KTYPE  long
+#else
+#   define  VDDU_KTYPE  unsigned long long
+#   define  VDDI_KTYPE  long long
+#   define  VQDU_KTYPE  unsigned long long
+#   define  VQDI_KTYPE  long long
 #endif
 
 #define     VDDF_KTYPE  double
 #define     VQDF_KTYPE  double
-#define     VODF_KTYPE  double
-#define     VSDF_KTYPE  double
 
-#define     VWYU_WIDTH  32
-#define     VDYU_WIDTH  64
-#define     VQYU_WIDTH  128
-#define     VOYU_WIDTH  256
-#define     VSYU_WIDTH  512
+#define     VWYU_WIDTH (32)
+#define     VWBU_WIDTH (32)
+#define     VWBI_WIDTH (32)
+#define     VWBC_WIDTH (32)
+#define     VWHU_WIDTH (32)
+#define     VWHI_WIDTH (32)
+#define     VWHF_WIDTH (32)
+#define     VWWU_WIDTH (32)
+#define     VWWI_WIDTH (32)
+#define     VWWF_WIDTH (32)
 
-#define     VWBU_WIDTH  32
-#define     VDBU_WIDTH  64
-#define     VQBU_WIDTH  128
-#define     VOBU_WIDTH  256
-#define     VSBU_WIDTH  512
+#define     VDYU_WIDTH (64)
+#define     VDBU_WIDTH (64)
+#define     VDBI_WIDTH (64)
+#define     VDBC_WIDTH (64)
+#define     VDHU_WIDTH (64)
+#define     VDHI_WIDTH (64)
+#define     VDHF_WIDTH (64)
+#define     VDWU_WIDTH (64)
+#define     VDWI_WIDTH (64)
+#define     VDWF_WIDTH (64)
+#define     VDDU_WIDTH (64)
+#define     VDDI_WIDTH (64)
+#define     VDDF_WIDTH (64)
 
-#define     VWBI_WIDTH  32
-#define     VDBI_WIDTH  64
-#define     VQBI_WIDTH  128
-#define     VOBI_WIDTH  256
-#define     VSBI_WIDTH  512
+#define     VQYU_WIDTH (128)
+#define     VQBU_WIDTH (128)
+#define     VQBI_WIDTH (128)
+#define     VQBC_WIDTH (128)
+#define     VQHU_WIDTH (128)
+#define     VQHI_WIDTH (128)
+#define     VQHF_WIDTH (128)
+#define     VQWU_WIDTH (128)
+#define     VQWI_WIDTH (128)
+#define     VQWF_WIDTH (128)
+#define     VQDU_WIDTH (128)
+#define     VQDI_WIDTH (128)
+#define     VQDF_WIDTH (128)
+#define     VQQU_WIDTH (128)
+#define     VQQI_WIDTH (128)
+#define     VQQF_WIDTH (128)
 
-#define     VWBC_WIDTH  32
-#define     VDBC_WIDTH  64
-#define     VQBC_WIDTH  128
-#define     VOBC_WIDTH  256
-#define     VSBC_WIDTH  512
+#define     VWYU_NEL   (32)
+#define     VWBU_NEL   (4)
+#define     VWBI_NEL   (4)
+#define     VWBC_NEL   (4)
+#define     VWHU_NEL   (2)
+#define     VWHI_NEL   (2)
+#define     VWHF_NEL   (2)
+#define     VWWU_NEL   (1)
+#define     VWWI_NEL   (1)
+#define     VWWF_NEL   (1)
 
-#define     VWHU_WIDTH  32
-#define     VDHU_WIDTH  64
-#define     VQHU_WIDTH  128
-#define     VOHU_WIDTH  256
-#define     VSHU_WIDTH  512
+#define     VDYU_NEL   (64)
+#define     VDBU_NEL   (8)
+#define     VDBI_NEL   (8)
+#define     VDBC_NEL   (8)
+#define     VDHU_NEL   (4)
+#define     VDHI_NEL   (4)
+#define     VDHF_NEL   (4)
+#define     VDWU_NEL   (2)
+#define     VDWI_NEL   (2)
+#define     VDWF_NEL   (2)
+#define     VDDU_NEL   (1)
+#define     VDDI_NEL   (1)
+#define     VDDF_NEL   (1)
 
-#define     VWHI_WIDTH  32
-#define     VDHI_WIDTH  64
-#define     VQHI_WIDTH  128
-#define     VOHI_WIDTH  256
-#define     VSHI_WIDTH  512
-
-#define     VWHF_WIDTH  32
-#define     VDHF_WIDTH  64
-#define     VQHF_WIDTH  128
-#define     VOHF_WIDTH  256
-#define     VSHF_WIDTH  512
-
-#define     VWWU_WIDTH  32
-#define     VDWU_WIDTH  64
-#define     VQWU_WIDTH  128
-#define     VOWU_WIDTH  256
-#define     VSWU_WIDTH  512
-
-#define     VWWI_WIDTH  32
-#define     VDWI_WIDTH  64
-#define     VQWI_WIDTH  128
-#define     VOWI_WIDTH  256
-#define     VSWI_WIDTH  512
-
-#define     VWWF_WIDTH  32
-#define     VDWF_WIDTH  64
-#define     VQWF_WIDTH  128
-#define     VOWF_WIDTH  256
-#define     VSWF_WIDTH  512
-
-#define     VDDU_WIDTH  64
-#define     VQDU_WIDTH  128
-#define     VODU_WIDTH  256
-#define     VSDU_WIDTH  512
-
-#define     VDDI_WIDTH  64
-#define     VDDF_WIDTH  64
-#define     VODI_WIDTH  256
-#define     VSDI_WIDTH  512
-
-#define     VQDI_WIDTH  128
-#define     VQDF_WIDTH  128
-#define     VODF_WIDTH  256
-#define     VSDF_WIDTH  512
-
-
-#define     VWYU_NEL    32
-#define     VDYU_NEL    64
-#define     VQYU_NEL    128
-#define     VOYU_NEL    256
-#define     VSYU_NEL    512
-
-#define     VWBU_NEL    4
-#define     VDBU_NEL    8
-#define     VQBU_NEL    16
-#define     VOBU_NEL    32
-#define     VSBU_NEL    64
-
-#define     VWBI_NEL    4
-#define     VDBI_NEL    8
-#define     VQBI_NEL    16
-#define     VOBI_NEL    32
-#define     VSBI_NEL    64
-
-#define     VWBC_NEL    4
-#define     VDBC_NEL    8
-#define     VQBC_NEL    16
-#define     VOBC_NEL    32
-#define     VSBC_NEL    64
-
-#define     VWHU_NEL    2
-#define     VDHU_NEL    4
-#define     VQHU_NEL    8
-#define     VOHU_NEL    16
-#define     VSHU_NEL    32
-
-#define     VWHI_NEL    2
-#define     VDHI_NEL    4
-#define     VQHI_NEL    8
-#define     VOHI_NEL    16
-#define     VSHI_NEL    32
-
-#define     VWWU_NEL    1
-#define     VDWU_NEL    2
-#define     VQWU_NEL    4
-#define     VOWU_NEL    8
-#define     VSWU_NEL    16
-
-#define     VWWI_NEL    1
-#define     VDWI_NEL    2
-#define     VQWI_NEL    4
-#define     VOWI_NEL    8
-#define     VSWI_NEL    16
-
-#define     VWWF_NEL    1
-#define     VDWF_NEL    2
-#define     VQWF_NEL    4
-#define     VOWF_NEL    8
-#define     VSWF_NEL    16
-
-#define     VDDU_NEL    1
-#define     VQDU_NEL    2
-#define     VODU_NEL    4
-#define     VSDU_NEL    8
-
-#define     VDDI_NEL    1
-#define     VQDI_NEL    2
-#define     VODI_NEL    4
-#define     VSDI_NEL    8
-
-#define     VDDF_NEL    1
-#define     VQDF_NEL    2
-#define     VODF_NEL    4
-#define     VSDF_NEL    8
-
-/*  THESE ARE OBSOLETE
-*/
-#if MY_VECTOR_ENDIAN == ENDIAN_BIG
-
-//  Used for Vwhr, Vdwr, Vqdr
-#   define  V2_K0   (0x1)
-#   define  V2_K1   (0x0)
-
-//  Used for Vwbr, Vdhr, Vqwr, Vodr
-#   define  V4_K0   (0x3)
-#   define  V4_K1   (0x2)
-#   define  V4_K2   (0x1)
-#   define  V4_K3   (0x0)
-
-//  Used for Vdbr, Vqhr, Vowr, Vsdr
-#   define  V8_K0   (0x7)
-#   define  V8_K1   (0x6)
-#   define  V8_K2   (0x5)
-#   define  V8_K3   (0x4)
-#   define  V8_K4   (0x3)
-#   define  V8_K5   (0x2)
-#   define  V8_K6   (0x1)
-#   define  V8_K7   (0x0)
-
-//  Used for Vqbr, Vohr, Vswr
-#   define  V16_K0  (0xf)
-#   define  V16_K1  (0xe)
-#   define  V16_K2  (0xd)
-#   define  V16_K3  (0xc)
-#   define  V16_K4  (0xb)
-#   define  V16_K5  (0xa)
-#   define  V16_K6  (0x9)
-#   define  V16_K7  (0x8)
-#   define  V16_K8  (0x7)
-#   define  V16_K9  (0x6)
-#   define  V16_K10 (0x5)
-#   define  V16_K11 (0x4)
-#   define  V16_K12 (0x3)
-#   define  V16_K13 (0x2)
-#   define  V16_K14 (0x1)
-#   define  V16_K15 (0x0)
-
-//  Used for Vwyu, Vobr, Vshr
-#   define  V32_K0  (0x1f)
-#   define  V32_K1  (0x1e)
-#   define  V32_K2  (0x1d)
-#   define  V32_K3  (0x1c)
-#   define  V32_K4  (0x1b)
-#   define  V32_K5  (0x1a)
-#   define  V32_K6  (0x19)
-#   define  V32_K7  (0x18)
-#   define  V32_K8  (0x17)
-#   define  V32_K9  (0x16)
-#   define  V32_K10 (0x15)
-#   define  V32_K11 (0x14)
-#   define  V32_K12 (0x13)
-#   define  V32_K13 (0x12)
-#   define  V32_K14 (0x11)
-#   define  V32_K15 (0x10)
-#   define  V32_K16 (0x0f)
-#   define  V32_K17 (0x0e)
-#   define  V32_K18 (0x0d)
-#   define  V32_K19 (0x0c)
-#   define  V32_K20 (0x0b)
-#   define  V32_K21 (0x0a)
-#   define  V32_K22 (0x09)
-#   define  V32_K23 (0x08)
-#   define  V32_K24 (0x07)
-#   define  V32_K25 (0x06)
-#   define  V32_K26 (0x05)
-#   define  V32_K27 (0x04)
-#   define  V32_K28 (0x03)
-#   define  V32_K29 (0x02)
-#   define  V32_K30 (0x01)
-#   define  V32_K31 (0x00)
-
-//  Used for Vdyu, Vsbr
-#   define  V64_K0  (0x3f)
-#   define  V64_K1  (0x3e)
-#   define  V64_K2  (0x3d)
-#   define  V64_K3  (0x3c)
-#   define  V64_K4  (0x3b)
-#   define  V64_K5  (0x3a)
-#   define  V64_K6  (0x39)
-#   define  V64_K7  (0x38)
-#   define  V64_K8  (0x37)
-#   define  V64_K9  (0x36)
-#   define  V64_K10 (0x35)
-#   define  V64_K11 (0x34)
-#   define  V64_K12 (0x33)
-#   define  V64_K13 (0x32)
-#   define  V64_K14 (0x31)
-#   define  V64_K15 (0x30)
-#   define  V64_K16 (0x2f)
-#   define  V64_K17 (0x2e)
-#   define  V64_K18 (0x2d)
-#   define  V64_K19 (0x2c)
-#   define  V64_K20 (0x2b)
-#   define  V64_K21 (0x2a)
-#   define  V64_K22 (0x29)
-#   define  V64_K23 (0x28)
-#   define  V64_K24 (0x27)
-#   define  V64_K25 (0x26)
-#   define  V64_K26 (0x25)
-#   define  V64_K27 (0x24)
-#   define  V64_K28 (0x23)
-#   define  V64_K29 (0x22)
-#   define  V64_K30 (0x21)
-#   define  V64_K31 (0x20)
-#   define  V64_K32 (0x1f)
-#   define  V64_K33 (0x1e)
-#   define  V64_K34 (0x1d)
-#   define  V64_K35 (0x1c)
-#   define  V64_K36 (0x1b)
-#   define  V64_K37 (0x1a)
-#   define  V64_K38 (0x19)
-#   define  V64_K39 (0x18)
-#   define  V64_K40 (0x17)
-#   define  V64_K41 (0x16)
-#   define  V64_K42 (0x15)
-#   define  V64_K43 (0x14)
-#   define  V64_K44 (0x13)
-#   define  V64_K45 (0x12)
-#   define  V64_K46 (0x11)
-#   define  V64_K47 (0x10)
-#   define  V64_K48 (0x0f)
-#   define  V64_K49 (0x0e)
-#   define  V64_K50 (0x0d)
-#   define  V64_K51 (0x0c)
-#   define  V64_K52 (0x0b)
-#   define  V64_K53 (0x0a)
-#   define  V64_K54 (0x09)
-#   define  V64_K55 (0x08)
-#   define  V64_K56 (0x07)
-#   define  V64_K57 (0x06)
-#   define  V64_K58 (0x05)
-#   define  V64_K59 (0x04)
-#   define  V64_K60 (0x03)
-#   define  V64_K61 (0x02)
-#   define  V64_K62 (0x01)
-#   define  V64_K63 (0x00)
-
-#elif MY_VECTOR_ENDIAN == ENDIAN_LIL
-
-#   define  V2_K0   (0x0)
-#   define  V2_K1   (0x1)
-
-#   define  V4_K0   (0x0)
-#   define  V4_K1   (0x1)
-#   define  V4_K2   (0x2)
-#   define  V4_K3   (0x3)
-
-#   define  V8_K0   (0x0)
-#   define  V8_K1   (0x1)
-#   define  V8_K2   (0x2)
-#   define  V8_K3   (0x3)
-#   define  V8_K4   (0x4)
-#   define  V8_K5   (0x5)
-#   define  V8_K6   (0x6)
-#   define  V8_K7   (0x7)
-
-#   define  V16_K0  (0x00)
-#   define  V16_K1  (0x01)
-#   define  V16_K2  (0x02)
-#   define  V16_K3  (0x03)
-#   define  V16_K4  (0x04)
-#   define  V16_K5  (0x05)
-#   define  V16_K6  (0x06)
-#   define  V16_K7  (0x07)
-#   define  V16_K8  (0x08)
-#   define  V16_K9  (0x09)
-#   define  V16_K10 (0x0a)
-#   define  V16_K11 (0x0b)
-#   define  V16_K12 (0x0c)
-#   define  V16_K13 (0x0d)
-#   define  V16_K14 (0x0e)
-#   define  V16_K15 (0x0f)
-
-#   define  V32_K0  (0x00)
-#   define  V32_K1  (0x01)
-#   define  V32_K2  (0x02)
-#   define  V32_K3  (0x03)
-#   define  V32_K4  (0x04)
-#   define  V32_K5  (0x05)
-#   define  V32_K6  (0x06)
-#   define  V32_K7  (0x07)
-#   define  V32_K8  (0x08)
-#   define  V32_K9  (0x09)
-#   define  V32_K10 (0x0a)
-#   define  V32_K11 (0x0b)
-#   define  V32_K12 (0x0c)
-#   define  V32_K13 (0x0d)
-#   define  V32_K14 (0x0e)
-#   define  V32_K15 (0x0f)
-#   define  V32_K16 (0x10)
-#   define  V32_K17 (0x11)
-#   define  V32_K18 (0x12)
-#   define  V32_K19 (0x13)
-#   define  V32_K20 (0x14)
-#   define  V32_K21 (0x15)
-#   define  V32_K22 (0x16)
-#   define  V32_K23 (0x17)
-#   define  V32_K24 (0x18)
-#   define  V32_K25 (0x19)
-#   define  V32_K26 (0x1a)
-#   define  V32_K27 (0x1b)
-#   define  V32_K28 (0x1c)
-#   define  V32_K29 (0x1d)
-#   define  V32_K30 (0x1e)
-#   define  V32_K31 (0x1f)
-
-#   define  V64_K0  (0x00)
-#   define  V64_K1  (0x01)
-#   define  V64_K2  (0x02)
-#   define  V64_K3  (0x03)
-#   define  V64_K4  (0x04)
-#   define  V64_K5  (0x05)
-#   define  V64_K6  (0x06)
-#   define  V64_K7  (0x07)
-#   define  V64_K8  (0x08)
-#   define  V64_K9  (0x09)
-#   define  V64_K10 (0x0a)
-#   define  V64_K11 (0x0b)
-#   define  V64_K12 (0x0c)
-#   define  V64_K13 (0x0d)
-#   define  V64_K14 (0x0e)
-#   define  V64_K15 (0x0f)
-#   define  V64_K16 (0x10)
-#   define  V64_K17 (0x11)
-#   define  V64_K18 (0x12)
-#   define  V64_K19 (0x13)
-#   define  V64_K20 (0x14)
-#   define  V64_K21 (0x15)
-#   define  V64_K22 (0x16)
-#   define  V64_K23 (0x17)
-#   define  V64_K24 (0x18)
-#   define  V64_K25 (0x19)
-#   define  V64_K26 (0x1a)
-#   define  V64_K27 (0x1b)
-#   define  V64_K28 (0x1c)
-#   define  V64_K29 (0x1d)
-#   define  V64_K30 (0x1e)
-#   define  V64_K31 (0x1f)
-#   define  V64_K32 (0x20)
-#   define  V64_K33 (0x21)
-#   define  V64_K34 (0x22)
-#   define  V64_K35 (0x23)
-#   define  V64_K36 (0x24)
-#   define  V64_K37 (0x25)
-#   define  V64_K38 (0x26)
-#   define  V64_K39 (0x27)
-#   define  V64_K40 (0x28)
-#   define  V64_K41 (0x29)
-#   define  V64_K42 (0x2a)
-#   define  V64_K43 (0x2b)
-#   define  V64_K44 (0x2c)
-#   define  V64_K45 (0x2d)
-#   define  V64_K46 (0x2e)
-#   define  V64_K47 (0x2f)
-#   define  V64_K48 (0x30)
-#   define  V64_K49 (0x31)
-#   define  V64_K50 (0x32)
-#   define  V64_K51 (0x33)
-#   define  V64_K52 (0x34)
-#   define  V64_K53 (0x35)
-#   define  V64_K54 (0x36)
-#   define  V64_K55 (0x37)
-#   define  V64_K56 (0x38)
-#   define  V64_K57 (0x39)
-#   define  V64_K58 (0x3a)
-#   define  V64_K59 (0x3b)
-#   define  V64_K60 (0x3c)
-#   define  V64_K61 (0x3d)
-#   define  V64_K62 (0x3e)
-#   define  V64_K63 (0x3f)
-#else
-#   error "why !(MY_ENDIAN==ENDIAN_LIL || MY_ENDIAN==ENDIAN_BIG)?"
-#endif
+#define     VQYU_NEL   (128)
+#define     VQBU_NEL   (16)
+#define     VQBI_NEL   (16)
+#define     VQBC_NEL   (16)
+#define     VQHU_NEL   (8)
+#define     VQHI_NEL   (8)
+#define     VQWU_NEL   (4)
+#define     VQWI_NEL   (4)
+#define     VQWF_NEL   (4)
+#define     VQDU_NEL   (2)
+#define     VQDI_NEL   (2)
+#define     VQDF_NEL   (2)
+#define     VQQU_NEL   (1)
+#define     VQQI_NEL   (1)
+#define     VQQF_NEL   (1)
 
 #if _LEAVE_EXTVEC_VLANES
 }
@@ -4377,7 +4061,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     VOYU_MTYPE  __m256i
 #define     VOYU_TYPE   __m256i
 
-#define     VOBU_REPR   (REPR_VOBU|REPR_M1)
+#define     VOBU_REPR   (REPR_VOYU|REPR_M1)
 #define     VOBU_MTYPE  __m256i
 #define     VOBU_TYPE   struct Obu1
 
@@ -4483,7 +4167,7 @@ types. Length (M) is encoded in 4 bits using the following:
 #define     VSDF_MTYPE  __m512d
 #define     VSDF_TYPE   __m512d
 
-#if defined(SPC_X86_AVX512FP16)
+#if defined(SPC_X86_FP16)
 #   define  VQHF_REPR   REPR_VQHF
 #   define  VQHF_MTYPE  __m128h
 #   define  VQHF_TYPE   __m128h
@@ -4532,261 +4216,160 @@ types. Length (M) is encoded in 4 bits using the following:
 
 #   define  VWBC_MTYPE  float
 #   define  VWBC_TYPE   struct Wbc1
-#if CHAR_MIN
-#   define  VWBC_REPR   REPR_VWBI
-#else
-#   define  VWBC_REPR   REPR_VWBU
-#endif
+#   define  VWBC_REPR   REPR_WF1
 
-#   define  VWHU_REPR   REPR_WF1
 #   define  VWHU_MTYPE  float
 #   define  VWHU_TYPE   struct Whu1
+#   define  VWHU_REPR   REPR_WF1
 
-#   define  VWHI_REPR   REPR_WF1
 #   define  VWHI_MTYPE  float
 #   define  VWHI_TYPE   struct Whi1
+#   define  VWHI_REPR   REPR_WF1
 
-#   define  VWHF_REPR   REPR_WF1
 #   define  VWHF_MTYPE  float
 #   define  VWHF_TYPE   struct Whf1
+#   define  VWHF_REPR   REPR_WF1
 
-
-#   define  VWWU_REPR   REPR_WF1
 #   define  VWWU_MTYPE  float
 #   define  VWWU_TYPE   struct Wwu1
+#   define  VWWU_REPR   REPR_WF1
 
-#   define  VWWI_REPR   REPR_WF1
 #   define  VWWI_MTYPE  float
 #   define  VWWI_TYPE   struct Wwi1
+#   define  VWWI_REPR   REPR_WF1
 
-#   define  VWWF_REPR   REPR_WF1
 #   define  VWWF_MTYPE  float
 #   define  VWWF_TYPE   struct Wwf1
+#   define  VWWF_REPR   REPR_WF1
 
 
-#   define  VDYU_REPR   REPR_DF1
 #   define  VDYU_MTYPE  double
 #   define  VDYU_TYPE   struct Dyu1
+#   define  VDYU_REPR   REPR_DF1
 
-#   define  VDBU_REPR   REPR_DF1
 #   define  VDBU_MTYPE  double
 #   define  VDBU_TYPE   struct Dbu1
+#   define  VDBU_REPR   REPR_DF1
 
-#   define  VDBI_REPR   REPR_DF1
 #   define  VDBI_MTYPE  double
 #   define  VDBI_TYPE   struct Dbi1
+#   define  VDBI_REPR   REPR_DF1
 
 #   define  VDBC_MTYPE  double
-#if CHAR_MIN
-#   define  VDBC_REPR   REPR_VDBI
-#   define  VDBC_TYPE   struct Dbi1
-#else
-#   define  VDBC_REPR   REPR_VDBU
-#   define  VDBC_TYPE   struct Dbu1
-#endif
+#   define  VDBC_TYPE   struct Dbc1
+#   define  VDBC_REPR   REPR_DF1
 
-#   define  VDHU_REPR   REPR_DF1
 #   define  VDHU_MTYPE  double
 #   define  VDHU_TYPE   struct Dhu1
+#   define  VDHU_REPR   REPR_DF1
 
-#   define  VDHI_REPR   REPR_DF1
 #   define  VDHI_MTYPE  double
 #   define  VDHI_TYPE   struct Dhi1
+#   define  VDHI_REPR   REPR_DF1
 
-#   define  VDHF_REPR   REPR_DF1
 #   define  VDHF_MTYPE  double
 #   define  VDHF_TYPE   struct Dhf1
+#   define  VDHF_REPR   REPR_DF1
 
-
-#   define  VDWU_REPR   REPR_DF1
 #   define  VDWU_MTYPE  double
 #   define  VDWU_TYPE   struct Dwu1
+#   define  VDWU_REPR   REPR_DF1
 
-#   define  VDWI_REPR   REPR_DF1
 #   define  VDWI_MTYPE  double
 #   define  VDWI_TYPE   struct Dwi1
+#   define  VDWI_REPR   REPR_DF1
 
-#   define  VDWF_REPR   REPR_DF1
 #   define  VDWF_MTYPE  double
 #   define  VDWF_TYPE   struct Dwf1
+#   define  VDWF_REPR   REPR_DF1
 
-
-#   define  VDDU_REPR   REPR_DF1
 #   define  VDDU_MTYPE  double
 #   define  VDDU_TYPE   struct Ddu1
+#   define  VDDU_REPR   REPR_DF1
 
-#   define  VDDI_REPR   REPR_DF1
 #   define  VDDI_MTYPE  double
 #   define  VDDI_TYPE   struct Ddi1
+#   define  VDDI_REPR   REPR_DF1
 
-#   define  VDDF_REPR   REPR_DF1
 #   define  VDDF_MTYPE  double
 #   define  VDDF_TYPE   struct Ddf1
+#   define  VDDF_REPR   REPR_DF1
 
 
-#   define  VQYU_REPR   REPR_VQYU
 #   define  VQYU_MTYPE  __m128i
 #   define  VQYU_TYPE   __m128i
+#   define  VQYU_REPR   REPR_VQYU
 
-#   define  VQBU_REPR   (REPR_VQBU|REPR_M1)
 #   define  VQBU_MTYPE  __m128i
 #   define  VQBU_TYPE   struct Qbu1
+#   define  VQBU_REPR   REPR_VQYU1
 
-#   define  VQBI_REPR   (REPR_VQBI|REPR_M1)
 #   define  VQBI_MTYPE  __m128i
 #   define  VQBI_TYPE   struct Qbi1
+#   define  VQBI_REPR   REPR_VQYU1
 
 #   define  VQBC_MTYPE  __m128i
-#if CHAR_MIN
-#   define  VQBC_REPR   REPR_VQBI
-#   define  VQBC_TYPE   struct Qbi1
-#else
-#   define  VQBC_REPR   REPR_VQBU
-#   define  VQBC_TYPE   struct Qbu1
-#endif
+#   define  VQBC_TYPE   struct Qbc1
+#   define  VQBI_REPR   REPR_VQYU1
 
-
-#   define  VQHU_REPR   (REPR_VQHU|REPR_M1)
 #   define  VQHU_MTYPE  __m128i
 #   define  VQHU_TYPE   struct Qhu1
+#   define  VQHU_REPR   REPR_VQYU1
 
-#   define  VQHI_REPR   (REPR_VQHI|REPR_M1)
 #   define  VQHI_MTYPE  __m128i
 #   define  VQHI_TYPE   struct Qhi1
+#   define  VQHI_REPR   REPR_VQYU1
 
 #   ifndef  SPC_X86_AVX512F
-#   define  VQHF_REPR   (REPR_VQHU|REPR_M1)
+#   define  VQHF_MTYPE  __m128h
+#   define  VQHF_TYPE   __m128h
+#   define  VQHF_REPR   REPR_VQHF
+#   else
+#   define  VQHF_REPR   REPR_VQYU1
 #   define  VQHF_MTYPE  __m128i
 #   define  VQHF_TYPE   struct Qhf1
 #   endif
 
 
-#   define  VQWU_REPR   (REPR_VQWU|REPR_M1)
 #   define  VQWU_MTYPE  __m128i
 #   define  VQWU_TYPE   struct Qwu1
+#   define  VQWU_REPR   REPR_VQYU1
 
-#   define  VQWI_REPR   (REPR_VQWI|REPR_M1)
 #   define  VQWI_MTYPE  __m128i
 #   define  VQWI_TYPE   struct Qwi1
+#   define  VQWI_REPR   REPR_VQYU1
 
-#   define  VQWF_REPR   REPR_VQWF
 #   define  VQWF_MTYPE  __m128
 #   define  VQWF_TYPE   __m128
+#   define  VQWF_REPR   REPR_VQWF
 
 
-#   define  VQDU_REPR   (REPR_VQDU|REPR_M1)
 #   define  VQDU_MTYPE  __m128i
 #   define  VQDU_TYPE   struct Qdu1
+#   define  VQDU_REPR   REPR_VQYU1
 
-#   define  VQDI_REPR   (REPR_VQDI|REPR_M1)
 #   define  VQDI_MTYPE  __m128i
 #   define  VQDI_TYPE   struct Qdi1
+#   define  VQDI_REPR   REPR_VQYU1
 
-#   define  VQDF_REPR   REPR_VQDF
 #   define  VQDF_MTYPE  __m128d
 #   define  VQDF_TYPE   __m128d
-
-#   ifndef  SPC_X86_AVX512F
-
-#   define  VOYU_REPR   (REPR_VQYU|REPR_M2)
-#   define  VOYU_TYPE   struct Qyu2
-
-#   define  VOBU_REPR   (REPR_VQBU|REPR_M2)
-#   define  VOBU_TYPE   struct Qbu2
-
-#   define  VOBI_REPR   (REPR_VQBI|REPR_M2)
-#   define  VOBI_TYPE   struct Qbi2
-
-#if CHAR_MIN
-#   define  VOBC_REPR   REPR_VOBI
-#   define  VOBC_TYPE   struct Qbi2
-#else
-#   define  VOBC_REPR   REPR_VOBU
-#   define  VOBC_TYPE   struct Qbu2
-#endif
+#   define  VQDF_REPR   REPR_VQDF
 
 
-#   define  VOHU_REPR   (REPR_VQHU|REPR_M2)
-#   define  VOHU_TYPE   struct Qhu2
+#   define  VQQU_MTYPE  __m128i
+#   define  VQQU_TYPE   struct Qqu1
+#   define  VQQU_REPR   REPR_VQYU1
 
-#   define  VOHI_REPR   (REPR_VQHI|REPR_M2)
-#   define  VOHI_TYPE   struct Qhi2
+#   define  VQQI_MTYPE  __m128i
+#   define  VQQI_TYPE   struct Qqi1
+#   define  VQQI_REPR   REPR_VQYU1
 
-#   define  VOHF_REPR   (REPR_VQHU|REPR_M2)
-#   define  VOHF_TYPE   struct Qhf2
-
-
-#   define  VOWU_REPR   (REPR_VQWU|REPR_M2)
-#   define  VOWU_TYPE   struct Qwu2
-
-#   define  VOWI_REPR   (REPR_VQWI|REPR_M2)
-#   define  VOWI_TYPE   struct Qwi2
-
-#   define  VOWF_REPR   (REPR_VQWF|REPR_M2)
-#   define  VOWF_TYPE   struct Qwf2
-
-
-#   define  VODU_REPR   (REPR_VQDU|REPR_M2)
-#   define  VODU_TYPE   struct Qdu2
-
-#   define  VODI_REPR   (REPR_VQDI|REPR_M2)
-#   define  VODI_TYPE   struct Qdi2
-
-#   define  VODF_REPR   (REPR_VQDF|REPR_M2)
-#   define  VODF_TYPE   struct Qdf2
-
-
-#   define  VSYU_REPR   (REPR_VQYU|REPR_M4)
-#   define  VSYU_TYPE   struct Qyu4
-
-#   define  VSBU_REPR   (REPR_VQBU|REPR_M4)
-#   define  VSBU_TYPE   struct Qbu4
-
-#   define  VSBI_REPR   (REPR_VQBI|REPR_M4)
-#   define  VSBI_TYPE   struct Qbi4
-
-
-#if CHAR_MIN
-#   define  VSBC_REPR   REPR_VSBI
-#   define  VSBC_TYPE   struct Qbi4
-#else
-#   define  VSBC_REPR   REPR_VSBU
-#   define  VSBC_TYPE   struct Qbu4
-#endif
-
-#   define  VSHU_REPR   (REPR_VQHU|REPR_M4)
-#   define  VSHU_TYPE   struct Qhu4
-
-#   define  VSHI_REPR   (REPR_VQHI|REPR_M4)
-#   define  VSHI_TYPE   struct Qhi4
-
-#   define  VSHF_REPR   (REPR_VQHU|REPR_M4)
-#   define  VSHF_TYPE   struct Qhf4
-
-
-#   define  VSWU_REPR   (REPR_VQWU|REPR_M4)
-#   define  VSWU_TYPE   struct Qwu4
-
-#   define  VSWI_REPR   (REPR_VQWI|REPR_M4)
-#   define  VSWI_TYPE   struct Qwi4
-
-#   define  VSWF_REPR   (REPR_VQWF|REPR_M4)
-#   define  VSWF_TYPE   struct Qwf4
-
-
-#   define  VSDU_REPR   (REPR_VQDU|REPR_M4)
-#   define  VSDU_TYPE   struct Qdu4
-
-#   define  VSDI_REPR   (REPR_VQDI|REPR_M4)
-#   define  VSDI_TYPE   struct Qdi4
-
-#   define  VSDF_REPR   (REPR_VQDF|REPR_M4)
-#   define  VSDF_TYPE   struct Qdf4
-
-#   endif
+#   define  VQQF_MTYPE  __m128i
+#   define  VQQF_TYPE   struct Qqf1
+#   define  VQQF_REPR   REPR_VQYU1
 
 #endif
-
 
 #if _LEAVE_EXTVEC_X86_SIMD
 }
@@ -4796,364 +4379,277 @@ types. Length (M) is encoded in 4 bits using the following:
 {
 #endif
 
+#if 0
+#undef SPC_ARM_NEON
+#endif
 
 #if defined(SPC_ARM_NEON)
 
 /*  A clang/LLVM compiler is required for arm targets, at
-    least until Microsoft implements the ACLE.
+    least until Microsoft implements the ACLE. 
 */
 #   ifndef  MY_ARM_NEON_H
 #   define  MY_ARM_NEON_H
 #   include   <arm_neon.h>
 #   endif
 
-#   define  VWYU_REPR       REPR_WF1
 #   define  VWYU_MTYPE      float
 #   define  VWYU_TYPE       struct Wyu1
+#   define  VWYU_REPR       REPR_WF1
 
-#   define  VWBU_REPR       REPR_WF1
 #   define  VWBU_MTYPE      float
 #   define  VWBU_TYPE       struct Wbu1
+#   define  VWBU_REPR       REPR_WF1
 
-#   define  VWBI_REPR       REPR_WF1
 #   define  VWBI_MTYPE      float
 #   define  VWBI_TYPE       struct Wbi1
+#   define  VWBI_REPR       REPR_WF1
 
 #   define  VWBC_MTYPE      float
 #   define  VWBC_TYPE       struct Wbc1
-#if CHAR_MIN
-#   define  VWBC_REPR       REPR_VWBI
-#else
-#   define  VWBC_REPR       REPR_VWBU
-#endif
+#   define  VWBC_REPR       REPR_WF1
 
-#   define  VWHU_REPR       REPR_WF1
 #   define  VWHU_MTYPE      float
 #   define  VWHU_TYPE       struct Whu1
+#   define  VWHU_REPR       REPR_WF1
 
-#   define  VWHI_REPR       REPR_WF1
 #   define  VWHI_MTYPE      float
 #   define  VWHI_TYPE       struct Whi1
+#   define  VWHI_REPR       REPR_WF1
 
-#   define  VWHF_REPR       REPR_WF1
 #   define  VWHF_MTYPE      float
 #   define  VWHF_TYPE       struct Whf1
+#   define  VWHF_REPR       REPR_WF1
 
-
-#   define  VWWU_REPR       REPR_WF1
 #   define  VWWU_MTYPE      float
 #   define  VWWU_TYPE       struct Wwu1
+#   define  VWWU_REPR       REPR_WF1
 
-#   define  VWWI_REPR       REPR_WF1
 #   define  VWWI_MTYPE      float
 #   define  VWWI_TYPE       struct Wwi1
+#   define  VWWI_REPR       REPR_WF1
 
-#   define  VWWF_REPR       REPR_WF1
 #   define  VWWF_MTYPE      float
 #   define  VWWF_TYPE       struct Wwf1
+#   define  VWWF_REPR       REPR_WF1
 
-#   define  VDYU_REPR       (REPR_VDDU|REPR_M1)
+
 #   define  VDYU_MTYPE      uint64x1_t
-#   define  VDYU_TYPE       struct Dyu1
 #   define  VDYU_M2TYPE     uint64x1x2_t
 #   define  VDYU_M3TYPE     uint64x1x3_t
 #   define  VDYU_M4TYPE     uint64x1x4_t
+#   define  VDYU_TYPE       struct Dyu1
+#   define  VDYU_REPR       REPR_VDDU1
 
-#   define  VDBU_REPR       REPR_VDBU
-#   define  VDBU_TYPE       uint8x8_t
 #   define  VDBU_MTYPE      uint8x8_t
 #   define  VDBU_M2TYPE     uint8x8x2_t
 #   define  VDBU_M3TYPE     uint8x8x3_t
 #   define  VDBU_M4TYPE     uint8x8x4_t
+#   define  VDBU_TYPE       uint8x8_t
+#   define  VDBU_REPR       REPR_VDBU
 
-#   define  VDBI_REPR       REPR_VDBI
-#   define  VDBI_TYPE       int8x8_t
 #   define  VDBI_MTYPE      int8x8_t
 #   define  VDBI_M2TYPE     int8x8x2_t
 #   define  VDBI_M3TYPE     int8x8x3_t
 #   define  VDBI_M4TYPE     int8x8x4_t
+#   define  VDBI_TYPE       int8x8_t
+#   define  VDBI_REPR       REPR_VDBI
 
-#   define  VDBC_TYPE       struct Dbc1
 #if CHAR_MIN
-#   define  VDBC_REPR       REPR_VDBI
 #   define  VDBC_MTYPE      int8x8_t
 #   define  VDBC_M2TYPE     int8x8x2_t
 #   define  VDBC_M3TYPE     int8x8x3_t
 #   define  VDBC_M4TYPE     int8x8x4_t
+#   define  VDBC_REPR       REPR_VDBI1
 #else
-#   define  VDBC_REPR       REPR_VDBU
 #   define  VDBC_MTYPE      uint8x8_t
 #   define  VDBC_M2TYPE     uint8x8x2_t
 #   define  VDBC_M3TYPE     uint8x8x3_t
 #   define  VDBC_M4TYPE     uint8x8x4_t
+#   define  VDBC_REPR       REPR_VDBU1      
 #endif
+#   define  VDBC_TYPE       struct Dbc1
 
-#   define  VDHU_REPR       REPR_VDHU
-#   define  VDHU_TYPE       uint16x4_t
 #   define  VDHU_MTYPE      uint16x4_t
 #   define  VDHU_M2TYPE     uint16x4x2_t
 #   define  VDHU_M3TYPE     uint16x4x3_t
 #   define  VDHU_M4TYPE     uint16x4x4_t
+#   define  VDHU_TYPE       uint16x4_t
+#   define  VDHU_REPR       REPR_VDHU
 
-#   define  VDHI_REPR       REPR_VDHI
-#   define  VDHI_TYPE       int16x4_t
 #   define  VDHI_MTYPE      int16x4_t
 #   define  VDHI_M2TYPE     int16x4x2_t
 #   define  VDHI_M3TYPE     int16x4x3_t
 #   define  VDHI_M4TYPE     int16x4x4_t
+#   define  VDHI_TYPE       int16x4_t
+#   define  VDHI_REPR       REPR_VDHI
 
-#   define  VDHF_REPR       REPR_VDHF
-#   define  VDHF_TYPE       float16x4_t
 #   define  VDHF_MTYPE      float16x4_t
 #   define  VDHF_M2TYPE     float16x4x2_t
 #   define  VDHF_M3TYPE     float16x4x3_t
 #   define  VDHF_M4TYPE     float16x4x4_t
+#   define  VDHF_TYPE       float16x4_t
+#   define  VDHF_REPR       REPR_VDHF
 
-
-#   define  VDWU_REPR       REPR_VDWU
-#   define  VDWU_TYPE       uint32x2_t
 #   define  VDWU_MTYPE      uint32x2_t
 #   define  VDWU_M2TYPE     uint32x2x2_t
 #   define  VDWU_M3TYPE     uint32x2x3_t
 #   define  VDWU_M4TYPE     uint32x2x4_t
+#   define  VDWU_TYPE       uint32x2_t
+#   define  VDWU_REPR       REPR_VDWU
 
-#   define  VDWI_REPR       REPR_VDWI
-#   define  VDWI_TYPE       int32x2_t
 #   define  VDWI_MTYPE      int32x2_t
 #   define  VDWI_M2TYPE     int32x2x2_t
 #   define  VDWI_M3TYPE     int32x2x3_t
 #   define  VDWI_M4TYPE     int32x2x4_t
+#   define  VDWI_TYPE       int32x2_t
+#   define  VDWI_REPR       REPR_VDWI
 
-#   define  VDWF_REPR       REPR_VDWF
-#   define  VDWF_TYPE       float32x2_t
 #   define  VDWF_MTYPE      float32x2_t
 #   define  VDWF_M2TYPE     float32x2x2_t
 #   define  VDWF_M3TYPE     float32x2x3_t
 #   define  VDWF_M4TYPE     float32x2x4_t
+#   define  VDWF_TYPE       float32x2_t
+#   define  VDWF_REPR       REPR_VDWF
 
-#   define  VDDU_REPR       REPR_VDDU
-#   define  VDDU_TYPE       uint64x1_t
 #   define  VDDU_MTYPE      uint64x1_t
 #   define  VDDU_M2TYPE     uint64x1x2_t
 #   define  VDDU_M3TYPE     uint64x1x3_t
 #   define  VDDU_M4TYPE     uint64x1x4_t
+#   define  VDDU_TYPE       uint64x1_t
+#   define  VDDU_REPR       REPR_VDDU
 
-#   define  VDDI_REPR       REPR_VDDI
-#   define  VDDI_TYPE       int64x1_t
 #   define  VDDI_MTYPE      int64x1_t
 #   define  VDDI_M2TYPE     int64x1x2_t
 #   define  VDDI_M3TYPE     int64x1x3_t
 #   define  VDDI_M4TYPE     int64x1x4_t
+#   define  VDDI_TYPE       int64x1_t
+#   define  VDDI_REPR       REPR_VDDI
 
-#   define  VDDF_REPR       REPR_VDDF
-#   define  VDDF_TYPE       float64x1_t
 #   define  VDDF_MTYPE      float64x1_t
 #   define  VDDF_M2TYPE     float64x1x2_t
 #   define  VDDF_M3TYPE     float64x1x3_t
 #   define  VDDF_M4TYPE     float64x1x4_t
+#   define  VDDF_TYPE       float64x1_t
+#   define  VDDF_REPR       REPR_VDDF
 
-#   define  VQYU_REPR       REPR_VQDU
-#   define  VQYU_TYPE       struct Qyu1
+
 #   define  VQYU_MTYPE      uint64x2_t
 #   define  VQYU_M2TYPE     uint64x2x2_t
 #   define  VQYU_M3TYPE     uint64x2x3_t
 #   define  VQYU_M4TYPE     uint64x2x4_t
+#   define  VQYU_TYPE       struct Qyu1
+#   define  VQYU_REPR       REPR_VQDU1
 
-#   define  VQBU_REPR       REPR_VQBU
-#   define  VQBU_TYPE       uint8x16_t
 #   define  VQBU_MTYPE      uint8x16_t
 #   define  VQBU_M2TYPE     uint8x16x2_t
 #   define  VQBU_M3TYPE     uint8x16x3_t
 #   define  VQBU_M4TYPE     uint8x16x4_t
+#   define  VQBU_TYPE       uint8x16_t
+#   define  VQBU_REPR       REPR_VQBU
 
-#   define  VQBI_REPR       REPR_VQBI
-#   define  VQBI_TYPE       int8x16_t
 #   define  VQBI_MTYPE      int8x16_t
 #   define  VQBI_M2TYPE     int8x16x2_t
 #   define  VQBI_M3TYPE     int8x16x3_t
 #   define  VQBI_M4TYPE     int8x16x4_t
+#   define  VQBI_TYPE       int8x16_t
+#   define  VQBI_REPR       REPR_VQBI
 
-#   define  VQBC_TYPE       struct Qbc1
 #if CHAR_MIN
-#   define  VQBC_REPR       REPR_VQBI
 #   define  VQBC_MTYPE      int8x16_t
 #   define  VQBC_M2TYPE     int8x16x2_t
 #   define  VQBC_M3TYPE     int8x16x3_t
 #   define  VQBC_M4TYPE     int8x16x4_t
+#   define  VQBC_REPR       REPR_VQBI1
 #else
-#   define  VQBC_REPR       REPR_VQBU
 #   define  VQBC_MTYPE      uint8x16_t
 #   define  VQBC_M2TYPE     uint8x16x2_t
 #   define  VQBC_M3TYPE     uint8x16x3_t
 #   define  VQBC_M4TYPE     uint8x16x4_t
+#   define  VQBC_REPR       REPR_VQBU1
 #endif
+#   define  VQBC_TYPE       struct Qbc1
 
-#   define  VQHU_REPR       REPR_VQHU
-#   define  VQHU_TYPE       uint16x8_t
 #   define  VQHU_MTYPE      uint16x8_t
 #   define  VQHU_M2TYPE     uint16x8x2_t
 #   define  VQHU_M3TYPE     uint16x8x3_t
 #   define  VQHU_M4TYPE     uint16x8x4_t
+#   define  VQHU_TYPE       uint16x8_t
+#   define  VQHU_REPR       REPR_VQHU
 
-#   define  VQHI_REPR       REPR_VQHI
-#   define  VQHI_TYPE       int16x8_t
 #   define  VQHI_MTYPE      int16x8_t
 #   define  VQHI_M2TYPE     int16x8x2_t
 #   define  VQHI_M3TYPE     int16x8x3_t
 #   define  VQHI_M4TYPE     int16x8x4_t
+#   define  VQHI_TYPE       int16x8_t
+#   define  VQHI_REPR       REPR_VQHI
 
-#   define  VQHF_REPR       REPR_VQHF
-#   define  VQHF_TYPE       float16x8_t
 #   define  VQHF_MTYPE      float16x8_t
 #   define  VQHF_M2TYPE     float16x8x2_t
 #   define  VQHF_M3TYPE     float16x8x3_t
 #   define  VQHF_M4TYPE     float16x8x4_t
+#   define  VQHF_TYPE       float16x8_t
+#   define  VQHF_REPR       REPR_VQHF
 
-#   define  VQWU_REPR       REPR_VQWU
-#   define  VQWU_TYPE       uint32x4_t
 #   define  VQWU_MTYPE      uint32x4_t
 #   define  VQWU_M2TYPE     uint32x4x2_t
 #   define  VQWU_M3TYPE     uint32x4x3_t
 #   define  VQWU_M4TYPE     uint32x4x4_t
+#   define  VQWU_TYPE       uint32x4_t
+#   define  VQWU_REPR       REPR_VQWU
 
-#   define  VQWI_REPR       REPR_VQWI
-#   define  VQWI_TYPE       int32x4_t
 #   define  VQWI_MTYPE      int32x4_t
 #   define  VQWI_M2TYPE     int32x4x2_t
 #   define  VQWI_M3TYPE     int32x4x3_t
 #   define  VQWI_M4TYPE     int32x4x4_t
+#   define  VQWI_TYPE       int32x4_t
+#   define  VQWI_REPR       REPR_VQWI
 
-#   define  VQWF_REPR       REPR_VQWF
-#   define  VQWF_TYPE       float32x4_t
 #   define  VQWF_MTYPE      float32x4_t
 #   define  VQWF_M2TYPE     float32x4x2_t
 #   define  VQWF_M3TYPE     float32x4x3_t
 #   define  VQWF_M4TYPE     float32x4x4_t
+#   define  VQWF_TYPE       float32x4_t
+#   define  VQWF_REPR       REPR_VQWF
 
-#   define  VQDU_REPR       REPR_VQDU
-#   define  VQDU_TYPE       uint64x2_t
 #   define  VQDU_MTYPE      uint64x2_t
 #   define  VQDU_M2TYPE     uint64x2x2_t
 #   define  VQDU_M3TYPE     uint64x2x3_t
 #   define  VQDU_M4TYPE     uint64x2x4_t
+#   define  VQDU_TYPE       uint64x2_t
+#   define  VQDU_REPR       REPR_VQDU
 
-#   define  VQDI_REPR       REPR_VQDI
-#   define  VQDI_TYPE       int64x2_t
 #   define  VQDI_MTYPE      int64x2_t
 #   define  VQDI_M2TYPE     int64x2x2_t
 #   define  VQDI_M3TYPE     int64x2x3_t
 #   define  VQDI_M4TYPE     int64x2x4_t
+#   define  VQDI_TYPE       int64x2_t
+#   define  VQDI_REPR       REPR_VQDI
 
-#   define  VQDF_REPR       REPR_VQDF
-#   define  VQDF_TYPE       float64x2_t
 #   define  VQDF_MTYPE      float64x2_t
 #   define  VQDF_M2TYPE     float64x2x2_t
 #   define  VQDF_M3TYPE     float64x2x3_t
 #   define  VQDF_M4TYPE     float64x2x4_t
+#   define  VQDF_TYPE       float64x2_t
+#   define  VQDF_REPR       REPR_VQDF
 
-#   define  VQQU_TYPE       struct Qqu1
 #   define  VQQU_MTYPE      uint64x2_t
 #   define  VQQU_M2TYPE     uint64x2x2_t
 #   define  VQQU_M3TYPE     uint64x2x3_t
 #   define  VQQU_M4TYPE     uint64x2x4_t
+#   define  VQQU_TYPE       struct Qqu1
+#   define  VQQU_REPR       REPR_VQDU1
 
-#   define  VQQI_TYPE       struct Qqi1
 #   define  VQQI_MTYPE      int64x2_t
 #   define  VQQI_M2TYPE     int64x2x2_t
 #   define  VQQI_M3TYPE     int64x2x3_t
 #   define  VQQI_M4TYPE     int64x2x4_t
+#   define  VQQI_TYPE       struct Qqi1
+#   define  VQQI_REPR       REPR_VQDI1
 
-#   define  VQQF_TYPE       struct Qqf1
 #   define  VQQF_MTYPE      long double
-
-#   define  VOYU_REPR       (REPR_VQYU|REPR_M2)
-#   define  VOYU_TYPE       struct Qyu2
-
-#   define  VOBU_REPR       (REPR_VQBU|REPR_M2)
-#   define  VOBU_TYPE       struct Qbu2
-
-#   define  VOBI_REPR       (REPR_VQBI|REPR_M2)
-#   define  VOBI_TYPE       struct Qbi2
-
-#   define  VOBC_TYPE       struct Qbc2
-#if CHAR_MIN
-#   define  VOBC_REPR       VOBI_REPR
-#else
-#   define  VOBC_REPR       VOBU_REPR
-#endif
-
-#   define  VOHU_REPR       (REPR_VQHU|REPR_M2)
-#   define  VOHU_TYPE       struct Qhu2
-
-#   define  VOHI_REPR       (REPR_VQHI|REPR_M2)
-#   define  VOHI_TYPE       struct Qhi2
-
-#   define  VOHF_REPR       (REPR_VQHF|REPR_M2)
-#   define  VOHF_TYPE       struct Qhf2
-
-#   define  VOWU_REPR       (REPR_VQWU|REPR_M2)
-#   define  VOWU_TYPE       struct Qwu2
-
-#   define  VOWI_REPR       (REPR_VQWI|REPR_M2)
-#   define  VOWI_TYPE       struct Qwi2
-
-#   define  VOWF_REPR       (REPR_VQWF|REPR_M2)
-#   define  VOWF_TYPE       struct Qwf2
-
-#   define  VODU_REPR       (REPR_VQDU|REPR_M2)
-#   define  VODU_TYPE       struct Qdu2
-
-#   define  VODI_REPR       (REPR_VQDI|REPR_M2)
-#   define  VODI_TYPE       struct Qdi2
-
-#   define  VODF_REPR       (REPR_VQDF|REPR_M2)
-#   define  VODF_TYPE       struct Qdf2
-
-
-#   define  VSYU_REPR       (REPR_VQYU|REPR_M4)
-#   define  VSYU_TYPE       struct Qyu4
-
-#   define  VSBU_REPR       (REPR_VQBU|REPR_M4)
-#   define  VSBU_TYPE       struct Qbu4
-
-#   define  VSBI_REPR       (REPR_VQBI|REPR_M4)
-#   define  VSBI_TYPE       struct Qbi4
-
-#   define  VSBC_TYPE       struct Qbc4
-#if CHAR_MIN
-#   define  VSBC_REPR       VSBI_REPR
-#else
-#   define  VSBC_REPR       VSBU_REPR
-#endif
-
-#   define  VSHU_REPR       (REPR_VQHU|REPR_M4)
-#   define  VSHU_TYPE       struct Qhu4
-
-#   define  VSHI_REPR       (REPR_VQHI|REPR_M4)
-#   define  VSHI_TYPE       struct Qhi4
-
-#   define  VSHF_REPR       (REPR_VQHF|REPR_M4)
-#   define  VSHF_TYPE       struct Qhf4
-
-
-#   define  VSWU_REPR       (REPR_VQWU|REPR_M4)
-#   define  VSWU_TYPE       struct Qwu4
-
-#   define  VSWI_REPR       (REPR_VQWI|REPR_M4)
-#   define  VSWI_TYPE       struct Qwi4
-
-#   define  VSWF_REPR       (REPR_VQWF|REPR_M4)
-#   define  VSWF_TYPE       struct Qwf4
-
-
-#   define  VSDU_REPR       (REPR_VQDU|REPR_M4)
-#   define  VSDU_TYPE       struct Qdu4
-
-#   define  VSDI_REPR       (REPR_VQDI|REPR_M4)
-#   define  VSDI_TYPE       struct Qdi4
-
-#   define  VSDF_REPR       (REPR_VQDF|REPR_M4)
-#   define  VSDF_TYPE       struct Qdf4
+#   define  VQQF_TYPE       struct Qqf1
+#   define  VQQF_REPR       REPR_QF1
 
 #endif
 
@@ -5181,6 +4677,9 @@ types. Length (M) is encoded in 4 bits using the following:
 
 */
 
+#   define  VQYU_REPR       (REPR_VQQU|REPR_M1)
+#   define  VQYU_MTYPE      vector unsigned __int128
+#   define  VQYU_TYPE       struct Qyu1
 
 #   define  VQBU_REPR       REPR_VQBU
 #   define  VQBU_TYPE       vector unsigned char
@@ -5234,75 +4733,17 @@ types. Length (M) is encoded in 4 bits using the following:
 #   define  VQDF_TYPE       vector double
 #   define  VQDF_MTYPE      vector double
 
-#   define  VOBU_REPR       (REPR_VQBU|REPR_M2)
-#   define  VOBU_TYPE       struct Qbu2
+#   define  VQQU_REPR       REPR_VQQU
+#   define  VQQU_TYPE       vector unsigned __int128
+#   define  VQQU_MTYPE      vector unsigned __int128
 
-#   define  VOBI_REPR       (REPR_VQBI|REPR_M2)
-#   define  VOBI_TYPE       struct Qbi2
+#   define  VQQI_REPR       REPR_VQQI
+#   define  VQQI_TYPE       vector signed __int128
+#   define  VQQI_MTYPE      vector signed __int128
 
-#   define  VOHU_REPR       (REPR_VQHU|REPR_M2)
-#   define  VOHU_TYPE       struct Qhu2
-
-#   define  VOHI_REPR       (REPR_VQHI|REPR_M2)
-#   define  VOHI_TYPE       struct Qhi2
-
-#   define  VOHF_REPR       (REPR_VQHF|REPR_M2)
-#   define  VOHF_TYPE       struct Qhf2
-
-#   define  VOWU_REPR       (REPR_VQWU|REPR_M2)
-#   define  VOWU_TYPE       struct Qwu2
-
-#   define  VOWI_REPR       (REPR_VQWI|REPR_M2)
-#   define  VOWI_TYPE       struct Qwi2
-
-#   define  VOWF_REPR       (REPR_VQWF|REPR_M2)
-#   define  VOWF_TYPE       struct Qwf2
-
-#   define  VODU_REPR       (REPR_VQDU|REPR_M2)
-#   define  VODU_TYPE       struct Qdu2
-
-#   define  VODI_REPR       (REPR_VQDI|REPR_M2)
-#   define  VODI_TYPE       struct Qdi2
-
-#   define  VODF_REPR       (REPR_VQDF|REPR_M2)
-#   define  VODF_TYPE       struct Qdf2
-
-
-#   define  VSBU_REPR       (REPR_VQBU|REPR_M4)
-#   define  VSBU_TYPE       struct Qbu4
-
-#   define  VSBI_REPR       (REPR_VQBI|REPR_M4)
-#   define  VSBI_TYPE       struct Qbi4
-
-
-#   define  VSHU_REPR       (REPR_VQHU|REPR_M4)
-#   define  VSHU_TYPE       struct Qhu4
-
-#   define  VSHI_REPR       (REPR_VQHI|REPR_M4)
-#   define  VSHI_TYPE       struct Qhi4
-
-#   define  VSHF_REPR       (REPR_VQHF|REPR_M4)
-#   define  VSHF_TYPE       struct Qhf4
-
-
-#   define  VSWU_REPR       (REPR_VQWU|REPR_M4)
-#   define  VSWU_TYPE       struct Qwu4
-
-#   define  VSWI_REPR       (REPR_VQWI|REPR_M4)
-#   define  VSWI_TYPE       struct Qwi4
-
-#   define  VSWF_REPR       (REPR_VQWF|REPR_M4)
-#   define  VSWF_TYPE       struct Qwf4
-
-
-#   define  VSDU_REPR       (REPR_VQDU|REPR_M4)
-#   define  VSDU_TYPE       struct Qdu4
-
-#   define  VSDI_REPR       (REPR_VQDI|REPR_M4)
-#   define  VSDI_TYPE       struct Qdi4
-
-#   define  VSDF_REPR       (REPR_VQDF|REPR_M4)
-#   define  VSDF_TYPE       struct Qdf4
+#   define  VQQF_REPR       REPR_VQQF
+#   define  VQQF_TYPE       vector long double
+#   define  VQQF_MTYPE      vector long double
 
 #endif
 
@@ -5313,29 +4754,29 @@ types. Length (M) is encoded in 4 bits using the following:
 #if CHAR_MIN
 
 #   ifndef  VWBC_REPR
-#   define  VWBC_REPR   REPR_VWBI
+#   define  VWBC_REPR   VWBI_REPR
 #   endif
 
 #   ifndef  VDBC_REPR
-#   define  VDBC_REPR   REPR_VDBI
+#   define  VDBC_REPR   VDBI_REPR
 #   endif
 
 #   ifndef  VQBC_REPR
-#   define  VQBC_REPR   REPR_VQBI
+#   define  VQBC_REPR   VQBI_REPR
 #   endif
 
 #else
 
 #   ifndef  VWBC_REPR
-#   define  VWBC_REPR   REPR_VWBU
+#   define  VWBC_REPR   VWBU_REPR
 #   endif
 
 #   ifndef  VDBC_REPR
-#   define  VDBC_REPR   REPR_VDBU
+#   define  VDBC_REPR   VDBU_REPR
 #   endif
 
 #   ifndef  VQBC_REPR
-#   define  VQBC_REPR   REPR_VQBU
+#   define  VQBC_REPR   VQBU_REPR
 #   endif
 
 #endif
@@ -5346,18 +4787,18 @@ types. Length (M) is encoded in 4 bits using the following:
 #endif
 
 #ifndef     VWYU_REPR
-#define     VWYU_REPR   REPR_YU32
 #define     VWYU_TYPE   struct Yu32
+#define     VWYU_REPR   REPR_YU32
 #endif
 
 #ifndef     VWBU_REPR
-#define     VWBU_REPR   REPR_BU4
 #define     VWBU_TYPE   struct Bu4
+#define     VWBU_REPR   REPR_BU4
 #endif
 
 #ifndef     VWBI_REPR
-#define     VWBI_REPR   REPR_BI4
 #define     VWBI_TYPE   struct Bi4
+#define     VWBI_REPR   REPR_BI4
 #endif
 
 #ifndef     VWBC_TYPE
@@ -5365,33 +4806,33 @@ types. Length (M) is encoded in 4 bits using the following:
 #endif
 
 #ifndef     VWHU_REPR
-#define     VWHU_REPR   REPR_HU2
 #define     VWHU_TYPE   struct Hu2
+#define     VWHU_REPR   REPR_HU2
 #endif
 
 #ifndef     VWHI_REPR
-#define     VWHI_REPR   REPR_HI2
 #define     VWHI_TYPE   struct Hi2
+#define     VWHI_REPR   REPR_HI2
 #endif
 
 #ifndef     VWHF_REPR
-#define     VWHF_REPR   REPR_HF2
 #define     VWHF_TYPE   struct Hf2
+#define     VWHF_REPR   REPR_HF2
 #endif
 
 #ifndef     VWWU_REPR
-#define     VWWU_REPR   REPR_WU1
 #define     VWWU_TYPE   struct Wu1
+#define     VWWU_REPR   REPR_WU1
 #endif
 
 #ifndef     VWWI_REPR
-#define     VWWI_REPR   REPR_WI1
 #define     VWWI_TYPE   struct Wi1
+#define     VWWI_REPR   REPR_WI1
 #endif
 
 #ifndef     VWWF_REPR
-#define     VWWF_REPR   REPR_WF1
 #define     VWWF_TYPE   struct Wf1
+#define     VWWF_REPR   REPR_WF1
 #endif
 
 #if _LEAVE_EXTVEC_VW_REPR
@@ -5403,18 +4844,18 @@ types. Length (M) is encoded in 4 bits using the following:
 #endif
 
 #ifndef     VDYU_REPR
-#define     VDYU_REPR   REPR_YU64
 #define     VDYU_TYPE   struct Yu64
+#define     VDYU_REPR   REPR_YU64
 #endif
 
 #ifndef     VDBU_REPR
-#define     VDBU_REPR   REPR_BU8
 #define     VDBU_TYPE   struct Bu8
+#define     VDBU_REPR   REPR_BU8
 #endif
 
 #ifndef     VDBI_REPR
-#define     VDBI_REPR   REPR_BI8
 #define     VDBI_TYPE   struct Bi8
+#define     VDBI_REPR   REPR_BI8
 #endif
 
 #ifndef     VDBC_TYPE
@@ -5422,48 +4863,48 @@ types. Length (M) is encoded in 4 bits using the following:
 #endif
 
 #ifndef     VDHU_REPR
-#define     VDHU_REPR   REPR_HU4
 #define     VDHU_TYPE   struct Hu4
+#define     VDHU_REPR   REPR_HU4
 #endif
 
 #ifndef     VDHI_REPR
-#define     VDHI_REPR   REPR_HI4
 #define     VDHI_TYPE   struct Hi4
+#define     VDHI_REPR   REPR_HI4
 #endif
 
 #ifndef     VDHF_REPR
-#define     VDHF_REPR   REPR_HF4
 #define     VDHF_TYPE   struct Hf4
+#define     VDHF_REPR   REPR_HF4
 #endif
 
 #ifndef     VDWU_REPR
-#define     VDWU_REPR   REPR_WU2
 #define     VDWU_TYPE   struct Wu2
+#define     VDWU_REPR   REPR_WU2
 #endif
 
 #ifndef     VDWI_REPR
-#define     VDWI_REPR   REPR_WI2
 #define     VDWI_TYPE   struct Wi2
+#define     VDWI_REPR   REPR_WI2
 #endif
 
 #ifndef     VDWF_REPR
-#define     VDWF_REPR   REPR_WF2
 #define     VDWF_TYPE   struct Wf2
+#define     VDWF_REPR   REPR_WF2
 #endif
 
 #ifndef     VDDU_REPR
-#define     VDDU_REPR   REPR_DU1
 #define     VDDU_TYPE   struct Du1
+#define     VDDU_REPR   REPR_DU1
 #endif
 
 #ifndef     VDDI_REPR
-#define     VDDI_REPR   REPR_DI1
 #define     VDDI_TYPE   struct Di1
+#define     VDDI_REPR   REPR_DI1
 #endif
 
 #ifndef     VDDF_REPR
-#define     VDDF_REPR   REPR_DF1
 #define     VDDF_TYPE   struct Df1
+#define     VDDF_REPR   REPR_DF1
 #endif
 
 #if _LEAVE_EXTVEC_VD_REPR
@@ -5475,18 +4916,18 @@ types. Length (M) is encoded in 4 bits using the following:
 #endif
 
 #ifndef     VQYU_REPR
-#define     VQYU_REPR   REPR_YU128
 #define     VQYU_TYPE   struct Yu128
+#define     VQYU_REPR   REPR_YU128
 #endif
 
 #ifndef     VQBU_REPR
-#define     VQBU_REPR   REPR_BU16
 #define     VQBU_TYPE   struct Bu16
+#define     VQBU_REPR   REPR_BU16
 #endif
 
 #ifndef     VQBI_REPR
-#define     VQBI_REPR   REPR_BI16
 #define     VQBI_TYPE   struct Bi16
+#define     VQBI_REPR   REPR_BI16
 #endif
 
 #ifndef     VQBC_TYPE
@@ -5495,49 +4936,65 @@ types. Length (M) is encoded in 4 bits using the following:
 
 
 #ifndef     VQHU_REPR
-#define     VQHU_REPR   REPR_HU8
 #define     VQHU_TYPE   struct Hu8
+#define     VQHU_REPR   REPR_HU8
 #endif
 
 #ifndef     VQHI_REPR
-#define     VQHI_REPR   REPR_HI8
 #define     VQHI_TYPE   struct Hi8
+#define     VQHI_REPR   REPR_HI8
 #endif
 
 #ifndef     VQHF_REPR
-#define     VQHF_REPR   REPR_HF8
 #define     VQHF_TYPE   struct Hf8
+#define     VQHF_REPR   REPR_HF8
 #endif
 
 #ifndef     VQWU_REPR
-#define     VQWU_REPR   REPR_WU4
 #define     VQWU_TYPE   struct Wu4
+#define     VQWU_REPR   REPR_WU4
 #endif
 
 #ifndef     VQWI_REPR
-#define     VQWI_REPR   REPR_WI4
 #define     VQWI_TYPE   struct Wi4
+#define     VQWI_REPR   REPR_WI4
 #endif
 
 #ifndef     VQWF_REPR
-#define     VQWF_REPR   REPR_WF4
 #define     VQWF_TYPE   struct Wf4
+#define     VQWF_REPR   REPR_WF4
 #endif
 
 
 #ifndef     VQDU_REPR
-#define     VQDU_REPR   REPR_DU2
 #define     VQDU_TYPE   struct Du2
+#define     VQDU_REPR   REPR_DU2
 #endif
 
 #ifndef     VQDI_REPR
-#define     VQDI_REPR   REPR_DI2
 #define     VQDI_TYPE   struct Di2
+#define     VQDI_REPR   REPR_DI2
 #endif
 
 #ifndef     VQDF_REPR
-#define     VQDF_REPR   REPR_DF2
 #define     VQDF_TYPE   struct Df2
+#define     VQDF_REPR   REPR_DF2
+#endif
+
+
+#ifndef     VQQU_REPR
+#define     VQQU_TYPE   struct Qu1
+#define     VQQU_REPR   REPR_QU1
+#endif
+
+#ifndef     VQQI_REPR
+#define     VQQI_TYPE   struct Qi1
+#define     VQQI_REPR   REPR_QI1
+#endif
+
+#ifndef     VQQF_REPR
+#define     VQQD_TYPE   struct Qf1
+#define     VQQF_REPR   REPR_QF1
 #endif
 
 #if _LEAVE_EXTVEC_VQ_REPR
@@ -5548,6 +5005,22 @@ types. Length (M) is encoded in 4 bits using the following:
 {
 #endif
 
+/*
+IMPORTANT NOTE: user code should never directly use these
+types.
+
+*_MTYPE is the most basic C type for *. E.g. x86 and arm 
+both lack a 32 bit vector type, but float is passed in a
+SIMD/float register so we can use it to guide the compiler
+in the right direction. Wrapping it in a struct can and is
+used to define multiple _Generic unique types. 
+
+Some intrinsics have their own set of homogeneous vector 
+aggregate types. *_MxTYPE is defined for the type with x 
+elements. E.g. arm has uint8x16x4 for intrinsics that take
+four 16 byte vectors as a 128 bit HVA×4.
+
+*/
 #if  defined(VWYU_MTYPE)
 
 typedef      VWYU_MTYPE Wyu;
@@ -5557,7 +5030,7 @@ struct Wyu1 {
 #   if defined(VWYU_M1TYPE)
         VWYU_M1TYPE   M;
 #   endif
-        struct {VWYU_MTYPE MY_NV1(V,);};
+        struct {Wyu MY_NV1(V,);};
     };
 };
 
@@ -5589,6 +5062,7 @@ struct Wyu4 {
 };
 
 #endif
+
 
 #if  defined(VWBU_MTYPE)
 
@@ -5631,6 +5105,7 @@ struct Wbu4 {
 };
 
 #endif
+
 
 #if  defined(VWBI_MTYPE)
 
@@ -5773,6 +5248,7 @@ struct Whi1 {
         struct {VWHI_MTYPE MY_NV1(V,);};
     };
 };
+
 struct Whi2 {
     union {
 #   if defined(VWHI_M2TYPE)
@@ -5781,6 +5257,7 @@ struct Whi2 {
         struct {VWHI_MTYPE MY_NV2(V,);};
     };
 };
+
 struct Whi3 {
     union {
 #   if defined(VWHI_M3TYPE)
@@ -5789,6 +5266,7 @@ struct Whi3 {
         struct {VWHI_MTYPE MY_NV3(V,);};
     };
 };
+
 struct Whi4 {
     union {
 #   if defined(VWHI_M4TYPE)
@@ -5799,6 +5277,7 @@ struct Whi4 {
 };
 
 #endif
+
 
 #if  defined(VWHF_MTYPE)
 
@@ -5812,6 +5291,7 @@ struct Whf1 {
         struct {VWHF_MTYPE MY_NV1(V,);};
     };
 };
+
 struct Whf2 {
     union {
 #   if defined(VWHF_M2TYPE)
@@ -5820,6 +5300,7 @@ struct Whf2 {
         struct {VWHF_MTYPE MY_NV2(V,);};
     };
 };
+
 struct Whf3 {
     union {
 #   if defined(VWHF_M3TYPE)
@@ -5828,6 +5309,7 @@ struct Whf3 {
         struct {VWHF_MTYPE MY_NV3(V,);};
     };
 };
+
 struct Whf4 {
     union {
 #   if defined(VWHF_M4TYPE)
@@ -5852,6 +5334,7 @@ struct Wwu1 {
         struct {VWWU_MTYPE MY_NV1(V,);};
     };
 };
+
 struct Wwu2 {
     union {
 #   if defined(VWWU_M2TYPE)
@@ -5860,6 +5343,7 @@ struct Wwu2 {
         struct {VWWU_MTYPE MY_NV2(V,);};
     };
 };
+
 struct Wwu3 {
     union {
 #   if defined(VWWU_M3TYPE)
@@ -5868,6 +5352,7 @@ struct Wwu3 {
         struct {VWWU_MTYPE MY_NV3(V,);};
     };
 };
+
 struct Wwu4 {
     union {
 #   if defined(VWWU_M4TYPE)
@@ -5891,6 +5376,7 @@ struct Wwi1 {
         struct {VWWI_MTYPE MY_NV1(V,);};
     };
 };
+
 struct Wwi2 {
     union {
 #   if defined(VWWI_M2TYPE)
@@ -5899,6 +5385,7 @@ struct Wwi2 {
         struct {VWWI_MTYPE MY_NV2(V,);};
     };
 };
+
 struct Wwi3 {
     union {
 #   if defined(VWWI_M3TYPE)
@@ -5907,6 +5394,7 @@ struct Wwi3 {
         struct {VWWI_MTYPE MY_NV3(V,);};
     };
 };
+
 struct Wwi4 {
     union {
 #   if defined(VWWI_M4TYPE)
@@ -5917,6 +5405,7 @@ struct Wwi4 {
 };
 
 #endif
+
 
 #if  defined(VWWF_MTYPE)
 
@@ -5930,6 +5419,7 @@ struct Wwf1 {
         struct {VWWF_MTYPE MY_NV1(V,);};
     };
 };
+
 struct Wwf2 {
     union {
 #   if defined(VWWF_M2TYPE)
@@ -5938,6 +5428,7 @@ struct Wwf2 {
         struct {VWWF_MTYPE MY_NV2(V,);};
     };
 };
+
 struct Wwf3 {
     union {
 #   if defined(VWWF_M3TYPE)
@@ -5946,6 +5437,7 @@ struct Wwf3 {
         struct {VWWF_MTYPE MY_NV3(V,);};
     };
 };
+
 struct Wwf4 {
     union {
 #   if defined(VWWF_M4TYPE)
@@ -6666,7 +6158,6 @@ ASSERT(040 == sizeof(struct Ddf4));
 {
 #endif
 
-
 #if  defined(VQYU_MTYPE)
 
 typedef      VQYU_MTYPE Qyu;
@@ -6679,6 +6170,7 @@ struct Qyu1 {
         struct {VQYU_MTYPE MY_NV1(V,);};
     };
 };
+
 struct Qyu2 {
     union {
 #   if defined(VQYU_M2TYPE)
@@ -7415,1339 +6907,24 @@ typedef VQWF_TYPE   Vqwf;
 typedef VQDU_TYPE   Vqdu;
 typedef VQDI_TYPE   Vqdi;
 typedef VQDF_TYPE   Vqdf;
-
-#if 0
 typedef VQQU_TYPE   Vqqu;
 typedef VQQI_TYPE   Vqqi;
 typedef VQQF_TYPE   Vqqf;
-#endif
-
-typedef union Vwba {uint8_t  U[ 4];int8_t  I[ 4];char    C[ 4];} Vwba;
-typedef union Vwha {uint16_t U[ 2];int16_t I[ 2];flt16_t F[ 2];} Vwha;
-typedef union Vwwa {uint32_t U[ 1];int32_t I[ 1];float   F[ 1];} Vwwa;
-
-typedef union Vdba {BYTE_UTYPE U[ 8];BYTE_ITYPE I[ 8];      char C[ 8];} Vdba;
-typedef union Vdha {HALF_UTYPE U[ 4];HALF_ITYPE I[ 4];HALF_FTYPE F[ 8];} Vdha;
-typedef union Vdwa {WORD_UTYPE U[ 2];WORD_ITYPE I[ 2];WORD_FTYPE F[ 4];} Vdwa;
-typedef union Vdda {DWRD_UTYPE U[ 1];DWRD_ITYPE I[ 1];DWRD_FTYPE F[ 2];} Vdda;
-
-typedef union Vqba {BYTE_UTYPE U[16];BYTE_ITYPE I[16];      char C[16];} Vqba;
-typedef union Vqha {HALF_UTYPE U[ 8];HALF_ITYPE I[ 8];HALF_FTYPE F[ 8];} Vqha;
-typedef union Vqwa {WORD_UTYPE U[ 4];WORD_ITYPE I[ 4];WORD_FTYPE F[ 4];} Vqwa;
-typedef union Vqda {DWRD_UTYPE U[ 2];DWRD_ITYPE I[ 2];DWRD_FTYPE F[ 2];} Vqda;
-#if 0
-typedef union Vqqa {QUAD_UTYPE U[ 1];QUAD_ITYPE I[ 1];QUAD_FTYPE F[ 1];} Vqqa;
-#endif
-
-#if defined(VWBU_MTYPE) || defined(VWBI_MTYPE)
-
-#   define  VWB_M1TYPE   union Vwb1
-
-union Vwbm {
-#   if defined(VWBU_MTYPE)
-    VWBU_MTYPE      U;
-#   endif
-
-#   if defined(VWBI_MTYPE)
-    VWBI_MTYPE      I;
-#   endif
-
-#   if defined(VWBC_MTYPE)
-    VWBC_MTYPE      C;
-#   endif
-
-};
-union Vwb1 {
-
-#   if defined(VWBU_MTYPE)
-    struct Wbu1    U;
-#   endif
-
-#   if defined(VWBI_MTYPE)
-    struct Wbi1    I;
-#   endif
-
-#   if defined(VWBC_MTYPE)
-    struct Wbc1    C;
-#   endif
-
-};
-union Vwb2 {
-
-#   if defined(VWBU_MTYPE)
-    struct Wbu2    U;
-#   endif
-
-#   if defined(VWBI_MTYPE)
-    struct Wbi2    I;
-#   endif
-
-#   if defined(VWBC_MTYPE)
-    struct Wbc2    C;
-#   endif
-
-};
-union Vwb3 {
-
-#   if defined(VWBU_MTYPE)
-    struct Wbu3    U;
-#   endif
-
-#   if defined(VWBI_MTYPE)
-    struct Wbi3    I;
-#   endif
-
-#   if defined(VWBC_MTYPE)
-    struct Wbc3    C;
-#   endif
-
-};
-union Vwb4 {
-#   if defined(VWBU_MTYPE)
-    struct Wbu4    U;
-#   endif
-
-#   if defined(VWBI_MTYPE)
-    struct Wbi4    I;
-#   endif
-
-#   if defined(VWBC_MTYPE)
-    struct Wbc4    C;
-#   endif
-
-};
-
-#endif
-
-#if defined(VWHU_MTYPE) || defined(VWHI_MTYPE) || defined(VWHF_MTYPE)
-
-#   define  VWH_M1TYPE   union Vwh1
-
-union Vwhm {
-
-#   if defined(VWHU_MTYPE)
-    VWHU_MTYPE    U;
-#   endif
-
-#   if defined(VWHI_MTYPE)
-    VWHI_MTYPE    I;
-#   endif
-
-#   if defined(VWHF_MTYPE)
-    VWHF_MTYPE    F;
-#   endif
-
-};
-union Vwh1 {
-
-#   if defined(VWHU_MTYPE)
-    struct Whu1    U;
-#   endif
-
-#   if defined(VWHI_MTYPE)
-    struct Whi1    I;
-#   endif
-
-#   if defined(VWHF_MTYPE)
-    struct Whf1    F;
-#   endif
-
-};
-union Vwh2 {
-
-#   if defined(VWHU_MTYPE)
-    struct Whu2    U;
-#   endif
-
-#   if defined(VWHI_MTYPE)
-    struct Whi2    I;
-#   endif
-
-#   if defined(VWHF_MTYPE)
-    struct Whf2    F;
-#   endif
-
-};
-union Vwh3 {
-#   if defined(VWHU_MTYPE)
-    struct Whu3    U;
-#   endif
-
-#   if defined(VWHI_MTYPE)
-    struct Whi3    I;
-#   endif
-
-#   if defined(VWHF_MTYPE)
-    struct Whf3    F;
-#   endif
-
-};
-union Vwh4 {
-#   if defined(VWHU_MTYPE)
-    struct Whu4    U;
-#   endif
-
-#   if defined(VWHI_MTYPE)
-    struct Whi4    I;
-#   endif
-
-#   if defined(VWHF_MTYPE)
-    struct Whf4    F;
-#   endif
-
-};
-
-#endif
-
-#if defined(VWWU_MTYPE) || defined(VWWI_MTYPE) || defined(VWWF_MTYPE)
-
-#   define  VWW_M1TYPE   union Vww1
-
-union Vwwm {
-#   if defined(VWWU_MTYPE)
-    VWWU_MTYPE  U;
-#   endif
-
-#   if defined(VWWI_MTYPE)
-    VWWI_MTYPE  I;
-#   endif
-
-#   if defined(VWWF_MTYPE)
-    VWWF_MTYPE  F;
-#   endif
-
-};
-union Vww1 {
-#   if defined(VWWU_MTYPE)
-    struct Wwu1    U;
-#   endif
-
-#   if defined(VWWI_MTYPE)
-    struct Wwi1    I;
-#   endif
-
-#   if defined(VWWF_MTYPE)
-    struct Wwf1    F;
-#   endif
-
-};
-union Vww2 {
-#   if defined(VWWU_MTYPE)
-    struct Wwu2    U;
-#   endif
-#   if defined(VWWI_MTYPE)
-    struct Wwi2    I;
-#   endif
-#   if defined(VWWF_MTYPE)
-    struct Wwf2    F;
-#   endif
-};
-union Vww3 {
-#   if defined(VWWU_MTYPE)
-    struct Wwu3    U;
-#   endif
-#   if defined(VWWI_MTYPE)
-    struct Wwi3    I;
-#   endif
-#   if defined(VWWF_MTYPE)
-    struct Wwf3    F;
-#   endif
-};
-union Vww4 {
-#   if defined(VWWU_MTYPE)
-    struct Wwu4    U;
-#   endif
-#   if defined(VWWI_MTYPE)
-    struct Wwi4    I;
-#   endif
-#   if defined(VWWF_MTYPE)
-    struct Wwf4    F;
-#   endif
-};
-
-#endif
-
-typedef  union Vwb {
-    Vwba        A;
-    Vwbu        U;
-    Vwbi        I;
-    Vwbc        C;
-#   if defined(VWB_M1TYPE)
-    union Vwbm  M;
-    union Vwb1  M1;
-#   endif
-
-    struct {
-        union {uint8_t U0; int8_t I0; char C0;};
-        union {uint8_t U1; int8_t I1; char C1;};
-        union {uint8_t U2; int8_t I2; char C2;};
-        union {uint8_t U3; int8_t I3; char C3;};
-    };
-
-} Vwb;
-typedef  union Vwh {
-    Vwha        A;
-    Vwhu        U;
-    Vwhi        I;
-    Vwhf        F;
-#   if defined(VWB_M1TYPE)
-    union Vwhm  M;
-    union Vwh1  M1;
-#   endif
-
-    struct {
-        union {Half H0; uint16_t U0; int16_t I0; flt16_t F0;};
-        union {Half H1; uint16_t U1; int16_t I1; flt16_t F1;};
-    };
-
-} Vwh;
-typedef  union Vww {
-    Vwwa        A;
-    Vwwu        U;
-    Vwwi        I;
-    Vwwf        F;
-#   if defined(VWB_M1TYPE)
-    union Vwwm  M;
-    union Vww1  M1;
-#   endif
-    struct {
-        union {uint32_t U0; int32_t I0; float F0;};
-    };
-
-} Vww;
-typedef  union Vw {
-    Vwyu    Y;
-    Vwb     B;
-    Vwh     H;
-    Vww     W;
-} Vw;
-
-
-#if defined(VDBU_MTYPE) || defined(VDBI_MTYPE) || defined(VDBC_MTYPE)
-
-#   define  VDB_M1TYPE   union Vdb1
-
-union Vdbm {
-
-#   if defined(VDBU_MTYPE)
-    VDBU_MTYPE      U;
-#   endif
-
-#   if defined(VDBI_MTYPE)
-    VDBI_MTYPE      I;
-#   endif
-
-#   if defined(VDBC_MTYPE)
-    VDBC_MTYPE      C;
-#   endif
-
-};
-union Vdb1 {
-
-#   if defined(VDBU_MTYPE)
-    struct Dbu1     U;
-#   endif
-
-#   if defined(VDBI_MTYPE)
-    struct Dbi1     I;
-#   endif
-
-#   if defined(VDBC_MTYPE)
-    struct Dbc1     C;
-#   endif
-
-};
-union Vdb2 {
-
-#   if defined(VDBU_MTYPE)
-    struct Dbu2     U;
-#   endif
-
-#   if defined(VDBI_MTYPE)
-    struct Dbi2     I;
-#   endif
-
-#   if defined(VDBC_MTYPE)
-    struct Dbc2     C;
-#   endif
-
-};
-union Vdb3 {
-
-#   if defined(VDBU_MTYPE)
-    struct Dbu3 U;
-#   endif
-
-#   if defined(VDBI_MTYPE)
-    struct Dbi3 I;
-#   endif
-
-#   if defined(VDBC_MTYPE)
-    struct Dbc3 C;
-#   endif
-
-};
-union Vdb4 {
-
-#   if defined(VDBU_MTYPE)
-    struct Dbu4    U;
-#   endif
-
-#   if defined(VDBI_MTYPE)
-    struct Dbi4    I;
-#   endif
-
-#   if defined(VDBC_MTYPE)
-    struct Dbc4      C;
-#   endif
-
-};
-
-#endif
-
-#if defined(VDHU_MTYPE) || defined(VDHI_MTYPE) || defined(VDHF_MTYPE)
-
-#   define  VDH_M1TYPE   union Vdh1
-
-union Vdhm {
-#   if defined(VDHU_MTYPE)
-    VDHU_MTYPE     U;
-#   endif
-
-#   if defined(VDHI_MTYPE)
-    VDHI_MTYPE      I;
-#   endif
-
-#   if defined(VDHF_MTYPE)
-    VDHF_MTYPE     F;
-#   endif
-
-};
-union Vdh1 {
-
-#   if defined(VDHU_MTYPE)
-    struct Dhu1    U;
-#   endif
-
-#   if defined(VDHI_MTYPE)
-    struct Dhi1    I;
-#   endif
-
-#   if defined(VDHF_MTYPE)
-    struct Dhf1    F;
-#   endif
-
-};
-union Vdh2 {
-
-#   if defined(VDHU_MTYPE)
-    struct Dhu2    U;
-#   endif
-
-#   if defined(VDHI_MTYPE)
-    struct Dhi2    I;
-#   endif
-
-#   if defined(VDHF_MTYPE)
-    struct Dhf2    F;
-#   endif
-
-};
-union Vdh3 {
-#   if defined(VDHU_MTYPE)
-    struct Dhu3    U;
-#   endif
-
-#   if defined(VDHI_MTYPE)
-    struct Dhi3    I;
-#   endif
-
-#   if defined(VDHF_MTYPE)
-    struct Dhf3    F;
-#   endif
-
-};
-union Vdh4 {
-#   if defined(VDHU_MTYPE)
-    struct Dhu4    U;
-#   endif
-
-#   if defined(VDHI_MTYPE)
-    struct Dhi4    I;
-#   endif
-
-#   if defined(VDHF_MTYPE)
-    struct Dhf4    F;
-#   endif
-
-};
-
-#endif
-
-#if defined(VDWU_MTYPE) || defined(VDWI_MTYPE) || defined(VDWF_MTYPE)
-
-#   define  VDW_M1TYPE   union Vdw1
-
-union Vdwm {
-
-#   if defined(VDWU_MTYPE)
-    VDWU_MTYPE     U;
-#   endif
-
-#   if defined(VDWI_MTYPE)
-    VDWI_MTYPE     I;
-#   endif
-
-#   if defined(VDWF_MTYPE)
-    VDWF_MTYPE     F;
-#   endif
-
-};
-union Vdw1 {
-#   if defined(VDWU_MTYPE)
-    struct Dwu1    U;
-#   endif
-
-#   if defined(VDWI_MTYPE)
-    struct Dwi1    I;
-#   endif
-
-#   if defined(VDWF_MTYPE)
-    struct Dwf1    F;
-#   endif
-
-};
-union Vdw2 {
-
-#   if defined(VDWU_MTYPE)
-    struct Dwu2    U;
-#   endif
-
-#   if defined(VDWI_MTYPE)
-    struct Dwi2    I;
-#   endif
-
-#   if defined(VDWF_MTYPE)
-    struct Dwf2    F;
-#   endif
-
-};
-union Vdw3 {
-
-#   if defined(VDWU_MTYPE)
-    struct Dwu3    U;
-#   endif
-
-#   if defined(VDWI_MTYPE)
-    struct Dwi3    I;
-#   endif
-
-#   if defined(VDWF_MTYPE)
-    struct Dwf3    F;
-#   endif
-
-};
-union Vdw4 {
-
-#   if defined(VDWU_MTYPE)
-    struct Dwu4    U;
-#   endif
-
-#   if defined(VDWI_MTYPE)
-    struct Dwi4    I;
-#   endif
-
-#   if defined(VDWF_MTYPE)
-    struct Dwf4    F;
-#   endif
-
-};
-
-#endif
-
-#if defined(VDDU_MTYPE) || defined(VDDI_MTYPE) || defined(VDDF_MTYPE)
-
-#   define  VDD_M1TYPE   union Vdd1
-
-union Vddm {
-
-#   if defined(VDDU_MTYPE)
-    VDDU_MTYPE      U;
-#   endif
-
-#   if defined(VDDI_MTYPE)
-    VDDI_MTYPE     I;
-#   endif
-
-#   if defined(VDDF_MTYPE)
-    VDDF_MTYPE     F;
-#   endif
-
-};
-union Vdd1 {
-    union Vddm      M;
-#   if defined(VDDU_MTYPE)
-    struct Ddu1     U;
-#   endif
-
-#   if defined(VDDI_MTYPE)
-    struct Ddi1     I;
-#   endif
-
-#   if defined(VDDF_MTYPE)
-    struct Ddf1     F;
-#   endif
-
-};
-union Vdd2 {
-
-#   if defined(VDDU_MTYPE)
-    struct Ddu2    U;
-#   endif
-
-#   if defined(VDDI_MTYPE)
-    struct Ddi2    I;
-#   endif
-
-#   if defined(VDDF_MTYPE)
-    struct Ddf2    F;
-#   endif
-
-};
-union Vdd3 {
-
-#   if defined(VDDU_MTYPE)
-    struct Ddu3    U;
-#   endif
-
-#   if defined(VDDI_MTYPE)
-    struct Ddi3    I;
-#   endif
-
-#   if defined(VDDF_MTYPE)
-    struct Ddf3    F;
-#   endif
-
-};
-union Vdd4 {
-
-#   if defined(VDDU_MTYPE)
-    struct Ddu4    U;
-#   endif
-
-#   if defined(VDDI_MTYPE)
-    struct Ddi4    I;
-#   endif
-
-#   if defined(VDDF_MTYPE)
-    struct Ddf4    F;
-#   endif
-
-};
-
-#endif
-
-typedef  union Vdb {
-    Vdba        A;
-    Vdbu        U;
-    Vdbi        I;
-    Vdbc        C;
-#   if defined(VWB_M2TYPE)
-    union Vwb2  M2;
-#   endif
-
-#   if defined(VDB_M1TYPE)
-    union Vdbm  M;
-    union Vdb1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint8_t U0; int8_t I0; char C0;};
-                union {uint8_t U1; int8_t I1; char C1;};
-                union {uint8_t U2; int8_t I2; char C2;};
-                union {uint8_t U3; int8_t I3; char C3;};
-            };
-            Vwb Lo;
-        };
-        union {
-            struct {
-                union {uint8_t U4; int8_t I4; char C4;};
-                union {uint8_t U5; int8_t I5; char C5;};
-                union {uint8_t U6; int8_t I6; char C6;};
-                union {uint8_t U7; int8_t I7; char C7;};
-            };
-            Vwb Hi;
-        };
-    };
-
-} Vdb;
-typedef  union Vdh {
-
-    Vdha    A;
-    Vdhu    U;
-    Vdhi    I;
-    Vdhf    F;
-
-#   if defined(VWH_M1TYPE)
-    union Vwh2  M2;
-#   endif
-
-#   if defined(VDH_M1TYPE)
-    union Vdhm  M;
-    union Vdh1  M1;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {uint16_t U0; int16_t I0; flt16_t F0;};
-                union {uint16_t U1; int16_t I1; flt16_t F1;};
-            };
-            Vwh Lo;
-        };
-        union {
-            struct {
-                union {uint16_t U2; int16_t I2; flt16_t F2;};
-                union {uint16_t U3; int16_t I3; flt16_t F3;};
-            };
-            Vwh Hi;
-        };
-    };
-
-} Vdh;
-typedef  union Vdw {
-    Vdwa    A;
-    Vdwu    U;
-    Vdwi    I;
-    Vdwf    F;
-#   if defined(VWW_M1TYPE)
-    union Vww2  M2;
-#   endif
-
-#   if defined(VDW_M1TYPE)
-    union Vdw1  M1;
-    union Vdwm  M;
-#   endif
-
-    struct {
-        union {
-            struct {
-                union {unsigned U0; int I0; float F0;};
-            };
-            Vww Lo;
-        };
-        union {
-            struct {
-
-                union {unsigned U1; int I1; float F1;};
-            };
-            Vww Hi;
-        };
-    };
-
-} Vdw;
-typedef  union Vdd {
-    Vdda    A;
-    Vddu    U;
-    Vddi    I;
-    Vddf    F;
-#   if defined(VDD_M1TYPE)
-    union Vdd1  M1;
-    union Vddm  M;
-#   endif
-
-    struct {
-        union {uint64_t U0; int64_t I0; double F0;};
-    };
-
-} Vdd;
-typedef  union Vd {
-    struct {Vw Lo, Hi;};
-    Vdyu    Y;
-    Vdb     B;
-    Vdh     H;
-    Vdw     W;
-    Vdd     D;
-} Vd;
-
-#if defined(VQBU_MTYPE) || defined(VQBI_MTYPE) || defined(VQBC_MTYPE)
-
-#   define  VQB_M1TYPE   union Vqb1
-
-union Vqb1 {
-
-#   if defined(VQBU_MTYPE)
-    struct Qbu1    U;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbi1    I;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbc1    C;
-#   endif
-
-};
-union Vqb2 {
-
-#   if defined(VQBU_MTYPE)
-    struct Qbu2    U;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbi2    I;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbc2    C;
-#   endif
-
-};
-union Vqb3 {
-
-#   if defined(VQBU_MTYPE)
-    struct Qbu3    U;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbi3    I;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbc3    C;
-#   endif
-
-};
-union Vqb4 {
-
-#   if defined(VQBU_MTYPE)
-    struct Qbu4    U;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbi4    I;
-#   endif
-
-#   if defined(VQBI_MTYPE)
-    struct Qbc4    C;
-#   endif
-
-};
-
-#endif
-
-#if defined(VQHU_MTYPE) || defined(VQHI_MTYPE) || defined(VQHF_MTYPE)
-
-#   define  VQH_M1TYPE   union Vqh1
-
-union Vqh1 {
-
-#   if defined(VQHU_MTYPE)
-    struct Qhu1    U;
-#   endif
-
-#   if defined(VQHI_MTYPE)
-    struct Qhi1    I;
-#   endif
-
-#   if defined(VQHF_MTYPE)
-    struct Qhf1    F;
-#   endif
-
-};
-union Vqh2 {
-
-#   if defined(VQHU_MTYPE)
-    struct Qhu2    U;
-#   endif
-
-#   if defined(VQHI_MTYPE)
-    struct Qhi2    I;
-#   endif
-
-#   if defined(VQHF_MTYPE)
-    struct Qhf2    F;
-#   endif
-
-};
-union Vqh3 {
-
-#   if defined(VQHU_MTYPE)
-    struct Qhu3    U;
-#   endif
-
-#   if defined(VQHI_MTYPE)
-    struct Qhi3    I;
-#   endif
-
-#   if defined(VQHF_MTYPE)
-    struct Qhf3    F;
-#   endif
-
-};
-union Vqh4 {
-#   if defined(VQHU_MTYPE)
-    struct Qhu4    U;
-#   endif
-#   if defined(VQHI_MTYPE)
-    struct Qhi4    I;
-#   endif
-#   if defined(VQHF_MTYPE)
-    struct Qhf4    F;
-#   endif
-};
-
-#endif
-
-#if defined(VQWU_MTYPE) || defined(VQWI_MTYPE) || defined(VQWF_MTYPE)
-
-#   define  VQW_M1TYPE   union Vqw1
-
-union Vqw1 {
-
-#   if defined(VQWU_MTYPE)
-    struct Qwu1    U;
-#   endif
-
-#   if defined(VQWI_MTYPE)
-    struct Qwi1    I;
-#   endif
-
-#   if defined(VQWF_MTYPE)
-    struct Qwf1    F;
-#   endif
-
-};
-union Vqw2 {
-
-#   if defined(VQWU_MTYPE)
-    struct Qwu2    U;
-#   endif
-
-#   if defined(VQWI_MTYPE)
-    struct Qwi2    I;
-#   endif
-
-#   if defined(VQWF_MTYPE)
-    struct Qwf2    F;
-#   endif
-
-};
-union Vqw3 {
-#   if defined(VQWU_MTYPE)
-    struct Qwu3    U;
-#   endif
-#   if defined(VQWI_MTYPE)
-    struct Qwi3    I;
-#   endif
-#   if defined(VQWF_MTYPE)
-    struct Qwf3    F;
-#   endif
-};
-union Vqw4 {
-#   if defined(VQWU_MTYPE)
-    struct Qwu4    U;
-#   endif
-#   if defined(VQWI_MTYPE)
-    struct Qwi4    I;
-#   endif
-#   if defined(VQWF_MTYPE)
-    struct Qwf4    F;
-#   endif
-};
-
-#endif
-
-#if defined(VQDU_MTYPE) || defined(VQDI_MTYPE) || defined(VQDF_MTYPE)
-
-#   define  VQD_M1TYPE   union Vqd1
-
-union Vqd1 {
-
-#   if defined(VQDU_MTYPE)
-    struct Qdu1    U;
-#   endif
-
-#   if defined(VQDI_MTYPE)
-    struct Qdi1    I;
-#   endif
-
-#   if defined(VQDF_MTYPE)
-    struct Qdf1    F;
-#   endif
-
-};
-union Vqd2 {
-
-#   if defined(VQDU_MTYPE)
-    struct Qdu2    U;
-#   endif
-
-#   if defined(VQDI_MTYPE)
-    struct Qdi2    I;
-#   endif
-
-#   if defined(VQDF_MTYPE)
-    struct Qdf2    F;
-#   endif
-
-};
-union Vqd3 {
-
-#   if defined(VQDU_MTYPE)
-    struct Qdu3    U;
-#   endif
-
-#   if defined(VQDI_MTYPE)
-    struct Qdi3    I;
-#   endif
-
-#   if defined(VQDF_MTYPE)
-    struct Qdf3    F;
-#   endif
-
-};
-union Vqd4 {
-
-#   if defined(VQDU_MTYPE)
-    struct Qdu4    U;
-#   endif
-
-#   if defined(VQDI_MTYPE)
-    struct Qdi4    I;
-#   endif
-
-#   if defined(VQDF_MTYPE)
-    struct Qdf4    F;
-#   endif
-
-};
-
-#endif
-
-#if 0
-#if defined(VQQU_MTYPE) || defined(VQQI_MTYPE) || defined(VQQF_MTYPE)
-
-#   define  VQQ_M1TYPE   union Vqq1
-
-union Vqqm {
-
-#   if defined(VQQU_MTYPE)
-    VQQU_MTYPE      U;
-#   endif
-
-#   if defined(VQQI_MTYPE)
-    VQQI_MTYPE     I;
-#   endif
-
-#   if defined(VQQF_MTYPE)
-    VQQF_MTYPE     F;
-#   endif
-
-};
-union Vqq1 {
-
-#   if defined(VQQU_MTYPE)
-    struct Qqu1    U;
-#   endif
-
-#   if defined(VQQI_MTYPE)
-    struct Qqi1    I;
-#   endif
-
-#   if defined(VQQF_MTYPE)
-    struct Qqf1    F;
-#   endif
-
-};
-union Vqq2 {
-
-#   if defined(VQQU_MTYPE)
-    struct Qqu2    U;
-#   endif
-
-#   if defined(VQQI_MTYPE)
-    struct Qqi2    I;
-#   endif
-
-#   if defined(VQQF_MTYPE)
-    struct Qqf2    F;
-#   endif
-
-};
-union Vqq3 {
-
-#   if defined(VQQU_MTYPE)
-    struct Qqu3    U;
-#   endif
-
-#   if defined(VQQI_MTYPE)
-    struct Qqi3    I;
-#   endif
-
-#   if defined(VQQF_MTYPE)
-    struct Qqf3    F;
-#   endif
-
-};
-union Vqq4 {
-
-#   if defined(VQQU_MTYPE)
-    struct Qqu4    U;
-#   endif
-
-#   if defined(VQQI_MTYPE)
-    struct Qqi4    I;
-#   endif
-
-#   if defined(VQQF_MTYPE)
-    struct Qqf4    F;
-#   endif
-
-};
-
-#endif
-#endif
-
-typedef  union Vqb {
-
-    Vqba    A;
-    Vqbu    U;
-    Vqbi    I;
-    Vqbc    C;
-
-#   if defined(VWB_M1TYPE)
-    union Vwb4  M4;
-#   endif
-
-#   if defined(VDB_M1TYPE)
-    union Vdb2  M2;
-#   endif
-
-#   if defined(VQB_M1TYPE)
-    union Vqb1  M1;
-#   endif
-
-    struct {
-        union {
-
-            struct {
-
-                union {uint8_t U0; int8_t I0; char C0;};
-                union {uint8_t U1; int8_t I1; char C1;};
-                union {uint8_t U2; int8_t I2; char C2;};
-                union {uint8_t U3; int8_t I3; char C3;};
-                union {uint8_t U4; int8_t I4; char C4;};
-                union {uint8_t U5; int8_t I5; char C5;};
-                union {uint8_t U6; int8_t I6; char C6;};
-                union {uint8_t U7; int8_t I7; char C7;};
-            };
-
-            Vdb Lo;
-        };
-        union {
-
-            struct {
-
-                union {uint8_t U8;  int8_t I8;  char C8;};
-                union {uint8_t U9;  int8_t I9;  char C9;};
-                union {uint8_t U10; int8_t I10; char C10;};
-                union {uint8_t U11; int8_t I11; char C11;};
-                union {uint8_t U12; int8_t I12; char C12;};
-                union {uint8_t U13; int8_t I13; char C13;};
-                union {uint8_t U14; int8_t I14; char C14;};
-                union {uint8_t U15; int8_t I15; char C15;};
-            };
-            Vdb Hi;
-        };
-    };
-
-} Vqb;
-
-typedef  union Vqh {
-
-    Vqha    A;
-    Vqhu    U;
-    Vqhi    I;
-    Vqhf    F;
-
-#   if defined(VWH_M1TYPE)
-    union Vwh4  M4;
-#   endif
-
-#   if defined(VDH_M1TYPE)
-    union Vdh2  M2;
-#   endif
-
-#   if defined(VQH_M1TYPE)
-    union Vqh1  M1;
-#   endif
-
-    struct {
-
-        union {
-            struct {
-                union {uint16_t U0; int16_t I0; flt16_t F0;};
-                union {uint16_t U1; int16_t I1; flt16_t F1;};
-                union {uint16_t U2; int16_t I2; flt16_t F2;};
-                union {uint16_t U3; int16_t I3; flt16_t F3;};
-            };
-            Vdh Lo;
-        };
-
-        union {
-            struct {
-                union {uint16_t U4; int16_t I4; flt16_t F4;};
-                union {uint16_t U5; int16_t I5; flt16_t F5;};
-                union {uint16_t U6; int16_t I6; flt16_t F6;};
-                union {uint16_t U7; int16_t I7; flt16_t F7;};
-            };
-            Vdh Hi;
-        };
-
-    };
-
-} Vqh;
-
-typedef  union Vqw {
-
-    Vqwa    A;
-    Vqwu    U;
-    Vqwi    I;
-    Vqwf    F;
-
-#   if defined(VWW_M1TYPE)
-    union Vww4  M4;
-#   endif
-
-#   if defined(VDW_M1TYPE)
-    union Vdw2  M2;
-#   endif
-
-#   if defined(VQW_M1TYPE)
-    union Vqw1  M1;
-#   endif
-
-    struct {
-
-        union {
-            struct {
-                union {unsigned U0; int I0; float F0;};
-                union {unsigned U1; int I1; float F1;};
-            };
-            Vdw Lo;
-        };
-
-        union {
-            struct {
-                union {unsigned U2; int I2; float F2;};
-                union {unsigned U3; int I3; float F3;};
-            };
-            Vdw Hi;
-        };
-
-    };
-
-} Vqw;
-
-typedef  union Vqd {
-
-    Vqda        A;
-    Vqdu        U;
-    Vqdi        I;
-    Vqdf        F;
-
-#   if defined(VDD_M1TYPE)
-    union Vdd2  M2;
-#   endif
-
-#   if defined(VQD_M1TYPE)
-    union Vqd1  M1;
-#   endif
-
-    struct {
-
-        union {
-            union {uint64_t U0; int64_t I0; double F0;};
-            Vdd Lo;
-        };
-
-        union {
-            union {uint64_t U1; int64_t I1; double F1;};
-            Vdd Hi;
-        };
-
-    };
-
-} Vqd;
-
-#if 0
-typedef  union Vqq {
-    Vqqa    A;
-    Vqqu    U;
-    Vqqi    I;
-    Vqqf    F;
-#   if defined(VQQ_M1TYPE)
-    union Vqq1  M1;
-    union Vqqm  M;
-#   endif
-
-    union {
-        struct {QUAD_UTYPE  U0;};
-        struct {QUAD_ITYPE  I0;};
-        struct {QUAD_FTYPE  F0;};
-    };
-
-} Vqq;
-#endif
-
-typedef  union Vq {
-    struct {Vd Lo, Hi;};
-    Vqyu    Y;
-    Vqb     B;
-    Vqh     H;
-    Vqw     W;
-    Vqd     D;
-    //Vqq     Q;
-} Vq;
 
 #if _LEAVE_EXTVEC_TYPEDEFS
 }
 #endif
 
-
 INLINE(Vwyu,VWYU_ASYU) (Vwyu v) {return v;}
-
 INLINE(Vwbu,VWBU_ASBU) (Vwbu v) {return v;}
 INLINE(Vwbi,VWBI_ASBI) (Vwbi v) {return v;}
 INLINE(Vwbc,VWBC_ASBC) (Vwbc v) {return v;}
-
 INLINE(Vwhu,VWHU_ASHU) (Vwhu v) {return v;}
 INLINE(Vwhi,VWHI_ASHI) (Vwhi v) {return v;}
 INLINE(Vwhf,VWHF_ASHF) (Vwhf v) {return v;}
-
 INLINE(Vwwu,VWWU_ASWU) (Vwwu v) {return v;}
 INLINE(Vwwi,VWWI_ASWI) (Vwwi v) {return v;}
 INLINE(Vwwf,VWWF_ASWF) (Vwwf v) {return v;}
-
-#if 0
-#define     VWYU_ASYU(V)    _Generic(V,Vwyu:V)
-
-#define     VWBU_ASBU(V)    _Generic(V,Vwbu:V)
-#define     VWBI_ASBI(V)    _Generic(V,Vwbi:V)
-#define     VWBC_ASBC(V)    _Generic(V,Vwbc:V)
-
-#define     VWHU_ASHU(V)    _Generic(V,Vwhu:V)
-#define     VWHI_ASHI(V)    _Generic(V,Vwhi:V)
-#define     VWHF_ASHF(V)    _Generic(V,Vwhf:V)
-
-#define     VWWU_ASWU(V)    _Generic(V,Vwwu:V)
-#define     VWWI_ASWI(V)    _Generic(V,Vwwi:V)
-#define     VWWF_ASWF(V)    _Generic(V,Vwwf:V)
-#endif
 
 INLINE(Vdyu,VDYU_ASYU) (Vdyu v) {return v;}
 INLINE(Vdbu,VDBU_ASBU) (Vdbu v) {return v;}
@@ -8763,20 +6940,6 @@ INLINE(Vddu,VDDU_ASDU) (Vddu v) {return v;}
 INLINE(Vddi,VDDI_ASDI) (Vddi v) {return v;}
 INLINE(Vddf,VDDF_ASDF) (Vddf v) {return v;}
 
-#define     VDYU_ASYU(V)    _Generic(V,Vdyu:V)
-#define     VDBU_ASBU(V)    _Generic(V,Vdbu:V)
-#define     VDBI_ASBI(V)    _Generic(V,Vdbi:V)
-#define     VDBC_ASBC(V)    _Generic(V,Vdbc:V)
-#define     VDHU_ASHU(V)    _Generic(V,Vdhu:V)
-#define     VDHI_ASHI(V)    _Generic(V,Vdhi:V)
-#define     VDHF_ASHF(V)    _Generic(V,Vdhf:V)
-#define     VDWU_ASWU(V)    _Generic(V,Vdwu:V)
-#define     VDWI_ASWI(V)    _Generic(V,Vdwi:V)
-#define     VDWF_ASWF(V)    _Generic(V,Vdwf:V)
-#define     VDDU_ASDU(V)    _Generic(V,Vddu:V)
-#define     VDDI_ASDI(V)    _Generic(V,Vddi:V)
-#define     VDDF_ASDF(V)    _Generic(V,Vddf:V)
-
 INLINE(Vqyu,VQYU_ASYU) (Vqyu v) {return v;}
 INLINE(Vqbu,VQBU_ASBU) (Vqbu v) {return v;}
 INLINE(Vqbi,VQBI_ASBI) (Vqbi v) {return v;}
@@ -8790,20 +6953,6 @@ INLINE(Vqwf,VQWF_ASWF) (Vqwf v) {return v;}
 INLINE(Vqdu,VQDU_ASDU) (Vqdu v) {return v;}
 INLINE(Vqdi,VQDI_ASDI) (Vqdi v) {return v;}
 INLINE(Vqdf,VQDF_ASDF) (Vqdf v) {return v;}
-
-#define     VQYU_ASYU(V)    _Generic(V,Vqyu:V)
-#define     VQBU_ASBU(V)    _Generic(V,Vqbu:V)
-#define     VQBI_ASBI(V)    _Generic(V,Vqbi:V)
-#define     VQBC_ASBC(V)    _Generic(V,Vqbc:V)
-#define     VQHU_ASHU(V)    _Generic(V,Vqhu:V)
-#define     VQHI_ASHI(V)    _Generic(V,Vqhi:V)
-#define     VQHF_ASHF(V)    _Generic(V,Vqhf:V)
-#define     VQWU_ASWU(V)    _Generic(V,Vqwu:V)
-#define     VQWI_ASWI(V)    _Generic(V,Vqwi:V)
-#define     VQWF_ASWF(V)    _Generic(V,Vqwf:V)
-#define     VQDU_ASDU(V)    _Generic(V,Vqdu:V)
-#define     VQDI_ASDI(V)    _Generic(V,Vqdi:V)
-#define     VQDF_ASDF(V)    _Generic(V,Vqdf:V)
 
 #define     VWYU_ASTU   VWYU_ASYU
 #define     VWBU_ASTU   VWBU_ASBU
@@ -8843,34 +6992,6 @@ INLINE(Vqdf,VQDF_ASDF) (Vqdf v) {return v;}
 #define     VQDU_ASTU   VQDU_ASDU
 #define     VQDI_ASTI   VQDI_ASDI
 #define     VQDF_ASTF   VQDF_ASDF
-
-#define     VOYU_ASTU   VOYU_ASYU
-#define     VOBU_ASTU   VOBU_ASBU
-#define     VOBI_ASTI   VOBI_ASBI
-//          ??
-#define     VOHU_ASTU   VOHU_ASHU
-#define     VOHI_ASTI   VOHI_ASHI
-#define     VOHF_ASTF   VOHF_ASHF
-#define     VOWU_ASTU   VOWU_ASWU
-#define     VOWI_ASTI   VOWI_ASWI
-#define     VOWF_ASTF   VOWF_ASWF
-#define     VODU_ASTU   VODU_ASDU
-#define     VODI_ASTI   VODI_ASDI
-#define     VODF_ASTF   VODF_ASDF
-
-#define     VSYU_ASTU   VSYU_ASYU
-#define     VSBU_ASTU   VSBU_ASBU
-#define     VSBI_ASTI   VSBI_ASBI
-//          ??
-#define     VSHU_ASTU   VSHU_ASHU
-#define     VSHI_ASTI   VSHI_ASHI
-#define     VSHF_ASTF   VSHF_ASHF
-#define     VSWU_ASTU   VSWU_ASWU
-#define     VSWI_ASTI   VSWI_ASWI
-#define     VSWF_ASTF   VSWF_ASWF
-#define     VSDU_ASTU   VSDU_ASDU
-#define     VSDI_ASTI   VSDI_ASDI
-#define     VSDF_ASTF   VSDF_ASDF
 
 #endif // EOF("extvec.h")
 
@@ -9872,454 +7993,6 @@ _Generic(   \
 }
 #endif
 
-#define       ADDR_VOID         ((void *) 0)
-#define       BOOL_VOID          ((_Bool) 0)
-#define      UCHAR_VOID  ((unsigned char) 0)
-#define      SCHAR_VOID    ((signed char) 0)
-#define       CHAR_VOID           ((char) 0)
-#define      USHRT_VOID ((unsigned short) 0)
-#define       SHRT_VOID          ((short) 0)
-#define       UINT_VOID                  (0u)
-#define        INT_VOID                  (0)
-#define      ULONG_VOID                  (0ul)
-#define     ULLONG_VOID                  (0ull)
-#define      LLONG_VOID                  (0ll)
-#define        FLT_VOID                  (0.0f)
-#define        DBL_VOID                  (0.0)
-
-#define    CHAR_ASTG(K)     (   (CHAR_STG(TYPE)){.C=(K)})
-#define   UCHAR_ASTG(K)     (  (UCHAR_STG(TYPE)){.U=(K)})
-#define   SCHAR_ASTG(K)     (  (SCHAR_STG(TYPE)){.I=(K)})
-#define   USHRT_ASTG(K)     (  (USHRT_STG(TYPE)){.U=(K)})
-#define    SHRT_ASTG(K)     (   (SHRT_STG(TYPE)){.I=(K)})
-#define   FLT16_ASTG(K)     (  (FLT16_STG(TYPE)){.F=(K)})
-#define    UINT_ASTG(K)     (   (UINT_STG(TYPE)){.U=(K)})
-#define     INT_ASTG(K)     (    (INT_STG(TYPE)){.I=(K)})
-#define     FLT_ASTG(K)     (    (FLT_STG(TYPE)){.F=(K)})
-#define   ULONG_ASTG(K)     (  (ULONG_STG(TYPE)){.U=(K)})
-#define    LONG_ASTG(K)     (   (LONG_STG(TYPE)){.I=(K)})
-#define  ULLONG_ASTG(K)     ( (ULLONG_STG(TYPE)){.U=(K)})
-#define   LLONG_ASTG(K)     (  (LLONG_STG(TYPE)){.I=(K)})
-#define     DBL_ASTG(K)     (    (DBL_STG(TYPE)){.F=(K)})
-#define    SIZE_ASTG(K)     (   (SIZE_STG(TYPE)){.U=(K)})
-#define  INTPTR_ASTG(K)     ( (INTPTR_STG(TYPE)){.I=(K)})
-#define UINTPTR_ASTG(K)     ((UINTPTR_STG(TYPE)){.U=(K)})
-#define PTRDIFF_ASTG(K)     ((PTRDIFF_STG(TYPE)){.I=(K)})
-
-INLINE(   _Bool,  BOOL_ASYU)   (_Bool x)
-{
-#define     BOOL_ASYU(X)   ((_Bool) X)
-#define     BOOL_ASTU       BOOL_ASYU
-    return  x;
-}
-
-
-INLINE( uint8_t, UCHAR_ASBU)   (uchar x) {return x;}
-INLINE( uint8_t, SCHAR_ASBU)   (schar x) {return x;}
-INLINE( uint8_t,  CHAR_ASBU)    (char x) {return x;}
-#define     UCHAR_ASTU      UCHAR_ASBU
-#define     SCHAR_ASTU      SCHAR_ASBU
-#define      CHAR_ASTU       CHAR_ASBU
-#define     UCHAR_ASTI      UCHAR_ASBI
-#define     SCHAR_ASTI      SCHAR_ASBI
-#define      CHAR_ASTI       CHAR_ASBI
-
-INLINE(  int8_t, UCHAR_ASBI)   (uchar x) {return x;}
-INLINE(  int8_t, SCHAR_ASBI)   (schar x) {return x;}
-INLINE(  int8_t,  CHAR_ASBI)    (char x) {return x;}
-
-INLINE(    char, UCHAR_ASBC)   (uchar x) {return x;}
-INLINE(    char, SCHAR_ASBC)   (schar x) {return x;}
-INLINE(    char,  CHAR_ASBC)    (char x) {return x;}
-
-
-INLINE(uint16_t, USHRT_ASHU)  (ushort x) {return x;}
-INLINE(uint16_t,  SHRT_ASHU)   (short x) {return x;}
-#define     USHRT_ASTU      USHRT_ASHU
-#define     SHRT_ASTU       SHRT_ASHU
-
-INLINE(uint16_t, FLT16_ASHU) (flt16_t x)
-{
-#define     FLT16_ASHU(X)   (FLT16_ASTG(X).U)
-#define     FLT16_ASTU      FLT16_ASHU
-    return  FLT16_ASHU(x);
-}
-
-
-INLINE( int16_t, USHRT_ASHI)  (ushort x) {return x;}
-INLINE( int16_t,  SHRT_ASHI)   (short x) {return x;}
-#define     USHRT_ASTI      USHRT_ASHI
-#define     SHRT_ASTI       SHRT_ASHI
-
-INLINE( int16_t, FLT16_ASHI) (flt16_t x)
-{
-#define     FLT16_ASHI(X)   (FLT16_ASTG(X).I)
-#define     FLT16_ASTI      FLT16_ASHI
-    return  FLT16_ASTI(x);
-}
-
-
-INLINE(uint32_t,  UINT_ASWU)    (uint x)
-{
-#define     UINT_ASWU(X)    (UINT_ASTG(X).U)
-#define     UINT_ASTU       UINT_ASWU
-    return  x;
-}
-
-INLINE(uint32_t,   INT_ASWU)     (int x)
-{
-#define     INT_ASWU(X)     (INT_ASTG(X).U)
-#define     INT_ASTU        INT_ASWU
-    return  x;
-}
-
-#if DWRD_NLONG == 2
-
-INLINE(uint32_t, ULONG_ASWU)   (ulong x)
-{
-#   define  ULONG_ASWU(X)   (ULONG_ASTG(X).U)
-#   define  ULONG_ASTU      ULONG_ASWU
-    return  x;
-}
-
-INLINE(uint32_t,  LONG_ASWU)    (long x)
-{
-#   define  LONG_ASWU(X)    (LONG_ASTG(X).U)
-#   define  LONG_ASTU       LONG_ASWU
-    return  LONG_ASWU(x);
-}
-
-#endif
-
-INLINE(uint32_t,   FLT_ASWU)   (float x)
-{
-#define     FLT_ASWU(X)     (FLT_ASTG(X).U)
-#define     FLT_ASTU        FLT_ASWU
-    return  FLT_ASWU(x);
-}
-
-
-INLINE( int32_t,  UINT_ASWI)    (uint x)
-{
-#define     UINT_ASWI(X)    (UINT_ASTG(X).I)
-#define     UINT_ASTI       UINT_ASWI
-    return  UINT_ASWI(x);
-}
-
-INLINE( int32_t,   INT_ASWI)     (int x)
-{
-#define     INT_ASWI(X)     (INT_ASTG(X).I)
-#define     INT_ASTI        INT_ASWI
-    return  x;
-}
-
-#if DWRD_NLONG == 2
-
-INLINE( int32_t, ULONG_ASWI)   (ulong x)
-{
-#   define  ULONG_ASWI(X)   ULONG_ASTG(X).I
-#   define  ULONG_ASTI      ULONG_ASWI
-    return  ULONG_ASWI(x);
-}
-
-INLINE( int32_t,  LONG_ASWI)    (long x)
-{
-#   define  LONG_ASWI(X)    (LONG_ASTG(X).I)
-#   define  LONG_ASTI       LONG_ASWI
-    return  x;
-}
-
-#endif
-
-INLINE( int32_t,   FLT_ASWI)   (float x)
-{
-#define     FLT_ASWI(X)     (FLT_ASTG(X).I)
-#define     FLT_ASTI        FLT_ASWI
-    return  FLT_ASWI(x);
-}
-
-
-#if DWRD_NLONG == 1
-
-INLINE(uint64_t, ULONG_ASDU)   (ulong x)
-{
-#   define  ULONG_ASDU(X)   (ULONG_ASTG(X).U)
-#   define  ULONG_ASTU      ULONG_ASDU
-    return  x;
-}
-
-INLINE(uint64_t,  LONG_ASDU)    (long x)
-{
-#   define  LONG_ASDU(X)    (LONG_ASTG(X).U)
-#   define  LONG_ASTU       LONG_ASDU
-    return  x;
-}
-
-#endif
-
-
-#if QUAD_NLLONG == 2
-
-INLINE(uint64_t,ULLONG_ASDU) (ullong x)
-{
-#   define  ULLONG_ASDU(X)   (ULLONG_ASTG(X).U)
-#   define  ULLONG_ASTU      ULLONG_ASDU
-    return  x;
-}
-
-INLINE(uint64_t, LLONG_ASDU)  (llong x)
-{
-#   define  LLONG_ASDU(X)   (LLONG_ASTG(X).U)
-#   define  LLONG_ASTU      LLONG_ASDU
-    return  x;
-}
-
-#else
-
-INLINE(ullong,ULLONG_ASQU) (ullong x) {return x;}
-INLINE(ullong, LLONG_ASQU)  (llong x) {return x;}
-
-#endif
-
-INLINE(uint64_t,   DBL_ASDU) (double x)
-{
-#define     DBL_ASDU(X)     (DBL_ASTG(X).U)
-#define     DBL_ASTU        DBL_ASDU
-    return  DBL_ASDU(x);
-}
-
-
-#if DWRD_NLONG == 1
-
-INLINE( int64_t, ULONG_ASDI)  (ulong x)
-{
-#   define  ULONG_ASDI(X)   (ULONG_ASTG(X).I)
-#   define  ULONG_ASTI      ULONG_ASDI
-    return  ULONG_ASDI(x);
-}
-
-INLINE( int64_t,  LONG_ASDI)   (long x)
-{
-#   define  LONG_ASDI(X)    (LONG_ASTG(X).I)
-#   define  LONG_ASTI       LONG_ASDI
-    return  x;
-}
-#endif
-
-
-#if QUAD_NLLONG == 2
-
-INLINE( int64_t,ULLONG_ASDI) (ullong x)
-{
-#   define  ULLONG_ASDI(X)  (ULLONG_ASTG(X).I)
-#   define  ULLONG_ASTI     ULLONG_ASDI
-    return  ULLONG_ASDI(x);
-}
-
-INLINE( int64_t, LLONG_ASDI) (llong x)
-{
-#   define  LLONG_ASDI(X)   (LLONG_ASTG(X).I)
-#   define  LLONG_ASTI      LLONG_ASDI
-    return  x;
-}
-
-#endif
-
-INLINE(int64_t,DBL_ASDI) (double x)
-{
-#define     DBL_ASDI(X)     (DBL_ASTG(X).I)
-#define     DBL_ASTI        DBL_ASDI
-    return  DBL_ASDI(x);
-}
-
-
-#if QUAD_NLLONG == 1
-
-INLINE(  ullong,ULLONG_ASQU) (ullong x)
-{
-#   define  ULLONG_ASQU(X)   (ULLONG_ASTG(X).U)
-#   define  ULLONG_ASTU      ULLONG_ASQU
-    return  x;
-}
-
-INLINE(  ullong, LLONG_ASQU) (llong x)
-{
-#   define  LLONG_ASQU(X)   (LLONG_ASTG(X).U)
-#   define  LLONG_ASTU      LLONG_ASQU
-    return  x;
-}
-
-INLINE(  ullong,  LDBL_ASQU) (long double x)
-{
-#   define  LDBL_ASQU(X)    (LDBL_ASTG(X).U)
-#   define  LDBL_ASTU       LDBL_ASQU
-    return  LDBL_ASQU(x);
-}
-
-
-INLINE(   llong,ULLONG_ASQI) (ullong x)
-{
-#   define  ULLONG_ASQI(X)  (ULLONG_ASTG(X).I)
-#   define  ULLONG_ASTI     ULLONG_ASQI
-    return  ULLONG_ASQI(x);
-}
-
-INLINE(   llong, LLONG_ASQI)  (llong x)
-{
-#   define  LLONG_ASQI(X)   (LLONG_ASTG(X).I)
-#   define  LLONG_ASTI      LLONG_ASQI
-    return  LLONG_ASQI(x);
-}
-
-INLINE(   llong,  LDBL_ASQI) (long double x)
-{
-#   define  LDBL_ASQI(X)    (LDBL_ASTG(X).I)
-#   define  LDBL_ASTI       LDBL_ASQU
-    return  LDBL_ASQI(x);
-}
-
-#endif
-
-#define  INTPTR_ASTU     INTPTR_BASE(ASTU)
-#define PTRDIFF_ASTU    PTRDIFF_BASE(ASTU)
-#define    SIZE_ASTI       SIZE_BASE(ASTI)
-#define UINTPTR_ASTI    UINTPTR_BASE(ASTI)
-
-
-INLINE(flt16_t,USHRT_ASHF)  (ushort x)
-{
-#define     USHRT_ASHF(X)   (USHRT_ASTG(X).F)
-#define     USHRT_ASTF      USHRT_ASHF
-    return  USHRT_ASHF(x);
-}
-
-INLINE(flt16_t, SHRT_ASHF)   (short x)
-{
-#define     SHRT_ASHF(X)    (SHRT_ASTG(X).F)
-#define     SHRT_ASTF       SHRT_ASHF
-    return  SHRT_ASHF(x);
-}
-
-INLINE(flt16_t,FLT16_ASHF) (flt16_t x)
-{
-#define     FLT16_ASHF(X)   (FLT16_ASTG(X).F)
-#define     FLT16_ASTF      FLT16_ASHF
-    return  x;
-}
-
-
-INLINE(float,   UINT_ASWF)    (uint x)
-{
-#define     UINT_ASWF(X)    (UINT_ASTG(X).F)
-#define     UINT_ASTF       UINT_ASWF
-    return  UINT_ASWF(x);
-}
-
-INLINE(float,    INT_ASWF)     (int x)
-{
-#define     INT_ASWF(X)    (INT_ASTG(X).F)
-#define     INT_ASTF       INT_ASWF
-    return  INT_ASWF(x);
-}
-
-INLINE(float,    FLT_ASWF)   (float x)
-{
-#define     FLT_ASWF(X)   (FLT_ASTG(X).F)
-#define     FLT_ASTF      FLT_ASWF
-    return  x;
-}
-
-
-#if DWRD_NLONG == 2
-INLINE(float,   ULONG_ASWF)  (ulong x)
-{
-#define     ULONG_ASWF(X)   (ULONG_ASTG(X).F)
-#define     ULONG_ASTF      ULONG_ASWF
-    return  ULONG_ASWF(x);
-}
-
-INLINE(float,    LONG_ASWF)   (long x)
-{
-#define     LONG_ASWF(X)   (LONG_ASTG(X).F)
-#define     LONG_ASTF      LONG_ASWF
-    return  LONG_ASWF(x);
-}
-
-#endif
-
-
-#if DWRD_NLONG == 1
-
-INLINE(double,  ULONG_ASDF)  (ulong x)
-{
-#define     ULONG_ASDF(X)   (ULONG_ASTG(X).F)
-#define     ULONG_ASTF      ULONG_ASDF
-    return  ULONG_ASDF(x);
-}
-
-INLINE(double,   LONG_ASDF)   (long x)
-{
-#define     LONG_ASDF(X)    (LONG_ASTG(X).F)
-#define     LONG_ASTF       LONG_ASDF
-    return  LONG_ASDF(x);
-}
-#endif
-
-#if QUAD_NLLONG == 2
-
-INLINE(double, ULLONG_ASDF) (ullong x)
-{
-#define     ULLONG_ASDF(X)  (ULLONG_ASTG(X).F)
-#define     ULLONG_ASTF     ULLONG_ASDF
-    return  ULLONG_ASDF(x);
-}
-
-INLINE(double,  LLONG_ASDF)  (llong x)
-{
-#define     LLONG_ASDF(X)   (LLONG_ASTG(X).F)
-#define     LLONG_ASTF      LLONG_ASDF
-    return  LLONG_ASTF(x);
-}
-
-#endif
-
-INLINE(double,   DBL_ASDF)  (double x)
-{
-#define     DBL_ASDF(X)   (DBL_ASTG(X).F)
-#define     DBL_ASTF      DBL_ASDF
-    return  x;
-}
-
-
-#if QUAD_NLLONG == 1
-
-INLINE(flt128_t,ULLONG_ASQF) (ullong x)
-{
-#   define  ULLONG_ASQF(X)  (ULLONG_ASTG(X).F)
-#   define  ULLONG_ASTF     ULLONG_ASQF
-    return  ULLONG_ASQF(x);
-}
-
-INLINE(flt128_t, LLONG_ASQF) (llong x)
-{
-#   define  LLONG_ASQI(X)   (LLONG_ASTG(X).F)
-#   define  LLONG_ASTF      LLONG_ASQF
-    return  LLONG_ASQF(x);
-}
-
-INLINE(flt128_t,  LDBL_ASQF) (long double x)
-{
-#   define  LDBL_ASQF(X)    (LDBL_ASTG(X).F)
-#   define  LDBL_ASTF       LDBL_ASQF
-}
-
-#endif
-
-#define        SIZE_ASTF       SIZE_BASE(ASTF)
-#define      INTPTR_ASTF     INTPTR_BASE(ASTF)
-#define     UINTPTR_ASTF    UINTPTR_BASE(ASTF)
-#define     PTRDIFF_ASTF    PTRDIFF_BASE(ASTF)
-
 #define     UINT8_ADDL      UINT8_BASE(ADDL)
 #define     UINT8_ADD2      UINT8_BASE(ADD2)
 #define     UINT8_ADDS      UINT8_BASE(ADDS)
@@ -10347,9 +8020,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     UINT8_AVGL      UINT8_BASE(AVGL)
 
-#define     UINT8_BFG1      UINT8_BASE(BFG1)
+#define     UINT8_BFGL      UINT8_BASE(BFGL)
 
-#define     UINT8_BFS1      UINT8_BASE(BFS1)
+#define     UINT8_BFSL      UINT8_BASE(BFSL)
 
 #define     UINT8_BFC1      UINT8_BASE(BFC1)
 
@@ -10490,12 +8163,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT8_MULD      UINT8_BASE(MULD)
 #define     UINT8_MULQ      UINT8_BASE(MULQ)
 
+#define     UINT8_MVWL      UINT8_BASE(MVWL)
+#define     UINT8_MVDL      UINT8_BASE(MVDL)
+#define     UINT8_MVQL      UINT8_BASE(MVQL)
+
 #define     UINT8_NEGL      UINT8_BASE(NEGL)
 #define     UINT8_NEGS      UINT8_BASE(NEGS)
 #define     UINT8_NEGH      UINT8_BASE(NEGH)
 #define     UINT8_NEGW      UINT8_BASE(NEGW)
 #define     UINT8_NEGD      UINT8_BASE(NEGD)
 #define     UINT8_NEGQ      UINT8_BASE(NEGQ)
+
+#define     UINT8_NEWW      UINT8_BASE(NEWW)
+#define     UINT8_NEWWAC    UINT8_BASE(NEWWAC)
+#define     UINT8_NEWD      UINT8_BASE(NEWD)
+#define     UINT8_NEWDAC    UINT8_BASE(NEWDAC)
+#define     UINT8_NEWQ      UINT8_BASE(NEWQ)
+#define     UINT8_NEWQAC    UINT8_BASE(NEWQAC)
 
 #define     UINT8_ORR1A     UINT8_BASE(ORR1A)
 #define     UINT8_ORRAA     UINT8_BASE(ORRAA)
@@ -10559,7 +8243,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT8_TSTS      UINT8_BASE(TSTS)
 #define     UINT8_TSTY      UINT8_BASE(TSTY)
 
-#define     UINT8_UNOS      UINT8_BASE(UNOS)
+#define     UINT8_UNOL      UINT8_BASE(UNOL)
+#define     UINT8_UNOR      UINT8_BASE(UNOR)
 
 #define     UINT8_XEQ1A     UINT8_BASE(XEQ1A)
 #define     UINT8_XEQAA     UINT8_BASE(XEQAA)
@@ -10621,9 +8306,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     INT8_AVGL       INT8_BASE(AVGL)
 
-#define     INT8_BFG1       INT8_BASE(BFG1)
+#define     INT8_BFGL       INT8_BASE(BFGL)
 
-#define     INT8_BFS1       INT8_BASE(BFS1)
+#define     INT8_BFSL       INT8_BASE(BFSL)
 
 #define     INT8_BFC1       INT8_BASE(BFC1)
 
@@ -10764,12 +8449,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT8_MULD       INT8_BASE(MULD)
 #define     INT8_MULQ       INT8_BASE(MULQ)
 
+#define     INT8_MVWL       INT8_BASE(MVWL)
+#define     INT8_MVDL       INT8_BASE(MVDL)
+#define     INT8_MVQL       INT8_BASE(MVQL)
+
 #define     INT8_NEGL       INT8_BASE(NEGL)
 #define     INT8_NEGS       INT8_BASE(NEGS)
 #define     INT8_NEGH       INT8_BASE(NEGH)
 #define     INT8_NEGW       INT8_BASE(NEGW)
 #define     INT8_NEGD       INT8_BASE(NEGD)
 #define     INT8_NEGQ       INT8_BASE(NEGQ)
+
+#define     INT8_NEWW       INT8_BASE(NEWW)
+#define     INT8_NEWWAC     INT8_BASE(NEWWAC)
+#define     INT8_NEWD       INT8_BASE(NEWD)
+#define     INT8_NEWDAC     INT8_BASE(NEWDAC)
+#define     INT8_NEWQ       INT8_BASE(NEWQ)
+#define     INT8_NEWQAC     INT8_BASE(NEWQAC)
 
 #define     INT8_ORR1A      INT8_BASE(ORR1A)
 #define     INT8_ORRAA      INT8_BASE(ORRAA)
@@ -10836,7 +8532,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT8_TSTS       INT8_BASE(TSTS)
 #define     INT8_TSTY       INT8_BASE(TSTY)
 
-#define     INT8_UNOS       INT8_BASE(UNOS)
+#define     INT8_UNOL       INT8_BASE(UNOL)
+#define     INT8_UNOR       INT8_BASE(UNOR)
 
 #define     INT8_XEQ1A      INT8_BASE(XEQ1A)
 #define     INT8_XEQAA      INT8_BASE(XEQAA)
@@ -10898,9 +8595,9 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     UINT16_AVGL     UINT16_BASE(AVGL)
 
-#define     UINT16_BFG1     UINT16_BASE(BFG1)
+#define     UINT16_BFGL     UINT16_BASE(BFGL)
 
-#define     UINT16_BFS1     UINT16_BASE(BFS1)
+#define     UINT16_BFSL     UINT16_BASE(BFSL)
 
 #define     UINT16_BFC1     UINT16_BASE(BFC1)
 
@@ -11047,12 +8744,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT16_MULD     UINT16_BASE(MULD)
 #define     UINT16_MULQ     UINT16_BASE(MULQ)
 
+#define     UINT16_MVWL     UINT16_BASE(MVWL)
+#define     UINT16_MVDL     UINT16_BASE(MVDL)
+#define     UINT16_MVQL     UINT16_BASE(MVQL)
+
 #define     UINT16_NEGL     UINT16_BASE(NEGL)
 #define     UINT16_NEGS     UINT16_BASE(NEGS)
 #define     UINT16_NEGH     UINT16_BASE(NEGH)
 #define     UINT16_NEGW     UINT16_BASE(NEGW)
 #define     UINT16_NEGD     UINT16_BASE(NEGD)
 #define     UINT16_NEGQ     UINT16_BASE(NEGQ)
+
+#define     UINT16_NEWW     UINT16_BASE(NEWW)
+#define     UINT16_NEWWAC   UINT16_BASE(NEWWAC)
+#define     UINT16_NEWD     UINT16_BASE(NEWD)
+#define     UINT16_NEWDAC   UINT16_BASE(NEWDAC)
+#define     UINT16_NEWQ     UINT16_BASE(NEWQ)
+#define     UINT16_NEWQAC   UINT16_BASE(NEWQAC)
 
 #define     UINT16_ORR1A    UINT16_BASE(ORR1A)
 #define     UINT16_ORRAA    UINT16_BASE(ORRAA)
@@ -11124,7 +8832,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT16_TSTS     UINT16_BASE(TSTS)
 #define     UINT16_TSTY     UINT16_BASE(TSTY)
 
-#define     UINT16_UNOS     UINT16_BASE(UNOS)
+#define     UINT16_UNOL     UINT16_BASE(UNOL)
+#define     UINT16_UNOR     UINT16_BASE(UNOR)
 
 #define     UINT16_XEQ1A    UINT16_BASE(XEQ1A)
 #define     UINT16_XEQAA    UINT16_BASE(XEQAA)
@@ -11187,11 +8896,11 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     INT16_AVGL      INT16_BASE(AVGL)
 
-#define     INT16_BFG1      INT16_BASE(BFG1)
+#define     INT16_BFGL      INT16_BASE(BFGL)
 
 #define     INT16_BFC1      INT16_BASE(BFC1)
 
-#define     INT16_BFS1      INT16_BASE(BFS1)
+#define     INT16_BFSL      INT16_BASE(BFSL)
 
 #define     INT16_CATL      INT16_BASE(CATL)
 
@@ -11333,12 +9042,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT16_MULD      INT16_BASE(MULD)
 #define     INT16_MULQ      INT16_BASE(MULQ)
 
+#define     INT16_MVWL      INT16_BASE(MVWL)
+#define     INT16_MVDL      INT16_BASE(MVDL)
+#define     INT16_MVQL      INT16_BASE(MVQL)
+
 #define     INT16_NEGL      INT16_BASE(NEGL)
 #define     INT16_NEGS      INT16_BASE(NEGS)
 #define     INT16_NEGH      INT16_BASE(NEGH)
 #define     INT16_NEGW      INT16_BASE(NEGW)
 #define     INT16_NEGD      INT16_BASE(NEGD)
 #define     INT16_NEGQ      INT16_BASE(NEGQ)
+
+#define     INT16_NEWW      INT16_BASE(NEWW)
+#define     INT16_NEWWAC    INT16_BASE(NEWWAC)
+#define     INT16_NEWD      INT16_BASE(NEWD)
+#define     INT16_NEWDAC    INT16_BASE(NEWDAC)
+#define     INT16_NEWQ      INT16_BASE(NEWQ)
+#define     INT16_NEWQAC    INT16_BASE(NEWQAC)
 
 #define     INT16_ORR1A     INT16_BASE(ORR1A)
 #define     INT16_ORRAA     INT16_BASE(ORRAA)
@@ -11407,7 +9127,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT16_TSTS      INT16_BASE(TSTS)
 #define     INT16_TSTY      INT16_BASE(TSTY)
 
-#define     INT16_UNOS      INT16_BASE(UNOS)
+#define     INT16_UNOL      INT16_BASE(UNOL)
+#define     INT16_UNOR      INT16_BASE(UNOR)
 
 #define     INT16_XEQ1A     INT16_BASE(XEQ1A)
 #define     INT16_XEQAA     INT16_BASE(XEQAA)
@@ -11470,11 +9191,11 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     UINT32_AVGL     UINT32_BASE(AVGL)
 
-#define     UINT32_BFG1     UINT32_BASE(BFG1)
+#define     UINT32_BFGL     UINT32_BASE(BFGL)
 
 #define     UINT32_BFC1     UINT32_BASE(BFC1)
 
-#define     UINT32_BFS1     UINT32_BASE(BFS1)
+#define     UINT32_BFSL     UINT32_BASE(BFSL)
 
 #define     UINT32_CATL     UINT32_BASE(CATL)
 
@@ -11616,12 +9337,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT32_MULD     UINT32_BASE(MULD)
 #define     UINT32_MULQ     UINT32_BASE(MULQ)
 
+#define     UINT32_MVWL     UINT32_BASE(MVWL)
+#define     UINT32_MVDL     UINT32_BASE(MVDL)
+#define     UINT32_MVQL     UINT32_BASE(MVQL)
+
 #define     UINT32_NEGL     UINT32_BASE(NEGL)
 #define     UINT32_NEGS     UINT32_BASE(NEGS)
 #define     UINT32_NEGH     UINT32_BASE(NEGH)
 #define     UINT32_NEGW     UINT32_BASE(NEGW)
 #define     UINT32_NEGD     UINT32_BASE(NEGD)
 #define     UINT32_NEGQ     UINT32_BASE(NEGQ)
+
+#define     UINT32_NEWW     UINT32_BASE(NEWW)
+#define     UINT32_NEWWAC   UINT32_BASE(NEWWAC)
+#define     UINT32_NEWD     UINT32_BASE(NEWD)
+#define     UINT32_NEWDAC   UINT32_BASE(NEWDAC)
+#define     UINT32_NEWQ     UINT32_BASE(NEWQ)
+#define     UINT32_NEWQAC   UINT32_BASE(NEWQAC)
 
 #define     UINT32_ORR1A    UINT32_BASE(ORR1A)
 #define     UINT32_ORRAA    UINT32_BASE(ORRAA)
@@ -11692,7 +9424,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT32_TSTS     UINT32_BASE(TSTS)
 #define     UINT32_TSTY     UINT32_BASE(TSTY)
 
-#define     UINT32_UNOS     UINT32_BASE(UNOS)
+#define     UINT32_UNOL     UINT32_BASE(UNOL)
+#define     UINT32_UNOR     UINT32_BASE(UNOR)
 
 #define     UINT32_XEQ1A    UINT32_BASE(XEQ1A)
 #define     UINT32_XEQAA    UINT32_BASE(XEQAA)
@@ -11756,11 +9489,11 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     INT32_AVGL      INT32_BASE(AVGL)
 
-#define     INT32_BFG1      INT32_BASE(BFG1)
+#define     INT32_BFGL      INT32_BASE(BFGL)
 
 #define     INT32_BFC1      INT32_BASE(BFC1)
 
-#define     INT32_BFS1      INT32_BASE(BFS1)
+#define     INT32_BFSL      INT32_BASE(BFSL)
 
 #define     INT32_CATL      INT32_BASE(CATL)
 
@@ -11902,12 +9635,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT32_MULD      INT32_BASE(MULD)
 #define     INT32_MULQ      INT32_BASE(MULQ)
 
+#define     INT32_MVWL      INT32_BASE(MVWL)
+#define     INT32_MVDL      INT32_BASE(MVDL)
+#define     INT32_MVQL      INT32_BASE(MVQL)
+
 #define     INT32_NEGL      INT32_BASE(NEGL)
 #define     INT32_NEGS      INT32_BASE(NEGS)
 #define     INT32_NEGH      INT32_BASE(NEGH)
 #define     INT32_NEGW      INT32_BASE(NEGW)
 #define     INT32_NEGD      INT32_BASE(NEGD)
 #define     INT32_NEGQ      INT32_BASE(NEGQ)
+
+#define     INT32_NEWW      INT32_BASE(NEWW)
+#define     INT32_NEWWAC    INT32_BASE(NEWWAC)
+#define     INT32_NEWD      INT32_BASE(NEWD)
+#define     INT32_NEWDAC    INT32_BASE(NEWDAC)
+#define     INT32_NEWQ      INT32_BASE(NEWQ)
+#define     INT32_NEWQAC    INT32_BASE(NEWQAC)
 
 #define     INT32_ORR1A     INT32_BASE(ORR1A)
 #define     INT32_ORRAA     INT32_BASE(ORRAA)
@@ -11975,7 +9719,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT32_TSTS      INT32_BASE(TSTS)
 #define     INT32_TSTY      INT32_BASE(TSTY)
 
-#define     INT32_UNOS      INT32_BASE(UNOS)
+#define     INT32_UNOL      INT32_BASE(UNOL)
+#define     INT32_UNOR      INT32_BASE(UNOR)
 
 #define     INT32_XEQ1A     INT32_BASE(XEQ1A)
 #define     INT32_XEQAA     INT32_BASE(XEQAA)
@@ -12038,11 +9783,11 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     UINT64_AVGL     UINT64_BASE(AVGL)
 
-#define     UINT64_BFG1     UINT64_BASE(BFG1)
+#define     UINT64_BFGL     UINT64_BASE(BFGL)
 
 #define     UINT64_BFC1     UINT64_BASE(BFC1)
 
-#define     UINT64_BFS1     UINT64_BASE(BFS1)
+#define     UINT64_BFSL     UINT64_BASE(BFSL)
 
 #define     UINT64_CATL     UINT64_BASE(CATL)
 
@@ -12183,12 +9928,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT64_MULD     UINT64_BASE(MULD)
 #define     UINT64_MULQ     UINT64_BASE(MULQ)
 
+#define     UINT64_MVWL     UINT64_BASE(MVWL)
+#define     UINT64_MVDL     UINT64_BASE(MVDL)
+#define     UINT64_MVQL     UINT64_BASE(MVQL)
+
 #define     UINT64_NEGL     UINT64_BASE(NEGL)
 #define     UINT64_NEGS     UINT64_BASE(NEGS)
 #define     UINT64_NEGH     UINT64_BASE(NEGH)
 #define     UINT64_NEGW     UINT64_BASE(NEGW)
 #define     UINT64_NEGD     UINT64_BASE(NEGD)
 #define     UINT64_NEGQ     UINT64_BASE(NEGQ)
+
+#define     UINT64_NEWW     UINT64_BASE(NEWW)
+#define     UINT64_NEWWAC   UINT64_BASE(NEWWAC)
+#define     UINT64_NEWD     UINT64_BASE(NEWD)
+#define     UINT64_NEWDAC   UINT64_BASE(NEWDAC)
+#define     UINT64_NEWQ     UINT64_BASE(NEWQ)
+#define     UINT64_NEWQAC   UINT64_BASE(NEWQAC)
 
 #define     UINT64_ORR1A    UINT64_BASE(ORR1A)
 #define     UINT64_ORRAA    UINT64_BASE(ORRAA)
@@ -12260,7 +10016,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     UINT64_TSTS     UINT64_BASE(TSTS)
 #define     UINT64_TSTY     UINT64_BASE(TSTY)
 
-#define     UINT64_UNOS     UINT64_BASE(UNOS)
+#define     UINT64_UNOL     UINT64_BASE(UNOL)
+#define     UINT64_UNOR     UINT64_BASE(UNOR)
 
 #define     UINT64_XEQ1A    UINT64_BASE(XEQ1A)
 #define     UINT64_XEQAA    UINT64_BASE(XEQAA)
@@ -12321,11 +10078,11 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 
 #define     INT64_AVGL      INT64_BASE(AVGL)
 
-#define     INT64_BFG1      INT64_BASE(BFG1)
+#define     INT64_BFGL      INT64_BASE(BFGL)
 
 #define     INT64_BFC1      INT64_BASE(BFC1)
 
-#define     INT64_BFS1      INT64_BASE(BFS1)
+#define     INT64_BFSL      INT64_BASE(BFSL)
 
 #define     INT64_CATL      INT64_BASE(CATL)
 
@@ -12466,12 +10223,23 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_MULD      INT64_BASE(MULD)
 #define     INT64_MULQ      INT64_BASE(MULQ)
 
+#define     INT64_MVWL      INT64_BASE(MVWL)
+#define     INT64_MVDL      INT64_BASE(MVDL)
+#define     INT64_MVQL      INT64_BASE(MVQL)
+
 #define     INT64_NEGL      INT64_BASE(NEGL)
 #define     INT64_NEGS      INT64_BASE(NEGS)
 #define     INT64_NEGH      INT64_BASE(NEGH)
 #define     INT64_NEGW      INT64_BASE(NEGW)
 #define     INT64_NEGD      INT64_BASE(NEGD)
 #define     INT64_NEGQ      INT64_BASE(NEGQ)
+
+#define     INT64_NEWW      INT64_BASE(NEWW)
+#define     INT64_NEWWAC    INT64_BASE(NEWWAC)
+#define     INT64_NEWD      INT64_BASE(NEWD)
+#define     INT64_NEWDAC    INT64_BASE(NEWDAC)
+#define     INT64_NEWQ      INT64_BASE(NEWQ)
+#define     INT64_NEWQAC    INT64_BASE(NEWQAC)
 
 #define     INT64_ORR1A     INT64_BASE(ORR1A)
 #define     INT64_ORRAA     INT64_BASE(ORRAA)
@@ -12539,7 +10307,8 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_TSTS      INT64_BASE(TSTS)
 #define     INT64_TSTY      INT64_BASE(TSTY)
 
-#define     INT64_UNOS      INT64_BASE(UNOS)
+#define     INT64_UNOL      INT64_BASE(UNOL)
+#define     INT64_UNOR      INT64_BASE(UNOR)
 
 #define     INT64_XEQ1A     INT64_BASE(XEQ1A)
 #define     INT64_XEQAA     INT64_BASE(XEQAA)
@@ -12571,13 +10340,30 @@ INLINE(flt128_t,  LDBL_ASQF) (long double x)
 #define     INT64_ZNES      INT64_BASE(ZNES)
 #define     INT64_ZNEY      INT64_BASE(ZNEY)
 
+#if MY_ISA != ISA_ARM
+#error "???"
+#endif
+
+#if 0
+#undef MY_ISA
+#define MY_ISA ISA_ANY
+#endif
+
 #if MY_ISA == ISA_ARM
+
 #   include "a64op.h"
 
 #elif MY_ISA == ISA_X86
+
 #   include "x64op.h"
 
+#else
+#   include "anyop.h"
+
 #endif
+
+#undef MY_ISA
+#define MY_ISA ISA_ARM
 
 /*
     catldbu(l, r) takes two Df1 HVAs and returns a Qdf1.
@@ -12807,11 +10593,10 @@ FUNCOF(             \
 /*  ABSolute value (as flt16_t)
 
 Compute the absolute value of a signed number and convert
-the result, if necessary, to a binary16 float.
+the result, if necessary, to a 16 bit float.
 
 If the absolute value of the operand cannot be represented
-exactly as a binary16 float, the result is implementation
-defined.
+exactly, the result is implementation defined.
 */
 
 #define     absh(X) (absh_funcof(X)(X))
@@ -12870,6 +10655,12 @@ FUNCOF(             \
 {
 #endif
 /*  ABSolute value (as float)
+
+Compute the absolute value of a signed number and convert
+the result, if necessary, to a 32 bit float.
+
+If the absolute value of the operand cannot be represented
+exactly, the result is implementation defined.
 */
 
 #define     absw(X) (absw_funcof(X)(X))
@@ -12928,8 +10719,13 @@ FUNCOF(             \
 {
 #endif
 /*  ABSolute value (as double)
-*/
 
+Compute the absolute value of a signed number and convert
+the result, if necessary, to a 64 bit float.
+
+If the absolute value of the operand cannot be represented
+exactly, the result is implementation defined.
+*/
 #define     absd(X) (absd_funcof(X)(X))
 #define     absd_funcof(X, ...)  \
 FUNCOF(             \
@@ -12981,10 +10777,11 @@ FUNCOF(             \
 {
 #endif
 /*  ADD (atomic fetch add w/ memory_order_relaxed)
-
+    
 Atomically exchange the contents of the scalar variable at
 the address specified by the first operand A with the sum
-of it and the second operand B.
+of it and the second operand B. Returns the previous value
+stored in A.
 
 If the address is not properly aligned, the result is
 undefined. For more info, consult the specification for
@@ -14115,8 +11912,6 @@ FUNCOF_AK(          \
 #if _LEAVE_ANDT
 }
 #endif
-
-
 
 #if _ENTER_ASTV
 {
@@ -15436,181 +13231,200 @@ FUNCOF(             \
 }
 #endif
 
-#if _ENTER_BFG1
+#if _ENTER_BFGL
 {
 #endif
-/*  Bit Field Get
+/*  Bit Field Get (into lower)
 
-"Load" a bit field.
+Extract a bitfield into the lowest bits of a new initially
+zerofilled value. 
 
-For scalars, the operation is semantically equivalent to
-accessing a C bit field of the corresponding type. If the
-sum of the offset and length operands exceeds the width of
-the allocation unit/element type, the result is undefined.
+For integers, the operation is almost identical to simply
+loading a C bitfield with the equivalent offset and width,
+the difference being the type of a bitfield access
+expression is pretty much arbitrary and the result of a
+bfgl is identical to the operand type. I.e. bfglbi returns
+an int8_t.
 
-An N bit vector is handled as an abstract allocation unit
-for bfg, i.e. bfg1qhi interprets the first operand as an
-array of 128 bits, and extracts 1 to 16 consecutive bits
-from any valid offset as an int16_t.
+For vectors, the offset and length describes a slice of
+the source vector. 
 
-The boolean vectors are special cases. The maximum value
-of the third operand - LEN - is the length of the vector.
-Thus, bfg1*yu may be used to efficiently slice any vector
-with single bit precision.
+If offset is negative or if the end of the field crosses
+the underlying allocation unit boundary, the result is
+undefined. I.e. bfglbi(x, 6, 4) is undefined because it
+tries to read 2 bits after the end of the source.
 
-Note that the 128 bit vector ops will be significantly
-slower than the 64 bit ops on architecture without 128 bit
-shift instructions, which is all targets at present.
+NOTE: it is highly recommended to avoid the generic form.
+Not only is it virtually certain that there will be a
+significantly faster macro version, but because of the
+aforementioned implicit promotions, it's difficult to 
+know which op is going to be used.
+
 */
 
-#define     bfg1(...)  (bfg1_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     bfg1_funcof(S, ...) \
+#define     bfgl(...)  (bfgl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     bfgl_funcof(S, ...) \
 FUNCOF(             \
-    bfg1, (   S   ),\
+    bfgl, (   S   ),\
     BDZ,  /* TGK */ \
-    YWZ,  /* TGW */ \
-    YDZ,  /* TGD */ \
-    YDZ,  /* TGQ */ \
+    YHR,  /* TGW */ \
+    YWR,  /* TGD */ \
+    YDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
-#define     bfg1bu   UINT8_BFG1
-#define     bfg1bi    INT8_BFG1
-#define     bfg1bc    CHAR_BFG1
-#define     bfg1hu  UINT16_BFG1
-#define     bfg1hi   INT16_BFG1
-#define     bfg1wu  UINT32_BFG1
-#define     bfg1wi   INT32_BFG1
-#define     bfg1du  UINT64_BFG1
-#define     bfg1di   INT64_BFG1
+#define     bfglbu   UINT8_BFGL
+#define     bfglbi    INT8_BFGL
+#define     bfglbc    CHAR_BFGL
+#define     bfglhu  UINT16_BFGL
+#define     bfglhi   INT16_BFGL
+#define     bfglwu  UINT32_BFGL
+#define     bfglwi   INT32_BFGL
+#define     bfgldu  UINT64_BFGL
+#define     bfgldi   INT64_BFGL
 #if DWRD_NLONG == 2
-#   define  bfg1lu   ULONG_BFG1
-#   define  bfg1li    LONG_BFG1
+#   define  bfgllu   ULONG_BFGL
+#   define  bfglli    LONG_BFGL
 #elif QUAD_NLLONG == 2
-#   define  bfg1lu  ULLONG_BFG1
-#   define  bfg1li   LLONG_BFG1
+#   define  bfgllu  ULLONG_BFGL
+#   define  bfglli   LLONG_BFGL
 #else
-#   define  bfg1qu  ULLONG_BFG1
-#   define  bfg1qi   LLONG_BFG1
+#   define  bfglqu  ULLONG_BFGL
+#   define  bfglqi   LLONG_BFGL
 #endif
 
-#define     bfg1wyu VWYU_BFG1
-#define     bfg1wbu VWBU_BFG1
-#define     bfg1wbi VWBI_BFG1
-#define     bfg1wbc VWBC_BFG1
-#define     bfg1whu VWHU_BFG1
-#define     bfg1whi VWHI_BFG1
-#define     bfg1wwu VWWU_BFG1
-#define     bfg1wwi VWWI_BFG1
+#define     bfglwyu VWYU_BFGL
+#define     bfglwbu VWBU_BFGL
+#define     bfglwbi VWBI_BFGL
+#define     bfglwbc VWBC_BFGL
+#define     bfglwhu VWHU_BFGL
+#define     bfglwhi VWHI_BFGL
+#define     bfglwhf VWHF_BFGL
 
-#define     bfg1dyu VDYU_BFG1
-#define     bfg1dbu VDBU_BFG1
-#define     bfg1dbi VDBI_BFG1
-#define     bfg1dbc VDBC_BFG1
-#define     bfg1dhu VDHU_BFG1
-#define     bfg1dhi VDHI_BFG1
-#define     bfg1dwu VDWU_BFG1
-#define     bfg1dwi VDWI_BFG1
-#define     bfg1ddu VDDU_BFG1
-#define     bfg1ddi VDDI_BFG1
+#define     bfgldyu VDYU_BFGL
+#define     bfgldbu VDBU_BFGL
+#define     bfgldbi VDBI_BFGL
+#define     bfgldbc VDBC_BFGL
+#define     bfgldhu VDHU_BFGL
+#define     bfgldhi VDHI_BFGL
+#define     bfgldhf VDHF_BFGL
+#define     bfgldwu VDWU_BFGL
+#define     bfgldwi VDWI_BFGL
+#define     bfgldwf VDWF_BFGL
 
-#define     bfg1qyu VQYU_BFG1
-#define     bfg1qbu VQBU_BFG1
-#define     bfg1qbi VQBI_BFG1
-#define     bfg1qbc VQBC_BFG1
-#define     bfg1qhu VQHU_BFG1
-#define     bfg1qhi VQHI_BFG1
-#define     bfg1qwu VQWU_BFG1
-#define     bfg1qwi VQWI_BFG1
-#define     bfg1qdu VQDU_BFG1
-#define     bfg1qdi VQDI_BFG1
-#if _LEAVE_BFG1
+#define     bfglqyu VQYU_BFGL
+#define     bfglqbu VQBU_BFGL
+#define     bfglqbi VQBI_BFGL
+#define     bfglqbc VQBC_BFGL
+#define     bfglqhu VQHU_BFGL
+#define     bfglqhi VQHI_BFGL
+#define     bfglqhf VQHF_BFGL
+#define     bfglqwu VQWU_BFGL
+#define     bfglqwi VQWI_BFGL
+#define     bfglqwf VQWF_BFGL
+#define     bfglqdu VQDU_BFGL
+#define     bfglqdi VQDI_BFGL
+#define     bfglqdf VQDF_BFGL
+#if _LEAVE_BFGL
 }
 #endif
 
-#if _ENTER_BFS1
+#if _ENTER_BFSL
 {
 #endif
 /*  Bit Field Set
 
-Takes 4 operands: the allocation unit DST; the offset in
-bits of the field OFF; the size in bits of the field LEN;
-and the value to store.
+Takes 4 operands: an allocation unit, DST; an offset, OFF;
+the length, LEN; and the source SRC, and replaces the
+specified slice of DST an equivalent number of consecutive
+bits of SRC, beginning at its least significant bit.
 
-Like with bfg1, the vector variants use the entire vector
-as the allocation unit, which allows manipulating the
-vector's binary representation across lane boundaries.
+For scalars, OFF and LEN specify a bit offset. For vectors,
+including boolean vectors, OFF is the starting lane number
+and LEN is a number of elements. The operation is limited
+to multielement vectors only.
 
-TODO: arm implementation needs massive overhaul
+If the specified slice exceed the boundaries of DST, the
+result is undefined.
+
+IMPORTANT NOTE: like with bfgl, use of the type generic 
+form is strongly discouraged due to implic promotions.
 
 */
 
-#define     bfs1(...)  (bfs1_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     bfs1_funcof(S, ...) \
-FUNCOF(             \
-    bfs1, (   S   ),\
-    BDZ,  /* TGK */ \
-    YWZ,  /* TGW */ \
-    YDZ,  /* TGD */ \
+#define     bfsl(...)  (bfsl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     bfsl_funcof(S, ...) \
+FUNCOF_AK(                  \
+    bfsl, (   D   ),\
+    YDR,  /* TGK */ \
+    NONE, /* TGA */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
     NONE, /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
-#define     bfs1bu   UINT8_BFS1
-#define     bfs1bi    INT8_BFS1
-#define     bfs1bc    CHAR_BFS1
-#define     bfs1hu  UINT16_BFS1
-#define     bfs1hi   INT16_BFS1
-#define     bfs1wu  UINT32_BFS1
-#define     bfs1wi   INT32_BFS1
-#define     bfs1du  UINT64_BFS1
-#define     bfs1di   INT64_BFS1
+#define     bfslbu   UINT8_BFSL
+#define     bfslbi    INT8_BFSL
+#define     bfslbc    CHAR_BFSL
+#define     bfslhu  UINT16_BFSL
+#define     bfslhi   INT16_BFSL
+#define     bfslwu  UINT32_BFSL
+#define     bfslwi   INT32_BFSL
+#define     bfsldu  UINT64_BFSL
+#define     bfsldi   INT64_BFSL
 #if DWRD_NLONG == 2
-#   define  bfs1lu   ULONG_BFS1
-#   define  bfs1li    LONG_BFS1
+#   define  bfsllu   ULONG_BFSL
+#   define  bfslli    LONG_BFSL
 #elif QUAD_NLLONG == 2
-#   define  bfs1lu  ULLONG_BFS1
-#   define  bfs1li   LLONG_BFS1
+#   define  bfsllu  ULLONG_BFSL
+#   define  bfslli   LLONG_BFSL
 #else
-#   define  bfs1qu  ULLONG_BFS1
-#   define  bfs1qi   LLONG_BFS1
+#   define  bfslqu  ULLONG_BFSL
+#   define  bfslqi   LLONG_BFSL
 #endif
 
-#define     bfs1wyu VWYU_BFS1
-#define     bfs1wbu VWBU_BFS1
-#define     bfs1wbi VWBI_BFS1
-#define     bfs1wbc VWBC_BFS1
-#define     bfs1whu VWHU_BFS1
-#define     bfs1whi VWHI_BFS1
-#define     bfs1wwu VWWU_BFS1
-#define     bfs1wwi VWWI_BFS1
+#define     bfslhf   FLT16_BFSL
+#define     bfslwf     FLT_BFSL
+#define     bfsldf     DBL_BFSL
 
-#define     bfs1dyu VDYU_BFS1
-#define     bfs1dbu VDBU_BFS1
-#define     bfs1dbi VDBI_BFS1
-#define     bfs1dbc VDBC_BFS1
-#define     bfs1dhu VDHU_BFS1
-#define     bfs1dhi VDHI_BFS1
-#define     bfs1dwu VDWU_BFS1
-#define     bfs1dwi VDWI_BFS1
-#define     bfs1ddu VDDU_BFS1
-#define     bfs1ddi VDDI_BFS1
+#define     bfslwyu   VWYU_BFSL
+#define     bfslwbu VWBU_BFSL
+#define     bfslwbi VWBI_BFSL
+#define     bfslwbc VWBC_BFSL
+#define     bfslwhu VWHU_BFSL
+#define     bfslwhi VWHI_BFSL
+#define     bfslwhf VWHF_BFSL
 
-#define     bfs1qyu VQYU_BFS1
-#define     bfs1qbu VQBU_BFS1
-#define     bfs1qbi VQBI_BFS1
-#define     bfs1qbc VQBC_BFS1
-#define     bfs1qhu VQHU_BFS1
-#define     bfs1qhi VQHI_BFS1
-#define     bfs1qwu VQWU_BFS1
-#define     bfs1qwi VQWI_BFS1
-#define     bfs1qdu VQDU_BFS1
-#define     bfs1qdi VQDI_BFS1
-#if _LEAVE_BFS1
+#define     bfsldyu VDYU_BFSL
+#define     bfsldbu VDBU_BFSL
+#define     bfsldbi VDBI_BFSL
+#define     bfsldbc VDBC_BFSL
+#define     bfsldhu VDHU_BFSL
+#define     bfsldhi VDHI_BFSL
+#define     bfsldhf VDHF_BFSL
+#define     bfsldwu VDWU_BFSL
+#define     bfsldwi VDWI_BFSL
+#define     bfsldwf VDWF_BFSL
+
+#define     bfslqyu VQYU_BFSL
+#define     bfslqbu VQBU_BFSL
+#define     bfslqbi VQBI_BFSL
+#define     bfslqbc VQBC_BFSL
+#define     bfslqhu VQHU_BFSL
+#define     bfslqhi VQHI_BFSL
+#define     bfslqhf VQHF_BFSL
+#define     bfslqwu VQWU_BFSL
+#define     bfslqwi VQWI_BFSL
+#define     bfslqwf VQWF_BFSL
+#define     bfslqdu VQDU_BFSL
+#define     bfslqdi VQDI_BFSL
+#define     bfslqdf VQDF_BFSL
+#if _LEAVE_BFSL
 }
 #endif
 
@@ -15620,10 +13434,21 @@ FUNCOF(             \
 #endif
 /*  BLeNd
 
-Construct a N element vector C of type T based on two T
-vectors A and B plus N additional Boolean parameters, K.
-Starting at lane I=0, if K[I] is false, C[I]=A[I], else
-C[I]=B[I].
+Takes two N element vectors A and B plus and N boolean 
+parameters and builds a new vector by selecting the 
+corresponding element of A when a parameter is false and
+B if it is true.
+
+    blnmqwu(
+        dupdwu('a'),
+        dupdwu('b'),
+        0,1,0,0
+    )
+
+would return
+
+    newlqwu('a', 'b', 'a', 'a')
+
 */
 
 #define     blnm(...)    (blnm_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -15676,10 +13501,19 @@ FUNCOF(             \
 #if _ENTER_CATL
 {
 #endif
-/*  Concatenate the binary representations of two values.
+/*  conCATenate (l##r)
 
-E.g. catlwu(a, z) takes two uint32_t values and returns a
-uint64_t with its 32 most significant bits equal to z.
+For scalars: copy the binary representation of the first
+operand A to the least significant K÷2 bits of the result
+then copy the binary representation of the second operand
+to the most significant K÷2 bits of the result, which is
+unsurprisingly a K bit integer of identical signeness as
+A and B, which are identical types.
+
+The vector form is semantically identical to the scalar
+form except that each operand is implicitly reinterpreted
+as a vector of one unsigned K÷2 bit integer. 
+
 */
 
 #define     catl(...)  (catl_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -15798,12 +13632,15 @@ FUNCOF(             \
 #endif
 /*  Compare BetweeN (saturated)
 
-Test if each element in the first operand (A) is an
-inclusive element of a range, setting all bits of the
-corresponding result element to 1 if true and 0 otherwise.
-The second operand (L) specifies the range's minimum bound
-and the third (R) specifies its maximum. If R is less than
-L, the result is undefined.
+For each element E in the first operand, each element L in
+the second operand, and each element R in the third, all
+of which are the same type, compute (L ≤ E ≤ R) then if
+true, store -1 in the corresponding element of the result,
+which for vectors is an integer of equivalent width and
+signedness as E, otherwise store 0.
+
+If any element in any operand is NaN, the entire result
+is undefined.
 */
 
 #define     cbns(...) (cbns_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -15887,14 +13724,18 @@ FUNCOF(             \
 #endif
 /*  Compare BetweeN (boolean)
 
-Test if each element in the first operand (A) is an
-inclusive element of a range, setting the least significant
-bit of the corresponding result element to 1 if true and 0
-otherwise. The second operand (L) specifies the range's
-minimum bound and the third (R) specifies its maximum. If R
-is less than L, the result is undefined.
+For each element E in the first operand, each element L in
+the second operand, and each element R in the third, all
+of which are the same type, compute (L ≤ E ≤ R) then if
+true, store 1 in the corresponding element of the result,
+which for vectors is an integer of equivalent width and
+signedness as E, otherwise store 0. For scalars, the
+result type is boolean.
 
+If any element in any operand is NaN, the entire result
+is undefined.
 */
+
 
 #define     cbny(...) (cbny_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cbny_funcof(A, ...)  \
@@ -15972,1006 +13813,20 @@ FUNCOF(             \
 }
 #endif
 
-
-#if _ENTER_CEQS
-{
-#endif
-/*  Elementwise compare 'A = B' (saturated)
-
-For each element Ea in the first operand A and the
-corresponding element Eb in the second operand B, set the
-corresponding result element of the result to -1 if Ea
-equals Eb. Otherwise, set it to zero.
-*/
-
-#define     ceqs(...) (ceqs_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     ceqs_funcof(A, ...)  \
-FUNCOF(             \
-    ceqs, (   A   ),\
-    BDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     ceqsbu   UINT8_CEQS
-#define     ceqsbi    INT8_CEQS
-#define     ceqsbc    CHAR_CEQS
-#define     ceqshu  UINT16_CEQS
-#define     ceqshi   INT16_CEQS
-#define     ceqshf   FLT16_CEQS
-#define     ceqswu  UINT32_CEQS
-#define     ceqswi   INT32_CEQS
-#define     ceqswf     FLT_CEQS
-#define     ceqsdu  UINT64_CEQS
-#define     ceqsdi   INT64_CEQS
-#define     ceqsdf     DBL_CEQS
-#if DWRD_NLONG == 2
-#   define  ceqslu   ULONG_CEQS
-#   define  ceqsli    LONG_CEQS
-#elif QUAD_NLLONG == 2
-#   define  ceqslu  ULLONG_CEQS
-#   define  ceqsli   LLONG_CEQS
-#else
-#   define  ceqsqu  ULLONG_CEQS
-#   define  ceqsqi   LLONG_CEQS
-#   define  ceqsqf    LDBL_CEQS
-#endif
-
-#define     ceqswbu   VWBU_CEQS
-#define     ceqswbi   VWBI_CEQS
-#define     ceqswbc   VWBC_CEQS
-#define     ceqswhu   VWHU_CEQS
-#define     ceqswhi   VWHI_CEQS
-#define     ceqswhf   VWHF_CEQS
-#define     ceqswwu   VWWU_CEQS
-#define     ceqswwi   VWWI_CEQS
-#define     ceqswwf   VWWF_CEQS
-
-#define     ceqsdbu   VDBU_CEQS
-#define     ceqsdbi   VDBI_CEQS
-#define     ceqsdbc   VDBC_CEQS
-#define     ceqsdhu   VDHU_CEQS
-#define     ceqsdhi   VDHI_CEQS
-#define     ceqsdhf   VDHF_CEQS
-#define     ceqsdwu   VDWU_CEQS
-#define     ceqsdwi   VDWI_CEQS
-#define     ceqsdwf   VDWF_CEQS
-#define     ceqsddu   VDDU_CEQS
-#define     ceqsddi   VDDI_CEQS
-#define     ceqsddf   VDDF_CEQS
-
-#define     ceqsqbu   VQBU_CEQS
-#define     ceqsqbi   VQBI_CEQS
-#define     ceqsqbc   VQBC_CEQS
-#define     ceqsqhu   VQHU_CEQS
-#define     ceqsqhi   VQHI_CEQS
-#define     ceqsqhf   VQHF_CEQS
-#define     ceqsqwu   VQWU_CEQS
-#define     ceqsqwi   VQWI_CEQS
-#define     ceqsqwf   VQWF_CEQS
-#define     ceqsqdu   VQDU_CEQS
-#define     ceqsqdi   VQDI_CEQS
-#define     ceqsqdf   VQDF_CEQS
-#if _LEAVE_CEQS
-}
-#endif
-
-#if _ENTER_CEQY
-{
-#endif
-/*  Elementwise compare 'A = B' (boolean) */
-
-#define     ceqy(...) (ceqy_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     ceqy_funcof(A, ...)  \
-FUNCOF(             \
-    ceqy, (   A   ),\
-    YDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     ceqyyu    BOOL_CEQY
-#define     ceqybu   UINT8_CEQY
-#define     ceqybi    INT8_CEQY
-#define     ceqybc    CHAR_CEQY
-#define     ceqyhu  UINT16_CEQY
-#define     ceqyhi   INT16_CEQY
-#define     ceqyhf   FLT16_CEQY
-#define     ceqywu  UINT32_CEQY
-#define     ceqywi   INT32_CEQY
-#define     ceqywf     FLT_CEQY
-#define     ceqydu  UINT64_CEQY
-#define     ceqydi   INT64_CEQY
-#define     ceqydf     DBL_CEQY
-#if DWRD_NLONG == 2
-#   define  ceqylu   ULONG_CEQY
-#   define  ceqyli    LONG_CEQY
-#elif QUAD_NLLONG == 2
-#   define  ceqylu  ULLONG_CEQY
-#   define  ceqyli   LLONG_CEQY
-#else
-#   define  ceqyqu  ULLONG_CEQY
-#   define  ceqyqi   LLONG_CEQY
-#   define  ceqyqf    LDBL_CEQY
-#endif
-
-#define     ceqywbu   VWBU_CEQY
-#define     ceqywbi   VWBI_CEQY
-#define     ceqywbc   VWBC_CEQY
-#define     ceqywhu   VWHU_CEQY
-#define     ceqywhi   VWHI_CEQY
-#define     ceqywhf   VWHF_CEQY
-#define     ceqywwu   VWWU_CEQY
-#define     ceqywwi   VWWI_CEQY
-#define     ceqywwf   VWWF_CEQY
-
-#define     ceqydbu   VDBU_CEQY
-#define     ceqydbi   VDBI_CEQY
-#define     ceqydbc   VDBC_CEQY
-#define     ceqydhu   VDHU_CEQY
-#define     ceqydhi   VDHI_CEQY
-#define     ceqydhf   VDHF_CEQY
-#define     ceqydwu   VDWU_CEQY
-#define     ceqydwi   VDWI_CEQY
-#define     ceqydwf   VDWF_CEQY
-#define     ceqyddu   VDDU_CEQY
-#define     ceqyddi   VDDI_CEQY
-#define     ceqyddf   VDDF_CEQY
-
-#define     ceqyqbu   VQBU_CEQY
-#define     ceqyqbi   VQBI_CEQY
-#define     ceqyqbc   VQBC_CEQY
-#define     ceqyqhu   VQHU_CEQY
-#define     ceqyqhi   VQHI_CEQY
-#define     ceqyqhf   VQHF_CEQY
-#define     ceqyqwu   VQWU_CEQY
-#define     ceqyqwi   VQWI_CEQY
-#define     ceqyqwf   VQWF_CEQY
-#define     ceqyqdu   VQDU_CEQY
-#define     ceqyqdi   VQDI_CEQY
-#define     ceqyqdf   VQDF_CEQY
-#if _LEAVE_CEQY
-}
-#endif
-
-
-#if _ENTER_CLTS
-{
-#endif
-/*  Elementwise compare 'A < B' (saturated) */
-
-#define     clts(...) (clts_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     clts_funcof(A, ...)  \
-FUNCOF(             \
-    clts, (   A   ),\
-    BDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cltsbu   UINT8_CLTS
-#define     cltsbi    INT8_CLTS
-#define     cltsbc    CHAR_CLTS
-#define     cltshu  UINT16_CLTS
-#define     cltshi   INT16_CLTS
-#define     cltshf   FLT16_CLTS
-#define     cltswu  UINT32_CLTS
-#define     cltswi   INT32_CLTS
-#define     cltswf     FLT_CLTS
-#define     cltsdu  UINT64_CLTS
-#define     cltsdi   INT64_CLTS
-#define     cltsdf     DBL_CLTS
-#if DWRD_NLONG == 2
-#   define  cltslu   ULONG_CLTS
-#   define  cltsli    LONG_CLTS
-#elif QUAD_NLLONG == 2
-#   define  cltslu  ULLONG_CLTS
-#   define  cltsli   LLONG_CLTS
-#else
-#   define  cltsqu  ULLONG_CLTS
-#   define  cltsqi   LLONG_CLTS
-#   define  cltsqf    LDBL_CLTS
-#endif
-
-#define     cltswbu   VWBU_CLTS
-#define     cltswbi   VWBI_CLTS
-#define     cltswbc   VWBC_CLTS
-#define     cltswhu   VWHU_CLTS
-#define     cltswhi   VWHI_CLTS
-#define     cltswhf   VWHF_CLTS
-#define     cltswwu   VWWU_CLTS
-#define     cltswwi   VWWI_CLTS
-#define     cltswwf   VWWF_CLTS
-
-#define     cltsdbu   VDBU_CLTS
-#define     cltsdbi   VDBI_CLTS
-#define     cltsdbc   VDBC_CLTS
-#define     cltsdhu   VDHU_CLTS
-#define     cltsdhi   VDHI_CLTS
-#define     cltsdhf   VDHF_CLTS
-#define     cltsdwu   VDWU_CLTS
-#define     cltsdwi   VDWI_CLTS
-#define     cltsdwf   VDWF_CLTS
-#define     cltsddu   VDDU_CLTS
-#define     cltsddi   VDDI_CLTS
-#define     cltsddf   VDDF_CLTS
-
-#define     cltsqbu   VQBU_CLTS
-#define     cltsqbi   VQBI_CLTS
-#define     cltsqbc   VQBC_CLTS
-#define     cltsqhu   VQHU_CLTS
-#define     cltsqhi   VQHI_CLTS
-#define     cltsqhf   VQHF_CLTS
-#define     cltsqwu   VQWU_CLTS
-#define     cltsqwi   VQWI_CLTS
-#define     cltsqwf   VQWF_CLTS
-#define     cltsqdu   VQDU_CLTS
-#define     cltsqdi   VQDI_CLTS
-#define     cltsqdf   VQDF_CLTS
-#if _LEAVE_CLTS
-}
-#endif
-
-#if _ENTER_CLTY
-{
-#endif
-/*  Elementwise compare 'A < B' (boolean) */
-
-#define     clty(...) (clty_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     clty_funcof(A, ...)  \
-FUNCOF(             \
-    clty, (   A   ),\
-    YDR,  /* TGK */ \
-    YWR,  /* TGW */ \
-    YDR,  /* TGD */ \
-    YDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cltyyu    BOOL_CLTY
-#define     cltybu   UINT8_CLTY
-#define     cltybi    INT8_CLTY
-#define     cltybc    CHAR_CLTY
-#define     cltyhu  UINT16_CLTY
-#define     cltyhi   INT16_CLTY
-#define     cltyhf   FLT16_CLTY
-#define     cltywu  UINT32_CLTY
-#define     cltywi   INT32_CLTY
-#define     cltywf     FLT_CLTY
-#define     cltydu  UINT64_CLTY
-#define     cltydi   INT64_CLTY
-#define     cltydf     DBL_CLTY
-#if DWRD_NLONG == 2
-#   define  cltylu   ULONG_CLTY
-#   define  cltyli    LONG_CLTY
-#elif QUAD_NLLONG == 2
-#   define  cltylu  ULLONG_CLTY
-#   define  cltyli   LLONG_CLTY
-#else
-#   define  cltyqu  ULLONG_CLTY
-#   define  cltyqi   LLONG_CLTY
-#   define  cltyqf    LDBL_CLTY
-#endif
-
-#define     cltywbu   VWBU_CLTY
-#define     cltywbi   VWBI_CLTY
-#define     cltywbc   VWBC_CLTY
-#define     cltywhu   VWHU_CLTY
-#define     cltywhi   VWHI_CLTY
-#define     cltywhf   VWHF_CLTY
-#define     cltywwu   VWWU_CLTY
-#define     cltywwi   VWWI_CLTY
-#define     cltywwf   VWWF_CLTY
-
-#define     cltydbu   VDBU_CLTY
-#define     cltydbi   VDBI_CLTY
-#define     cltydbc   VDBC_CLTY
-#define     cltydhu   VDHU_CLTY
-#define     cltydhi   VDHI_CLTY
-#define     cltydhf   VDHF_CLTY
-#define     cltydwu   VDWU_CLTY
-#define     cltydwi   VDWI_CLTY
-#define     cltydwf   VDWF_CLTY
-#define     cltyddu   VDDU_CLTY
-#define     cltyddi   VDDI_CLTY
-#define     cltyddf   VDDF_CLTY
-
-#define     cltyqbu   VQBU_CLTY
-#define     cltyqbi   VQBI_CLTY
-#define     cltyqbc   VQBC_CLTY
-#define     cltyqhu   VQHU_CLTY
-#define     cltyqhi   VQHI_CLTY
-#define     cltyqhf   VQHF_CLTY
-#define     cltyqwu   VQWU_CLTY
-#define     cltyqwi   VQWI_CLTY
-#define     cltyqwf   VQWF_CLTY
-#define     cltyqdu   VQDU_CLTY
-#define     cltyqdi   VQDI_CLTY
-#define     cltyqdf   VQDF_CLTY
-#if _LEAVE_CLTY
-}
-#endif
-
-#if _ENTER_CLES
-{
-#endif
-/*  Elementwise compare 'A ≤ B' (saturated) */
-
-#define     cles(...) (cles_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cles_funcof(A, ...)  \
-FUNCOF(             \
-    cles, (   A   ),\
-    BDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     clesbu   UINT8_CLES
-#define     clesbi    INT8_CLES
-#define     clesbc    CHAR_CLES
-#define     cleshu  UINT16_CLES
-#define     cleshi   INT16_CLES
-#define     cleshf   FLT16_CLES
-#define     cleswu  UINT32_CLES
-#define     cleswi   INT32_CLES
-#define     cleswf     FLT_CLES
-#define     clesdu  UINT64_CLES
-#define     clesdi   INT64_CLES
-#define     clesdf     DBL_CLES
-#if DWRD_NLONG == 2
-#   define  cleslu   ULONG_CLES
-#   define  clesli    LONG_CLES
-#elif QUAD_NLLONG == 2
-#   define  cleslu  ULLONG_CLES
-#   define  clesli   LLONG_CLES
-#else
-#   define  clesqu  ULLONG_CLES
-#   define  clesqi   LLONG_CLES
-#   define  clesqf    LDBL_CLES
-#endif
-
-#define     cleswbu   VWBU_CLES
-#define     cleswbi   VWBI_CLES
-#define     cleswbc   VWBC_CLES
-#define     cleswhu   VWHU_CLES
-#define     cleswhi   VWHI_CLES
-#define     cleswhf   VWHF_CLES
-#define     cleswwu   VWWU_CLES
-#define     cleswwi   VWWI_CLES
-#define     cleswwf   VWWF_CLES
-
-#define     clesdbu   VDBU_CLES
-#define     clesdbi   VDBI_CLES
-#define     clesdbc   VDBC_CLES
-#define     clesdhu   VDHU_CLES
-#define     clesdhi   VDHI_CLES
-#define     clesdhf   VDHF_CLES
-#define     clesdwu   VDWU_CLES
-#define     clesdwi   VDWI_CLES
-#define     clesdwf   VDWF_CLES
-#define     clesddu   VDDU_CLES
-#define     clesddi   VDDI_CLES
-#define     clesddf   VDDF_CLES
-
-#define     clesqbu   VQBU_CLES
-#define     clesqbi   VQBI_CLES
-#define     clesqbc   VQBC_CLES
-#define     clesqhu   VQHU_CLES
-#define     clesqhi   VQHI_CLES
-#define     clesqhf   VQHF_CLES
-#define     clesqwu   VQWU_CLES
-#define     clesqwi   VQWI_CLES
-#define     clesqwf   VQWF_CLES
-#define     clesqdu   VQDU_CLES
-#define     clesqdi   VQDI_CLES
-#define     clesqdf   VQDF_CLES
-#if _LEAVE_CLES
-}
-#endif
-
-#if _ENTER_CLEY
-{
-#endif
-/*  Elementwise compare 'A ≤ B' (boolean) */
-
-#define     cley(...) (cley_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cley_funcof(A, ...)  \
-FUNCOF(             \
-    cley, (   A   ),\
-    YDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cleyyu    BOOL_CLEY
-#define     cleybu   UINT8_CLEY
-#define     cleybi    INT8_CLEY
-#define     cleybc    CHAR_CLEY
-#define     cleyhu  UINT16_CLEY
-#define     cleyhi   INT16_CLEY
-#define     cleyhf   FLT16_CLEY
-#define     cleywu  UINT32_CLEY
-#define     cleywi   INT32_CLEY
-#define     cleywf     FLT_CLEY
-#define     cleydu  UINT64_CLEY
-#define     cleydi   INT64_CLEY
-#define     cleydf     DBL_CLEY
-#if DWRD_NLONG == 2
-#   define  cleylu   ULONG_CLEY
-#   define  cleyli    LONG_CLEY
-#elif QUAD_NLLONG == 2
-#   define  cleylu  ULLONG_CLEY
-#   define  cleyli   LLONG_CLEY
-#else
-#   define  cleyqu  ULLONG_CLEY
-#   define  cleyqi   LLONG_CLEY
-#   define  cleyqf    LDBL_CLEY
-#endif
-
-#define     cleywbu   VWBU_CLEY
-#define     cleywbi   VWBI_CLEY
-#define     cleywbc   VWBC_CLEY
-#define     cleywhu   VWHU_CLEY
-#define     cleywhi   VWHI_CLEY
-#define     cleywhf   VWHF_CLEY
-#define     cleywwu   VWWU_CLEY
-#define     cleywwi   VWWI_CLEY
-#define     cleywwf   VWWF_CLEY
-
-#define     cleydbu   VDBU_CLEY
-#define     cleydbi   VDBI_CLEY
-#define     cleydbc   VDBC_CLEY
-#define     cleydhu   VDHU_CLEY
-#define     cleydhi   VDHI_CLEY
-#define     cleydhf   VDHF_CLEY
-#define     cleydwu   VDWU_CLEY
-#define     cleydwi   VDWI_CLEY
-#define     cleydwf   VDWF_CLEY
-#define     cleyddu   VDDU_CLEY
-#define     cleyddi   VDDI_CLEY
-#define     cleyddf   VDDF_CLEY
-
-#define     cleyqbu   VQBU_CLEY
-#define     cleyqbi   VQBI_CLEY
-#define     cleyqbc   VQBC_CLEY
-#define     cleyqhu   VQHU_CLEY
-#define     cleyqhi   VQHI_CLEY
-#define     cleyqhf   VQHF_CLEY
-#define     cleyqwu   VQWU_CLEY
-#define     cleyqwi   VQWI_CLEY
-#define     cleyqwf   VQWF_CLEY
-#define     cleyqdu   VQDU_CLEY
-#define     cleyqdi   VQDI_CLEY
-#define     cleyqdf   VQDF_CLEY
-#if _LEAVE_CLEY
-}
-#endif
-
-#if _ENTER_CGTS
-{
-#endif
-/*  Elementwise compare 'A > B' (saturated) */
-
-#define     cgts(...) (cgts_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cgts_funcof(A, ...)  \
-FUNCOF(             \
-    cgts, (   A   ),\
-    BDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cgtsbu   UINT8_CGTS
-#define     cgtsbi    INT8_CGTS
-#define     cgtsbc    CHAR_CGTS
-#define     cgtshu  UINT16_CGTS
-#define     cgtshi   INT16_CGTS
-#define     cgtshf   FLT16_CGTS
-#define     cgtswu  UINT32_CGTS
-#define     cgtswi   INT32_CGTS
-#define     cgtswf     FLT_CGTS
-#define     cgtsdu  UINT64_CGTS
-#define     cgtsdi   INT64_CGTS
-#define     cgtsdf     DBL_CGTS
-#if DWRD_NLONG == 2
-#   define  cgtslu   ULONG_CGTS
-#   define  cgtsli    LONG_CGTS
-#elif QUAD_NLLONG == 2
-#   define  cgtslu  ULLONG_CGTS
-#   define  cgtsli   LLONG_CGTS
-#else
-#   define  cgtsqu  ULLONG_CGTS
-#   define  cgtsqi   LLONG_CGTS
-#   define  cgtsqf    LDBL_CGTS
-#endif
-
-#define     cgtswbu   VWBU_CGTS
-#define     cgtswbi   VWBI_CGTS
-#define     cgtswbc   VWBC_CGTS
-#define     cgtswhu   VWHU_CGTS
-#define     cgtswhi   VWHI_CGTS
-#define     cgtswhf   VWHF_CGTS
-#define     cgtswwu   VWWU_CGTS
-#define     cgtswwi   VWWI_CGTS
-#define     cgtswwf   VWWF_CGTS
-
-#define     cgtsdbu   VDBU_CGTS
-#define     cgtsdbi   VDBI_CGTS
-#define     cgtsdbc   VDBC_CGTS
-#define     cgtsdhu   VDHU_CGTS
-#define     cgtsdhi   VDHI_CGTS
-#define     cgtsdhf   VDHF_CGTS
-#define     cgtsdwu   VDWU_CGTS
-#define     cgtsdwi   VDWI_CGTS
-#define     cgtsdwf   VDWF_CGTS
-#define     cgtsddu   VDDU_CGTS
-#define     cgtsddi   VDDI_CGTS
-#define     cgtsddf   VDDF_CGTS
-
-#define     cgtsqbu   VQBU_CGTS
-#define     cgtsqbi   VQBI_CGTS
-#define     cgtsqbc   VQBC_CGTS
-#define     cgtsqhu   VQHU_CGTS
-#define     cgtsqhi   VQHI_CGTS
-#define     cgtsqhf   VQHF_CGTS
-#define     cgtsqwu   VQWU_CGTS
-#define     cgtsqwi   VQWI_CGTS
-#define     cgtsqwf   VQWF_CGTS
-#define     cgtsqdu   VQDU_CGTS
-#define     cgtsqdi   VQDI_CGTS
-#define     cgtsqdf   VQDF_CGTS
-#if _LEAVE_CGTS
-}
-#endif
-
-#if _ENTER_CGTY
-{
-#endif
-/*  Elementwise compare 'A > B' (boolean) */
-
-#define     cgty(...) (cgty_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cgty_funcof(A, ...)  \
-FUNCOF(             \
-    cgty, (   A   ),\
-    YDR,  /* TGK */ \
-    YWR,  /* TGW */ \
-    YDR,  /* TGD */ \
-    YDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cgtyyu    BOOL_CGTY
-#define     cgtybu   UINT8_CGTY
-#define     cgtybi    INT8_CGTY
-#define     cgtybc    CHAR_CGTY
-#define     cgtyhu  UINT16_CGTY
-#define     cgtyhi   INT16_CGTY
-#define     cgtyhf   FLT16_CGTY
-#define     cgtywu  UINT32_CGTY
-#define     cgtywi   INT32_CGTY
-#define     cgtywf     FLT_CGTY
-#define     cgtydu  UINT64_CGTY
-#define     cgtydi   INT64_CGTY
-#define     cgtydf     DBL_CGTY
-#if DWRD_NLONG == 2
-#   define  cgtylu   ULONG_CGTY
-#   define  cgtyli    LONG_CGTY
-#elif QUAD_NLLONG == 2
-#   define  cgtylu  ULLONG_CGTY
-#   define  cgtyli   LLONG_CGTY
-#else
-#   define  cgtyqu  ULLONG_CGTY
-#   define  cgtyqi   LLONG_CGTY
-#   define  cgtyqf    LDBL_CGTY
-#endif
-
-#define     cgtywbu   VWBU_CGTY
-#define     cgtywbi   VWBI_CGTY
-#define     cgtywbc   VWBC_CGTY
-#define     cgtywhu   VWHU_CGTY
-#define     cgtywhi   VWHI_CGTY
-#define     cgtywhf   VWHF_CGTY
-#define     cgtywwu   VWWU_CGTY
-#define     cgtywwi   VWWI_CGTY
-#define     cgtywwf   VWWF_CGTY
-
-#define     cgtydbu   VDBU_CGTY
-#define     cgtydbi   VDBI_CGTY
-#define     cgtydbc   VDBC_CGTY
-#define     cgtydhu   VDHU_CGTY
-#define     cgtydhi   VDHI_CGTY
-#define     cgtydhf   VDHF_CGTY
-#define     cgtydwu   VDWU_CGTY
-#define     cgtydwi   VDWI_CGTY
-#define     cgtydwf   VDWF_CGTY
-#define     cgtyddu   VDDU_CGTY
-#define     cgtyddi   VDDI_CGTY
-#define     cgtyddf   VDDF_CGTY
-
-#define     cgtyqbu   VQBU_CGTY
-#define     cgtyqbi   VQBI_CGTY
-#define     cgtyqbc   VQBC_CGTY
-#define     cgtyqhu   VQHU_CGTY
-#define     cgtyqhi   VQHI_CGTY
-#define     cgtyqhf   VQHF_CGTY
-#define     cgtyqwu   VQWU_CGTY
-#define     cgtyqwi   VQWI_CGTY
-#define     cgtyqwf   VQWF_CGTY
-#define     cgtyqdu   VQDU_CGTY
-#define     cgtyqdi   VQDI_CGTY
-#define     cgtyqdf   VQDF_CGTY
-#if _LEAVE_CGTY
-}
-#endif
-
-#if _ENTER_CGES
-{
-#endif
-/*  Elementwise compare 'A ≥ B' (saturated) */
-
-#define     cges(...) (cges_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cges_funcof(A, ...)  \
-FUNCOF(             \
-    cges, (   A   ),\
-    BDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cgesbu   UINT8_CGES
-#define     cgesbi    INT8_CGES
-#define     cgesbc    CHAR_CGES
-#define     cgeshu  UINT16_CGES
-#define     cgeshi   INT16_CGES
-#define     cgeshf   FLT16_CGES
-#define     cgeswu  UINT32_CGES
-#define     cgeswi   INT32_CGES
-#define     cgeswf     FLT_CGES
-#define     cgesdu  UINT64_CGES
-#define     cgesdi   INT64_CGES
-#define     cgesdf     DBL_CGES
-#if DWRD_NLONG == 2
-#   define  cgeslu   ULONG_CGES
-#   define  cgesli    LONG_CGES
-#elif QUAD_NLLONG == 2
-#   define  cgeslu  ULLONG_CGES
-#   define  cgesli   LLONG_CGES
-#else
-#   define  cgesqu  ULLONG_CGES
-#   define  cgesqi   LLONG_CGES
-#   define  cgesqf    LDBL_CGES
-#endif
-
-#define     cgeswbu   VWBU_CGES
-#define     cgeswbi   VWBI_CGES
-#define     cgeswbc   VWBC_CGES
-#define     cgeswhu   VWHU_CGES
-#define     cgeswhi   VWHI_CGES
-#define     cgeswhf   VWHF_CGES
-#define     cgeswwu   VWWU_CGES
-#define     cgeswwi   VWWI_CGES
-#define     cgeswwf   VWWF_CGES
-
-#define     cgesdbu   VDBU_CGES
-#define     cgesdbi   VDBI_CGES
-#define     cgesdbc   VDBC_CGES
-#define     cgesdhu   VDHU_CGES
-#define     cgesdhi   VDHI_CGES
-#define     cgesdhf   VDHF_CGES
-#define     cgesdwu   VDWU_CGES
-#define     cgesdwi   VDWI_CGES
-#define     cgesdwf   VDWF_CGES
-#define     cgesddu   VDDU_CGES
-#define     cgesddi   VDDI_CGES
-#define     cgesddf   VDDF_CGES
-
-#define     cgesqbu   VQBU_CGES
-#define     cgesqbi   VQBI_CGES
-#define     cgesqbc   VQBC_CGES
-#define     cgesqhu   VQHU_CGES
-#define     cgesqhi   VQHI_CGES
-#define     cgesqhf   VQHF_CGES
-#define     cgesqwu   VQWU_CGES
-#define     cgesqwi   VQWI_CGES
-#define     cgesqwf   VQWF_CGES
-#define     cgesqdu   VQDU_CGES
-#define     cgesqdi   VQDI_CGES
-#define     cgesqdf   VQDF_CGES
-#if _LEAVE_CGES
-}
-#endif
-
-#if _ENTER_CGEY
-{
-#endif
-/*  Elementwise compare 'A ≥ B' (boolean) */
-
-#define     cgey(...) (cgey_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cgey_funcof(A, ...)  \
-FUNCOF(             \
-    cgey, (   A   ),\
-    YDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cgeyyu    BOOL_CGEY
-#define     cgeybu   UINT8_CGEY
-#define     cgeybi    INT8_CGEY
-#define     cgeybc    CHAR_CGEY
-#define     cgeyhu  UINT16_CGEY
-#define     cgeyhi   INT16_CGEY
-#define     cgeyhf   FLT16_CGEY
-#define     cgeywu  UINT32_CGEY
-#define     cgeywi   INT32_CGEY
-#define     cgeywf     FLT_CGEY
-#define     cgeydu  UINT64_CGEY
-#define     cgeydi   INT64_CGEY
-#define     cgeydf     DBL_CGEY
-
-#if DWRD_NLONG == 2
-#   define  cgeylu   ULONG_CGEY
-#   define  cgeyli    LONG_CGEY
-#elif QUAD_NLLONG == 2
-#   define  cgeylu  ULLONG_CGEY
-#   define  cgeyli   LLONG_CGEY
-#else
-#   define  cgeyqu  ULLONG_CGEY
-#   define  cgeyqi   LLONG_CGEY
-#   define  cgeyqf    LDBL_CGEY
-#endif
-
-#define     cgeywbu   VWBU_CGEY
-#define     cgeywbi   VWBI_CGEY
-#define     cgeywbc   VWBC_CGEY
-#define     cgeywhu   VWHU_CGEY
-#define     cgeywhi   VWHI_CGEY
-#define     cgeywhf   VWHF_CGEY
-#define     cgeywwu   VWWU_CGEY
-#define     cgeywwi   VWWI_CGEY
-#define     cgeywwf   VWWF_CGEY
-
-#define     cgeydbu   VDBU_CGEY
-#define     cgeydbi   VDBI_CGEY
-#define     cgeydbc   VDBC_CGEY
-#define     cgeydhu   VDHU_CGEY
-#define     cgeydhi   VDHI_CGEY
-#define     cgeydhf   VDHF_CGEY
-#define     cgeydwu   VDWU_CGEY
-#define     cgeydwi   VDWI_CGEY
-#define     cgeydwf   VDWF_CGEY
-#define     cgeyddu   VDDU_CGEY
-#define     cgeyddi   VDDI_CGEY
-#define     cgeyddf   VDDF_CGEY
-
-#define     cgeyqbu   VQBU_CGEY
-#define     cgeyqbi   VQBI_CGEY
-#define     cgeyqbc   VQBC_CGEY
-#define     cgeyqhu   VQHU_CGEY
-#define     cgeyqhi   VQHI_CGEY
-#define     cgeyqhf   VQHF_CGEY
-#define     cgeyqwu   VQWU_CGEY
-#define     cgeyqwi   VQWI_CGEY
-#define     cgeyqwf   VQWF_CGEY
-#define     cgeyqdu   VQDU_CGEY
-#define     cgeyqdi   VQDI_CGEY
-#define     cgeyqdf   VQDF_CGEY
-#if _LEAVE_CGEY
-}
-#endif
-
-#if _ENTER_CNES
-{
-#endif
-/*  Elementwise compare 'A ≠ B' (saturated) */
-
-#define     cnes(...) (cnes_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cnes_funcof(A, ...)  \
-FUNCOF(             \
-    cnes, (   A   ),\
-    BDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cnesbu   UINT8_CNES
-#define     cnesbi    INT8_CNES
-#define     cnesbc    CHAR_CNES
-#define     cneshu  UINT16_CNES
-#define     cneshi   INT16_CNES
-#define     cneshf   FLT16_CNES
-#define     cneswu  UINT32_CNES
-#define     cneswi   INT32_CNES
-#define     cneswf     FLT_CNES
-#define     cnesdu  UINT64_CNES
-#define     cnesdi   INT64_CNES
-#define     cnesdf     DBL_CNES
-#if DWRD_NLONG == 2
-#   define  cneslu   ULONG_CNES
-#   define  cnesli    LONG_CNES
-#elif QUAD_NLLONG == 2
-#   define  cneslu  ULLONG_CNES
-#   define  cnesli   LLONG_CNES
-#else
-#   define  cnesqu  ULLONG_CNES
-#   define  cnesqi   LLONG_CNES
-#   define  cnesqf    LDBL_CNES
-#endif
-
-#define     cneswbu   VWBU_CNES
-#define     cneswbi   VWBI_CNES
-#define     cneswbc   VWBC_CNES
-#define     cneswhu   VWHU_CNES
-#define     cneswhi   VWHI_CNES
-#define     cneswhf   VWHF_CNES
-#define     cneswwu   VWWU_CNES
-#define     cneswwi   VWWI_CNES
-#define     cneswwf   VWWF_CNES
-
-#define     cnesdbu   VDBU_CNES
-#define     cnesdbi   VDBI_CNES
-#define     cnesdbc   VDBC_CNES
-#define     cnesdhu   VDHU_CNES
-#define     cnesdhi   VDHI_CNES
-#define     cnesdhf   VDHF_CNES
-#define     cnesdwu   VDWU_CNES
-#define     cnesdwi   VDWI_CNES
-#define     cnesdwf   VDWF_CNES
-#define     cnesddu   VDDU_CNES
-#define     cnesddi   VDDI_CNES
-#define     cnesddf   VDDF_CNES
-
-#define     cnesqbu   VQBU_CNES
-#define     cnesqbi   VQBI_CNES
-#define     cnesqbc   VQBC_CNES
-#define     cnesqhu   VQHU_CNES
-#define     cnesqhi   VQHI_CNES
-#define     cnesqhf   VQHF_CNES
-#define     cnesqwu   VQWU_CNES
-#define     cnesqwi   VQWI_CNES
-#define     cnesqwf   VQWF_CNES
-#define     cnesqdu   VQDU_CNES
-#define     cnesqdi   VQDI_CNES
-#define     cnesqdf   VQDF_CNES
-#if _LEAVE_CNES
-}
-#endif
-
-#if _ENTER_CNEY
-{
-#endif
-/*  Elementwise compare 'A ≠ B' (boolean) */
-
-#define     cney(...) (cney_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cney_funcof(A, ...)  \
-FUNCOF(             \
-    cney, (   A   ),\
-    YDR,  /* TGK */ \
-    BWR,  /* TGW */ \
-    BDR,  /* TGD */ \
-    BDR,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
-)
-
-#define     cneyyu    BOOL_CNEY
-#define     cneybu   UINT8_CNEY
-#define     cneybi    INT8_CNEY
-#define     cneybc    CHAR_CNEY
-#define     cneyhu  UINT16_CNEY
-#define     cneyhi   INT16_CNEY
-#define     cneyhf   FLT16_CNEY
-#define     cneywu  UINT32_CNEY
-#define     cneywi   INT32_CNEY
-#define     cneywf     FLT_CNEY
-#define     cneydu  UINT64_CNEY
-#define     cneydi   INT64_CNEY
-#define     cneydf     DBL_CNEY
-#if DWRD_NLONG == 2
-#   define  cneylu   ULONG_CNEY
-#   define  cneyli    LONG_CNEY
-#elif QUAD_NLLONG == 2
-#   define  cneylu  ULLONG_CNEY
-#   define  cneyli   LLONG_CNEY
-#else
-#   define  cneyqu  ULLONG_CNEY
-#   define  cneyqi   LLONG_CNEY
-#   define  cneyqf    LDBL_CNEY
-#endif
-
-#define     cneywbu   VWBU_CNEY
-#define     cneywbi   VWBI_CNEY
-#define     cneywbc   VWBC_CNEY
-#define     cneywhu   VWHU_CNEY
-#define     cneywhi   VWHI_CNEY
-#define     cneywhf   VWHF_CNEY
-#define     cneywwu   VWWU_CNEY
-#define     cneywwi   VWWI_CNEY
-#define     cneywwf   VWWF_CNEY
-
-#define     cneydbu   VDBU_CNEY
-#define     cneydbi   VDBI_CNEY
-#define     cneydbc   VDBC_CNEY
-#define     cneydhu   VDHU_CNEY
-#define     cneydhi   VDHI_CNEY
-#define     cneydhf   VDHF_CNEY
-#define     cneydwu   VDWU_CNEY
-#define     cneydwi   VDWI_CNEY
-#define     cneydwf   VDWF_CNEY
-#define     cneyddu   VDDU_CNEY
-#define     cneyddi   VDDI_CNEY
-#define     cneyddf   VDDF_CNEY
-
-#define     cneyqbu   VQBU_CNEY
-#define     cneyqbi   VQBI_CNEY
-#define     cneyqbc   VQBC_CNEY
-#define     cneyqhu   VQHU_CNEY
-#define     cneyqhi   VQHI_CNEY
-#define     cneyqhf   VQHF_CNEY
-#define     cneyqwu   VQWU_CNEY
-#define     cneyqwi   VQWI_CNEY
-#define     cneyqwf   VQWF_CNEY
-#define     cneyqdu   VQDU_CNEY
-#define     cneyqdi   VQDI_CNEY
-#define     cneyqdf   VQDF_CNEY
-#if _LEAVE_CNEY
-}
-#endif
-
 #if _ENTER_CNBS
 {
 #endif
 /*  Compare Not Between (saturated)
 
-Test each element in the first operand for membership within
-the range specified by the second (min) and third (max)
-operands. If an element is NOT in the exclusive range, all
-bits in the corresponding result element are set to 1,
-otherwise 0.
+For each element E in the first operand, each element L in
+the second operand, and each element R in the third, all
+of which are the same type, compute !(L ≤ E ≤ R) then if
+true, store -1 in the corresponding element of the result,
+which for vectors is an integer of equivalent width and
+signedness as E, otherwise store 0.
 
-The result is undefined if any element of any operand is NaN.
-
+If any element in any operand is NaN, the entire result
+is undefined.
 */
 
 #define     cnbs(...) (cnbs_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17141,13 +13996,1136 @@ FUNCOF(             \
 }
 #endif
 
+#if _ENTER_CEQS
+{
+#endif
+
+#define     ceqs(...) (ceqs_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     ceqs_funcof(A, ...)  \
+FUNCOF(             \
+    ceqs, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     ceqsbu   UINT8_CEQS
+#define     ceqsbi    INT8_CEQS
+#define     ceqsbc    CHAR_CEQS
+#define     ceqshu  UINT16_CEQS
+#define     ceqshi   INT16_CEQS
+#define     ceqshf   FLT16_CEQS
+#define     ceqswu  UINT32_CEQS
+#define     ceqswi   INT32_CEQS
+#define     ceqswf     FLT_CEQS
+#define     ceqsdu  UINT64_CEQS
+#define     ceqsdi   INT64_CEQS
+#define     ceqsdf     DBL_CEQS
+#if DWRD_NLONG == 2
+#   define  ceqslu   ULONG_CEQS
+#   define  ceqsli    LONG_CEQS
+#elif QUAD_NLLONG == 2
+#   define  ceqslu  ULLONG_CEQS
+#   define  ceqsli   LLONG_CEQS
+#else
+#   define  ceqsqu  ULLONG_CEQS
+#   define  ceqsqi   LLONG_CEQS
+#   define  ceqsqf    LDBL_CEQS
+#endif
+
+#define     ceqswbu   VWBU_CEQS
+#define     ceqswbi   VWBI_CEQS
+#define     ceqswbc   VWBC_CEQS
+#define     ceqswhu   VWHU_CEQS
+#define     ceqswhi   VWHI_CEQS
+#define     ceqswhf   VWHF_CEQS
+#define     ceqswwu   VWWU_CEQS
+#define     ceqswwi   VWWI_CEQS
+#define     ceqswwf   VWWF_CEQS
+
+#define     ceqsdbu   VDBU_CEQS
+#define     ceqsdbi   VDBI_CEQS
+#define     ceqsdbc   VDBC_CEQS
+#define     ceqsdhu   VDHU_CEQS
+#define     ceqsdhi   VDHI_CEQS
+#define     ceqsdhf   VDHF_CEQS
+#define     ceqsdwu   VDWU_CEQS
+#define     ceqsdwi   VDWI_CEQS
+#define     ceqsdwf   VDWF_CEQS
+#define     ceqsddu   VDDU_CEQS
+#define     ceqsddi   VDDI_CEQS
+#define     ceqsddf   VDDF_CEQS
+
+#define     ceqsqbu   VQBU_CEQS
+#define     ceqsqbi   VQBI_CEQS
+#define     ceqsqbc   VQBC_CEQS
+#define     ceqsqhu   VQHU_CEQS
+#define     ceqsqhi   VQHI_CEQS
+#define     ceqsqhf   VQHF_CEQS
+#define     ceqsqwu   VQWU_CEQS
+#define     ceqsqwi   VQWI_CEQS
+#define     ceqsqwf   VQWF_CEQS
+#define     ceqsqdu   VQDU_CEQS
+#define     ceqsqdi   VQDI_CEQS
+#define     ceqsqdf   VQDF_CEQS
+#if _LEAVE_CEQS
+}
+#endif
+
+#if _ENTER_CEQY
+{
+#endif
+/*  Compare EQual (boolean)
+
+Let I be an element from the first operand and J be the 
+corresponding element of the second operand. Set the
+corresponding element of the result to +1 if I = J, 
+otherwise set it to 0.
+
+The first and second operands have identical types. For 
+vectors, the result has an integer element type of the
+same width and signeness as I. For scalars, the result 
+type is boolean.
+
+NaN equality comparisons have implementation defined
+results.
+
+Note ceqy is theoretically more computationally expensive
+compared to ceqs on all presently supported architectures.
+Only use the -y suffixed comparisons when it matters that
+results are exactly 1 when true and exactly 0 when false.
+*/
+
+#define     ceqy(...) (ceqy_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     ceqy_funcof(A, ...)  \
+FUNCOF(             \
+    ceqy, (   A   ),\
+    YDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     ceqyyu    BOOL_CEQY
+#define     ceqybu   UINT8_CEQY
+#define     ceqybi    INT8_CEQY
+#define     ceqybc    CHAR_CEQY
+#define     ceqyhu  UINT16_CEQY
+#define     ceqyhi   INT16_CEQY
+#define     ceqyhf   FLT16_CEQY
+#define     ceqywu  UINT32_CEQY
+#define     ceqywi   INT32_CEQY
+#define     ceqywf     FLT_CEQY
+#define     ceqydu  UINT64_CEQY
+#define     ceqydi   INT64_CEQY
+#define     ceqydf     DBL_CEQY
+#if DWRD_NLONG == 2
+#   define  ceqylu   ULONG_CEQY
+#   define  ceqyli    LONG_CEQY
+#elif QUAD_NLLONG == 2
+#   define  ceqylu  ULLONG_CEQY
+#   define  ceqyli   LLONG_CEQY
+#else
+#   define  ceqyqu  ULLONG_CEQY
+#   define  ceqyqi   LLONG_CEQY
+#   define  ceqyqf    LDBL_CEQY
+#endif
+
+#define     ceqywbu   VWBU_CEQY
+#define     ceqywbi   VWBI_CEQY
+#define     ceqywbc   VWBC_CEQY
+#define     ceqywhu   VWHU_CEQY
+#define     ceqywhi   VWHI_CEQY
+#define     ceqywhf   VWHF_CEQY
+#define     ceqywwu   VWWU_CEQY
+#define     ceqywwi   VWWI_CEQY
+#define     ceqywwf   VWWF_CEQY
+
+#define     ceqydbu   VDBU_CEQY
+#define     ceqydbi   VDBI_CEQY
+#define     ceqydbc   VDBC_CEQY
+#define     ceqydhu   VDHU_CEQY
+#define     ceqydhi   VDHI_CEQY
+#define     ceqydhf   VDHF_CEQY
+#define     ceqydwu   VDWU_CEQY
+#define     ceqydwi   VDWI_CEQY
+#define     ceqydwf   VDWF_CEQY
+#define     ceqyddu   VDDU_CEQY
+#define     ceqyddi   VDDI_CEQY
+#define     ceqyddf   VDDF_CEQY
+
+#define     ceqyqbu   VQBU_CEQY
+#define     ceqyqbi   VQBI_CEQY
+#define     ceqyqbc   VQBC_CEQY
+#define     ceqyqhu   VQHU_CEQY
+#define     ceqyqhi   VQHI_CEQY
+#define     ceqyqhf   VQHF_CEQY
+#define     ceqyqwu   VQWU_CEQY
+#define     ceqyqwi   VQWI_CEQY
+#define     ceqyqwf   VQWF_CEQY
+#define     ceqyqdu   VQDU_CEQY
+#define     ceqyqdi   VQDI_CEQY
+#define     ceqyqdf   VQDF_CEQY
+#if _LEAVE_CEQY
+}
+#endif
+
+
+#if _ENTER_CNES
+{
+#endif
+/*  Compare Not Equal (saturated) 
+
+Let I be an element from the first operand and J be the 
+corresponding element of the second operand. Set the
+corresponding element of the result to -1 (all ones) if
+I ≠ J, otherwise set it to 0.
+
+The first and second operands are of identical types. The
+result has the same number of elements, which are integers
+of the same signedness and width of I. I.e. comparisons of
+unsigned ints generate an unsigned result while signed int
+and floating point comparisons generate a signed result.
+
+NaN inequality comparisons have implementation defined
+results.
+
+*/
+
+#define     cnes(...) (cnes_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cnes_funcof(A, ...)  \
+FUNCOF(             \
+    cnes, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cnesbu   UINT8_CNES
+#define     cnesbi    INT8_CNES
+#define     cnesbc    CHAR_CNES
+#define     cneshu  UINT16_CNES
+#define     cneshi   INT16_CNES
+#define     cneshf   FLT16_CNES
+#define     cneswu  UINT32_CNES
+#define     cneswi   INT32_CNES
+#define     cneswf     FLT_CNES
+#define     cnesdu  UINT64_CNES
+#define     cnesdi   INT64_CNES
+#define     cnesdf     DBL_CNES
+#if DWRD_NLONG == 2
+#   define  cneslu   ULONG_CNES
+#   define  cnesli    LONG_CNES
+#elif QUAD_NLLONG == 2
+#   define  cneslu  ULLONG_CNES
+#   define  cnesli   LLONG_CNES
+#else
+#   define  cnesqu  ULLONG_CNES
+#   define  cnesqi   LLONG_CNES
+#   define  cnesqf    LDBL_CNES
+#endif
+
+#define     cneswbu   VWBU_CNES
+#define     cneswbi   VWBI_CNES
+#define     cneswbc   VWBC_CNES
+#define     cneswhu   VWHU_CNES
+#define     cneswhi   VWHI_CNES
+#define     cneswhf   VWHF_CNES
+#define     cneswwu   VWWU_CNES
+#define     cneswwi   VWWI_CNES
+#define     cneswwf   VWWF_CNES
+
+#define     cnesdbu   VDBU_CNES
+#define     cnesdbi   VDBI_CNES
+#define     cnesdbc   VDBC_CNES
+#define     cnesdhu   VDHU_CNES
+#define     cnesdhi   VDHI_CNES
+#define     cnesdhf   VDHF_CNES
+#define     cnesdwu   VDWU_CNES
+#define     cnesdwi   VDWI_CNES
+#define     cnesdwf   VDWF_CNES
+#define     cnesddu   VDDU_CNES
+#define     cnesddi   VDDI_CNES
+#define     cnesddf   VDDF_CNES
+
+#define     cnesqbu   VQBU_CNES
+#define     cnesqbi   VQBI_CNES
+#define     cnesqbc   VQBC_CNES
+#define     cnesqhu   VQHU_CNES
+#define     cnesqhi   VQHI_CNES
+#define     cnesqhf   VQHF_CNES
+#define     cnesqwu   VQWU_CNES
+#define     cnesqwi   VQWI_CNES
+#define     cnesqwf   VQWF_CNES
+#define     cnesqdu   VQDU_CNES
+#define     cnesqdi   VQDI_CNES
+#define     cnesqdf   VQDF_CNES
+#if _LEAVE_CNES
+}
+#endif
+
+#if _ENTER_CNEY
+{
+#endif
+/*  Compare Not Equal (boolean)
+
+Let I be an element from the first operand and J be the 
+corresponding element of the second operand. Set the
+corresponding element of the result to +1 if I ≠ J, 
+otherwise set it to 0.
+
+The first and second operands have identical types. For 
+vectors, the result has an integer element type of the
+same width and signeness as I. For scalars, the result 
+type is boolean.
+
+NaN inequality comparisons have implementation defined
+results.
+
+Note cney is theoretically more computationally expensive
+compared to cnes on all presently supported architectures.
+Only use the -y suffixed comparisons when it matters that
+results are exactly 1 when true and exactly 0 when false.
+*/
+
+#define     cney(...) (cney_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cney_funcof(A, ...)  \
+FUNCOF(             \
+    cney, (   A   ),\
+    YDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cneyyu    BOOL_CNEY
+#define     cneybu   UINT8_CNEY
+#define     cneybi    INT8_CNEY
+#define     cneybc    CHAR_CNEY
+#define     cneyhu  UINT16_CNEY
+#define     cneyhi   INT16_CNEY
+#define     cneyhf   FLT16_CNEY
+#define     cneywu  UINT32_CNEY
+#define     cneywi   INT32_CNEY
+#define     cneywf     FLT_CNEY
+#define     cneydu  UINT64_CNEY
+#define     cneydi   INT64_CNEY
+#define     cneydf     DBL_CNEY
+#if DWRD_NLONG == 2
+#   define  cneylu   ULONG_CNEY
+#   define  cneyli    LONG_CNEY
+#elif QUAD_NLLONG == 2
+#   define  cneylu  ULLONG_CNEY
+#   define  cneyli   LLONG_CNEY
+#else
+#   define  cneyqu  ULLONG_CNEY
+#   define  cneyqi   LLONG_CNEY
+#   define  cneyqf    LDBL_CNEY
+#endif
+
+#define     cneywbu   VWBU_CNEY
+#define     cneywbi   VWBI_CNEY
+#define     cneywbc   VWBC_CNEY
+#define     cneywhu   VWHU_CNEY
+#define     cneywhi   VWHI_CNEY
+#define     cneywhf   VWHF_CNEY
+#define     cneywwu   VWWU_CNEY
+#define     cneywwi   VWWI_CNEY
+#define     cneywwf   VWWF_CNEY
+
+#define     cneydbu   VDBU_CNEY
+#define     cneydbi   VDBI_CNEY
+#define     cneydbc   VDBC_CNEY
+#define     cneydhu   VDHU_CNEY
+#define     cneydhi   VDHI_CNEY
+#define     cneydhf   VDHF_CNEY
+#define     cneydwu   VDWU_CNEY
+#define     cneydwi   VDWI_CNEY
+#define     cneydwf   VDWF_CNEY
+#define     cneyddu   VDDU_CNEY
+#define     cneyddi   VDDI_CNEY
+#define     cneyddf   VDDF_CNEY
+
+#define     cneyqbu   VQBU_CNEY
+#define     cneyqbi   VQBI_CNEY
+#define     cneyqbc   VQBC_CNEY
+#define     cneyqhu   VQHU_CNEY
+#define     cneyqhi   VQHI_CNEY
+#define     cneyqhf   VQHF_CNEY
+#define     cneyqwu   VQWU_CNEY
+#define     cneyqwi   VQWI_CNEY
+#define     cneyqwf   VQWF_CNEY
+#define     cneyqdu   VQDU_CNEY
+#define     cneyqdi   VQDI_CNEY
+#define     cneyqdf   VQDF_CNEY
+#if _LEAVE_CNEY
+}
+#endif
+
+
+#if _ENTER_CLTS
+{
+#endif
+
+#define     clts(...) (clts_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     clts_funcof(A, ...)  \
+FUNCOF(             \
+    clts, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cltsbu   UINT8_CLTS
+#define     cltsbi    INT8_CLTS
+#define     cltsbc    CHAR_CLTS
+#define     cltshu  UINT16_CLTS
+#define     cltshi   INT16_CLTS
+#define     cltshf   FLT16_CLTS
+#define     cltswu  UINT32_CLTS
+#define     cltswi   INT32_CLTS
+#define     cltswf     FLT_CLTS
+#define     cltsdu  UINT64_CLTS
+#define     cltsdi   INT64_CLTS
+#define     cltsdf     DBL_CLTS
+#if DWRD_NLONG == 2
+#   define  cltslu   ULONG_CLTS
+#   define  cltsli    LONG_CLTS
+#elif QUAD_NLLONG == 2
+#   define  cltslu  ULLONG_CLTS
+#   define  cltsli   LLONG_CLTS
+#else
+#   define  cltsqu  ULLONG_CLTS
+#   define  cltsqi   LLONG_CLTS
+#   define  cltsqf    LDBL_CLTS
+#endif
+
+#define     cltswbu   VWBU_CLTS
+#define     cltswbi   VWBI_CLTS
+#define     cltswbc   VWBC_CLTS
+#define     cltswhu   VWHU_CLTS
+#define     cltswhi   VWHI_CLTS
+#define     cltswhf   VWHF_CLTS
+#define     cltswwu   VWWU_CLTS
+#define     cltswwi   VWWI_CLTS
+#define     cltswwf   VWWF_CLTS
+
+#define     cltsdbu   VDBU_CLTS
+#define     cltsdbi   VDBI_CLTS
+#define     cltsdbc   VDBC_CLTS
+#define     cltsdhu   VDHU_CLTS
+#define     cltsdhi   VDHI_CLTS
+#define     cltsdhf   VDHF_CLTS
+#define     cltsdwu   VDWU_CLTS
+#define     cltsdwi   VDWI_CLTS
+#define     cltsdwf   VDWF_CLTS
+#define     cltsddu   VDDU_CLTS
+#define     cltsddi   VDDI_CLTS
+#define     cltsddf   VDDF_CLTS
+
+#define     cltsqbu   VQBU_CLTS
+#define     cltsqbi   VQBI_CLTS
+#define     cltsqbc   VQBC_CLTS
+#define     cltsqhu   VQHU_CLTS
+#define     cltsqhi   VQHI_CLTS
+#define     cltsqhf   VQHF_CLTS
+#define     cltsqwu   VQWU_CLTS
+#define     cltsqwi   VQWI_CLTS
+#define     cltsqwf   VQWF_CLTS
+#define     cltsqdu   VQDU_CLTS
+#define     cltsqdi   VQDI_CLTS
+#define     cltsqdf   VQDF_CLTS
+#if _LEAVE_CLTS
+}
+#endif
+
+#if _ENTER_CLTY
+{
+#endif
+/*  Compare Less Than (boolean)
+
+Let I be an element from the first operand and J be the 
+corresponding element of the second operand. Set the
+corresponding element of the result to +1 if I < J, 
+otherwise set it to 0.
+
+The first and second operands have identical types. For 
+vectors, the result has an integer element type of the
+same width and signeness as I. For scalars, the result 
+type is boolean.
+
+Ordered NaN comparisons have implementation defined
+results.
+
+Note clty is theoretically more computationally expensive
+compared to clts on all presently supported architectures.
+Only use the -y suffixed comparisons when it matters that
+results are exactly 1 when true and exactly 0 when false.
+*/
+
+#define     clty(...) (clty_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     clty_funcof(A, ...)  \
+FUNCOF(             \
+    clty, (   A   ),\
+    YDR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cltyyu    BOOL_CLTY
+#define     cltybu   UINT8_CLTY
+#define     cltybi    INT8_CLTY
+#define     cltybc    CHAR_CLTY
+#define     cltyhu  UINT16_CLTY
+#define     cltyhi   INT16_CLTY
+#define     cltyhf   FLT16_CLTY
+#define     cltywu  UINT32_CLTY
+#define     cltywi   INT32_CLTY
+#define     cltywf     FLT_CLTY
+#define     cltydu  UINT64_CLTY
+#define     cltydi   INT64_CLTY
+#define     cltydf     DBL_CLTY
+#if DWRD_NLONG == 2
+#   define  cltylu   ULONG_CLTY
+#   define  cltyli    LONG_CLTY
+#elif QUAD_NLLONG == 2
+#   define  cltylu  ULLONG_CLTY
+#   define  cltyli   LLONG_CLTY
+#else
+#   define  cltyqu  ULLONG_CLTY
+#   define  cltyqi   LLONG_CLTY
+#   define  cltyqf    LDBL_CLTY
+#endif
+
+#define     cltywbu   VWBU_CLTY
+#define     cltywbi   VWBI_CLTY
+#define     cltywbc   VWBC_CLTY
+#define     cltywhu   VWHU_CLTY
+#define     cltywhi   VWHI_CLTY
+#define     cltywhf   VWHF_CLTY
+#define     cltywwu   VWWU_CLTY
+#define     cltywwi   VWWI_CLTY
+#define     cltywwf   VWWF_CLTY
+
+#define     cltydbu   VDBU_CLTY
+#define     cltydbi   VDBI_CLTY
+#define     cltydbc   VDBC_CLTY
+#define     cltydhu   VDHU_CLTY
+#define     cltydhi   VDHI_CLTY
+#define     cltydhf   VDHF_CLTY
+#define     cltydwu   VDWU_CLTY
+#define     cltydwi   VDWI_CLTY
+#define     cltydwf   VDWF_CLTY
+#define     cltyddu   VDDU_CLTY
+#define     cltyddi   VDDI_CLTY
+#define     cltyddf   VDDF_CLTY
+
+#define     cltyqbu   VQBU_CLTY
+#define     cltyqbi   VQBI_CLTY
+#define     cltyqbc   VQBC_CLTY
+#define     cltyqhu   VQHU_CLTY
+#define     cltyqhi   VQHI_CLTY
+#define     cltyqhf   VQHF_CLTY
+#define     cltyqwu   VQWU_CLTY
+#define     cltyqwi   VQWI_CLTY
+#define     cltyqwf   VQWF_CLTY
+#define     cltyqdu   VQDU_CLTY
+#define     cltyqdi   VQDI_CLTY
+#define     cltyqdf   VQDF_CLTY
+#if _LEAVE_CLTY
+}
+#endif
+
+
+#if _ENTER_CLES
+{
+#endif
+/*  Elementwise compare 'A ≤ B' (saturated) */
+
+#define     cles(...) (cles_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cles_funcof(A, ...)  \
+FUNCOF(             \
+    cles, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     clesbu   UINT8_CLES
+#define     clesbi    INT8_CLES
+#define     clesbc    CHAR_CLES
+#define     cleshu  UINT16_CLES
+#define     cleshi   INT16_CLES
+#define     cleshf   FLT16_CLES
+#define     cleswu  UINT32_CLES
+#define     cleswi   INT32_CLES
+#define     cleswf     FLT_CLES
+#define     clesdu  UINT64_CLES
+#define     clesdi   INT64_CLES
+#define     clesdf     DBL_CLES
+#if DWRD_NLONG == 2
+#   define  cleslu   ULONG_CLES
+#   define  clesli    LONG_CLES
+#elif QUAD_NLLONG == 2
+#   define  cleslu  ULLONG_CLES
+#   define  clesli   LLONG_CLES
+#else
+#   define  clesqu  ULLONG_CLES
+#   define  clesqi   LLONG_CLES
+#   define  clesqf    LDBL_CLES
+#endif
+
+#define     cleswbu   VWBU_CLES
+#define     cleswbi   VWBI_CLES
+#define     cleswbc   VWBC_CLES
+#define     cleswhu   VWHU_CLES
+#define     cleswhi   VWHI_CLES
+#define     cleswhf   VWHF_CLES
+#define     cleswwu   VWWU_CLES
+#define     cleswwi   VWWI_CLES
+#define     cleswwf   VWWF_CLES
+
+#define     clesdbu   VDBU_CLES
+#define     clesdbi   VDBI_CLES
+#define     clesdbc   VDBC_CLES
+#define     clesdhu   VDHU_CLES
+#define     clesdhi   VDHI_CLES
+#define     clesdhf   VDHF_CLES
+#define     clesdwu   VDWU_CLES
+#define     clesdwi   VDWI_CLES
+#define     clesdwf   VDWF_CLES
+#define     clesddu   VDDU_CLES
+#define     clesddi   VDDI_CLES
+#define     clesddf   VDDF_CLES
+
+#define     clesqbu   VQBU_CLES
+#define     clesqbi   VQBI_CLES
+#define     clesqbc   VQBC_CLES
+#define     clesqhu   VQHU_CLES
+#define     clesqhi   VQHI_CLES
+#define     clesqhf   VQHF_CLES
+#define     clesqwu   VQWU_CLES
+#define     clesqwi   VQWI_CLES
+#define     clesqwf   VQWF_CLES
+#define     clesqdu   VQDU_CLES
+#define     clesqdi   VQDI_CLES
+#define     clesqdf   VQDF_CLES
+#if _LEAVE_CLES
+}
+#endif
+
+#if _ENTER_CLEY
+{
+#endif
+/*  Compare Less or Equal (boolean)
+
+Let I be an element from the first operand and J be the 
+corresponding element of the second operand. Set the
+corresponding element of the result to +1 if I ≤ J, 
+otherwise set it to 0.
+
+The first and second operands have identical types. For 
+vectors, the result has an integer element type of the
+same width and signeness as I. For scalars, the result 
+type is boolean.
+
+Ordered NaN comparisons have implementation defined
+results.
+
+Note cley is theoretically more computationally expensive
+compared to cles on all presently supported architectures.
+Only use the -y suffixed comparisons when it matters that
+results are exactly 1 when true and exactly 0 when false.
+*/
+
+#define     cley(...) (cley_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cley_funcof(A, ...)  \
+FUNCOF(             \
+    cley, (   A   ),\
+    YDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cleyyu    BOOL_CLEY
+#define     cleybu   UINT8_CLEY
+#define     cleybi    INT8_CLEY
+#define     cleybc    CHAR_CLEY
+#define     cleyhu  UINT16_CLEY
+#define     cleyhi   INT16_CLEY
+#define     cleyhf   FLT16_CLEY
+#define     cleywu  UINT32_CLEY
+#define     cleywi   INT32_CLEY
+#define     cleywf     FLT_CLEY
+#define     cleydu  UINT64_CLEY
+#define     cleydi   INT64_CLEY
+#define     cleydf     DBL_CLEY
+#if DWRD_NLONG == 2
+#   define  cleylu   ULONG_CLEY
+#   define  cleyli    LONG_CLEY
+#elif QUAD_NLLONG == 2
+#   define  cleylu  ULLONG_CLEY
+#   define  cleyli   LLONG_CLEY
+#else
+#   define  cleyqu  ULLONG_CLEY
+#   define  cleyqi   LLONG_CLEY
+#   define  cleyqf    LDBL_CLEY
+#endif
+
+#define     cleywbu   VWBU_CLEY
+#define     cleywbi   VWBI_CLEY
+#define     cleywbc   VWBC_CLEY
+#define     cleywhu   VWHU_CLEY
+#define     cleywhi   VWHI_CLEY
+#define     cleywhf   VWHF_CLEY
+#define     cleywwu   VWWU_CLEY
+#define     cleywwi   VWWI_CLEY
+#define     cleywwf   VWWF_CLEY
+
+#define     cleydbu   VDBU_CLEY
+#define     cleydbi   VDBI_CLEY
+#define     cleydbc   VDBC_CLEY
+#define     cleydhu   VDHU_CLEY
+#define     cleydhi   VDHI_CLEY
+#define     cleydhf   VDHF_CLEY
+#define     cleydwu   VDWU_CLEY
+#define     cleydwi   VDWI_CLEY
+#define     cleydwf   VDWF_CLEY
+#define     cleyddu   VDDU_CLEY
+#define     cleyddi   VDDI_CLEY
+#define     cleyddf   VDDF_CLEY
+
+#define     cleyqbu   VQBU_CLEY
+#define     cleyqbi   VQBI_CLEY
+#define     cleyqbc   VQBC_CLEY
+#define     cleyqhu   VQHU_CLEY
+#define     cleyqhi   VQHI_CLEY
+#define     cleyqhf   VQHF_CLEY
+#define     cleyqwu   VQWU_CLEY
+#define     cleyqwi   VQWI_CLEY
+#define     cleyqwf   VQWF_CLEY
+#define     cleyqdu   VQDU_CLEY
+#define     cleyqdi   VQDI_CLEY
+#define     cleyqdf   VQDF_CLEY
+#if _LEAVE_CLEY
+}
+#endif
+
+
+#if _ENTER_CGTS
+{
+#endif
+/*  Elementwise compare 'A > B' (saturated) */
+
+#define     cgts(...) (cgts_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cgts_funcof(A, ...)  \
+FUNCOF(             \
+    cgts, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cgtsbu   UINT8_CGTS
+#define     cgtsbi    INT8_CGTS
+#define     cgtsbc    CHAR_CGTS
+#define     cgtshu  UINT16_CGTS
+#define     cgtshi   INT16_CGTS
+#define     cgtshf   FLT16_CGTS
+#define     cgtswu  UINT32_CGTS
+#define     cgtswi   INT32_CGTS
+#define     cgtswf     FLT_CGTS
+#define     cgtsdu  UINT64_CGTS
+#define     cgtsdi   INT64_CGTS
+#define     cgtsdf     DBL_CGTS
+#if DWRD_NLONG == 2
+#   define  cgtslu   ULONG_CGTS
+#   define  cgtsli    LONG_CGTS
+#elif QUAD_NLLONG == 2
+#   define  cgtslu  ULLONG_CGTS
+#   define  cgtsli   LLONG_CGTS
+#else
+#   define  cgtsqu  ULLONG_CGTS
+#   define  cgtsqi   LLONG_CGTS
+#   define  cgtsqf    LDBL_CGTS
+#endif
+
+#define     cgtswbu   VWBU_CGTS
+#define     cgtswbi   VWBI_CGTS
+#define     cgtswbc   VWBC_CGTS
+#define     cgtswhu   VWHU_CGTS
+#define     cgtswhi   VWHI_CGTS
+#define     cgtswhf   VWHF_CGTS
+#define     cgtswwu   VWWU_CGTS
+#define     cgtswwi   VWWI_CGTS
+#define     cgtswwf   VWWF_CGTS
+
+#define     cgtsdbu   VDBU_CGTS
+#define     cgtsdbi   VDBI_CGTS
+#define     cgtsdbc   VDBC_CGTS
+#define     cgtsdhu   VDHU_CGTS
+#define     cgtsdhi   VDHI_CGTS
+#define     cgtsdhf   VDHF_CGTS
+#define     cgtsdwu   VDWU_CGTS
+#define     cgtsdwi   VDWI_CGTS
+#define     cgtsdwf   VDWF_CGTS
+#define     cgtsddu   VDDU_CGTS
+#define     cgtsddi   VDDI_CGTS
+#define     cgtsddf   VDDF_CGTS
+
+#define     cgtsqbu   VQBU_CGTS
+#define     cgtsqbi   VQBI_CGTS
+#define     cgtsqbc   VQBC_CGTS
+#define     cgtsqhu   VQHU_CGTS
+#define     cgtsqhi   VQHI_CGTS
+#define     cgtsqhf   VQHF_CGTS
+#define     cgtsqwu   VQWU_CGTS
+#define     cgtsqwi   VQWI_CGTS
+#define     cgtsqwf   VQWF_CGTS
+#define     cgtsqdu   VQDU_CGTS
+#define     cgtsqdi   VQDI_CGTS
+#define     cgtsqdf   VQDF_CGTS
+#if _LEAVE_CGTS
+}
+#endif
+
+#if _ENTER_CGTY
+{
+#endif
+/*  Compare Greater Than (boolean)
+
+Let I be an element from the first operand and J be the 
+corresponding element of the second operand. Set the
+corresponding element of the result to +1 if I > J, 
+otherwise set it to 0.
+
+The first and second operands have identical types. For 
+vectors, the result has an integer element type of the
+same width and signeness as I. For scalars, the result 
+type is boolean.
+
+Ordered NaN comparisons have implementation defined
+results.
+
+Note cgty is theoretically more computationally expensive
+compared to cgts on all presently supported architectures.
+Only use the -y suffixed comparisons when it matters that
+results are exactly 1 when true and exactly 0 when false.
+*/
+
+#define     cgty(...) (cgty_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cgty_funcof(A, ...)  \
+FUNCOF(             \
+    cgty, (   A   ),\
+    YDR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cgtyyu    BOOL_CGTY
+#define     cgtybu   UINT8_CGTY
+#define     cgtybi    INT8_CGTY
+#define     cgtybc    CHAR_CGTY
+#define     cgtyhu  UINT16_CGTY
+#define     cgtyhi   INT16_CGTY
+#define     cgtyhf   FLT16_CGTY
+#define     cgtywu  UINT32_CGTY
+#define     cgtywi   INT32_CGTY
+#define     cgtywf     FLT_CGTY
+#define     cgtydu  UINT64_CGTY
+#define     cgtydi   INT64_CGTY
+#define     cgtydf     DBL_CGTY
+#if DWRD_NLONG == 2
+#   define  cgtylu   ULONG_CGTY
+#   define  cgtyli    LONG_CGTY
+#elif QUAD_NLLONG == 2
+#   define  cgtylu  ULLONG_CGTY
+#   define  cgtyli   LLONG_CGTY
+#else
+#   define  cgtyqu  ULLONG_CGTY
+#   define  cgtyqi   LLONG_CGTY
+#   define  cgtyqf    LDBL_CGTY
+#endif
+
+#define     cgtywbu   VWBU_CGTY
+#define     cgtywbi   VWBI_CGTY
+#define     cgtywbc   VWBC_CGTY
+#define     cgtywhu   VWHU_CGTY
+#define     cgtywhi   VWHI_CGTY
+#define     cgtywhf   VWHF_CGTY
+#define     cgtywwu   VWWU_CGTY
+#define     cgtywwi   VWWI_CGTY
+#define     cgtywwf   VWWF_CGTY
+
+#define     cgtydbu   VDBU_CGTY
+#define     cgtydbi   VDBI_CGTY
+#define     cgtydbc   VDBC_CGTY
+#define     cgtydhu   VDHU_CGTY
+#define     cgtydhi   VDHI_CGTY
+#define     cgtydhf   VDHF_CGTY
+#define     cgtydwu   VDWU_CGTY
+#define     cgtydwi   VDWI_CGTY
+#define     cgtydwf   VDWF_CGTY
+#define     cgtyddu   VDDU_CGTY
+#define     cgtyddi   VDDI_CGTY
+#define     cgtyddf   VDDF_CGTY
+
+#define     cgtyqbu   VQBU_CGTY
+#define     cgtyqbi   VQBI_CGTY
+#define     cgtyqbc   VQBC_CGTY
+#define     cgtyqhu   VQHU_CGTY
+#define     cgtyqhi   VQHI_CGTY
+#define     cgtyqhf   VQHF_CGTY
+#define     cgtyqwu   VQWU_CGTY
+#define     cgtyqwi   VQWI_CGTY
+#define     cgtyqwf   VQWF_CGTY
+#define     cgtyqdu   VQDU_CGTY
+#define     cgtyqdi   VQDI_CGTY
+#define     cgtyqdf   VQDF_CGTY
+#if _LEAVE_CGTY
+}
+#endif
+
+
+#if _ENTER_CGES
+{
+#endif
+/*  Compare Greater or Equal (boolean)
+
+Let I be an element from the first operand and J be the 
+corresponding element of the second operand. Set the
+corresponding element of the result to +1 if I ≥ J, 
+otherwise set it to 0.
+
+The first and second operands have identical types. For 
+vectors, the result has an integer element type of the
+same width and signeness as I. For scalars, the result 
+type is boolean.
+
+Ordered NaN comparisons have implementation defined
+results.
+
+Note cgey is theoretically more computationally expensive
+compared to cges on all presently supported architectures.
+Only use the -y suffixed comparisons when it matters that
+results are exactly 1 when true and exactly 0 when false.
+*/
+
+#define     cges(...) (cges_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cges_funcof(A, ...)  \
+FUNCOF(             \
+    cges, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cgesbu   UINT8_CGES
+#define     cgesbi    INT8_CGES
+#define     cgesbc    CHAR_CGES
+#define     cgeshu  UINT16_CGES
+#define     cgeshi   INT16_CGES
+#define     cgeshf   FLT16_CGES
+#define     cgeswu  UINT32_CGES
+#define     cgeswi   INT32_CGES
+#define     cgeswf     FLT_CGES
+#define     cgesdu  UINT64_CGES
+#define     cgesdi   INT64_CGES
+#define     cgesdf     DBL_CGES
+#if DWRD_NLONG == 2
+#   define  cgeslu   ULONG_CGES
+#   define  cgesli    LONG_CGES
+#elif QUAD_NLLONG == 2
+#   define  cgeslu  ULLONG_CGES
+#   define  cgesli   LLONG_CGES
+#else
+#   define  cgesqu  ULLONG_CGES
+#   define  cgesqi   LLONG_CGES
+#   define  cgesqf    LDBL_CGES
+#endif
+
+#define     cgeswbu   VWBU_CGES
+#define     cgeswbi   VWBI_CGES
+#define     cgeswbc   VWBC_CGES
+#define     cgeswhu   VWHU_CGES
+#define     cgeswhi   VWHI_CGES
+#define     cgeswhf   VWHF_CGES
+#define     cgeswwu   VWWU_CGES
+#define     cgeswwi   VWWI_CGES
+#define     cgeswwf   VWWF_CGES
+
+#define     cgesdbu   VDBU_CGES
+#define     cgesdbi   VDBI_CGES
+#define     cgesdbc   VDBC_CGES
+#define     cgesdhu   VDHU_CGES
+#define     cgesdhi   VDHI_CGES
+#define     cgesdhf   VDHF_CGES
+#define     cgesdwu   VDWU_CGES
+#define     cgesdwi   VDWI_CGES
+#define     cgesdwf   VDWF_CGES
+#define     cgesddu   VDDU_CGES
+#define     cgesddi   VDDI_CGES
+#define     cgesddf   VDDF_CGES
+
+#define     cgesqbu   VQBU_CGES
+#define     cgesqbi   VQBI_CGES
+#define     cgesqbc   VQBC_CGES
+#define     cgesqhu   VQHU_CGES
+#define     cgesqhi   VQHI_CGES
+#define     cgesqhf   VQHF_CGES
+#define     cgesqwu   VQWU_CGES
+#define     cgesqwi   VQWI_CGES
+#define     cgesqwf   VQWF_CGES
+#define     cgesqdu   VQDU_CGES
+#define     cgesqdi   VQDI_CGES
+#define     cgesqdf   VQDF_CGES
+#if _LEAVE_CGES
+}
+#endif
+
+#if _ENTER_CGEY
+{
+#endif
+/*  Elementwise compare 'A ≥ B' (boolean) */
+
+#define     cgey(...) (cgey_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cgey_funcof(A, ...)  \
+FUNCOF(             \
+    cgey, (   A   ),\
+    YDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cgeyyu    BOOL_CGEY
+#define     cgeybu   UINT8_CGEY
+#define     cgeybi    INT8_CGEY
+#define     cgeybc    CHAR_CGEY
+#define     cgeyhu  UINT16_CGEY
+#define     cgeyhi   INT16_CGEY
+#define     cgeyhf   FLT16_CGEY
+#define     cgeywu  UINT32_CGEY
+#define     cgeywi   INT32_CGEY
+#define     cgeywf     FLT_CGEY
+#define     cgeydu  UINT64_CGEY
+#define     cgeydi   INT64_CGEY
+#define     cgeydf     DBL_CGEY
+
+#if DWRD_NLONG == 2
+#   define  cgeylu   ULONG_CGEY
+#   define  cgeyli    LONG_CGEY
+#elif QUAD_NLLONG == 2
+#   define  cgeylu  ULLONG_CGEY
+#   define  cgeyli   LLONG_CGEY
+#else
+#   define  cgeyqu  ULLONG_CGEY
+#   define  cgeyqi   LLONG_CGEY
+#   define  cgeyqf    LDBL_CGEY
+#endif
+
+#define     cgeywbu   VWBU_CGEY
+#define     cgeywbi   VWBI_CGEY
+#define     cgeywbc   VWBC_CGEY
+#define     cgeywhu   VWHU_CGEY
+#define     cgeywhi   VWHI_CGEY
+#define     cgeywhf   VWHF_CGEY
+#define     cgeywwu   VWWU_CGEY
+#define     cgeywwi   VWWI_CGEY
+#define     cgeywwf   VWWF_CGEY
+
+#define     cgeydbu   VDBU_CGEY
+#define     cgeydbi   VDBI_CGEY
+#define     cgeydbc   VDBC_CGEY
+#define     cgeydhu   VDHU_CGEY
+#define     cgeydhi   VDHI_CGEY
+#define     cgeydhf   VDHF_CGEY
+#define     cgeydwu   VDWU_CGEY
+#define     cgeydwi   VDWI_CGEY
+#define     cgeydwf   VDWF_CGEY
+#define     cgeyddu   VDDU_CGEY
+#define     cgeyddi   VDDI_CGEY
+#define     cgeyddf   VDDF_CGEY
+
+#define     cgeyqbu   VQBU_CGEY
+#define     cgeyqbi   VQBI_CGEY
+#define     cgeyqbc   VQBC_CGEY
+#define     cgeyqhu   VQHU_CGEY
+#define     cgeyqhi   VQHI_CGEY
+#define     cgeyqhf   VQHF_CGEY
+#define     cgeyqwu   VQWU_CGEY
+#define     cgeyqwi   VQWI_CGEY
+#define     cgeyqwf   VQWF_CGEY
+#define     cgeyqdu   VQDU_CGEY
+#define     cgeyqdi   VQDI_CGEY
+#define     cgeyqdf   VQDF_CGEY
+#if _LEAVE_CGEY
+}
+#endif
+
 
 #if _ENTER_CNT1
 {
 #endif
-/*  Count the number of '1' digits in a value's binary
-    representation. Commonly called "population count" or
-    Hamming weight.
+/*  Count (set bits)
+
+For each integer element E of in the N element operand, 
+count the number of times '1' occurs and store this in the
+corresponding element of the result, which consists of N
+elements of the same type as E.
+
+E.g. 
+    cnt1bu(0b1001001)
+
+returns
+
+    ((uint8_t) 4)
+
 */
 
 #define     cnt1(...) (cnt1_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17218,9 +15196,22 @@ FUNCOF(             \
 #if _ENTER_CNTS
 {
 #endif
-/*  Count the number of times each element's MSB repeats.
+/*  Count (sign bits)
 
-Commonly called "count leading redundant sign bits"
+Let Y be the value of the most significant bit of the
+integer element E of the N element operand. Starting with
+the bit before the most significant bit, count the number
+of times Y repeats and store this in the corresponding
+element of the result, which consists of N elements of the
+same type as E.
+
+E.g. 
+    cntsbu(0b11110000)
+
+returns
+
+    3
+
 */
 
 #define     cnts(...) (cnts_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17291,7 +15282,15 @@ FUNCOF(             \
 #if _ENTER_CSZL
 {
 #endif
-/*  Count Zequential Zeros (lo to hi) */
+/*  Count Zequential Zeros (lo to hi) 
+
+For each K bit integer element E in the N element operand,
+starting at the least significant bit and moving towards
+the most significant bit, count the number of consecutive
+zeros and store the result in the corresponding element of
+the result, which consists of N elements of the same type
+as E.
+*/
 
 #define     cszl(...) (cszl_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cszl_funcof(X, ...)  \
@@ -17361,7 +15360,15 @@ FUNCOF(             \
 #if _ENTER_CSZR
 {
 #endif
-/*  Count Sequential Zeros (msb/hi to lsb/lo) */
+/*  Count Zequential Zeros (hi to lo) 
+
+For each K bit integer element E in the N element operand,
+starting at the most significant bit and moving towards
+the least significant bit, count the number of consecutive
+zeros and store the result in the corresponding element of
+the result, which consists of N elements of the same type
+as E.
+*/
 
 #define     cszr(...) (cszr_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cszr_funcof(X, ...)  \
@@ -17432,10 +15439,18 @@ FUNCOF(             \
 #if _ENTER_CVBU
 {
 #endif
-/*  Convert a scalar to an unsigned 8 bit integer or a
-    vector with at least four elements to a vector of
-    unsigned 8 bit integers.
+/*  ConVert Byte (truncated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 8 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
 */
+
 
 #define     cvbu(...) (cvbu_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvbu_funcof(X, ...)  \
@@ -17502,9 +15517,26 @@ FUNCOF(             \
 #if _ENTER_CVBZ
 {
 #endif
-/*  Convert a scalar to an unsigned 8 bit integer or a
-    vector with at least four elements to a vector of
-    unsigned 8 bit integers. The result is saturated.
+/*  ConVert Byte (saturated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding unsigned 8 bit int element 
+of the N element result.
+
+E.g.
+
+    #define cvbz(X)                                     \
+    (                                                   \
+        (uint8_t)                                       \
+        (                                               \
+            (long double) X < 0x0000000 ? UINT8_MIN :   \
+            (long double) X > UINT8_MAX ? UINT8_MAX :   \
+            X                                           \
+        )                                               \
+    )
+
 */
 
 #define     cvbz(...) (cvbz_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17572,9 +15604,16 @@ FUNCOF(             \
 #if _ENTER_CVBI
 {
 #endif
-/*  Convert a scalar to an signed 8 bit integer or a
-    vector with at least four elements to a vector of
-    signed 8 bit integers.
+/*  ConVert Byte (truncated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 8 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
 */
 
 #define     cvbi(...) (cvbi_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17642,9 +15681,26 @@ FUNCOF(             \
 #if _ENTER_CVBS
 {
 #endif
-/*  Convert a scalar to an unsigned 8 bit integer or a
-    vector with at least four elements to a vector of
-    unsigned 8 bit integers. The result is saturated.
+/*  ConVert Byte (saturated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding signed 8 bit int element of
+the N element result.
+
+E.g.
+
+    #define cvbs(X)                                 \
+    (                                               \
+        (int8_t)                                    \
+        (                                           \
+            (long double) X < INT8_MIN ? INT8_MIN : \
+            (long double) X > INT8_MAX ? INT8_MAX : \
+            X                                       \
+        )                                           \
+    )
+
 */
 
 #define     cvbs(...) (cvbs_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17712,10 +15768,29 @@ FUNCOF(             \
 #if _ENTER_CVBC
 {
 #endif
-/*  Convert a scalar to an ASCII char or a vector with at
-    least four elements to a vector of ASCII chars.
-*/
+/*  ConVert Byte (ASCII char)
 
+Convert each K bit element E in the N element operand to
+an ASCII char. For vectors, the result is an N element 
+char vector. 
+
+If E is less than zero or greater than 127, the result is
+undefined. If E is a float and not an integral, the result
+is undefined.
+
+E.g.
+
+    #define cvbc(X)                         \
+    (                                       \
+        (char)                              \
+        (                                   \
+            (long double) X < '\x00' ? -1 : \
+            (long double) X > '\x7f' ? -1 : \
+            X                               \
+        )                                   \
+    )
+
+*/
 #define     cvbc(...) (cvbc_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvbc_funcof(X, ...)  \
 FUNCOF(             \
@@ -17783,10 +15858,18 @@ FUNCOF(             \
 #if _ENTER_CVHU
 {
 #endif
-/*  Convert a scalar to an unsigned 16 bit integer or a
-    vector with at least two elements to a vector of
-    unsigned 16 bit integers. The result is saturated.
+/*  ConVert Halfword (truncated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 16 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
 */
+
 
 #define     cvhu(...) (cvhu_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvhu_funcof(X, ...)  \
@@ -17859,9 +15942,26 @@ FUNCOF(             \
 #if _ENTER_CVHZ
 {
 #endif
-/*  Convert a scalar to an unsigned 16 bit integer or a
-    vector with at least four elements to a vector of
-    unsigned 16 bit integers.
+/*  ConVert Halfword (saturated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding unsigned 16 bit int element 
+of the N element result.
+
+E.g.
+
+    #define cvhz(X)                                     \
+    (                                                   \
+        (uint16_t)                                      \
+        (                                               \
+            (long double) X < 0x00000000 ? UINT16_MIN : \
+            (long double) X > UINT16_MAX ? UINT16_MAX : \
+            X                                           \
+        )                                               \
+    )
+
 */
 
 #define     cvhz(...) (cvhz_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17935,7 +16035,16 @@ FUNCOF(             \
 #if _ENTER_CVHI
 {
 #endif
-/*  ConVert Halfword (truncated int16_t)
+/*  ConVert Halfword (truncated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 16 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
 */
 
 #define     cvhi(...) (cvhi_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18012,7 +16121,26 @@ FUNCOF(             \
 #if _ENTER_CVHS
 {
 #endif
-/*  ConVert Halfword (saturated int16_t)
+/*  ConVert Halfword (saturated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding signed 16 bit int element 
+of the N element result.
+
+E.g.
+
+    #define cvhs(X)                                     \
+    (                                                   \
+        (int16_t)                                       \
+        (                                               \
+            (long double) X <  INT16_MIN ?  INT16_MIN : \
+            (long double) X >  INT16_MAX ?  INT16_MAX : \
+            X                                           \
+        )                                               \
+    )
+
 */
 
 #define     cvhs(...) (cvhs_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18086,7 +16214,17 @@ FUNCOF(             \
 #if _ENTER_CVHF
 {
 #endif
-/*  ConVert Halfword (flt16_t)
+/*  ConVert Halfword  (truncated float)
+
+Convert each K bit element E in the N element operand to 
+the target's 16 bit floating point type.
+
+The result of a lossy conversion is implemention defined.
+
+The range of integers losslessly representable by a half
+precision (binary16) float is ±2048 (1<<11). If flt16_t
+uses the bfloat16 spec, the lossless int range is ±256.
+
 */
 
 #define     cvhf(...) (cvhf_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18144,9 +16282,6 @@ FUNCOF(             \
 #define     cvhfdwi   VDWI_CVHF
 #define     cvhfdwf   VDWF_CVHF
 
-#define     cvhfqbu   VQBU_CVHF
-#define     cvhfqbi   VQBU_CVHF
-#define     cvhfqbc   VQBU_CVHF
 #define     cvhfqhu   VQHU_CVHF
 #define     cvhfqhi   VQHI_CVHF
 #define     cvhfqhf   VQHF_CVHF
@@ -18161,11 +16296,98 @@ FUNCOF(             \
 #endif
 
 
+#if _ENTER_CVWV
+{
+#endif
+/*  ConVert Word (boolean vector)
+
+Let E be the name of a particular element in the N element
+vector. If E is nonzero, set the corresponding lane in the
+Vwyu result to 1. Otherwise, set it to zero.
+
+E.g.
+    cvwvwbu((S=newlwbu(0, 128, 0, 64)))
+
+would return
+
+    (D=asyuwwu(astvwu(0b1010)))
+
+since 
+    D[0] = ((bool) S[0]) = 0
+    D[1] = ((bool) S[1]) = 1
+    D[2] = ((bool) S[2]) = 0
+    D[3] = ((bool) S[3]) = 0
+
+*/
+
+
+#define     cvwv(...) (cvwv_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cvwv_funcof(X, ...)  \
+FUNCOF(             \
+    cvwv, (   X   ),\
+    NONE, /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cvwvwbu   VWBU_CVWV
+#define     cvwvwbi   VWBI_CVWV
+#define     cvwvwbc   VWBC_CVWV
+#define     cvwvwhu   VWHU_CVWV
+#define     cvwvwhi   VWHI_CVWV
+#define     cvwvwhf   VWHF_CVWV
+#define     cvwvwwu   VWWU_CVWV
+#define     cvwvwwi   VWWI_CVWV
+#define     cvwvwwf   VWWF_CVWV
+
+#define     cvwvdbu   VDBU_CVWV
+#define     cvwvdbi   VDBI_CVWV
+#define     cvwvdbc   VDBC_CVWV
+#define     cvwvdhu   VDHU_CVWV
+#define     cvwvdhi   VDHI_CVWV
+#define     cvwvdhf   VDHF_CVWV
+#define     cvwvdwu   VDWU_CVWV
+#define     cvwvdwi   VDWI_CVWV
+#define     cvwvdwf   VDWF_CVWV
+#define     cvwvddu   VDDU_CVWV
+#define     cvwvddi   VDDI_CVWV
+#define     cvwvddf   VDDF_CVWV
+
+#define     cvwvqbu   VQBU_CVWV
+#define     cvwvqbi   VQBI_CVWV
+#define     cvwvqbc   VQBC_CVWV
+#define     cvwvqhu   VQHU_CVWV
+#define     cvwvqhi   VQHI_CVWV
+#define     cvwvqhf   VQHF_CVWV
+#define     cvwvqwu   VQWU_CVWV
+#define     cvwvqwi   VQWI_CVWV
+#define     cvwvqwf   VQWF_CVWV
+#define     cvwvqdu   VQDU_CVWV
+#define     cvwvqdi   VQDI_CVWV
+#define     cvwvqdf   VQDF_CVWV
+#if _LEAVE_CVWV
+}
+#endif
+
 #if _ENTER_CVWU
 {
 #endif
-/*  ConVert Word (truncated uint32_t)
+/*  ConVert Word (truncated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 32 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
 */
+
 
 #define     cvwu(...) (cvwu_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvwu_funcof(X, ...)  \
@@ -18238,7 +16460,26 @@ FUNCOF(             \
 #if _ENTER_CVWZ
 {
 #endif
-/*  ConVert Word (saturated uint32_t)
+/*  ConVert Word (saturated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding unsigned 32 bit int element 
+of the N element result.
+
+E.g.
+
+    #define cvwz(X)                                     \
+    (                                                   \
+        (uint32_t)                                      \
+        (                                               \
+            (long double) X < 0x00000000 ? UINT32_MIN : \
+            (long double) X > UINT32_MAX ? UINT32_MAX : \
+            X                                           \
+        )                                               \
+    )
+
 */
 
 #define     cvwz(...) (cvwz_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18312,8 +16553,16 @@ FUNCOF(             \
 #if _ENTER_CVWI
 {
 #endif
-/*  Convert each element to an unsigned 32 bit integer.
-The result is saturated.
+/*  ConVert Word (truncated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 32 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
 */
 
 #define     cvwi(...) (cvwi_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18387,8 +16636,26 @@ FUNCOF(             \
 #if _ENTER_CVWS
 {
 #endif
-/*  Convert each element to an signed 32 bit integer. The
-    result is saturated.
+/*  ConVert Word (saturated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding signed 32 bit int element 
+of the N element result.
+
+E.g.
+
+    #define cvws(X)                                     \
+    (                                                   \
+        (int32_t)                                       \
+        (                                               \
+            (long double) X <  INT32_MIN ?  INT32_MIN : \
+            (long double) X >  INT32_MAX ?  INT32_MAX : \
+            X                                           \
+        )                                               \
+    )
+
 */
 
 #define     cvws(...) (cvws_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18462,15 +16729,29 @@ FUNCOF(             \
 #if _ENTER_CVWF
 {
 #endif
-/*  Elementwise convert to IEEE 764 32-bit float
+/*  ConVert Word  (truncated float)
 
-    If an element cannot be converted exactly, the
-    rounding direction is implementation defined and a
-    floating point exception may be raised.
+Convert each K bit element E in the N element operand to 
+the target's 32 bit floating point type.
 
-    If any element cannot be converted, the entire result
-    is undefined and the implementation may raise a
-    floating point exception.
+The result of a lossy conversion is implemention defined.
+E.g. in the reference implementation, which always uses 
+IEEE 746 'single precision' 32 bit floats, the result of
+the following is implementation defined.
+
+    cvwfdu( (1+(1ull<<53)) )
+    
+could be 
+    
+    9007199254740992.0
+
+or 
+    
+    HUGE_VALF
+
+The range of integers losslessly representable by a single
+precision (binary32) float is ±8388608 (1<<23)
+
 */
 
 #define     cvwf(...) (cvwf_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18545,7 +16826,18 @@ FUNCOF(             \
 #if _ENTER_CVDU
 {
 #endif
-/*  Elementwise convert to uint64_t */
+/*  ConVert Doubleword (truncated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 64 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
+*/
+
 
 #define     cvdu(...) (cvdu_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvdu_funcof(X, ...)  \
@@ -18609,7 +16901,27 @@ FUNCOF(             \
 #if _ENTER_CVDZ
 {
 #endif
-/*  Elementwise convert to saturated uint64_t */
+/*  ConVert Doubleword (saturated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding unsigned 64 bit int element 
+of the N element result.
+
+E.g.
+
+    #define cvdz(X)                                     \
+    (                                                   \
+        (uint64_t)                                      \
+        (                                               \
+            (long double) X < 0x00000000 ? UINT64_MIN : \
+            (long double) X > UINT64_MAX ? UINT64_MAX : \
+            X                                           \
+        )                                               \
+    )
+
+*/
 
 #define     cvdz(...) (cvdz_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvdz_funcof(X, ...)  \
@@ -18674,7 +16986,17 @@ FUNCOF(             \
 #if _ENTER_CVDI
 {
 #endif
-/*  Elementwise convert to int64_t */
+/*  ConVert Doubleword (truncated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 64 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+Attempting to convert NaN, inf, or subnormal floats result
+in undefined behavior.
+*/
 
 #define     cvdi(...) (cvdi_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvdi_funcof(X, ...)  \
@@ -18738,7 +17060,27 @@ FUNCOF(             \
 #if _ENTER_CVDS
 {
 #endif
-/*  Elementwise convert to saturated int64_t */
+/*  ConVert Doubleword (saturated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. S is then used
+to saturate the corresponding signed 64 bit int element 
+of the N element result.
+
+E.g.
+
+    #define cvds(X)                                     \
+    (                                                   \
+        (int64_t)                                       \
+        (                                               \
+            (long double) X <  INT64_MIN ?  INT64_MIN : \
+            (long double) X >  INT64_MAX ?  INT64_MAX : \
+            X                                           \
+        )                                               \
+    )
+
+*/
 
 #define     cvds(...) (cvds_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     cvds_funcof(X, ...)  \
@@ -18814,15 +17156,29 @@ FUNCOF(             \
 #if _ENTER_CVDF
 {
 #endif
-/*  Elementwise convert to IEEE 764 64-bit float (double)
+/*  ConVert Doubleword  (truncated float)
 
-    If an element cannot be converted exactly, the
-    rounding direction is implementation defined and a
-    floating point exception may be raised.
+Convert each K bit element E in the N element operand to 
+the target's 64 bit floating point type.
 
-    If any element cannot be converted, the entire result
-    is undefined and the implementation may raise a
-    floating point exception.
+The result of a lossy conversion is implemention defined.
+E.g. in the reference implementation, which always uses 
+IEEE 746 'double precision' 64 bit floats, the result of
+the following is implementation defined.
+
+    cvdfdu( (1+(1ull<<53)) )
+    
+could be 
+    
+    9007199254740992.0
+
+or 
+    
+    HUGE_VAL
+
+The range of integers losslessly representable by a double
+precision (binary64) float is ±9007199254740992 (1<<53)
+
 */
 
 #define     cvdf(...) (cvdf_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -19247,16 +17603,15 @@ producing a result with the same size as A.
 #define     divl_funcof(A, ...)  \
 FUNCOF(             \
     divl, (   A   ),\
-    YDZ,  /* TGK */ \
-    YWZ,  /* TGW */ \
-    YDZ,  /* TGD */ \
-    YDZ,  /* TGQ */ \
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
-#define     divlyu    BOOL_DIVL
 #define     divlbu   UINT8_DIVL
 #define     divlbi    INT8_DIVL
 #define     divlbc    CHAR_DIVL
@@ -19277,7 +17632,6 @@ FUNCOF(             \
 #   define  divlqi   LLONG_DIVL
 #endif
 
-#define     divlwyu   VWYU_DIVL
 #define     divlwbu   VWBU_DIVL
 #define     divlwbi   VWBI_DIVL
 #define     divlwbc   VWBC_DIVL
@@ -19286,7 +17640,6 @@ FUNCOF(             \
 #define     divlwwu   VWWU_DIVL
 #define     divlwwi   VWWI_DIVL
 
-#define     divldyu   VDYU_DIVL
 #define     divldbu   VDBU_DIVL
 #define     divldbi   VDBI_DIVL
 #define     divldbc   VDBC_DIVL
@@ -19297,7 +17650,6 @@ FUNCOF(             \
 #define     divlddu   VDDU_DIVL
 #define     divlddi   VDDI_DIVL
 
-#define     divlqyu   VQYU_DIVL
 #define     divlqbu   VQBU_DIVL
 #define     divlqbi   VQBI_DIVL
 #define     divlqbc   VQBC_DIVL
@@ -19596,22 +17948,25 @@ FUNCOF(             \
 #if _ENTER_DUPW
 {
 #endif
-/*  Set each lane of a 32 bit vector to the same value
+/*  Copy a scalar into all lanes of a 32 bit vector
 
-The source value can be a 1, 8, or 16 bit scalar, the
-unaligned memory address of a scalar, or a vector plus
-the lane number to duplicate.
+The operand can be a scalar (or one's address) or a vector.
+
+If the operand is an address, it need not be aligned.
+
+For the vector variants, a second operand representing the
+source lane is required.
 */
 
 #define     dupw(...)    (dupw_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     dupw_funcof(X, ...) \
 FUNCOF_AC(                      \
     dupw, (   X   ),\
-    YHR,  /* TGK */ \
-    YHR,  /* TGA */ \
-    YHR,  /* TGW */ \
-    YHR,  /* TGD */ \
-    YHR,  /* TGQ */ \
+    YWR,  /* TGK */ \
+    YWR,  /* TGA */ \
+    YWR,  /* TGW */ \
+    YWR,  /* TGD */ \
+    YWR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -19668,7 +18023,15 @@ FUNCOF_AC(                      \
 #if _ENTER_DUPD
 {
 #endif
-/*  Set each lane of a 64 bit vector to the same value */
+/*  Copy a scalar into all lanes of a 64 bit vector
+
+The operand can be a scalar (or one's address) or a vector.
+
+If the operand is an address, it need not be aligned.
+
+For the vector variants, a second operand representing the
+source lane is required.
+*/
 
 #define     dupd(...)    (dupd_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     dupd_funcof(X, ...) \
@@ -19768,7 +18131,15 @@ FUNCOF_AC(                      \
 #if _ENTER_DUPQ
 {
 #endif
-/*  Set each lane of a 128 bit vector to the same value */
+/*  Copy a scalar into all lanes of a 128 bit vector
+
+The operand can be a scalar (or one's address) or a vector.
+
+If the operand is an address, it need not be aligned.
+
+For the vector variants, a second operand representing the
+source lane is required.
+*/
 
 #define     dupq(...)    (dupq_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     dupq_funcof(X, ...) \
@@ -19884,8 +18255,8 @@ x86 calls this "broadcast" and ppc calls it "splat".
 FUNCOF(             \
     dupl, (   V   ),\
     NONE, /* TGK */ \
-    YWR,  /* TGW */ \
-    YDR,  /* TGD */ \
+    YHR,  /* TGW */ \
+    YWR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
@@ -20117,7 +18488,14 @@ FUNCOF(             \
 #if _ENTER_GET1
 {
 #endif
-/*  Extract a single vector element 
+/*  Extract single element
+
+For scalars, the element type is _Bool and the second 
+operand is the bit offset. For vectors, the second operand
+is the lane number.
+
+If the second operand is outside the valid range, the
+result is undefined.
 
 */
 
@@ -20174,6 +18552,18 @@ FUNCOF(             \
 {
 #endif
 /*  Extract lower half
+
+If K is a N bit integer, getl copies its N÷2 lower bits
+into a half as wide int of equivalent signedness. 
+
+Otherwise, the lower half of a multielement vector is 
+returned as a value of the appropriate type.
+
+E.g. getlqbu returns the first 8 elements of the 16 
+element Vqbu as a 8 element Vdbu. getldi on the other hand
+extracts the least sign 32 bits of an int64_t as a int32_t.
+
+
 */
 
 #define     getl(...)  (getl_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -20302,7 +18692,11 @@ FUNCOF(             \
 #if _ENTER_ICRL
 {
 #endif
-/*  InCRement (truncated) */
+/*  InCRement (truncated) 
+
+Increment each integer element in the operand using two's
+complement addition.
+*/
 
 #define     icrl(...) (icrl_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     icrl_funcof(A, ...)  \
@@ -21309,7 +19703,10 @@ FUNCOF_AC(          \
 #if _ENTER_LUNW
 {
 #endif
-/*  Load UNaligned Word vector (native endian) 
+/*  Load UNaligned (Word vector)
+
+Load 4 consecutive bytes from an arbitrary memory address
+then reinterpret it as the appropriate vector.
 */
 
 #define     lunw(...) (lunw_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -21348,7 +19745,10 @@ FUNCOF_AC(          \
 #if _ENTER_LUND
 {
 #endif
-/*  Load UNaligned Doubleword vector (native endian)
+/*  Load UNaligned (Doubleword vector)
+
+Load 8 consecutive bytes from an arbitrary memory address
+then reinterpret it as the appropriate vector.
 */
 
 #define     lund(...) (lund_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -21396,7 +19796,10 @@ FUNCOF_AC(          \
 #if _ENTER_LUNQ
 {
 #endif
-/*  Load UNaligned (nat endian Quadword vector)
+/*  Load UNaligned (Quadword vector)
+
+Load 16 consecutive bytes from an arbitrary memory address
+then reinterpret it as the appropriate vector.
 */
 
 #define     lunq(...) (lunq_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -21744,6 +20147,12 @@ FUNCOF(             \
 #if _ENTER_MODL
 {
 #endif
+/*  MODulus (truncated)
+
+Calculate the remainder after dividing two equivalent
+width integers.
+
+*/
 
 #define     modl(...) (modl_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     modl_funcof(A, ...)  \
@@ -21815,6 +20224,11 @@ FUNCOF(             \
 {
 #endif
 /*  MODulus (wide divisor)
+
+Calculate the remainder after dividing each M bit integer
+in the first operand by the corresponding (M÷2) bit 
+integer in the second operand. 
+
 */
 
 #define     mod2(...) (mod2_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -22023,16 +20437,15 @@ is clamped to the maximum or minimum representable by N bits.
 #define     muls_funcof(A, ...)  \
 FUNCOF(             \
     muls, (   A   ),\
-    YDZ,  /* TGK */ \
-    YWZ,  /* TGW */ \
-    YDZ,  /* TGD */ \
-    YDZ,  /* TGQ */ \
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
-#define     mulsyu    BOOL_MULS
 #define     mulsbu   UINT8_MULS
 #define     mulsbi    INT8_MULS
 #define     mulsbc    CHAR_MULS
@@ -22053,7 +20466,6 @@ FUNCOF(             \
 #   define  mulsqi   LLONG_MULS
 #endif
 
-#define     mulswyu   VWYU_MULS
 #define     mulswbu   VWBU_MULS
 #define     mulswbi   VWBI_MULS
 #define     mulswbc   VWBC_MULS
@@ -22062,7 +20474,6 @@ FUNCOF(             \
 #define     mulswwu   VWWU_MULS
 #define     mulswwi   VWWI_MULS
 
-#define     mulsdyu   VDYU_MULS
 #define     mulsdbu   VDBU_MULS
 #define     mulsdbi   VDBI_MULS
 #define     mulsdbc   VDBC_MULS
@@ -22073,7 +20484,6 @@ FUNCOF(             \
 #define     mulsddu   VDDU_MULS
 #define     mulsddi   VDDI_MULS
 
-#define     mulsqyu   VQYU_MULS
 #define     mulsqbu   VQBU_MULS
 #define     mulsqbi   VQBI_MULS
 #define     mulsqbc   VQBC_MULS
@@ -22272,7 +20682,7 @@ FUNCOF(             \
     YDR,  /* TGK */ \
     HWR,  /* TGW */ \
     WDR,  /* TGD */ \
-    DR, /* TGQ */ \
+    DR,   /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -22321,6 +20731,217 @@ FUNCOF(             \
 #define     muldqdi   VQDI_MULD
 #define     muldqdf   VQDF_MULD
 #if _LEAVE_MULD
+}
+#endif
+
+
+#if _ENTER_MVWL
+{
+#endif
+/*  MoVe to empty Word (lo)
+
+For a type T scalar, sets the first lane of a zero filled 
+32 bit T vector to the operand. For a 32 bit vector V, the
+result is the contents of V's first lane.
+*/
+
+#define     mvwl(...) (mvwl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     mvwl_funcof(A, ...)  \
+FUNCOF(             \
+    mvwl, (   A   ),\
+    YWR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     mvwlyu    BOOL_MVWL
+#define     mvwlbu   UINT8_MVWL
+#define     mvwlbi    INT8_MVWL
+#define     mvwlbc    CHAR_MVWL
+#define     mvwlhu  UINT16_MVWL
+#define     mvwlhi   INT16_MVWL
+#define     mvwlwu  UINT32_MVWL
+#define     mvwlwi   INT32_MVWL
+#if   DWRD_NLONG == 2
+#   define  mvwllu   ULONG_MVWL
+#   define  mvwlli    LONG_MVWL
+#endif
+
+#define     mvwlhf   FLT16_MVWL
+#define     mvwlwf     FLT_MVWL
+
+#define     mvwlwyu   VWYU_MVWL
+#define     mvwlwbu   VWBU_MVWL
+#define     mvwlwbi   VWBI_MVWL
+#define     mvwlwbc   VWBC_MVWL
+#define     mvwlwhu   VWHU_MVWL
+#define     mvwlwhi   VWHI_MVWL
+#define     mvwlwhf   VWHF_MVWL
+#define     mvwlwwu   VWWU_MVWL
+#define     mvwlwwi   VWWI_MVWL
+#define     mvwlwwf   VWWF_MVWL
+
+#define     mvwldyu   VDYU_MVWL
+#define     mvwldbu   VDBU_MVWL
+#define     mvwldbi   VDBI_MVWL
+#define     mvwldbc   VDBC_MVWL
+#define     mvwldhu   VDHU_MVWL
+#define     mvwldhi   VDHI_MVWL
+#define     mvwldhf   VDHF_MVWL
+#define     mvwldwu   VDWU_MVWL
+#define     mvwldwi   VDWI_MVWL
+#define     mvwldwf   VDWF_MVWL
+#define     mvwlddu   VDDU_MVWL
+#define     mvwlddi   VDDI_MVWL
+#define     mvwlddf   VDDF_MVWL
+
+#define     mvwlqyu   VQYU_MVWL
+#define     mvwlqbu   VQBU_MVWL
+#define     mvwlqbi   VQBI_MVWL
+#define     mvwlqbc   VQBC_MVWL
+#define     mvwlqhu   VQHU_MVWL
+#define     mvwlqhi   VQHI_MVWL
+#define     mvwlqhf   VQHF_MVWL
+#define     mvwlqwu   VQWU_MVWL
+#define     mvwlqwi   VQWI_MVWL
+#define     mvwlqwf   VQWF_MVWL
+#define     mvwlqdu   VQDU_MVWL
+#define     mvwlqdi   VQDI_MVWL
+#define     mvwlqdf   VQDF_MVWL
+#if _LEAVE_MVWL
+}
+#endif
+
+#if _ENTER_MVDL
+{
+#endif
+/*  MoVe to empty Dwrd (lo)
+
+For a type T scalar, sets the first lane of a zero filled 
+64 bit T vector to the operand. For a 64 bit vector V, the
+result is the contents of V's first lane.
+*/
+
+#define     mvdl(...) (mvdl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     mvdl_funcof(A, ...)  \
+FUNCOF(             \
+    mvdl, (   A   ),\
+    YDR,  /* TGK */ \
+    NONE, /* TGW */ \
+    YDR,  /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     mvdlyu    BOOL_MVDL
+#define     mvdlbu   UINT8_MVDL
+#define     mvdlbi    INT8_MVDL
+#define     mvdlbc    CHAR_MVDL
+#define     mvdlhu  UINT16_MVDL
+#define     mvdlhi   INT16_MVDL
+#define     mvdlwu  UINT32_MVDL
+#define     mvdlwi   INT32_MVDL
+#define     mvdldu  UINT64_MVDL
+#define     mvdldi   INT64_MVDL
+#if   DWRD_NLONG == 2
+#   define  mvdllu   ULONG_MVDL
+#   define  mvdlli    LONG_MVDL
+#elif QUAD_NLLONG == 2
+#   define  mvdllu  ULLONG_MVDL
+#   define  mvdlli   LLONG_MVDL
+#endif
+
+#define     mvdlhf   FLT16_MVDL
+#define     mvdlwf     FLT_MVDL
+#define     mvdldf     DBL_MVDL
+
+#define     mvdldyu   VDYU_MVDL
+#define     mvdldbu   VDBU_MVDL
+#define     mvdldbi   VDBI_MVDL
+#define     mvdldbc   VDBC_MVDL
+#define     mvdldhu   VDHU_MVDL
+#define     mvdldhi   VDHI_MVDL
+#define     mvdldhf   VDHF_MVDL
+#define     mvdldwu   VDWU_MVDL
+#define     mvdldwi   VDWI_MVDL
+#define     mvdldwf   VDWF_MVDL
+#define     mvdlddu   VDDU_MVDL
+#define     mvdlddi   VDDI_MVDL
+#define     mvdlddf   VDDF_MVDL
+
+#if _LEAVE_MVDL
+}
+#endif
+
+#if _ENTER_MVQL
+{
+#endif
+/*  MoVe to empty Quad (lo)
+
+For a type T scalar, sets the first lane of a zero filled 
+128 bit T vector to the operand. For a 128 bit vector V, the
+result is the contents of V's first lane.
+*/
+
+#define     mvql(...) (mvql_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     mvql_funcof(A, ...)  \
+FUNCOF(             \
+    mvql, (   A   ),\
+    YDR,  /* TGK */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     mvqlyu    BOOL_MVQL
+#define     mvqlbu   UINT8_MVQL
+#define     mvqlbi    INT8_MVQL
+#define     mvqlbc    CHAR_MVQL
+#define     mvqlhu  UINT16_MVQL
+#define     mvqlhi   INT16_MVQL
+#define     mvqlwu  UINT32_MVQL
+#define     mvqlwi   INT32_MVQL
+#define     mvqldu  UINT64_MVQL
+#define     mvqldi   INT64_MVQL
+#if   DWRD_NLONG == 2
+#   define  mvqllu   ULONG_MVQL
+#   define  mvqlli    LONG_MVQL
+#elif QUAD_NLLONG == 2
+#   define  mvqllu  ULLONG_MVQL
+#   define  mvqlli   LLONG_MVQL
+#else
+#   define  mvqlqu  ULLONG_MVQL
+#   define  mvqlqi   LLONG_MVQL
+#endif
+
+#define     mvqlhf   FLT16_MVQL
+#define     mvqlwf     FLT_MVQL
+#define     mvqldf     DBL_MVQL
+
+#define     mvqlqyu   VQYU_MVQL
+#define     mvqlqbu   VQBU_MVQL
+#define     mvqlqbi   VQBI_MVQL
+#define     mvqlqbc   VQBC_MVQL
+#define     mvqlqhu   VQHU_MVQL
+#define     mvqlqhi   VQHI_MVQL
+#define     mvqlqhf   VQHF_MVQL
+#define     mvqlqwu   VQWU_MVQL
+#define     mvqlqwi   VQWI_MVQL
+#define     mvqlqwf   VQWF_MVQL
+#define     mvqlqdu   VQDU_MVQL
+#define     mvqlqdi   VQDI_MVQL
+#define     mvqlqdf   VQDF_MVQL
+
+#if _LEAVE_MVQL
 }
 #endif
 
@@ -22404,7 +21025,7 @@ FUNCOF(             \
 #if _ENTER_NEGS
 {
 #endif
-/*  NEGation (saturated)
+/*  NEGation (signed saturated)
 */
 
 #define     negs(X) (negs_funcof(X)(X))
@@ -22420,7 +21041,6 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     negsyu    BOOL_NEGS
 #define     negsbu   UINT8_NEGS
 #define     negsbi    INT8_NEGS
 #define     negsbc    CHAR_NEGS
@@ -22441,7 +21061,6 @@ FUNCOF(             \
 #   define  negsqi  LLONG_NEGS
 #endif
 
-#define     negswyu  VWYU_NEGS
 #define     negswbu  VWBU_NEGS
 #define     negswbi  VWBI_NEGS
 #define     negswbc  VWBC_NEGS
@@ -22450,7 +21069,6 @@ FUNCOF(             \
 #define     negswwu  VWWU_NEGS
 #define     negswwi  VWWI_NEGS
 
-#define     negsdyu  VDYU_NEGS
 #define     negsdbu  VDBU_NEGS
 #define     negsdbi  VDBI_NEGS
 #define     negsdbc  VDBC_NEGS
@@ -22461,7 +21079,6 @@ FUNCOF(             \
 #define     negsddu  VDDU_NEGS
 #define     negsddi  VDDI_NEGS
 
-#define     negsqyu  VQYU_NEGS
 #define     negsqbu  VQBU_NEGS
 #define     negsqbi  VQBI_NEGS
 #define     negsqbc  VQBC_NEGS
@@ -22812,6 +21429,292 @@ FUNCOF(             \
 }
 #endif
 
+
+
+#if _ENTER_NEWW
+{
+#endif
+/*  NEW vector (32 bit)
+
+For scalars, each op takes the same number of operands as
+there are elements in a 32 bit vector and insers them one at
+a time, beginning with the first operand/lane zero.
+
+For arrays, the first operand is its address, which is 
+followed by the same number of indices as there are elements
+in the result. The vector is then constructed by gathering
+the elements at the specified indexes.
+
+For vectors, the additional operands are lanes to copy from
+the source. If -1 is specified as a lane number, the 
+corresponding result element is zeroed out.
+*/
+
+#define     neww(T, ...) (neww_funcof(T)(__VA_ARGS__))
+#define     neww_funcof(T, ...) \
+FUNCOF_AK(                      \
+    dupw, (   X   ),\
+    YWR,  /* TGK */ \
+    YWR,  /* TGA */ \
+    YWR,  /* TGW */ \
+    YWR,  /* TGD */ \
+    YWR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     newwbu      UINT8_NEWW
+#define     newwacbu    UINT8_NEWWAC
+#define     newwbi       INT8_NEWW
+#define     newwacbi     INT8_NEWWAC
+#define     newwbc       CHAR_NEWW
+#define     newwacbc     CHAR_NEWWAC
+#define     newwhu     UINT16_NEWW
+#define     newwachu   UINT16_NEWWAC
+#define     newwhi      INT16_NEWW
+#define     newwachi    INT16_NEWWAC
+#define     newwhf      FLT16_NEWW
+#define     newwachf    FLT16_NEWWAC
+#define     newwwu     UINT32_NEWW
+#define     newwacwu   UINT32_NEWWAC
+#define     newwwi      INT32_NEWW
+#define     newwacwi    INT32_NEWWAC
+#define     newwwf        FLT_NEWW
+#define     newwacwf      FLT_NEWWAC
+#if DWRD_NLONG == 2
+#   define  newwlu      ULONG_NEWW
+#   define  newwaclu    ULONG_NEWWAC
+#   define  newwli       LONG_NEWW
+#   define  newwacli     LONG_NEWWAC
+#endif
+
+#define     newwwbu      VWBU_NEWW
+#define     newwwbi      VWBI_NEWW
+#define     newwwbc      VWBC_NEWW
+#define     newwwhu      VWHU_NEWW
+#define     newwwhi      VWHI_NEWW
+#define     newwwhf      VWHF_NEWW
+#define     newwwwu      VWWU_NEWW
+#define     newwwwi      VWWI_NEWW
+#define     newwwwf      VWWF_NEWW
+
+#define     newwdbu      VDBU_NEWW
+#define     newwdbi      VDBI_NEWW
+#define     newwdbc      VDBC_NEWW
+#define     newwdhu      VDHU_NEWW
+#define     newwdhi      VDHI_NEWW
+#define     newwdhf      VDHF_NEWW
+#define     newwdwu      VDWU_NEWW
+#define     newwdwi      VDWI_NEWW
+#define     newwdwf      VDWF_NEWW
+
+#define     newwqbu      VQBU_NEWW
+#define     newwqbi      VQBI_NEWW
+#define     newwqbc      VQBC_NEWW
+#define     newwqhu      VQHU_NEWW
+#define     newwqhi      VQHI_NEWW
+#define     newwqhf      VQHF_NEWW
+#define     newwqwu      VQWU_NEWW
+#define     newwqwi      VQWI_NEWW
+#define     newwqwf      VQWF_NEWW
+#if _LEAVE_NEWW
+}
+#endif
+
+#if _ENTER_NEWD
+{
+#endif
+/*  NEW vector (64 bit)
+
+For scalars, each op takes the same number of operands as
+there are elements in a 32 bit vector and insers them one at
+a time, beginning with the first operand/lane zero.
+
+For arrays, the first operand is its address, which is 
+followed by the same number of indices as there are elements
+in the result. The vector is then constructed by gathering
+the elements at the specified indexes.
+
+For vectors, the additional operands are lanes to copy from
+the source. If -1 is specified as a lane number, the 
+corresponding result element is zeroed out.
+*/
+
+#define     newd(T, ...) (newd_funcof(T)(__VA_ARGS__))
+#define     newd_funcof(T, ...) \
+FUNCOF_AK(                      \
+    dupw, (   X   ),\
+    YDR,  /* TGK */ \
+    YDR,  /* TGA */ \
+    YDR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     newdbu      UINT8_NEWD
+#define     newdacbu    UINT8_NEWDAC
+#define     newdbi       INT8_NEWD
+#define     newdacbi     INT8_NEWDAC
+#define     newdbc       CHAR_NEWD
+#define     newdacbc     CHAR_NEWDAC
+#define     newdhu     UINT16_NEWD
+#define     newdachu   UINT16_NEWDAC
+#define     newdhi      INT16_NEWD
+#define     newdachi    INT16_NEWDAC
+#define     newdhf      FLT16_NEWD
+#define     newdachf    FLT16_NEWDAC
+#define     newdwu     UINT32_NEWD
+#define     newdacwu   UINT32_NEWDAC
+#define     newdwi      INT32_NEWD
+#define     newdacwi    INT32_NEWDAC
+#define     newdwf        FLT_NEWD
+#define     newdacwf      FLT_NEWDAC
+#if DWRD_NLONG == 2
+#   define  newdlu      ULONG_NEWD
+#   define  newdaclu    ULONG_NEWDAC
+#   define  newdli       LONG_NEWD
+#   define  newdacli     LONG_NEWDAC
+#elif QUAD_NLLONG == 2
+#   define  newdlu     ULLONG_NEWD
+#   define  newdaclu   ULLONG_NEWDAC
+#   define  newdli      LLONG_NEWD
+#   define  newdacli    LLONG_NEWDAC
+#endif
+
+#define     newdwbu      VWBU_NEWD
+#define     newdwbi      VWBI_NEWD
+#define     newdwbc      VWBC_NEWD
+#define     newdwhu      VWHU_NEWD
+#define     newdwhi      VWHI_NEWD
+#define     newdwhf      VWHF_NEWD
+#define     newdwwu      VWWU_NEWD
+#define     newdwwi      VWWI_NEWD
+#define     newdwwf      VWWF_NEWD
+
+#define     newddbu      VDBU_NEWD
+#define     newddbi      VDBI_NEWD
+#define     newddbc      VDBC_NEWD
+#define     newddhu      VDHU_NEWD
+#define     newddhi      VDHI_NEWD
+#define     newddhf      VDHF_NEWD
+#define     newddwu      VDWU_NEWD
+#define     newddwi      VDWI_NEWD
+#define     newddwf      VDWF_NEWD
+#define     newdddu      VDDU_NEWD
+#define     newdddi      VDDI_NEWD
+#define     newdddf      VDDF_NEWD
+
+#define     newdqbu      VQBU_NEWD
+#define     newdqbi      VQBI_NEWD
+#define     newdqbc      VQBC_NEWD
+#define     newdqhu      VQHU_NEWD
+#define     newdqhi      VQHI_NEWD
+#define     newdqhf      VQHF_NEWD
+#define     newdqwu      VQWU_NEWD
+#define     newdqwi      VQWI_NEWD
+#define     newdqwf      VQWF_NEWD
+#define     newdqdu      VQDU_NEWD
+#define     newdqdi      VQDI_NEWD
+#define     newdqdf      VQDF_NEWD
+#if _LEAVE_NEWD
+}
+#endif
+
+#if _ENTER_NEWQ
+{
+#endif
+/*  NEW vector (128 bit)
+
+Construct a 128 bit vector from a sequence of scalars. 
+
+*/
+
+#define     newq(T, ...) (newq_funcof(T)(__VA_ARGS__))
+#define     newq_funcof(T, ...) \
+FUNCOF_AK(                      \
+    dupw, (   X   ),\
+    YDR,  /* TGK */ \
+    YDR,  /* TGA */ \
+    YDR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     newqbu      UINT8_NEWQ
+#define     newqacbu    UINT8_NEWQAC
+#define     newqbi       INT8_NEWQ
+#define     newqacbi     INT8_NEWQAC
+#define     newqbc       CHAR_NEWQ
+#define     newqacbc     CHAR_NEWQAC
+#define     newqhu     UINT16_NEWQ
+#define     newqachu   UINT16_NEWQAC
+#define     newqhi      INT16_NEWQ
+#define     newqachi    INT16_NEWQAC
+#define     newqhf      FLT16_NEWQ
+#define     newqachf    FLT16_NEWQAC
+#define     newqwu     UINT32_NEWQ
+#define     newqacwu   UINT32_NEWQAC
+#define     newqwi      INT32_NEWQ
+#define     newqacwi    INT32_NEWQAC
+#define     newqwf        FLT_NEWQ
+#define     newqacwf      FLT_NEWQAC
+#if DWRD_NLONG == 2
+#   define  newqlu      ULONG_NEWQ
+#   define  newqaclu    ULONG_NEWQAC
+#   define  newqli       LONG_NEWQ
+#   define  newqacli     LONG_NEWQAC
+#elif QUAD_NLLONG == 2
+#   define  newqlu     ULLONG_NEWQ
+#   define  newqaclu   ULLONG_NEWQAC
+#   define  newqli      LLONG_NEWQ
+#   define  newqacli    LLONG_NEWQAC
+#endif
+
+#define     newqwbu      VWBU_NEWQ
+#define     newqwbi      VWBI_NEWQ
+#define     newqwbc      VWBC_NEWQ
+#define     newqwhu      VWHU_NEWQ
+#define     newqwhi      VWHI_NEWQ
+#define     newqwhf      VWHF_NEWQ
+#define     newqwwu      VWWU_NEWQ
+#define     newqwwi      VWWI_NEWQ
+#define     newqwwf      VWWF_NEWQ
+
+#define     newqdbu      VDBU_NEWQ
+#define     newqdbi      VDBI_NEWQ
+#define     newqdbc      VDBC_NEWQ
+#define     newqdhu      VDHU_NEWQ
+#define     newqdhi      VDHI_NEWQ
+#define     newqdhf      VDHF_NEWQ
+#define     newqdwu      VDWU_NEWQ
+#define     newqdwi      VDWI_NEWQ
+#define     newqdwf      VDWF_NEWQ
+#define     newqddu      VDDU_NEWQ
+#define     newqddi      VDDI_NEWQ
+#define     newqddf      VDDF_NEWQ
+
+#define     newqqbu      VQBU_NEWQ
+#define     newqqbi      VQBI_NEWQ
+#define     newqqbc      VQBC_NEWQ
+#define     newqqhu      VQHU_NEWQ
+#define     newqqhi      VQHI_NEWQ
+#define     newqqhf      VQHF_NEWQ
+#define     newqqwu      VQWU_NEWQ
+#define     newqqwi      VQWI_NEWQ
+#define     newqqwf      VQWF_NEWQ
+#define     newqqdu      VQDU_NEWQ
+#define     newqqdi      VQDI_NEWQ
+#define     newqqdf      VQDF_NEWQ
+#if _LEAVE_NEWQ
+}
+#endif
 
 #if _ENTER_ORRS
 {
@@ -23233,18 +22136,17 @@ FUNCOF_AK(          \
 #endif
 
 
-
 #if _ENTER_PERS
 {
 #endif
 /*  PERmute vector (single)
 
-Create a vector with elements selected from another
-vector. Each operation takes an N element source vector A
-plus N signed int constant parameters representing a lane
-in A from which to copy the corresponding value. If the
-list of lane numbers contains any values outside the
-range [-1..N-1], the result is undefined.
+Create a vector with elements selected by lane number from
+another vector. Each operation takes an N element source 
+vector A plus N signed int constant parameters representing 
+the lane in A from which to copy the corresponding value.
+If the list of lane numbers contains any values outside 
+the range [-1..N-1], the result is undefined.
 
 Whenever a lane is specified as -1, the corresponding lane
 of the result is set to zero.
@@ -23466,6 +22368,7 @@ FUNCOF(             \
     NONE, /* TGS */ \
     default: NULL   \
 )
+
 #define     revybu   UINT8_REVY
 #define     revybi    INT8_REVY
 #define     revybc    CHAR_REVY
@@ -23660,7 +22563,7 @@ If any element is NaN, the result is undefined.
 #define     razb_funcof(X, ...)  \
 FUNCOF(             \
     razb, (   X   ),\
-    BDF,  /* TGK */ \
+    HDF,  /* TGK */ \
     NONE, /* TGW */ \
     HF,   /* TGD */ \
     HWF,  /* TGQ */ \
@@ -23728,18 +22631,6 @@ FUNCOF(             \
 #define     razhqhf   VQHF_RAZH // qhf => qhi
 #define     razhqwf   VQWF_RAZH // qwf => dhi
 #define     razhqdf   VQDF_RAZH // qwf => whi
-
-// TGO=HDF
-#define     razhohf   VOHF_RAZH // ohf => ohi
-#define     razhowf   VOWF_RAZH // owf => qhi
-#define     razhodf   VODF_RAZH // odf => dhi
-#define     razhoqf   VOQF_RAZH // oqf => whi
-
-// TGS=HDF
-#define     razhshf   VSHF_RAZH // shf => shi
-#define     razhswf   VSWF_RAZH // swf => ohi
-#define     razhsdf   VSDF_RAZH // sdf => qhi
-#define     razhsqf   VSQF_RAZH // sqf => dhi
 
 #if _LEAVE_RAZH
 }
@@ -23844,9 +22735,12 @@ FUNCOF(             \
 #if _ENTER_RAZF
 {
 #endif
-/*  Round Away from Zero
+/*  Round with ties Away from Zero (as integral)
 
-Round away from zero
+Round each floating point element in the operand to the
+nearest integer with ties away from zero. Unlike the other
+raz prefixed operations, razf doesn't convert each element
+to an integer representation.
 */
 
 #define     razf(...) (razf_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -24149,7 +23043,7 @@ If any element is NaN, the result is undefined.
 FUNCOF(             \
     rtnh, (   X   ),\
     HDF,  /* TGK */ \
-    HF, /* TGW */ \
+    HF,   /* TGW */ \
     HWF,  /* TGD */ \
     HDF,  /* TGQ */ \
     NONE, /* TGO */ \
@@ -24239,7 +23133,6 @@ int64_t is implementation defined.
 If any element is NaN, the entire result is undefined.
 */
 
-
 #define     rtnd(...) (rtnd_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     rtnd_funcof(X, ...)  \
 FUNCOF(             \
@@ -24247,7 +23140,7 @@ FUNCOF(             \
     HDF,  /* TGK */ \
     HWF,  /* TGW */ \
     WDF,  /* TGD */ \
-    DF, /* TGQ */ \
+    DF,   /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -24613,7 +23506,7 @@ TODO: consider adding floats
 #define     seqd(...) (seqd_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     seqd_funcof(A, ...) \
 FUNCOF(             \
-    seqd,   A,          \
+    seqd,   A,      \
     BWZ,  /* TGK */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
@@ -24880,8 +23773,8 @@ FUNCOF(             \
 #endif
 /*  SHift Left (truncated)
 
-Multiply each element in the first operand by the power of
-two multiple given as the second number. For N bit ints,
+Multiply each element in the first operand A by the power 
+of two multiple given as the second number. For N bit ints,
 only the least significant N bits of the result are kept.
 If the shift amount falls outside the range [0..N], the
 result is implementation defined.
@@ -24890,6 +23783,10 @@ For floats, which are generally implemented by adding the
 shift amount to its exponent bitfield, the result is
 undefined if it exceeds the maximum exponent possible for
 a normal class float.
+
+NOTE: in C, -1<<3 is undefined. shll(-1, 3) evaluates to
+-4 as expected. For the signed variants, the value of the
+sign bit never changes.
 
 TODO: actually implement for floats 
 */
@@ -25278,7 +24175,7 @@ the third operand C. The least significant C bits of the
 corresponding element of the second operand B are shifted
 in.
 
-    sill(a,b,c) => (a<<c)|(b[:c])
+    sill(a, b, c) => (a<<c)|(b[:c])
 
 */
 
@@ -25346,7 +24243,7 @@ the third operand C. The most significant C bits of the
 corresponding element of the second operand B are shifted
 in.
 
-    silr(a,b,c) => (a<<c)|(b[-c:])
+    silr(a, b, c) => (a<<c)|(b[-c:])
 
 */
 
@@ -25402,7 +24299,6 @@ FUNCOF(             \
 #if _LEAVE_SILR
 }
 #endif
-
 
 
 #if _ENTER_SIRR
@@ -25478,7 +24374,6 @@ FUNCOF(             \
 }
 #endif
 
-
 #if _ENTER_SIRL
 {
 #endif
@@ -25551,6 +24446,7 @@ FUNCOF(             \
 #if _LEAVE_SIRL
 }
 #endif
+
 
 #if _ENTER_SPRL
 {
@@ -25664,7 +24560,7 @@ FUNCOF_AK(          \
 #   define  str1aqi   LLONG_STR1A
 #endif
 
-#if _LEAVE_STRA
+#if _LEAVE_STR1
 }
 #endif
 
@@ -25773,8 +24669,6 @@ FUNCOF_AK(          \
 #if _LEAVE_STRT
 }
 #endif
-
-
 
 #if _ENTER_STRW
 {
@@ -25914,6 +24808,7 @@ FUNCOF_AK(                  \
 #if _LEAVE_STRQ
 }
 #endif
+
 
 #if _ENTER_SUBL
 {
@@ -26441,7 +25336,6 @@ FUNCOF(             \
 }
 #endif
 
-
 #if _ENTER_SUML
 {
 #endif
@@ -26902,7 +25796,7 @@ number of bits specified by the corresponding N bit
 unsigned int in the second vector.
 
 As with shll, unsigned operands are logically shifted
-while signed operands are arithmeticallt shifted.
+while signed operands are arithmetically shifted.
 
 If any element in the second operand falls outside the
 range [0..N], the result is implementation defined.
@@ -26913,14 +25807,15 @@ range [0..N], the result is implementation defined.
 FUNCOF(             \
     svll, (   A   ),\
     NONE, /* TGK */ \
-    BWZ,  /* TGW */ \
-    BDZ,  /* TGD */ \
-    BDZ,  /* TGQ */ \
+    YWZ,  /* TGW */ \
+    YDZ,  /* TGD */ \
+    YDZ,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
+#define     svllwyu   VWYU_SVLL
 #define     svllwbu   VWBU_SVLL
 #define     svllwbi   VWBI_SVLL
 #define     svllwbc   VWBC_SVLL
@@ -26929,6 +25824,7 @@ FUNCOF(             \
 #define     svllwwu   VWWU_SVLL
 #define     svllwwi   VWWI_SVLL
 
+#define     svlldyu   VDYU_SVLL
 #define     svlldbu   VDBU_SVLL
 #define     svlldbi   VDBI_SVLL
 #define     svlldbc   VDBC_SVLL
@@ -26939,6 +25835,7 @@ FUNCOF(             \
 #define     svllddu   VDDU_SVLL
 #define     svllddi   VDDI_SVLL
 
+#define     svllqyu   VQYU_SVLL
 #define     svllqbu   VQBU_SVLL
 #define     svllqbi   VQBI_SVLL
 #define     svllqbc   VQBC_SVLL
@@ -27491,24 +26388,20 @@ FUNCOF(             \
 #endif
 
 
-#if _ENTER_UNOS
+#if _ENTER_UNOL
 {
 #endif
-/*  generate a consecutive sequence of '1' bits
+/*  Generate consecutive sequence of 1 bits (lo to hi)
 
-Set each element of the result to a consecutive sequence
-of 1 bits. E.g. unosdbu(3) is equivalent to dupdbu(0b111).
-If the number of bits exceeds the width of the operation's
-element type, the result is undefined.
+Given the number of bits K, generate a sequence of K '1'
+bits S, then set each element of the result to S.
 
-TODO: debate splitting unos into unol and unor. Hopefully,
-it is obvious what the difference between them would be.
 */
 
-#define     unos(T, ...)    (unos_funcof(T)(__VA_ARGS__))
-#define     unos_funcof(T, ...) \
+#define     unol(T, ...)    (unol_funcof(T)(__VA_ARGS__))
+#define     unol_funcof(T, ...) \
 FUNCOF(             \
-    unos, ((T){0}), \
+    unol, ((T){0}), \
     YDZ,  /* TGK */ \
     YWZ,  /* TGW */ \
     YDZ,  /* TGD */ \
@@ -27518,58 +26411,135 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     unosyu    BOOL_UNOS
-#define     unosbu   UINT8_UNOS
-#define     unosbi    INT8_UNOS
-#define     unosbc    CHAR_UNOS
-#define     unoshu  UINT16_UNOS
-#define     unoshi   INT16_UNOS
-#define     unoswu  UINT32_UNOS
-#define     unoswi   INT32_UNOS
-#define     unosdu  UINT64_UNOS
-#define     unosdi   INT64_UNOS
+#define     unolyu    BOOL_UNOL
+#define     unolbu   UINT8_UNOL
+#define     unolbi    INT8_UNOL
+#define     unolbc    CHAR_UNOL
+#define     unolhu  UINT16_UNOL
+#define     unolhi   INT16_UNOL
+#define     unolwu  UINT32_UNOL
+#define     unolwi   INT32_UNOL
+#define     unoldu  UINT64_UNOL
+#define     unoldi   INT64_UNOL
 #if DWRD_NLONG == 2
-#   define  unoslu   ULONG_UNOS
-#   define  unosli    LONG_UNOS
+#   define  unollu   ULONG_UNOL
+#   define  unolli    LONG_UNOL
 #elif QUAD_NLLONG == 2
-#   define  unoslu  ULLONG_UNOS
-#   define  unosli   LLONG_UNOS
+#   define  unollu  ULLONG_UNOL
+#   define  unolli   LLONG_UNOL
 #endif
 
-#define     unoswyu     VWYU_UNOS
-#define     unoswbu     VWBU_UNOS
-#define     unoswbi     VWBI_UNOS
-#define     unoswbc     VWBI_UNOS
-#define     unoswhu     VWHU_UNOS
-#define     unoswhi     VWHI_UNOS
-#define     unoswwu     VWWU_UNOS
-#define     unoswwi     VWWI_UNOS
+#define     unolwyu     VWYU_UNOL
+#define     unolwbu     VWBU_UNOL
+#define     unolwbi     VWBI_UNOL
+#define     unolwbc     VWBI_UNOL
+#define     unolwhu     VWHU_UNOL
+#define     unolwhi     VWHI_UNOL
+#define     unolwwu     VWWU_UNOL
+#define     unolwwi     VWWI_UNOL
 
-#define     unosdyu     VDYU_UNOS
-#define     unosdbu     VDBU_UNOS
-#define     unosdbi     VDBI_UNOS
-#define     unosdbc     VDBC_UNOS
-#define     unosdhu     VDHU_UNOS
-#define     unosdhi     VDHI_UNOS
-#define     unosdwu     VDWU_UNOS
-#define     unosdwi     VDWI_UNOS
-#define     unosddu     VDDU_UNOS
-#define     unosddi     VDDI_UNOS
+#define     unoldyu     VDYU_UNOL
+#define     unoldbu     VDBU_UNOL
+#define     unoldbi     VDBI_UNOL
+#define     unoldbc     VDBC_UNOL
+#define     unoldhu     VDHU_UNOL
+#define     unoldhi     VDHI_UNOL
+#define     unoldwu     VDWU_UNOL
+#define     unoldwi     VDWI_UNOL
+#define     unolddu     VDDU_UNOL
+#define     unolddi     VDDI_UNOL
 
-#define     unosqyu     VQYU_UNOS
-#define     unosqbu     VQBU_UNOS
-#define     unosqbi     VQBI_UNOS
-#define     unosqbc     VQBC_UNOS
-#define     unosqhu     VQHU_UNOS
-#define     unosqhi     VQHI_UNOS
-#define     unosqwu     VQWU_UNOS
-#define     unosqwi     VQWI_UNOS
-#define     unosqdu     VQDU_UNOS
-#define     unosqdi     VQDI_UNOS
-#if _LEAVE_UNOS
+#define     unolqyu     VQYU_UNOL
+#define     unolqbu     VQBU_UNOL
+#define     unolqbi     VQBI_UNOL
+#define     unolqbc     VQBC_UNOL
+#define     unolqhu     VQHU_UNOL
+#define     unolqhi     VQHI_UNOL
+#define     unolqwu     VQWU_UNOL
+#define     unolqwi     VQWI_UNOL
+#define     unolqdu     VQDU_UNOL
+#define     unolqdi     VQDI_UNOL
+#if _LEAVE_UNOL
 }
 #endif
 
+#if _ENTER_UNOR
+{
+#endif
+/*  Generate consecutive sequence of 1 bits (hi to lo)
+
+Given the number of bits N, generate a sequence of N '1'
+bits S, then set the upper N bits of each element in the
+result to S.
+
+For type T of width K, if N is less than zero or greater than
+K, the result is undefined.
+*/
+
+#define     unor(T, ...)    (unor_funcof(T)(__VA_ARGS__))
+#define     unor_funcof(T, ...) \
+FUNCOF(             \
+    unor, ((T){0}), \
+    YDZ,  /* TGK */ \
+    YWZ,  /* TGW */ \
+    YDZ,  /* TGD */ \
+    YDZ,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     unoryu    BOOL_UNOR
+#define     unorbu   UINT8_UNOR
+#define     unorbi    INT8_UNOR
+#define     unorbc    CHAR_UNOR
+#define     unorhu  UINT16_UNOR
+#define     unorhi   INT16_UNOR
+#define     unorwu  UINT32_UNOR
+#define     unorwi   INT32_UNOR
+#define     unordu  UINT64_UNOR
+#define     unordi   INT64_UNOR
+#if DWRD_NLONG == 2
+#   define  unorlu   ULONG_UNOR
+#   define  unorli    LONG_UNOR
+#elif QUAD_NLLONG == 2
+#   define  unorlu  ULLONG_UNOR
+#   define  unorli   LLONG_UNOR
+#endif
+
+#define     unorwyu     VWYU_UNOR
+#define     unorwbu     VWBU_UNOR
+#define     unorwbi     VWBI_UNOR
+#define     unorwbc     VWBI_UNOR
+#define     unorwhu     VWHU_UNOR
+#define     unorwhi     VWHI_UNOR
+#define     unorwwu     VWWU_UNOR
+#define     unorwwi     VWWI_UNOR
+
+#define     unordyu     VDYU_UNOR
+#define     unordbu     VDBU_UNOR
+#define     unordbi     VDBI_UNOR
+#define     unordbc     VDBC_UNOR
+#define     unordhu     VDHU_UNOR
+#define     unordhi     VDHI_UNOR
+#define     unordwu     VDWU_UNOR
+#define     unordwi     VDWI_UNOR
+#define     unorddu     VDDU_UNOR
+#define     unorddi     VDDI_UNOR
+
+#define     unorqyu     VQYU_UNOR
+#define     unorqbu     VQBU_UNOR
+#define     unorqbi     VQBI_UNOR
+#define     unorqbc     VQBC_UNOR
+#define     unorqhu     VQHU_UNOR
+#define     unorqhi     VQHI_UNOR
+#define     unorqwu     VQWU_UNOR
+#define     unorqwi     VQWI_UNOR
+#define     unorqdu     VQDU_UNOR
+#define     unorqdi     VQDI_UNOR
+#if _LEAVE_UNOR
+}
+#endif
 
 #if _ENTER_UZPL
 {
@@ -27685,10 +26655,10 @@ FUNCOF(             \
 #endif
 /*  Vector EQuality match (boolean)
 
-Test if any element in the multielement first operand A is
-equal to the second operand B.
+Test if any element in the first operand A is equal to the
+second operand B.
 
-Any NaN comparisons produce an undefined result.
+If any comparand is NaN, the result is undefined.
 */
 
 #define     veqy(...) (veqy_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -27696,8 +26666,8 @@ Any NaN comparisons produce an undefined result.
 FUNCOF(             \
     veqy, (   A   ),\
     NONE, /* TGK */ \
-    YHR,  /* TGW */ \
-    YWR,  /* TGD */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
     YDR,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
@@ -27711,6 +26681,9 @@ FUNCOF(             \
 #define     veqywhu   VWHU_VEQY
 #define     veqywhi   VWHI_VEQY
 #define     veqywhf   VWHF_VEQY
+#define     veqywwu   VWWU_VEQY
+#define     veqywwi   VWWI_VEQY
+#define     veqywwf   VWWF_VEQY
 
 #define     veqydyu   VDYU_VEQY
 #define     veqydbu   VDBU_VEQY
@@ -27722,6 +26695,9 @@ FUNCOF(             \
 #define     veqydwu   VDWU_VEQY
 #define     veqydwi   VDWI_VEQY
 #define     veqydwf   VDWF_VEQY
+#define     veqyddu   VDDU_VEQY
+#define     veqyddi   VDDI_VEQY
+#define     veqyddf   VDDF_VEQY
 
 #define     veqyqyu   VQYU_VEQY
 #define     veqyqbu   VQBU_VEQY
@@ -27736,6 +26712,9 @@ FUNCOF(             \
 #define     veqyqdu   VQDU_VEQY
 #define     veqyqdi   VQDI_VEQY
 #define     veqyqdf   VQDF_VEQY
+#define     veqyqqu   VQQU_VEQY
+#define     veqyqqi   VQQI_VEQY
+#define     veqyqqf   VQQF_VEQY
 #if _LEAVE_VEQY
 }
 #endif
@@ -29589,6 +28568,150 @@ FUNCOF(             \
 }
 #endif
 
+
+#define     repryu   BOOL_REPR
+#define     reprbu  UINT8_REPR
+#define     reprbi   INT8_REPR
+#define     reprbc   CHAR_REPR
+#define     reprhu UINT16_REPR
+#define     reprhi  INT16_REPR
+#define     reprhf  FLT16_REPR
+#define     reprwu UINT32_REPR
+#define     reprwi  INT32_REPR
+#define     reprwf    FLT_REPR
+#define     reprdu UINT64_REPR
+#define     reprdi  INT64_REPR
+#define     reprdf    DBL_REPR
+#if DWRD_NLONG == 2
+#   define  reprlu  ULONG_REPR
+#   define  reprli   LONG_REPR
+#elif QUAD_NLLONG == 2
+#   define  reprlu ULLONG_REPR
+#   define  reprli  LLONG_REPR
+#endif
+
+#define     reprwyu  VWYU_REPR
+#define     reprwbu  VWBU_REPR
+#define     reprwbi  VWBI_REPR
+#define     reprwbc  VWBC_REPR
+#define     reprwhu  VWHU_REPR
+#define     reprwhi  VWHI_REPR
+#define     reprwhf  VWHF_REPR
+#define     reprwwu  VWWU_REPR
+#define     reprwwi  VWWI_REPR
+#define     reprwwf  VWWF_REPR
+
+#define     reprdyu  VDYU_REPR
+#define     reprdbu  VDBU_REPR
+#define     reprdbi  VDBI_REPR
+#define     reprdbc  VDBC_REPR
+#define     reprdhu  VDHU_REPR
+#define     reprdhi  VDHI_REPR
+#define     reprdhf  VDHF_REPR
+#define     reprdwu  VDWU_REPR
+#define     reprdwi  VDWI_REPR
+#define     reprdwf  VDWF_REPR
+#define     reprddu  VDDU_REPR
+#define     reprddi  VDDI_REPR
+#define     reprddf  VDDF_REPR
+
+#define     reprqyu  VQYU_REPR
+#define     reprqbu  VQBU_REPR
+#define     reprqbi  VQBI_REPR
+#define     reprqbc  VQBC_REPR
+#define     reprqhu  VQHU_REPR
+#define     reprqhi  VQHI_REPR
+#define     reprqhf  VQHF_REPR
+#define     reprqwu  VQWU_REPR
+#define     reprqwi  VQWI_REPR
+#define     reprqwf  VQWF_REPR
+#define     reprqdu  VQDU_REPR
+#define     reprqdi  VQDI_REPR
+#define     reprqdf  VQDF_REPR
+
+#define     reprof(X)  \
+FUNCOF(             \
+    repr, (   X   ),\
+    YDR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+INLINE(char const *, reprof_sfx) (unsigned R)
+{
+    static char str[8];
+    char *p = str;
+    
+    unsigned t = 0b0000000000000011&R;  // U, I, or F
+    unsigned k = 0b0000000000011100&R;  // (Kz) esize 
+    unsigned c = 0b0000000001100000&R;  // K, V, M, X (cat)
+    unsigned e = 0b0000000010000000&R;  // L or R (endianness)
+    unsigned z = 0b0000011100000000&R;  // sizeof
+    unsigned m = 0b0111100000000000&R;  // lengthof
+    if (0) printf(
+        "t=0x%x, e=0x%x, k=0x%x, c=0x%x, z=0x%x, m=0x%x\n"
+        ,
+        t,e,k,c,z,m
+    );
+    // hf: t=0x3, e=0x0, k=0x4, c=0x0, z=0x0, m=0x0
+    switch (c)
+    {
+        case REPR_V: switch (z)
+        {
+            case REPR_SZB: {*(p++) = 'b';  break;}
+            case REPR_SZH: {*(p++) = 'h';  break;}
+            case REPR_SZW: {*(p++) = 'w';  break;}
+            case REPR_SZD: {*(p++) = 'd';  break;}
+            case REPR_SZQ: {*(p++) = 'q';  break;}
+            case REPR_SZO: {*(p++) = 'o';  break;}
+            case REPR_SZS: {*(p++) = 's';  break;}
+        }
+        case REPR_M:
+        case REPR_K: break;
+        default: return (printf("c = %u (error)\n", c),NULL);
+    }
+
+    switch (k)
+    {
+        case REPR_K1:  {*(p++) = 'y'; break;}
+        case REPR_K8:  {*(p++) = 'b'; break;}
+        case REPR_K16: {*(p++) = 'h'; break;}
+        case REPR_K32: {*(p++) = 'w'; break;}
+        case REPR_K64: {*(p++) = 'd'; break;}
+        case REPR_K128:{*(p++) = 'q'; break;}
+    }
+
+    switch (t)
+    {
+        case REPR_U: {*(p++) = 'u'; break;}
+        case REPR_I: {*(p++) = 'i'; break;}
+        case REPR_F: {*(p++) = 'f'; break;}
+        default:     {*(p++) = '?';}
+    }
+
+    if ((m>>11) < 8)
+    {
+        if ((m>>11) > 0) *(p++) = '0'+(m>>11);
+    }
+    else switch (m)
+    {
+        case REPR_M8:   {*(p++) = '8'; break;}
+        case REPR_M16:  {*(p++) = '1'; *(p++) = '6'; break;}
+        case REPR_M32:  {*(p++) = '3'; *(p++) = '2'; break;}
+        case REPR_M64:  {*(p++) = '6'; *(p++) = '4'; break;}
+        case REPR_M128: {*(p++) = '1'; *(p++) = '2'; *(p++)='8';break;}
+        default: return (printf("m=%u(error)\n",m),NULL);
+    }
+    *p = 0;
+    return str;
+
+}
+
+
 #ifdef SPC_ARM_NEON
 
 int TEST_ARM_GET1(FILE *f)
@@ -29604,8 +28727,8 @@ int TEST_ARM_GET1(FILE *f)
 
     MY_TEST("TEST_ARM_GET1()\n");
 
-    Vdhu dh = newl(Vdhu, '0','1','2','3');
-    dh = VDHU_PERS(dh, 3,0,1, 2);
+    Vdhu dh = {0};
+    dh = VDHU_PERS(dh, 3, 0, 1, 2);
     MY_TEST(
         "%c%c%c%c\n",
         VDHU_GET1(dh, 0),
@@ -29622,7 +28745,7 @@ int TEST_ARM_GET1(FILE *f)
 void TEST_ARM_PERS(void)
 {
     float32x2_t df = vreinterpret_f32_s32(vdup_n_s32(0));
-    Vwbu w0123 = newl(Vwbu, '0', '1','2','3');
+    Vwbu w0123 = {0};
     Vwbu w3012 = VWBU_PERS(w0123, 3,0,1,2);
     uint8_t s16[17] = {0};
     df = vset_lane_f32(VWBU_ASTM(w3012), df, 0);
@@ -29638,33 +28761,10 @@ void TEST_ARM_PERS(void)
 
 int wtfclang(void) {return 0;}
 
-
-int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
-{
-    unsigned char seq[4];
-    (void) UCHAR_STRWA(seq, src);
-    return fprintf(
-        dst, fmt,
-        seq[0], seq[1], seq[2], seq[3]
-    );
-}
-
-#define     outfwbi(src, ...) outfwbu(VWBI_ASTU(src), __VA_ARGS__)
-#define     outfwbc(src, ...) outfwbu(VWBC_ASTU(src), __VA_ARGS__)
-#if 0 // NO OUTS
-
-int         outfwhu(Vwhu src, FILE *dst, char const *fmt)
-{
-    unsigned short seq[2];
-    (void) USHRT_STRWA(seq, src);
-    return fprintf(dst, fmt, seq[0], seq[1]);
-}
-
-#define     outfwhi(src, ...) outfwhu(VWHI_ASTU(src), __VA_ARGS__)
-
-
 int         outfdbu(Vdbu src, FILE *dst, char const *fmt)
 {
+#define     outfdbi(src, ...) outfdbu(VDBI_ASTU(src), __VA_ARGS__)
+#define     outfdbc(src, ...) outfdbu(VDBC_ASTU(src), __VA_ARGS__)
     unsigned char seq[8];
     (void) UINT8_STRDA(seq, src);
     return fprintf(
@@ -29673,8 +28773,28 @@ int         outfdbu(Vdbu src, FILE *dst, char const *fmt)
         seq[4], seq[5], seq[6], seq[7]
     );
 }
-#define     outfdbi(src, ...) outfdbu(VDBI_ASTU(src), __VA_ARGS__)
-#define     outfdbc(src, ...) outfdbu(VDBC_ASTU(src), __VA_ARGS__)
+
+
+int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
+{
+#define     outfwbi(src, ...) outfwbu(VWBI_ASTU(src), __VA_ARGS__)
+#define     outfwbc(src, ...) outfwbu(VWBC_ASTU(src), __VA_ARGS__)
+    unsigned char seq[4];
+    (void) UCHAR_STRWA(seq, src);
+    return fprintf(
+        dst, fmt,
+        seq[0], seq[1], seq[2], seq[3]
+    );
+}
+
+int         outfwhu(Vwhu src, FILE *dst, char const *fmt)
+{
+#define     outfwhi(src, ...) outfwhu(VWHI_ASTU(src), __VA_ARGS__)
+    unsigned short seq[2];
+    (void) USHRT_STRWA(seq, src);
+    return fprintf(dst, fmt, seq[0], seq[1]);
+}
+
 
 int         outfdhu(Vdhu src, FILE *dst, char const *fmt)
 {
@@ -29686,6 +28806,7 @@ int         outfdhu(Vdhu src, FILE *dst, char const *fmt)
         seq[0], seq[1], seq[2], seq[3]
     );
 }
+
 
 int         outfdwu(Vdwu src, FILE *dst, char const *fmt)
 {
@@ -29718,9 +28839,9 @@ int         outfqbu(Vqbu src, FILE *dst, char const *fmt)
         seq[0xc], seq[0xd], seq[0xe], seq[0xf]
     );
 }
-
 int         outfqhu(Vqhu src, FILE *dst, char const *fmt)
 {
+#define     outfqhi(src, ...) outfqhu(VQHI_ASTU(src), __VA_ARGS__)
     unsigned short seq[8];
     (void) UINT16_STRQA(seq, src);
     return fprintf(
@@ -29729,27 +28850,27 @@ int         outfqhu(Vqhu src, FILE *dst, char const *fmt)
         seq[4], seq[5], seq[6], seq[7]
     );
 }
-#define     outfqhi(src, ...) outfqhu(VQHI_ASTU(src), __VA_ARGS__)
+#if 0 // NO OUTS
 
 int         outfqwu(Vqwu src, FILE *dst, char const *fmt)
 {
+#define     outfqwi(src, ...) outfqwu(VQWI_ASTU(src), __VA_ARGS__)
     uint32_t d[4];
     (void) UINT32_STRQA(d, src);
     return fprintf(dst, fmt, d[0], d[1], d[2], d[3]);
 }
-#define     outfqwi(src, ...) outfqwu(VQWI_ASTU(src), __VA_ARGS__)
 
 int         outfqdu(Vqdu src, FILE *dst, char const *fmt)
 {
+#define     outfqdi(src, ...) outfqdu(VQDI_ASTU(src), __VA_ARGS__)
     uint64_t d[2];
     (void) UINT64_STRQA(d, src);
     return fprintf(dst, fmt, d[0], d[1]);
 }
-#define     outfqdi(src, ...) outfqdu(VQDI_ASTU(src), __VA_ARGS__)
 
-#endif
+#endif // NO OUTS 
 
-#if 1 // NO TOAY
+#if 0 // NO TOAY
 
 void *toayyu(_Bool v, char s[1], size_t n[1])
 {
@@ -29953,7 +29074,7 @@ char const *volatile testupr_dst;
         if (off)
         {
             str = str-off;
-            vec = orrs(vec, asbc(unosddu((8*off))));
+            vec = orrs(vec, asbc(unolddu((8*off))));
         }
         for (;;)
         {
