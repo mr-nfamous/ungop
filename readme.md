@@ -640,15 +640,11 @@ Key:
 
 ### •bfg· «BitField Get»
 
-    •bfg1(a, b, c) => (a[b:c])
+    •bfgl(a, b, c) => (a[b:c])
 
 ### •bfs· «BitField Set»
 
-    •bfs1(a, b, c, d) => (a[b:c] = d)
-
-### •bfc· «BitField Clear»
-
-    •bfc1(a, b, c) => (a[b:c] = 0)
+    •bfsl(a, b, c, d) => (a[b:c] = d)
 
 ### •bln· «BLeNd»
 
@@ -781,10 +777,9 @@ Key:
 
 ### •dup· «DUPlicate vector element»
 
-    •dupl(a) => DUP(get1(a, 0))
-    •dupw(a) => DUP(a)
-    •dupd(a) => DUP(a)
-    •dupq(a) => DUP(a)
+    •dupw(a, b) => as 32 bit vector 
+    •dupd(a, b) => as 64 bit vector
+    •dupq(a, b) => as 128 bit vector
 
 ### •fam· «Fused Add Multiply»
 
@@ -1097,6 +1092,30 @@ Key:
     •xora(...)  => atomic_xor_explicit(..., memory_order_acquire)
     •xore(...)  => atomic_xor_explicit(..., memory_order_release)
     •xort(...)  => atomic_xor_explicit(..., memory_order_seq_cst)
+
+### •yeq· «Y'all EQual»
+
+    •yeqy(a, b) => ALL(MAP(ceqy, a, b))
+
+### •yne· «Y'all Not Equal»
+
+    •yney(a, b) => ALL(MAP(cney, a, b))
+
+### •ylt· «Y'all Less Than»
+
+    •ylty(a, b) => ALL(MAP(clty, a, b))
+
+### •yle· «Y'all Less or Equal»
+
+    •yley(a, b) => ALL(MAP(cley, a, b))
+
+### •ygt· «Y'all Greater Than»
+
+    •ygty(a, b) => ALL(MAP(cgty, a, b))
+
+### •yge· «Y'all Greater or Equal»
+
+    •ygey(a, b) => ALL(MAP(cgey, a, b))
 
 ### •zeq· «Zero EQuals»
 
