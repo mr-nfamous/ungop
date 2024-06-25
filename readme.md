@@ -636,8 +636,10 @@ Key:
 
 ### •avg· «AVeraGe»
 
-    •avgl(a, b) => (a+b)>>1
-
+    •avgl(a, b) => truncating
+    •avgp(a, b) => ceiling
+    •avgn(a, b) => flooring
+    
 ### •bfg· «BitField Get»
 
     •bfgl(a, b, c) => (a[b:c])
@@ -650,49 +652,51 @@ Key:
 
     •blnm(a, b, ...c) => {b[i] if c[i] else a[i] for ...}
 
-### •cat· «representation conCATenation»
+### •cat· «conCATenation»
 
     •catl(l, r) => l ## r
-
-### •cbn· «Compare BetweeN»
-
-    •cbns(a, l, r) => (l <= a) && (a <= r) ? -1 : 0
-    •cbny(a, l, r) => (l <= a) && (a <= r) ? +1 : 0
 
 ### •ceq· «Compare EQual»
 
     •ceqs(a, b) => a == b ? -1 : 0
-    •ceqy(a, b) => a == b ? +1 : 0
-
-### •cgt· «Compare Greater Than»
-
-    •cgts(a, b) => a > b ? -1 : 0
-    •cgty(a, b) => a > b ? +1 : 0
-
-### •cge· «Compare Greater than or Equal»
-
-    •cges(a, b) => a >= b ? -1 : 0
-    •cgey(a, b) => a >= b ? +1 : 0
-
-### •cle· «Compare Less than or Equal»
-
-    •cles(a, b) => a <= b ? -1 : 0
-    •cley(a, b) => a <= b ? +1 : 0
-
-### •clt· «Compare Less Than»
-
-    •clts(a, b) => a < b ? -1 : 0
-    •clty(a, b) => a < b ? +1 : 0
-
-### •cnb· «Compare Not Between»
-
-    •cnbs(a, l, r) => (a < l) || (r < a) ? -1 : 0
-    •cnby(a, l, r) => (a < l) || (r < a) ? +1 : 0
+    •ceql(a, b) => a == b ? +1 : 0
+    •ceqy(a, b) => a == b
 
 ### •cne· «Compare Not Equal»
 
     •cnes(a, b) => a != b ? -1 : 0
-    •cney(a, b) => a != b ? +1 : 0
+    •cnel(a, b) => a != b ? +1 : 0
+    •cney(a, b) => a != b
+
+### •clt· «Compare Less Than»
+
+    •clts(a, b) => a < b ? -1 : 0
+    •cltl(a, b) => a < b ? +1 : 0
+    •clty(a, b) => a < b
+
+### •cle· «Compare Less than or Equal»
+
+    •cles(a, b) => a <= b ? -1 : 0
+    •clel(a, b) => a <= b ? +1 : 0
+    •cley(a, b) => a <= b
+
+### •cgt· «Compare Greater Than»
+
+    •cgts(a, b) => a > b ? -1 : 0
+    •cgtl(a, b) => a > b ? +1 : 0
+    •cgty(a, b) => a > b
+
+### •cge· «Compare Greater than or Equal»
+
+    •cges(a, b) => a >= b ? -1 : 0
+    •cgel(a, b) => a >= b ? +1 : 0
+    •cgey(a, b) => a >= b
+
+### •cnb· «Compare Not Between»
+
+    •cnbs(a, l, r) => (l <= a) && (a <= r) ? -1 : 0
+    •cnbl(a, l, r) => (l <= a) && (a <= r) ? +1 : 0
+    •cnby(a, l, r) => (l <= a) && (a <= r)
 
 ### •cmb· «Compiler Memory Barrier»
 
@@ -767,13 +771,11 @@ Key:
 
     •difu(a, b) => absu(|a-b|)
 
-### •div· «DIVide without remainder»
+### •div· «DIVision»
 
-    •divl(a, b) => a/b
-    •div2(a, b) => a/b (halfwidth dividend)
-    •divh(a, b) => (flt16_t) a/b
-    •divw(a, b) => (float) a/b
-    •divd(a, b) => (double) a/b
+    •divl(a, b) => truncating division
+    •divn(a, b) => flooring division
+    •div2(a, b) => narrowing int division
 
 ### •dup· «DUPlicate vector element»
 
@@ -784,6 +786,12 @@ Key:
 ### •fam· «Fused Add Multiply»
 
     •faml(a, b, c) => TRUNCATE(a+b*c)
+    •fam2(a, b, c) => a+NARROWED(b)*NARROWED(c)
+    •famf(a, b, c) => FLOATING(a+b*c)
+
+### •fsm· «Fused Subtract Multiply»
+
+    •faml(a, b, c) => TRUNCATE(a-b*c)
     •fam2(a, b, c) => a+NARROWED(b)*NARROWED(c)
     •famf(a, b, c) => FLOATING(a+b*c)
 
@@ -842,10 +850,11 @@ Key:
     •minl(a, b) => LIKELY(a < b) ? a : b
     •minv(v)    => REDUCE(minl, v)
 
-### •mod· «MODulus (division remainder)»
+### •mod· «MODulus (division with remainder)»
 
-    •modl(a, b) => TRUNCATE(a%b)
-    •mod2(a, b) => a%b
+    •modl(a, b, *r) => truncating
+    •modn(a, b, *r) => flooring
+    •mod2(a, b, *r) => narrowing
 
 ### •mul· «MULtiply»
 
@@ -897,6 +906,12 @@ Key:
 
     •pers(a, ...)    => permute with 0 default
     •perm(a, b, ...) => permute with b default
+
+### •rem· «REMainder of division»
+
+    •reml(a, b, *r) => truncated
+    •remn(a, b, *r) => floored
+    •rem2(a, b, *r) => narrowed 
 
 ### •rev· «REVerse»
 
@@ -1073,8 +1088,11 @@ Key:
 
 ### •veq· «Vector EQuality match»
 
-    •veqs(a, b) => VECTORIZE(CEQS, a, DUP(b))
-    •veqy(a, b) => VECTORIZE(CEQY, a, DUP(b))
+    •veql(a, b) => lane of first ltr match
+    •veqr(a, b) => lane of first rtl match 
+    •veqn(a, b) => number of matches
+    •veqs(a, b) => saturated if any match 
+    •veqy(a, b) => true if any match else false
 
 ### •xeq· «eXchange if EQual»
 
@@ -1093,29 +1111,20 @@ Key:
     •xore(...)  => atomic_xor_explicit(..., memory_order_release)
     •xort(...)  => atomic_xor_explicit(..., memory_order_seq_cst)
 
-### •yeq· «Y'all EQual»
+### •xrd  «eXtend Right Double»
 
-    •yeqy(a, b) => ALL(MAP(ceqy, a, b))
+    •xrdz(x) => zero extend
+    •xrds(x) => sign extend
 
-### •yne· «Y'all Not Equal»
+### •xrq  «eXtend Right Quadruple»
 
-    •yney(a, b) => ALL(MAP(cney, a, b))
+    •xrqz(x) => zero extend
+    •xrqs(x) => sign extend
 
-### •ylt· «Y'all Less Than»
+### •xro  «eXtend Right Octuple»
 
-    •ylty(a, b) => ALL(MAP(clty, a, b))
-
-### •yle· «Y'all Less or Equal»
-
-    •yley(a, b) => ALL(MAP(cley, a, b))
-
-### •ygt· «Y'all Greater Than»
-
-    •ygty(a, b) => ALL(MAP(cgty, a, b))
-
-### •yge· «Y'all Greater or Equal»
-
-    •ygey(a, b) => ALL(MAP(cgey, a, b))
+    •xroz(x) => zero extend
+    •xros(x) => sign extend
 
 ### •zeq· «Zero EQuals»
 
