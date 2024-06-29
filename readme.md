@@ -656,6 +656,13 @@ Key:
 
     •catl(l, r) => l ## r
 
+
+### •tst· «Test Set biTs»
+
+    •tsts(a, b) => ((a&b) != 0) ? -1 : 0
+    •tsty(a, b) => ((a&b) != 0) ? +1 : 0
+
+
 ### •ceq· «Compare EQual»
 
     •ceqs(a, b) => a == b ? -1 : 0
@@ -672,6 +679,7 @@ Key:
 
     •clts(a, b) => a < b ? -1 : 0
     •cltl(a, b) => a < b ? +1 : 0
+    •cltr(a, b) => a < b ?  b : a (unstable max)
     •clty(a, b) => a < b
 
 ### •cle· «Compare Less than or Equal»
@@ -684,6 +692,7 @@ Key:
 
     •cgts(a, b) => a > b ? -1 : 0
     •cgtl(a, b) => a > b ? +1 : 0
+    •cgtr(a, b) => a < b ?  b : a (unstable min)
     •cgty(a, b) => a > b
 
 ### •cge· «Compare Greater than or Equal»
@@ -791,9 +800,9 @@ Key:
 
 ### •fsm· «Fused Subtract Multiply»
 
-    •faml(a, b, c) => TRUNCATE(a-b*c)
-    •fam2(a, b, c) => a+NARROWED(b)*NARROWED(c)
-    •famf(a, b, c) => FLOATING(a+b*c)
+    •fsml(a, b, c) => TRUNCATE(a-b*c)
+    •fsm2(a, b, c) => a+NARROWED(b)*NARROWED(c)
+    •fsmf(a, b, c) => FLOATING(a+b*c)
 
 ### •get· «vector GET»
 
@@ -842,12 +851,10 @@ Key:
 
 ### •max· «MAXimum»
 
-    •maxl(a, b) => LIKELY(a > b) ? a : b
     •maxv(v)    => REDUCE(maxl, v)
 
 ### •min· «MINimum»
 
-    •minl(a, b) => LIKELY(a < b) ? a : b
     •minv(v)    => REDUCE(minl, v)
 
 ### •mod· «MODulus (division with remainder)»
@@ -890,7 +897,7 @@ Key:
 
     •neww(...) => 32 bit
     •newd(...) => 64 bit
-    •newq(...) => 64 bit
+    •newq(...) => 128 bit
 
 ### •orr· «bitwise ORR»
 
@@ -1071,11 +1078,6 @@ Key:
     •toal(a) => LOWERHEX(a)
     •toau(a) => UPPERHEX(a)
 
-### •tst· «Test Set biTs»
-
-    •tsts(a, b) => ((a&b) != 0) ? -1 : 0
-    •tsty(a, b) => ((a&b) != 0) ? +1 : 0
-
 ### •uno· «Generate consecutive '1' bits»
 
     •unol(N) => from lsb to msb
@@ -1088,11 +1090,67 @@ Key:
 
 ### •veq· «Vector EQuality match»
 
-    •veql(a, b) => lane of first ltr match
-    •veqr(a, b) => lane of first rtl match 
-    •veqn(a, b) => number of matches
+    •veql(a, b) => lane of first match or -1
+    •veqr(a, b) => lane of last match or -1
+    •veqn(a, b) => match count
     •veqs(a, b) => saturated if any match 
     •veqy(a, b) => true if any match else false
+
+### •vne· «Vector NonEquality match»
+
+    •vnel(a, b) => lane of first match or -1
+    •vner(a, b) => lane of last match or -1
+    •vnen(a, b) => match count
+    •vnes(a, b) => saturated if any match 
+    •vney(a, b) => true if any match else false
+
+### •vlt· «Vector Less Than match»
+
+    •vltl(a, b) => lane of first match or -1
+    •vltr(a, b) => lane of last match or -1
+    •vltn(a, b) => match count
+    •vlts(a, b) => saturated if any match 
+    •vlty(a, b) => true if any match else false
+
+### •vle· «Vector Less or Equal match»
+
+    •vlel(a, b) => lane of first match or -1
+    •vler(a, b) => lane of last match or -1
+    •vlen(a, b) => match count
+    •vles(a, b) => saturated if any match 
+    •vley(a, b) => true if any match else false
+
+### •vgt· «Vector Greater Than match»
+
+    •vgtl(a, b) => lane of first match or -1
+    •vgtr(a, b) => lane of last match or -1
+    •vgtn(a, b) => match count
+    •vgts(a, b) => saturated if any match 
+    •vgty(a, b) => true if any match else false
+
+### •vge· «Vector Greater or Equal match»
+
+    •vgel(a, b) => lane of first match or -1
+    •vger(a, b) => lane of last match or -1
+    •vgen(a, b) => match count
+    •vges(a, b) => saturated if any match 
+    •vgey(a, b) => true if any match else false
+
+### •vbn· «Vector BetweeN match»
+
+    •vbnl(a, b) => lane of first match or -1
+    •vbnr(a, b) => lane of last match or -1
+    •vbnn(a, b) => match count
+    •vbns(a, b) => saturated if any match 
+    •vbny(a, b) => true if any match else false
+
+### •vnb· «Vector Not Between match»
+
+    •vnbl(a, b) => lane of first match or -1
+    •vnbr(a, b) => lane of last match or -1
+    •vnbn(a, b) => match count
+    •vnbs(a, b) => saturated if any match 
+    •vnby(a, b) => true if any match else false
 
 ### •xeq· «eXchange if EQual»
 
