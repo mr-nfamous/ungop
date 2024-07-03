@@ -1,9 +1,1078 @@
 #include "/sdcard/C/ungop.h"
 
+#if 0
+
+#undef MY_TEST 
+
+#define MY_TEST(F, X) _Static_assert(F(X), "!" #F "(" #X ")\n" )
+MY_TEST(BOOL_CKTY, BOOL_VOID);
+MY_TEST(UCHAR_CKTY, UCHAR_VOID);
+MY_TEST(SCHAR_CKTY, SCHAR_VOID);
+MY_TEST(CHAR_CKTY, CHAR_VOID);
+MY_TEST(USHRT_CKTY, USHRT_VOID);
+MY_TEST(SHRT_CKTY, SHRT_VOID);
+MY_TEST(UINT_CKTY, UINT_VOID);
+MY_TEST(INT_CKTY, INT_VOID);
+MY_TEST(ULONG_CKTY, ULONG_VOID);
+MY_TEST(LONG_CKTY, LONG_VOID);
+MY_TEST(ULLONG_CKTY, ULLONG_VOID);
+MY_TEST(LLONG_CKTY, LLONG_VOID);
+MY_TEST(FLT16_CKTY, FLT16_VOID);
+MY_TEST(FLT_CKTY, FLT_VOID);
+MY_TEST(DBL_CKTY, DBL_VOID);
+
+MY_TEST(cktyyu,voidyu);
+MY_TEST(cktyayu,voidayu);
+MY_TEST(cktyacyu,voidacyu);
+
+MY_TEST(cktybu,voidbu);
+MY_TEST(cktyabu,voidabu);
+MY_TEST(cktyacbu,voidacbu);
+
+MY_TEST(cktybi,voidbi);
+MY_TEST(cktyabi,voidabi);
+MY_TEST(cktyacbi,voidacbi);
+
+MY_TEST(cktybc,voidbc);
+MY_TEST(cktyabc,voidabc);
+MY_TEST(cktyacbc,voidacbc);
+
+MY_TEST(cktyhu,voidhu);
+MY_TEST(cktyahu,voidahu);
+MY_TEST(cktyachu,voidachu);
+
+MY_TEST(cktyhi,voidhi);
+MY_TEST(cktyahi,voidahi);
+MY_TEST(cktyachi,voidachi);
+
+MY_TEST(cktyhf,voidhf);
+MY_TEST(cktyahf,voidahf);
+MY_TEST(cktyachf,voidachf);
+
+MY_TEST(cktywu,voidwu);
+MY_TEST(cktyawu,voidawu);
+MY_TEST(cktyacwu,voidacwu);
+
+MY_TEST(cktywi,voidwi);
+MY_TEST(cktyawi,voidawi);
+MY_TEST(cktyacwi,voidacwi);
+
+MY_TEST(cktywf,voidwf);
+MY_TEST(cktyawf,voidawf);
+MY_TEST(cktyacwf,voidacwf);
+
+MY_TEST(cktydu,voiddu);
+MY_TEST(cktyadu,voidadu);
+MY_TEST(cktyacdu,voidacdu);
+
+MY_TEST(cktydi,voiddi);
+MY_TEST(cktyadi,voidadi);
+MY_TEST(cktyacdi,voidacdi);
+
+MY_TEST(cktydf,voiddf);
+MY_TEST(cktyadf,voidadf);
+MY_TEST(cktyacdf,voidacdf);
+MY_TEST(cktywyu,voidwyu);
+MY_TEST(cktywbu,voidwbu);
+MY_TEST(cktywbi,voidwbi);
+MY_TEST(cktywbc,voidwbc);
+MY_TEST(cktywhu,voidwhu);
+MY_TEST(cktywhi,voidwhi);
+MY_TEST(cktywhf,voidwhf);
+
+MY_TEST(cktywwu,voidwwu);
+MY_TEST(cktywwi,voidwwi);
+MY_TEST(cktywwf,voidwwf);
+
+MY_TEST(cktydyu,voiddyu);
+MY_TEST(cktydbu,voiddbu);
+MY_TEST(cktydbi,voiddbi);
+MY_TEST(cktydbc,voiddbc);
+MY_TEST(cktydhu,voiddhu);
+MY_TEST(cktydhi,voiddhi);
+MY_TEST(cktydhf,voiddhf);
+MY_TEST(cktydwu,voiddwu);
+MY_TEST(cktydwi,voiddwi);
+MY_TEST(cktydwf,voiddwf);
+MY_TEST(cktyddu,voidddu);
+MY_TEST(cktyddi,voidddi);
+MY_TEST(cktyddf,voidddf);
+
+MY_TEST(cktyqyu,voidqyu);
+MY_TEST(cktyqbu,voidqbu);
+MY_TEST(cktyqbi,voidqbi);
+MY_TEST(cktyqbc,voidqbc);
+MY_TEST(cktyqhu,voidqhu);
+MY_TEST(cktyqhi,voidqhi);
+MY_TEST(cktyqhf,voidqhf);
+MY_TEST(cktyqwu,voidqwu);
+MY_TEST(cktyqwi,voidqwi);
+MY_TEST(cktyqwf,voidqwf);
+MY_TEST(cktyqdu,voidqdu);
+MY_TEST(cktyqdi,voidqdi);
+MY_TEST(cktyqdf,voidqdf);
+MY_TEST(cktyqqu,voidqqu);
+MY_TEST(cktyqqi,voidqqi);
+MY_TEST(cktyqqf,voidqqf);
+
+#endif
+
+#if 1
+
+int MY_CEQTEST(void)
+{
+    char const *why;
+    int lno = -1;
+#undef MY_TEST
+#define MY_TEST(F, A, Y, N) lno = __LINE__; \
+    do {    \
+        if (!ceqy##F(A,Y))\
+        {\
+            why = "!ceqy" #F "( "#A ", " #Y ")";\
+            goto fail;\
+        }\
+        if (ceqy##F(A,N))\
+        {\
+            why = "ceqy" #F "(" #A ", " #N ")";\
+            goto fail;\
+        }\
+        if (!ckty##F(ceql##F(A,Y))) \
+        {\
+            why = "!ckty" #F "(ceql" #F "(" #A "," #Y "))";\
+            goto fail;\
+        }\
+        if (!ckty##F(ceql##F(A,N))) \
+        {\
+            why = "!ckty" #F "(ceql" #F "(" #A "," #N "))";\
+            goto fail;\
+        }\
+        if (+1 != cvwi##F(ceql##F(A,Y)))\
+        {\
+            why = "+1 != cvwi" #F "(ceql" #F"(" #A ", " #Y "))";\
+            goto fail;\
+        }\
+        if (+0 != cvwi##F(ceql##F(A,N)))\
+        {\
+            why = "+1 != cvwi" #F "(ceql" #F"(" #A ", " #N "))";\
+            goto fail;\
+        }\
+        if (!ckty##F(ceqs##F(A,Y))) \
+        {\
+            why = "!ckty" #F "(ceqs" #F "(" #A "," #Y "))";\
+            goto fail;\
+        }\
+        if (!ckty##F(ceqs##F(A,N))) \
+        {\
+            why = "!ckty" #F "(ceqs" #F "(" #A "," #N "))";\
+            goto fail;\
+        }\
+        if (cv##F##wi(-1) != cvwi##F(ceqs##F(A,Y)))\
+        {\
+            why = "cv"#F "wi(-1) != cvwi" #F "(ceqs" #F"(" #A ", " #Y "))";\
+            goto fail;\
+        }\
+        if (+0 != cvwi##F(ceqs##F(A,N)))\
+        {\
+            why = "+0 != cvwi" #F "(ceqs" #F"(" #A ", " #N "))";\
+            goto fail;\
+        }\
+    } while (0)
+
+    MY_TEST(bu, +1, +1, ~+1);
+    MY_TEST(bu, -1, -1, ~-1);
+    MY_TEST(bu, UINT8_MAX, UINT8_MAX, ~UINT8_MAX);
+
+    MY_TEST(bi, +1, +1, ~+0);
+    MY_TEST(bi, -1, -1, ~-1);
+    MY_TEST(bi, INT8_MAX, INT8_MAX, ~INT_MAX);
+    MY_TEST(bi, INT8_MIN, INT8_MIN, ~INT_MIN);
+
+    MY_TEST(bc, 1, 1, 0);
+    MY_TEST(bc, CHAR_MAX, CHAR_MAX, ~CHAR_MAX);
+    MY_TEST(bc, CHAR_MIN, CHAR_MIN, ~CHAR_MIN);
+
+    MY_TEST(hu, +1, +1, ~+1);
+    MY_TEST(hu, -1, -1, ~-1);
+    MY_TEST(hu, UINT16_MAX, UINT16_MAX, ~UINT16_MAX);
+
+    MY_TEST(hi, +1, +1, ~+0);
+    MY_TEST(hi, -1, -1, ~-1);
+    MY_TEST(hi, INT16_MAX, INT16_MAX, ~INT16_MAX);
+    MY_TEST(hi, INT16_MIN, INT16_MIN, ~INT16_MIN);
+
+    MY_TEST(wu, +1, +1, ~+1);
+    MY_TEST(wu, -1, -1, ~-1);
+    MY_TEST(wu, UINT32_MAX, UINT32_MAX, ~UINT32_MAX);
+    
+    MY_TEST(wi, +1, +1, ~+0);
+    MY_TEST(wi, -1, -1, ~-1);
+    MY_TEST(wi, INT32_MAX, INT32_MAX, ~INT32_MAX);
+    MY_TEST(wi, INT32_MIN, INT32_MIN, ~INT32_MIN);
+
+    MY_TEST(du, +1, +1, ~+1);
+    MY_TEST(du, -1, -1, ~-1);
+    MY_TEST(du, UINT64_MAX, UINT64_MAX, ~UINT64_MAX);
+
+    MY_TEST(di, +1, +1, ~+0);
+    MY_TEST(di, -1, -1, ~-1);
+    MY_TEST(di, INT64_MAX, INT64_MAX, ~INT64_MAX);
+    MY_TEST(di, INT64_MIN, INT64_MIN, ~INT64_MIN);
+
+    QUAD_TYPE negq = QUAD_UMAX;
+    QUAD_TYPE nilq = {0};
+    QUAD_TYPE minq = QUAD_IMIN;
+    QUAD_TYPE maxq = QUAD_IMAX;
+    QUAD_TYPE posq = {.Lo.U=1};
+    
+    MY_TEST(qu, negq.U, negq.U, nilq.U); // -1q,-1q,+0q
+    MY_TEST(qu, nilq.U, nilq.U, negq.U); // +0q,+0q,-1q
+    MY_TEST(qu, posq.U, posq.U, nilq.U); // +1q,+1q,+0q
+    MY_TEST(qu, maxq.U, maxq.U, minq.U); // max,max,min
+    MY_TEST(qu, minq.U, minq.U, maxq.U); // max,max,min
+    
+    MY_TEST(qi, negq.I, negq.I, nilq.I); // -1q,-1q,+0q
+    MY_TEST(qi, nilq.I, nilq.I, negq.I); // +0q,+0q,-1q
+    MY_TEST(qi, posq.I, posq.I, nilq.I); // +1q,+1q,+0q
+    MY_TEST(qi, maxq.I, maxq.I, minq.I); // max,max,min
+    MY_TEST(qi, minq.I, minq.I, maxq.I); // max,max,min
+
+    (void) printf("passed %s\n", __func__);
+    return 0;
+    fail: {return printf("failed test on line %i: %s\n", lno, why);}
+
+#undef MY_TEST
+}
+
+#endif
+
+#if 1 // mh_ceql_test
+
+int ceqy_test(void)
+{
+    int lno;
+    char const *why;
+    union {
+        union {     _Bool U;} Y;
+        union {   uint8_t U;     int8_t I;       char C;} B;
+        union {  uint16_t U;    int16_t I;    flt16_t F;} H;
+        union {  uint32_t U;    int32_t I;      float F;} W;
+        union {  uint64_t U;    int64_t I;     double F;} D;
+        union {QUAD_UTYPE U; QUAD_ITYPE I; QUAD_FTYPE F;} Q;
+    } k;
+    WORD_VTYPE w = {0};
+    DWRD_VTYPE d = {0};
+    QUAD_VTYPE q = {0};
+#undef TEST
+
+#define TEST(T, V, X) \
+if (!cktyyu(ceqy ## T(V.X, V.X))) \
+do {\
+    lno = __LINE__;\
+    why = "!cktyyu(ceqy" #T "(" #V "." #X ", " #V "." #X "))\n";\
+    goto fail;\
+} while (0)
+
+#define TESTK(T, X) TEST(T, k, X)
+    TESTK(bu, B.U); TESTK(bi, B.I); TESTK(bc, B.C);
+    TESTK(hu, H.U); TESTK(hi, H.I); TESTK(hf, H.F);
+    TESTK(wu, W.U); TESTK(wi, W.I); TESTK(wf, W.F);
+    TESTK(du, D.U); TESTK(di, D.I); TESTK(df, D.F);
+    TESTK(qu, Q.U); TESTK(qi, Q.I); 
+    
+#undef TEST
+#undef TESTK
+#define TEST(F, X, A, B) \
+if (X != ceqy##F(A,B)) do {\
+    lno = __LINE__;\
+    why = #X " != ceqy" #F "(" #A ", " #B ")\n";\
+    goto fail;\
+} while(0)
+
+#define TESTWB(X, T, L0,L1,L2,L3,  R0,R1,R2,R3) \
+if (X != ((ceqywb##T)(newwb##T(L0,L1,L2,L3), newwb##T(R0,R1,R2,R3)))) \
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqywh" #T "(" \
+"newwb" #T "(" #L0 "," #L1 "," #L2 "," #L3 "), "\
+"newwb" #T "(" #R0 "," #R1 "," #R2 "," #R3 "))\n";\
+    goto fail;\
+} while(0)
+
+    TESTWB(1,u, +4,+3,+2,+1,  +4,+3,+2,+1);
+    TESTWB(1,u, +1,+1,+1,+1,  +1,+1,+1,+1);
+    TESTWB(1,u, +0,+0,+0,+0,  +0,+0,+0,+0);
+    TESTWB(1,u, -1,-1,-1,-1,  -1,-1,-1,-1);
+
+    TESTWB(0,u, +4,+3,+2,+1,  +4,+3,+2,+0);
+    TESTWB(0,u, +4,+3,+2,+1,  +4,+3,+2,-1);
+    TESTWB(0,u, +1,+1,+1,+1,  +2,+2,+2,+2);
+    TESTWB(0,u, +1,+1,+1,+1,  -1,-1,-1,-1);
+    TESTWB(0,u, +1,+1,+1,+1,  +0,+0,+0,+0);
+    TESTWB(0,u, +0,+0,+0,+0,  +1,+1,+1,+1);
+    TESTWB(0,u, 00,00,00,00,  -1,-1,-1,-1);
+
+    TESTWB(1,i, +4,+3,+2,+1,  +4,+3,+2,+1);
+    TESTWB(1,i, +1,+1,+1,+1,  +1,+1,+1,+1);
+    TESTWB(1,i, +0,+0,+0,+0,  +0,+0,+0,+0);
+    TESTWB(1,i, -1,-1,-1,-1,  -1,-1,-1,-1);
+
+    TESTWB(0,i, +4,+3,+2,+1,  +4,+3,+2,+0);
+    TESTWB(0,i, +4,+3,+2,+1,  +4,+3,+2,-1);
+    TESTWB(0,i, +1,+1,+1,+1,  +2,+2,+2,+2);
+    TESTWB(0,i, +1,+1,+1,+1,  -1,-1,-1,-1);
+    TESTWB(0,i, +1,+1,+1,+1,  +0,+0,+0,+0);
+    TESTWB(0,i, +0,+0,+0,+0,  +1,+1,+1,+1);
+    TESTWB(0,i, 00,00,00,00,  -1,-1,-1,-1);
+
+    TESTWB(1,c, +4,+3,+2,+1,  +4,+3,+2,+1);
+    TESTWB(1,c, +1,+1,+1,+1,  +1,+1,+1,+1);
+    TESTWB(1,c, +0,+0,+0,+0,  +0,+0,+0,+0);
+    TESTWB(1,c, -1,-1,-1,-1,  -1,-1,-1,-1);
+
+    TESTWB(0,c, +4,+3,+2,+1,  +4,+3,+2,+0);
+    TESTWB(0,c, +4,+3,+2,+1,  +4,+3,+2,-1);
+    TESTWB(0,c, +1,+1,+1,+1,  +2,+2,+2,+2);
+    TESTWB(0,c, +1,+1,+1,+1,  -1,-1,-1,-1);
+    TESTWB(0,c, +1,+1,+1,+1,  +0,+0,+0,+0);
+    TESTWB(0,c, +0,+0,+0,+0,  +1,+1,+1,+1);
+    TESTWB(0,c, 00,00,00,00,  -1,-1,-1,-1);
+#undef TESTWB
+
+#define TESTWH(X, T, L0,L1,  R0,R1) \
+if (X != ((ceqywh##T)(newwh##T(L0,L1), newwh##T(R0,R1)))) \
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqywh" #T "(" \
+"newwh" #T "(" #L0 "," #L1 "), "\
+"newwh" #T "(" #R0 "," #R1 "))\n";\
+    goto fail;\
+} while(0)
+
+    TESTWH(1,u, -1,-1,  -1,-1);
+    TESTWH(1,u, +0,+0,  +0,+0);
+    TESTWH(1,u, +1,+1,  +1,+1);
+    TESTWH(1,u, +4,+3,  +4,+3);
+
+    TESTWH(0,u, +3,+4,  +4,+3);
+    TESTWH(0,u, +1,+1,  +0,+1);
+    TESTWH(0,u, +1,+1,  +1,+0);
+    TESTWH(0,u, +1,+1,  +0,+0);
+    TESTWH(0,u, +0,+0,  +0,+1);
+    TESTWH(0,u, +0,+0,  +1,+0);
+    TESTWH(0,u, +0,+0,  +1,+1);
+    TESTWH(0,u, -1,-1,  -1,+0);
+    TESTWH(0,u, -1,-1,  +0,-1);
+    TESTWH(0,u, -1,-1,  +0,+1);
+    TESTWH(0,u, -1,-1,  +0,+0);
+
+    TESTWH(1,i, -1,-1,  -1,-1);
+    TESTWH(1,i, +0,+0,  +0,+0);
+    TESTWH(1,i, +1,+1,  +1,+1);
+    TESTWH(1,i, +4,+3,  +4,+3);
+
+    TESTWH(0,i, +3,+4,  +4,+3);
+    TESTWH(0,i, +1,+1,  +0,+1);
+    TESTWH(0,i, +1,+1,  +1,+0);
+    TESTWH(0,i, +1,+1,  +0,+0);
+    TESTWH(0,i, +0,+0,  +0,+1);
+    TESTWH(0,i, +0,+0,  +1,+0);
+    TESTWH(0,i, +0,+0,  +1,+1);
+    TESTWH(0,i, -1,-1,  -1,+0);
+    TESTWH(0,i, -1,-1,  +0,-1);
+    TESTWH(0,i, -1,-1,  +0,+1);
+    TESTWH(0,i, -1,-1,  +0,+0);
+#undef TESTWH
+
+#define TESTWW(X, T, L0,  R0) \
+if (X != ((ceqyww##T)(newww##T(L0), newww##T(R0)))) \
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqyww" #T "(" \
+"newww" #T "(" #L0 "), "\
+"newww" #T "(" #R0 "))\n";\
+    goto fail;\
+} while(0)
+
+    TESTWW(1,u, 0x00000000U, 0x00000000U);
+    TESTWW(1,u, 0x00000001U, 0x00000001U);
+    TESTWW(1,u,   UINT8_MAX,   UINT8_MAX);
+    TESTWW(1,u,    INT8_MAX,    INT8_MAX);
+    TESTWW(1,u,  UINT16_MAX,  UINT16_MAX);
+    TESTWW(1,u,   INT16_MAX,   INT16_MAX);
+    TESTWW(1,u,  UINT32_MAX,  UINT32_MAX);
+    TESTWW(1,u,   INT32_MAX,   INT32_MAX);
+    
+    TESTWW(0,u, 0x00000000U, 0x00000001U);
+    TESTWW(0,u, 0x00000001U, 0x00000000U);
+    TESTWW(0,u, 0xD3ADBEEFU, 0xDEADBEEFU);
+    TESTWW(0,u,   UINT8_MAX,    INT8_MAX);
+    TESTWW(0,u,  UINT16_MAX,   INT16_MAX);
+    TESTWW(0,u,  UINT32_MAX,  UINT16_MAX);
+    
+    TESTWW(1,i, +0,+0);
+    TESTWW(1,i, +1,+1);
+    TESTWW(1,i, -1,-1);
+
+    TESTWW(0,i, -1,+1);
+    TESTWW(0,i, +1,-1);
+    TESTWW(0,i, +1,+0);
+    TESTWW(0,i, +0,+1);
+    TESTWW(0,i, +0,-1);
+    TESTWW(0,i, -1,+0);
+    
+    TESTWW(1,f, +0.0F, +0.0F);
+    TESTWW(1,f, -0.0F, +0.0F);
+    TESTWW(1,f, +0.0F, -0.0F);
+    TESTWW(1,f, +1.0F, +1.0F);
+    TESTWW(1,f, -1.0F, -1.0F);
+
+    TESTWW(0,f, -1.0F, -0.0F);
+    TESTWW(0,f, -1.0F, +0.0F);
+    TESTWW(0,f, -1.0F, +1.0F);
+    TESTWW(0,f, -0.0F, -1.0F);
+    TESTWW(0,f, -0.0F, +1.0F);
+    TESTWW(0,f, +0.0F, -1.0F);
+    TESTWW(0,f, +0.0F, +1.0F);
+    TESTWW(0,f, +1.0F, -1.0F);
+    TESTWW(0,f, +1.0F, -0.0F);
+#undef TESTWW
+
+    
+#define TESTDB(X, T, L0,L1,L2,L3,L4,L5,L6,L7, R0,R1,R2,R3,R4,R5,R6,R7) \
+if (X != \
+((ceqydb##T)(\
+newdb##T(L0,L1,L2,L3,L4,L5,L6,L7), \
+newdb##T(R0,R1,R2,R3,R4,R5,R6,R7)))) \
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqywh" #T "(" \
+"newdb"#T"("#L0","#L1","#L2","#L3","#L4","#L5","#L6","#L7"), "\
+"newdb"#T"("#R0","#R1","#R2","#R3","#R4","#R5","#R6","#R7"))\n";\
+    goto fail;\
+} while(0)
+
+    TESTDB(1,u, +0,+0,+0,+0,+0,+0,+0,+0,  +0,+0,+0,+0,+0,+0,+0,+0);
+    TESTDB(1,u, +0,+0,+0,+0,+0,+0,+0,+1,  +0,+0,+0,+0,+0,+0,+0,+1);
+    TESTDB(1,u, +1,+1,+1,+1,+1,+1,+1,+1,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(1,u, +1,+1,+1,+1,+1,+1,+1,+0,  +1,+1,+1,+1,+1,+1,+1,+0);
+    TESTDB(1,u, -1,-1,-1,-1,-1,-1,-1,-1,  -1,-1,-1,-1,-1,-1,-1,-1);
+    TESTDB(1,u, -1,-1,-1,-1,-1,-1,-1,+0,  -1,-1,-1,-1,-1,-1,-1,+0);
+    TESTDB(1,u, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,+1);
+
+    TESTDB(0,u, +0,+0,+0,+0,+0,+0,+0,+0,  +0,+0,+0,+0,+0,+0,+0,+1);
+    TESTDB(0,u, +0,+0,+0,+0,+0,+0,+0,+1,  +0,+0,+0,+0,+0,+0,+0,+0);
+    TESTDB(0,u, +0,+1,+1,+1,+1,+1,+1,+1,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(0,u, +1,+1,+1,+1,+1,+1,+1,+0,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(0,u, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,-1);
+    TESTDB(0,u, -1,-1,-1,-1,-1,-1,-1,+0,  -1,-1,-1,-1,-1,-1,-1,+1);
+    TESTDB(0,u, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,+0);
+
+    TESTDB(1,i, +0,+0,+0,+0,+0,+0,+0,+0,  +0,+0,+0,+0,+0,+0,+0,+0);
+    TESTDB(1,i, +0,+0,+0,+0,+0,+0,+0,+1,  +0,+0,+0,+0,+0,+0,+0,+1);
+    TESTDB(1,i, +1,+1,+1,+1,+1,+1,+1,+1,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(1,i, +1,+1,+1,+1,+1,+1,+1,+0,  +1,+1,+1,+1,+1,+1,+1,+0);
+    TESTDB(1,i, -1,-1,-1,-1,-1,-1,-1,-1,  -1,-1,-1,-1,-1,-1,-1,-1);
+    TESTDB(1,i, -1,-1,-1,-1,-1,-1,-1,+0,  -1,-1,-1,-1,-1,-1,-1,+0);
+    TESTDB(1,i, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,+1);
+
+    TESTDB(0,i, +0,+0,+0,+0,+0,+0,+0,+0,  +0,+0,+0,+0,+0,+0,+0,+1);
+    TESTDB(0,i, +0,+0,+0,+0,+0,+0,+0,+1,  +0,+0,+0,+0,+0,+0,+0,+0);
+    TESTDB(0,i, +0,+1,+1,+1,+1,+1,+1,+1,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(0,i, +1,+1,+1,+1,+1,+1,+1,+0,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(0,i, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,-1);
+    TESTDB(0,i, -1,-1,-1,-1,-1,-1,-1,+0,  -1,-1,-1,-1,-1,-1,-1,+1);
+    TESTDB(0,i, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,+0);
+
+    TESTDB(0,c, +0,+0,+0,+0,+0,+0,+0,+0,  +0,+0,+0,+0,+0,+0,+0,+1);
+    TESTDB(0,c, +0,+0,+0,+0,+0,+0,+0,+1,  +0,+0,+0,+0,+0,+0,+0,+0);
+    TESTDB(0,c, +0,+1,+1,+1,+1,+1,+1,+1,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(0,c, +1,+1,+1,+1,+1,+1,+1,+0,  +1,+1,+1,+1,+1,+1,+1,+1);
+    TESTDB(0,c, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,-1);
+    TESTDB(0,c, -1,-1,-1,-1,-1,-1,-1,+0,  -1,-1,-1,-1,-1,-1,-1,+1);
+    TESTDB(0,c, -1,-1,-1,-1,-1,-1,-1,+1,  -1,-1,-1,-1,-1,-1,-1,+0);
+#undef TESTDB
+
+#define TESTDH(X, T, L0,L1,L2,L3,  R0,R1,R2,R3) \
+if (X != ((ceqydh##T)(newdh##T(L0,L1,L2,L3),newdh##T(R0,R1,R2,R3)))) \
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqydh" #T "(" \
+"newdh" #T "(" #L0 "," #L1 "," #L2 "," #L3 "), "\
+"newdh" #T "(" #R0 "," #R1 "," #R2 "," #R3 "))\n";\
+    goto fail;\
+} while(0)
+
+    TESTDH(1,u, +4,+3,+2,+1,  +4,+3,+2,+1);
+    TESTDH(1,u, +1,+1,+1,+1,  +1,+1,+1,+1);
+    TESTDH(1,u, +0,+0,+0,+0,  +0,+0,+0,+0);
+    TESTDH(1,u, -1,-1,-1,-1,  -1,-1,-1,-1);
+
+    TESTDH(0,u, +4,+3,+2,+1,  +4,+3,+2,+0);
+    TESTDH(0,u, +4,+3,+2,+1,  +4,+3,+2,-1);
+    TESTDH(0,u, +1,+1,+1,+1,  +2,+2,+2,+2);
+    TESTDH(0,u, +1,+1,+1,+1,  -1,-1,-1,-1);
+    TESTDH(0,u, +1,+1,+1,+1,  +0,+0,+0,+0);
+    TESTDH(0,u, +0,+0,+0,+0,  +1,+1,+1,+1);
+    TESTDH(0,u, 00,00,00,00,  -1,-1,-1,-1);
+
+    TESTDH(1,i, +4,+3,+2,+1,  +4,+3,+2,+1);
+    TESTDH(1,i, +1,+1,+1,+1,  +1,+1,+1,+1);
+    TESTDH(1,i, +0,+0,+0,+0,  +0,+0,+0,+0);
+    TESTDH(1,i, -1,-1,-1,-1,  -1,-1,-1,-1);
+
+    TESTDH(0,i, +4,+3,+2,+1,  +4,+3,+2,+0);
+    TESTDH(0,i, +4,+3,+2,+1,  +4,+3,+2,-1);
+    TESTDH(0,i, +1,+1,+1,+1,  +2,+2,+2,+2);
+    TESTDH(0,i, +1,+1,+1,+1,  -1,-1,-1,-1);
+    TESTDH(0,i, +1,+1,+1,+1,  +0,+0,+0,+0);
+    TESTDH(0,i, +0,+0,+0,+0,  +1,+1,+1,+1);
+    TESTDH(0,i, 00,00,00,00,  -1,-1,-1,-1);
+
+#undef TESTDH
+
+#define TESTDW(X, T, L0,L1,  R0,R1) \
+if (X != ((ceqydw##T)(newdw##T(L0,L1), newdw##T(R0,R1)))) \
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqydw" #T "(" \
+"newdw" #T "(" #L0 "," #L1 "), "\
+"newdw" #T "(" #R0 "," #R1 "))\n";\
+    goto fail;\
+} while(0)
+    TESTDW(1,u, -1,-1,  -1,-1);
+    TESTDW(1,u, +0,+0,  +0,+0);
+    TESTDW(1,u, +1,+1,  +1,+1);
+    TESTDW(1,u, +4,+3,  +4,+3);
+
+    TESTDW(0,u, +3,+4,  +4,+3);
+    TESTDW(0,u, +1,+1,  +0,+1);
+    TESTDW(0,u, +1,+1,  +1,+0);
+    TESTDW(0,u, +1,+1,  +0,+0);
+    TESTDW(0,u, +0,+0,  +0,+1);
+    TESTDW(0,u, +0,+0,  +1,+0);
+    TESTDW(0,u, +0,+0,  +1,+1);
+    TESTDW(0,u, -1,-1,  -1,+0);
+    TESTDW(0,u, -1,-1,  +0,-1);
+    TESTDW(0,u, -1,-1,  +0,+1);
+    TESTDW(0,u, -1,-1,  +0,+0);
+
+    TESTDW(1,i, -1,-1,  -1,-1);
+    TESTDW(1,i, +0,+0,  +0,+0);
+    TESTDW(1,i, +1,+1,  +1,+1);
+    TESTDW(1,i, +4,+3,  +4,+3);
+
+    TESTDW(0,i, +3,+4,  +4,+3);
+    TESTDW(0,i, +1,+1,  +0,+1);
+    TESTDW(0,i, +1,+1,  +1,+0);
+    TESTDW(0,i, +1,+1,  +0,+0);
+    TESTDW(0,i, +0,+0,  +0,+1);
+    TESTDW(0,i, +0,+0,  +1,+0);
+    TESTDW(0,i, +0,+0,  +1,+1);
+    TESTDW(0,i, -1,-1,  -1,+0);
+    TESTDW(0,i, -1,-1,  +0,-1);
+    TESTDW(0,i, -1,-1,  +0,+1);
+    TESTDW(0,i, -1,-1,  +0,+0);
+#undef TESTDW
+
+#define TESTDD(X, T, L0,  R0) \
+if (X != ((ceqydd##T)(newdd##T(L0), newdd##T(R0)))) \
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqydd" #T "(" \
+"newdd" #T "(" #L0 "), "\
+"newdd" #T "(" #R0 "))\n";\
+    goto fail;\
+} while(0)
+
+    TESTDD(1,u, 0x00000000U, 0x00000000U);
+    TESTDD(1,u, 0x00000001U, 0x00000001U);
+    TESTDD(1,u,   UINT8_MAX,   UINT8_MAX);
+    TESTDD(1,u,    INT8_MAX,    INT8_MAX);
+    TESTDD(1,u,  UINT16_MAX,  UINT16_MAX);
+    TESTDD(1,u,   INT16_MAX,   INT16_MAX);
+    TESTDD(1,u,  UINT32_MAX,  UINT32_MAX);
+    TESTDD(1,u,   INT32_MAX,   INT32_MAX);
+    
+    TESTDD(0,u, 0x00000000U, 0x00000001U);
+    TESTDD(0,u, 0x00000001U, 0x00000000U);
+    TESTDD(0,u, 0xD3ADBEEFU, 0xDEADBEEFU);
+    TESTDD(0,u,   UINT8_MAX,    INT8_MAX);
+    TESTDD(0,u,  UINT16_MAX,   INT16_MAX);
+    TESTDD(0,u,  UINT32_MAX,  UINT16_MAX);
+    
+    TESTDD(1,i, +0,+0);
+    TESTDD(1,i, +1,+1);
+    TESTDD(1,i, -1,-1);
+
+    TESTDD(0,i, -1,+1);
+    TESTDD(0,i, +1,-1);
+    TESTDD(0,i, +1,+0);
+    TESTDD(0,i, +0,+1);
+    TESTDD(0,i, +0,-1);
+    TESTDD(0,i, -1,+0);
+    
+    TESTDD(1,f, +0.0, +0.0);
+    TESTDD(1,f, -0.0, +0.0);
+    TESTDD(1,f, +0.0, -0.0);
+    TESTDD(1,f, +1.0, +1.0);
+    TESTDD(1,f, -1.0, -1.0);
+
+    TESTDD(0,f, -1.0, -0.0);
+    TESTDD(0,f, -1.0, +0.0);
+    TESTDD(0,f, -1.0, +1.0);
+    TESTDD(0,f, -0.0, -1.0);
+    TESTDD(0,f, -0.0, +1.0);
+    TESTDD(0,f, +0.0, -1.0);
+    TESTDD(0,f, +0.0, +1.0);
+    TESTDD(0,f, +1.0, -1.0);
+    TESTDD(0,f, +1.0, -0.0);
+#undef TESTDD
+
+#define TESTQBU(X, L0,L1,  R0,R1) \
+if (X != ((ceqyqbu)(\
+catldbu(vcreate_u8(L0##ULL),vcreate_u8(L1##ULL)),\
+catldbu(vcreate_u8(R0##ULL),vcreate_u8(R1##ULL)))))\
+do {\
+    lno = __LINE__;\
+    why = #X " != ceqyqbu(" \
+"newqbu(" #L0 "," #L1 "), "\
+"newqbu(" #R0 "," #R1 "))\n";\
+    goto fail;\
+} while(0)
+
+    TESTQBU(
+        1, 
+        0x0000000000000000,0x0000000000000000,
+        0x0000000000000000,0x0000000000000000
+    );
+    TESTQBU(
+        1, 
+        0x0000000000000001,0x0000000000000000,
+        0x0000000000000001,0x0000000000000000
+    );
+
+    TEST(bu, 1, 0xff, 0xffff);
+    TEST(bu, 1, 0x00, 0xff00);
+    TEST(bu, 0, 0x00, 0xff01);
+
+    TEST(bi, 1,        0,        0);
+    TEST(bi, 1, INT8_MIN, INT8_MIN);
+    TEST(bi, 1, INT8_MAX, INT8_MAX);
+    TEST(bi, 1,   0x117f, 0xff7f);
+    TEST(bi, 0,   0x1170, 0xff7f);
+
+    TEST(bc, 1, '\0',           '\0');
+    TEST(bc, 0, '\0',           '\1');
+    TEST(bc, 1, 'a',            'a');
+    TEST(bc, 1, 0x000|CHAR_MIN, CHAR_MIN);
+    TEST(bc, 1, 0xf00|CHAR_MAX, CHAR_MAX);
+    TEST(bc, 1, 0x07f,          0xff7f);
+    TEST(bc, 0, 0x1170,         0xff7f);
+
+    TEST(hu, 1, 0xffff, 0xffffffffU);
+    TEST(hu, 1, 0xf000, 0xfffff000U);
+    TEST(hu, 1, 0x0001, 0xffff0001U);
+    TEST(hu, 0, 0x0001, 0xffff0000U);
+
+    TEST(hi, 1,        0,        0);
+    TEST(hi, 1,  INT16_MIN,  INT16_MIN);
+    TEST(hi, 1,  INT16_MAX,  INT16_MAX);
+    TEST(hi, 1, 0x12345678, 0x00005678);
+    TEST(hi, 0,     0x1170,     0x1171);
+
+    TEST(wu, 1, 0x0000ffffffffULL, 0xffffffffU);
+    TEST(wu, 1, 0x00000000f000ULL, 0xf000U);
+    TEST(wu, 1, 0x0000ffff0001ULL, 0xffff0001U);
+    TEST(wu, 0, 0x000000000001ULL, 0x00000000U);
+
+    TEST(wi, 1,               0,        0);
+    TEST(wi, 1,       INT32_MIN,  INT32_MIN);
+    TEST(wi, 1,       INT32_MAX,  INT32_MAX);
+    TEST(wi, 1, 0x000012345678LL, 0x12345678);
+    TEST(wi, 0, 0x000000001170LL,     0x1171);
+
+    TEST(wf, 1, +1.0F, +1.0F);
+    TEST(wf, 0, -1.0F, +1.0F);
+    TEST(wf, 1, ((WORD_TYPE){.U=1U<<31}).F, 0.0F);
+
+    TEST(du, 1, 0x0000ffffffffULL, 0xffffffffU);
+    TEST(du, 1, 0x00000000f000ULL, 0xf000U);
+    TEST(du, 1, 0x0000ffff0001ULL, 0xffff0001U);
+    TEST(du, 0, 0x000000000001ULL, 0x00000000U);
+    
+    TEST(di, 1,               0,        0);
+    TEST(di, 0,       INT64_MAX,  INT32_MAX);
+    TEST(di, 1,       INT64_MIN,  INT64_MIN);
+    TEST(di, 1,       INT64_MAX,  INT64_MAX);
+    TEST(di, 1, 0x000012345678LL, 0x12345678);
+    TEST(di, 0, 0x000000001170LL,     0x1171);
+
+    TEST(df, 1, +1.0, +1.0);
+    TEST(df, 0, -1.0, +1.0);
+    TEST(df, 1, ((DWRD_TYPE){.U=1ULL<<63}).F, 0.0);
+
+
+#if 0
+#define TESTW(R,V,T,L,R) TEST(w##V##T,w##V##K,w.L,w.R)
+
+    TESTW(u,b,u, B.U, B.U); 
+    TESTW(i,b,i, B.I, B.I);
+    TESTW(c,b,c, B.C, B.C);
+    TESTW(u,h,u, H.U, H.U); 
+    TESTW(u,h,i, H.I, H.I);
+    TESTW(i,h,i, W.U, W.U); 
+    TESTW(u,w,u, W.I, W.I);
+
+    TESTW(i,w,f, W.I, W.F);
+#undef TESTW
+
+#define TESTD(V,K,T,L,R) TEST(d##V##T,d##V##K,d.L,d.R)
+    TESTD(u,b,u, B.U, B.U); 
+    TESTD(i,b,i, B.I, B.I);
+    TESTD(c,b,c, B.C, B.C);
+    TESTD(u,h,u, H.U, H.U); 
+    TESTD(u,h,i, H.I, H.I);
+    TESTD(i,h,i, W.U, W.U); 
+    TESTD(u,w,u, W.I, W.I);
+    TESTD(i,w,f, W.I, W.F);
+    TESTD(u,d,u, D.U, D.U); 
+    TESTD(i,d,i, D.I, D.I);
+    TESTD(i,d,f, D.F, D.F);
+#undef TESTD
+
+#define TESTQ(V,K,T,L,R) TEST(q##V##T,q##V##K,q.L,q.R)
+    TESTQ(u,b,u, B.U, B.U); 
+    TESTQ(i,b,i, B.I, B.I);
+    TESTQ(c,b,c, B.C, B.C);
+    TESTQ(u,h,u, H.U, H.U); 
+    TESTQ(u,h,i, H.I, H.I);
+    TESTQ(i,h,i, W.U, W.U); 
+    TESTQ(u,w,u, W.I, W.I);
+    TESTQ(i,w,f, W.I, W.F);
+    TESTQ(u,d,u, D.U, D.U); 
+    TESTQ(i,d,i, D.I, D.I);
+    TESTQ(i,d,f, D.F, D.F);
+    TESTQ(u,q,u, Q.U, Q.U); 
+    TESTQ(i,q,i, Q.I, Q.I); 
+#undef TESTQ
+#endif
+
+    printf("%s passed\n", __func__);
+    return 0;
+    fail:
+    {
+        return printf("failed %s on line %i: %s", __func__,lno, why);
+    }
+}
+#endif // my_ceqlty
+
+int my_addlty(void)
+{
+    return 0;
+#if 0
+
+    int lno;
+    char const *why;
+#undef TEST
+
+#define TEST(T, A, B) \
+if (!ckty##T(addl##T(A,B))) \
+do {\
+    lno = __LINE__;\
+    why = "!ckty" #T "(addl" #T "(" #A ", " #B "))\n";\
+    goto fail;\
+} while (0)
+
+    TEST(yu, 0, 0);
+    TEST(bu, 0, 0); TEST(bi, 0, 0); TEST(bc, 0, 0);
+    TEST(hu, 0, 0); TEST(hi, 0, 0);
+    TEST(wu, 0, 0); TEST(wi, 0, 0);
+    TEST(du, 0, 0); TEST(di, 0, 0);
+    TEST(qu, 0, 0); TEST(qi, 0, 0);
+    WORD_VTYPE w = {0};
+    TEST(wyu,w.Y.U, w.Y.U);
+    TEST(wbu,w.B.U, w.B.U); TEST(wbi,w.B.I, w.B.I); TEST(wbc,w.B.C, w.B.C);
+    TEST(whu,w.H.U, w.H.U); TEST(whi,w.H.I, w.H.I);
+    TEST(wwu,w.W.U, w.W.U); TEST(wwi,w.W.I, w.W.I);
+    DWRD_VTYPE d = {0};
+    TEST(dyu,d.Y.U, d.Y.U);
+    TEST(dbu,d.B.U, d.B.U); TEST(dbi,d.B.I, d.B.I); TEST(dbc,d.B.C, d.B.C);
+    TEST(dhu,d.H.U, d.H.U); TEST(dhi,d.H.I, d.H.I);
+    TEST(dwu,d.W.U, d.W.U); TEST(dwi,d.W.I, d.W.I);
+    TEST(ddu,d.D.U, d.D.U); TEST(ddi,d.D.I, d.D.I);
+    QUAD_VTYPE q = {0};
+    TEST(qyu,q.Y.U, q.Y.U);
+    TEST(qbu,q.B.U, q.B.U); TEST(qbi,q.B.I, q.B.I); TEST(qbc,q.B.C, q.B.C);
+    TEST(qhu,q.H.U, q.H.U); TEST(qhi,q.H.I, q.H.I);
+    TEST(qwu,q.W.U, q.W.U); TEST(qwi,q.W.I, q.W.I);
+    TEST(qdu,q.D.U, q.D.U); TEST(qdi,q.D.I, q.D.I);
+    TEST(qqu,q.Q.U, q.Q.U); TEST(qqi,q.Q.I, q.Q.I);
+
+#undef TEST
+#define TEST(T, A, B, C)    \
+if (ceqladdl##T(A,B) != C) do { \
+    lno = __LINE__;     \
+    why = "addl"#T"("#A", "#B") != "#C"\n";\
+    goto fail;\
+} while (0)
+
+    TEST(yu,0,0,0);TEST(yu,0,1,1);TEST(yu,1,0,1);TEST(yu,1,1,0);
+    TEST(bu, 0x00, 0x00, 0x00);
+    TEST(bu, 0x00, 0x01, 0x01);
+    TEST(bu, 0xfe, 0x01, 0xff);
+    TEST(bu, 0xff, 0x01, 0x00);
+    TEST(bu, 0xff,   -1, 0xfe);
+    TEST(bi,        0,  0,  0);
+    TEST(bi,        0,  1,  1);
+    TEST(bi,        1,  1,  2);
+    TEST(bi,        1, -1,  0);
+    TEST(bi,        1, -2, -1);
+    TEST(bi, INT8_MAX,  1, INT8_MIN);
+    TEST(bi, INT8_MIN, -1, INT8_MAX);
+
+    TEST(hu, 0x0000, 0x0000, 0x0000);
+    TEST(hu, 0x0000, 0x0001, 0x0001);
+    TEST(hu, 0xfffe, 0x0001, 0xffff);
+    TEST(hu, 0xffff, 0x0001, 0x0000);
+    TEST(hu, 0xffff,     -1, 0xfffe);
+    TEST(hi,         0,   0,  0);
+    TEST(hi,         0,   1,  1);
+    TEST(hi,         1,   1,  2);
+    TEST(hi,         1,  -1,  0);
+    TEST(hi,         1,  -2, -1);
+    TEST(hi, INT16_MAX,   1, INT16_MIN);
+    TEST(hi, INT16_MIN,  -1, INT16_MAX);
+
+    TEST(wu, 0x00000000U, 0x00000000U, 0x00000000U);
+    TEST(wu, 0x00000000U, 0x00000001U, 0x00000001U);
+    TEST(wu, 0xfffffffeU, 0x00000001U, 0xffffffffU);
+    TEST(wu, 0xffffffffU, 0x00000001U, 0x00000000U);
+    TEST(wu, 0xffffffffU,         -1,  0xfffffffeU);
+    TEST(wi,           0,          0,            0);
+    TEST(wi,           0,          1,            1);
+    TEST(wi,           1,          1,            2);
+    TEST(wi,           1,         -1,            0);
+    TEST(wi,           1,         -2,           -1);
+    TEST(wi,   INT32_MAX,          1, INT32_MIN);
+    TEST(wi,   INT32_MIN,         -1, INT32_MAX);
+
+    TEST(du, UINT64_C(0), UINT64_C(0), UINT64_C(0));
+    TEST(du, UINT64_C(0), UINT64_C(1), UINT64_C(1));
+    TEST(du, UINT64_MAX,  UINT64_C(1), UINT64_C(0));
+    TEST(du, UINT64_MAX,          -1,  UINT64_C(0xfffffffffffffffe));
+    TEST(di,           0,          0,            0);
+    TEST(di,           0,          1,            1);
+    TEST(di,           1,          1,            2);
+    TEST(di,           1,         -1,            0);
+    TEST(di,           1,         -2,           -1);
+    TEST(di,   INT64_MAX,          1, INT32_MIN);
+    TEST(wi,   INT32_MIN,         -1, INT32_MAX);
+
+
+    printf("addl passed\n");
+    return 0;
+    fail:
+    {
+        return printf("failed test on line %i: %s", lno, why);
+    }
+    
+#endif
+
+}
+
+uint8x8_t 
+my_cvbubyu(uint32_t j)
+{
+/*
+    0b.0000.0000.0000.1111 =
+    0b.0001.0001.0001.0001
+    0b.0001.<<<<.<<<<.< = 9
+    0b.0001.<<<<.<<<<.< = 9
+    (49, 42, 35, 28, 21, 14, 7)
+    {(j<<42), (j<<28)
+*/
+    uint64_t    d0 = j&0xff;
+    uint64_t    d1 = (d0<<7);
+    uint64_t    d2 = (d0<<14);
+    uint64_t    d3 = (d0<<21);
+    uint64_t    d4 = (d0|d1|d2|d3);
+    d1 = (d0<<28);
+    d2 = (d0<<35);
+    d3 = (d0<<42);
+    d0 = (d0<<49);
+    d4 = (d0|d1|d2|d3|d4);
+    d4 = 0x0101010101010101ULL&d4;
+    return vcreate_u8(d4);
+}
+
+#if 0
+unsigned MY_CNTW(unsigned v)
+{
+
+    unsigned int c; // store the total here
+    static const int S[] = {1, 2, 4, 8, 16}; // Magic Binary Numbers
+    static const int B[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF, 0x0000FFFF};
+    c = v - ((v >> 1) & B[0]);
+    c = ((c >> S[1]) & B[1]) + (c & B[1]);
+    c = ((c >> S[2]) + c) & B[2];
+    c = ((c >> S[3]) + c) & B[3];
+    c = ((c >> S[4]) + c) & B[4];
+    return c;
+}
+#endif
+
+#if 1
+unsigned MY_CNTW(unsigned v)
+{
+    v = v-(0x55555555&(v>>001));
+    v = (0x33333333&v)+(0x33333333&(v>>002));
+    return ((v+(v>>04)&0xF0F0F0F)*0x1010101)>>24;
+/*
+This is the only version clang -O3 is capable of optimizing
+into the cnt sequence:
+
+        fmov    s0,     w0
+        cnt     v0.8b,  v0.8b
+        uaddlv  h0,     v0.8b
+        fmov    w0,     s0
+
+Note that this is best for 8, 16, and 32 bit operands, since
+armv8's 'cnt' instruction simply sets each byte in a 64 or 
+128 bit vector register to its hamming weight.
+*/
+
+}
+#endif
+#if 0
+unsigned MY_CNTW(unsigned v)
+{
+    unsigned c;
+    c = v-(0x55555555&(v>>001));
+    c =   (0x33333333& (c>>002))+(0x33333333&c);
+    c =   (0x0F0F0F0F&((c>>004)+c));
+    c =   (0x00FF00FF&((c>>010)+c));
+    c =   (0x0000FFFF&((c>>020)+c));
+    return c;
+}
+#endif
+
+uint64_t MY_CNTD(uint64_t v)
+{
+    uint64_t c;
+    c = v-(UINT64_C(0x5555555555555555)& (v>>001));
+    c =   (UINT64_C(0x3333333333333333)& (c>>002))+(0x3333333333333333ull&c);
+    c =   (UINT64_C(0x0F0F0F0F0F0F0F0F)&((c>>004)+c));
+    c =   (UINT64_C(0x00FF00FF00FF00FF)&((c>>010)+c));
+    c =   (UINT64_C(0x0000FFFF0000FFFF)&((c>>020)+c));
+    c =   (UINT64_C(0x00000000FFFFFFFF)&((c>>040)+c));
+    return c;
+}
+
+uint64_t revydux86(register uint64_t rdi)
+{
+    rdi = __builtin_bswap64(rdi);
+    register uint64_t rax = rdi;
+    rax >>= 4;
+    register uint64_t rcx =  0xf0f0f0f0f0f0f0fULL;
+    rax &= rcx;
+    rdi &= rcx;
+    rdi <<= 4;
+    rdi |= rax;
+    rax = 0x3333333333333333ULL;
+    rcx = rdi;
+    rcx &= rax;
+    rdi >>= 2;
+    rdi &= rax;
+    rax = rdi+4*rcx;
+    rcx = 0x5555555555555555ULL;
+    register uint64_t rdx = rax;
+    rdx &= rcx;
+    rax >>= 1;
+    rax &= rcx;
+    rax = rax+2*rdx;
+    return rax;
+}
 
 int main(int argc, char *argv[], char *envp[])
 {
+    for (uint64_t k=0; k < 8; k++)
+    {
+        uint64_t l = 8*k;
+        uint64_t n = (1<<l)-1;
+        for (uint64_t j=0; j < 256; j++)
+        {
+            uint64_t x = n+(j<<l);
+            uint64_t y = revydu(x);
+            uint64_t z = revydux86(x);
+            if (y != z)
+            {
 
+                return printf(
+                    "revyduarm(%"UINT64_DFMT") => %" UINT64_DFMT
+                    "\n"
+                    "revydux86(%"UINT64_DFMT") => %" UINT64_DFMT
+                    "\n",
+                    x,y,x,z
+                );
+            }
+        }
+    }
+#if 0
+
+    for (unsigned i=0, bj, mj; i <= 0xffff; i++)
+    {
+        if ((bj=__builtin_popcountll(i)) != (mj=MY_CNTD(i)))
+        {
+            printf("i=%u, b=%u, m=%u\n", i,bj,mj);
+            exit(0);
+        }
+    }
+    printf("cntd(0..0xffff) works bitches!\n");
+
+    for (uint64_t i=(1+UINT32_MAX+1), j=(0xffff+i), bj, mj; i <= j; i++)
+    {
+        if ((bj=__builtin_popcountll(i)) != (mj=MY_CNTD(i)))
+        {
+            printf("i=%lu, b=%lu, m=%lu\n", i,bj,mj);
+            exit(0);
+        }
+    }
+    printf("cntd(0x1'0000'0000..0x1'0000'ffff) works bitches!\n");
+    
+    
+
+    for (uint64_t i=(1ull<<48), j=(0xffff+i), bj, mj; i <= j; i++)
+    {
+        if ((bj=__builtin_popcountll(i)) != (mj=MY_CNTD(i)))
+        {
+            printf("i=%lu, b=%lu, m=%lu\n", i,bj,mj);
+            exit(0);
+        }
+    }
+    printf(
+        "cntd("
+        "0x1'0000'0000'0000.."
+        "0x1'0000'0000'ffff) works bitches!\n"
+    );
+    
+    
+
+    for (uint64_t i=(1ull<<56), j=(0xffff+i), bj, mj; i <= j; i++)
+    {
+        if ((bj=__builtin_popcountll(i)) != (mj=MY_CNTD(i)))
+        {
+            printf("i=%lu, b=%lu, m=%lu\n", i,bj,mj);
+            exit(0);
+        }
+    }
+    printf(
+        "cntd("
+        "0x100'0000'0000'0000.."
+        "0x100'0000'0000'ffff) works bitches!\n"
+    );
+    
+    
+#endif
 #if 0
 
     if (0)
@@ -87,7 +1156,7 @@ int main(int argc, char *argv[], char *envp[])
 
     if (0)
     {
-        printf("mod2(31u, 8) => %hu\n", mod2(31u, 8));
+        printf("rem2(31u, 8) => %hu\n", rem2(31u, 8));
     }
 
     if (0)
@@ -323,7 +1392,8 @@ int main(int argc, char *argv[], char *envp[])
     Vqdu        vqdu = {0};
     Vqdi        vqdi = {0};
     Vqdf        vqdf = {0};
-
+    Vqqu        vqqu = {0};
+    
     char const *expr;
     int         line;
     
@@ -344,11 +1414,18 @@ resolve the appropriate function designator.
 #if 0 // enter 
 {
 #endif
+
 #if 0 // leave 
 }
 #endif
 
+
+#if 0 // enter ___
+{
+#endif
+
 #if MY_FUNCOF_TESTS
+
 
 #if 0 // DONE AND DUSTED
 
@@ -1626,44 +2703,44 @@ resolve the appropriate function designator.
 #if 0 // enter bfs_
 {
 #endif
-//  BFS1=BDZ
-    if (!TASSERT(bfs1_funcof( kbu) ==  (UINT8_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof( kbi) ==   (INT8_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof( khu) == (UINT16_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof( khi) ==  (INT16_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof( kwu) == (UINT32_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof( kwi) ==  (INT32_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof( kdu) == (UINT64_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof( kdi) ==  (INT64_BFS1)))  goto fail;
-//  BFS1W=YWZ
-    if (!TASSERT(bfs1_funcof(vwyu) ==   (VWYU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vwbu) ==   (VWBU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vwbi) ==   (VWBI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vwhu) ==   (VWHU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vwhi) ==   (VWHI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vwwu) ==   (VWWU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vwwi) ==   (VWWI_BFS1)))  goto fail;
-//  BFS1D=YDZ
-    if (!TASSERT(bfs1_funcof(vdyu) ==   (VDYU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vdbu) ==   (VDBU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vdbi) ==   (VDBI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vdhu) ==   (VDHU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vdhi) ==   (VDHI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vdwu) ==   (VDWU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vdwi) ==   (VDWI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vddu) ==   (VDDU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vddi) ==   (VDDI_BFS1)))  goto fail;
-//  BFS1Q=YDZ
+//  BFSL=BDZ
+    if (!TASSERT(bfs1_funcof( kbu) ==  (UINT8_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof( kbi) ==   (INT8_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof( khu) == (UINT16_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof( khi) ==  (INT16_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof( kwu) == (UINT32_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof( kwi) ==  (INT32_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof( kdu) == (UINT64_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof( kdi) ==  (INT64_BFSL)))  goto fail;
+//  BFSLW=YWZ
+    if (!TASSERT(bfs1_funcof(vwyu) ==   (VWYU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vwbu) ==   (VWBU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vwbi) ==   (VWBI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vwhu) ==   (VWHU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vwhi) ==   (VWHI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vwwu) ==   (VWWU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vwwi) ==   (VWWI_BFSL)))  goto fail;
+//  BFSLD=YDZ
+    if (!TASSERT(bfs1_funcof(vdyu) ==   (VDYU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vdbu) ==   (VDBU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vdbi) ==   (VDBI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vdhu) ==   (VDHU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vdhi) ==   (VDHI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vdwu) ==   (VDWU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vdwi) ==   (VDWI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vddu) ==   (VDDU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vddi) ==   (VDDI_BFSL)))  goto fail;
+//  BFSLQ=YDZ
 #if 0
-    if (!TASSERT(bfs1_funcof(vqyu) ==   (VQYU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqbu) ==   (VQBU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqbi) ==   (VQBI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqhu) ==   (VQHU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqhi) ==   (VQHI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqwu) ==   (VQWU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqwi) ==   (VQWI_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqdu) ==   (VQDU_BFS1)))  goto fail;
-    if (!TASSERT(bfs1_funcof(vqdi) ==   (VQDI_BFS1)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqyu) ==   (VQYU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqbu) ==   (VQBU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqbi) ==   (VQBI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqhu) ==   (VQHU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqhi) ==   (VQHI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqwu) ==   (VQWU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqwi) ==   (VQWI_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqdu) ==   (VQDU_BFSL)))  goto fail;
+    if (!TASSERT(bfs1_funcof(vqdi) ==   (VQDI_BFSL)))  goto fail;
 #endif
 
 #if 0 // leave bfs_
@@ -2029,51 +3106,51 @@ resolve the appropriate function designator.
     if (!TASSERT(ceqs_funcof(vqdu) ==   (VQDU_CEQS)))  goto fail;
     if (!TASSERT(ceqs_funcof(vqdi) ==   (VQDI_CEQS)))  goto fail;
     if (!TASSERT(ceqs_funcof(vqdf) ==   (VQDF_CEQS)))  goto fail;
-//  CEQY=BDR
-    if (!TASSERT(ceqy_funcof( kbu) ==  (UINT8_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( kbi) ==   (INT8_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( khu) == (UINT16_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( khi) ==  (INT16_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( khf) ==  (FLT16_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( kwu) == (UINT32_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( kwi) ==  (INT32_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( kwf) ==    (FLT_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( kdu) == (UINT64_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( kdi) ==  (INT64_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof( kdf) ==    (DBL_CEQY)))  goto fail;
-//  CEQYW=BWR
-    if (!TASSERT(ceqy_funcof(vwbu) ==   (VWBU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vwbi) ==   (VWBI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vwhu) ==   (VWHU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vwhi) ==   (VWHI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vwhf) ==   (VWHF_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vwwu) ==   (VWWU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vwwi) ==   (VWWI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vwwf) ==   (VWWF_CEQY)))  goto fail;
-//  CEQYD=BDR
-    if (!TASSERT(ceqy_funcof(vdbu) ==   (VDBU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vdbi) ==   (VDBI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vdhu) ==   (VDHU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vdhi) ==   (VDHI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vdhf) ==   (VDHF_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vdwu) ==   (VDWU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vdwi) ==   (VDWI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vdwf) ==   (VDWF_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vddu) ==   (VDDU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vddi) ==   (VDDI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vddf) ==   (VDDF_CEQY)))  goto fail;
-//  CEQYQ=BDR
-    if (!TASSERT(ceqy_funcof(vqbu) ==   (VQBU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqbi) ==   (VQBI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqhu) ==   (VQHU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqhi) ==   (VQHI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqhf) ==   (VQHF_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqwu) ==   (VQWU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqwi) ==   (VQWI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqwf) ==   (VQWF_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqdu) ==   (VQDU_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqdi) ==   (VQDI_CEQY)))  goto fail;
-    if (!TASSERT(ceqy_funcof(vqdf) ==   (VQDF_CEQY)))  goto fail;
+//  CEQL=BDR
+    if (!TASSERT(ceql_funcof( kbu) ==  (UINT8_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( kbi) ==   (INT8_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( khu) == (UINT16_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( khi) ==  (INT16_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( khf) ==  (FLT16_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( kwu) == (UINT32_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( kwi) ==  (INT32_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( kwf) ==    (FLT_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( kdu) == (UINT64_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( kdi) ==  (INT64_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof( kdf) ==    (DBL_CEQL)))  goto fail;
+//  CEQLW=BWR
+    if (!TASSERT(ceql_funcof(vwbu) ==   (VWBU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vwbi) ==   (VWBI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vwhu) ==   (VWHU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vwhi) ==   (VWHI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vwhf) ==   (VWHF_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vwwu) ==   (VWWU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vwwi) ==   (VWWI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vwwf) ==   (VWWF_CEQL)))  goto fail;
+//  CEQLD=BDR
+    if (!TASSERT(ceql_funcof(vdbu) ==   (VDBU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vdbi) ==   (VDBI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vdhu) ==   (VDHU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vdhi) ==   (VDHI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vdhf) ==   (VDHF_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vdwu) ==   (VDWU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vdwi) ==   (VDWI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vdwf) ==   (VDWF_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vddu) ==   (VDDU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vddi) ==   (VDDI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vddf) ==   (VDDF_CEQL)))  goto fail;
+//  CEQLQ=BDR
+    if (!TASSERT(ceql_funcof(vqbu) ==   (VQBU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqbi) ==   (VQBI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqhu) ==   (VQHU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqhi) ==   (VQHI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqhf) ==   (VQHF_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqwu) ==   (VQWU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqwi) ==   (VQWI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqwf) ==   (VQWF_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqdu) ==   (VQDU_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqdi) ==   (VQDI_CEQL)))  goto fail;
+    if (!TASSERT(ceql_funcof(vqdf) ==   (VQDF_CEQL)))  goto fail;
 #if 0 // leave ceq_
 }
 #endif
@@ -3564,44 +4641,44 @@ resolve the appropriate function designator.
 #if 0 // enter div_
 {
 #endif
-//  DIVL=YDZ
-    if (!TASSERT(divl_funcof( kyu) ==   (BOOL_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( kbu) ==  (UINT8_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( kbi) ==   (INT8_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( khu) == (UINT16_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( khi) ==  (INT16_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( kwu) == (UINT32_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( kwi) ==  (INT32_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( kdu) == (UINT64_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof( kdi) ==  (INT64_DIVL)))  goto fail;
-//  DIVLW=YWZ
-    if (!TASSERT(divl_funcof(vwyu) ==   (VWYU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vwbu) ==   (VWBU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vwbi) ==   (VWBI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vwhu) ==   (VWHU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vwhi) ==   (VWHI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vwwu) ==   (VWWU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vwwi) ==   (VWWI_DIVL)))  goto fail;
-//  DIVLD=YDZ
-    if (!TASSERT(divl_funcof(vdyu) ==   (VDYU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vdbu) ==   (VDBU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vdbi) ==   (VDBI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vdhu) ==   (VDHU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vdhi) ==   (VDHI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vdwu) ==   (VDWU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vdwi) ==   (VDWI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vddu) ==   (VDDU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vddi) ==   (VDDI_DIVL)))  goto fail;
-//  DIVLQ=YDZ
-    if (!TASSERT(divl_funcof(vqyu) ==   (VQYU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqbu) ==   (VQBU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqbi) ==   (VQBI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqhu) ==   (VQHU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqhi) ==   (VQHI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqwu) ==   (VQWU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqwi) ==   (VQWI_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqdu) ==   (VQDU_DIVL)))  goto fail;
-    if (!TASSERT(divl_funcof(vqdi) ==   (VQDI_DIVL)))  goto fail;
+//  DIVN=YDZ
+    if (!TASSERT(divn_funcof( kyu) ==   (BOOL_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( kbu) ==  (UINT8_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( kbi) ==   (INT8_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( khu) == (UINT16_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( khi) ==  (INT16_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( kwu) == (UINT32_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( kwi) ==  (INT32_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( kdu) == (UINT64_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof( kdi) ==  (INT64_DIVN)))  goto fail;
+//  DIVNW=YWZ
+    if (!TASSERT(divn_funcof(vwyu) ==   (VWYU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vwbu) ==   (VWBU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vwbi) ==   (VWBI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vwhu) ==   (VWHU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vwhi) ==   (VWHI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vwwu) ==   (VWWU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vwwi) ==   (VWWI_DIVN)))  goto fail;
+//  DIVND=YDZ
+    if (!TASSERT(divn_funcof(vdyu) ==   (VDYU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vdbu) ==   (VDBU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vdbi) ==   (VDBI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vdhu) ==   (VDHU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vdhi) ==   (VDHI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vdwu) ==   (VDWU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vdwi) ==   (VDWI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vddu) ==   (VDDU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vddi) ==   (VDDI_DIVN)))  goto fail;
+//  DIVNQ=YDZ
+    if (!TASSERT(divn_funcof(vqyu) ==   (VQYU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqbu) ==   (VQBU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqbi) ==   (VQBI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqhu) ==   (VQHU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqhi) ==   (VQHI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqwu) ==   (VQWU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqwi) ==   (VQWI_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqdu) ==   (VQDU_DIVN)))  goto fail;
+    if (!TASSERT(divn_funcof(vqdi) ==   (VQDI_DIVN)))  goto fail;
 //  DIV2=HDZ
     if (!TASSERT(div2_funcof( khu) == (UINT16_DIV2)))  goto fail;
     if (!TASSERT(div2_funcof( khi) ==  (INT16_DIV2)))  goto fail;
@@ -4390,55 +5467,55 @@ resolve the appropriate function designator.
 #if 0 // enter max_
 {
 #endif
-//  MAXL=YDR
-    if (!TASSERT(maxl_funcof( kyu) ==   (BOOL_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kbu) ==  (UINT8_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kbi) ==   (INT8_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( khu) == (UINT16_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( khi) ==  (INT16_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( khf) ==  (FLT16_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kwu) == (UINT32_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kwi) ==  (INT32_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kwf) ==    (FLT_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kdu) == (UINT64_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kdi) ==  (INT64_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof( kdf) ==    (DBL_MAXL)))  goto fail;
-//  MAXLW=YWR
-    if (!TASSERT(maxl_funcof(vwyu) ==   (VWYU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwbu) ==   (VWBU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwbi) ==   (VWBI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwhu) ==   (VWHU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwhi) ==   (VWHI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwhf) ==   (VWHF_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwwu) ==   (VWWU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwwi) ==   (VWWI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vwwf) ==   (VWWF_MAXL)))  goto fail;
-//  MAXLD=YDR
-    if (!TASSERT(maxl_funcof(vdyu) ==   (VDYU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdbu) ==   (VDBU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdbi) ==   (VDBI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdhu) ==   (VDHU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdhi) ==   (VDHI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdhf) ==   (VDHF_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdwu) ==   (VDWU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdwi) ==   (VDWI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vdwf) ==   (VDWF_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vddu) ==   (VDDU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vddi) ==   (VDDI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vddf) ==   (VDDF_MAXL)))  goto fail;
-//  MAXLQ=YDR
-    if (!TASSERT(maxl_funcof(vqyu) ==   (VQYU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqbu) ==   (VQBU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqbi) ==   (VQBI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqhu) ==   (VQHU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqhi) ==   (VQHI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqhf) ==   (VQHF_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqwu) ==   (VQWU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqwi) ==   (VQWI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqwf) ==   (VQWF_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqdu) ==   (VQDU_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqdi) ==   (VQDI_MAXL)))  goto fail;
-    if (!TASSERT(maxl_funcof(vqdf) ==   (VQDF_MAXL)))  goto fail;
+//  CLTR=YDR
+    if (!TASSERT(cltr_funcof( kyu) ==   (BOOL_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kbu) ==  (UINT8_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kbi) ==   (INT8_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( khu) == (UINT16_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( khi) ==  (INT16_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( khf) ==  (FLT16_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kwu) == (UINT32_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kwi) ==  (INT32_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kwf) ==    (FLT_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kdu) == (UINT64_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kdi) ==  (INT64_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof( kdf) ==    (DBL_CLTR)))  goto fail;
+//  CLTRW=YWR
+    if (!TASSERT(cltr_funcof(vwyu) ==   (VWYU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwbu) ==   (VWBU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwbi) ==   (VWBI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwhu) ==   (VWHU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwhi) ==   (VWHI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwhf) ==   (VWHF_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwwu) ==   (VWWU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwwi) ==   (VWWI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vwwf) ==   (VWWF_CLTR)))  goto fail;
+//  CLTRD=YDR
+    if (!TASSERT(cltr_funcof(vdyu) ==   (VDYU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdbu) ==   (VDBU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdbi) ==   (VDBI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdhu) ==   (VDHU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdhi) ==   (VDHI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdhf) ==   (VDHF_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdwu) ==   (VDWU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdwi) ==   (VDWI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vdwf) ==   (VDWF_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vddu) ==   (VDDU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vddi) ==   (VDDI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vddf) ==   (VDDF_CLTR)))  goto fail;
+//  CLTRQ=YDR
+    if (!TASSERT(cltr_funcof(vqyu) ==   (VQYU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqbu) ==   (VQBU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqbi) ==   (VQBI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqhu) ==   (VQHU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqhi) ==   (VQHI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqhf) ==   (VQHF_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqwu) ==   (VQWU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqwi) ==   (VQWI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqwf) ==   (VQWF_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqdu) ==   (VQDU_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqdi) ==   (VQDI_CLTR)))  goto fail;
+    if (!TASSERT(cltr_funcof(vqdf) ==   (VQDF_CLTR)))  goto fail;
 //  MAXVW=YHR
     if (!TASSERT(maxv_funcof(vwyu) ==   (VWYU_MAXV)))  goto fail;
     if (!TASSERT(maxv_funcof(vwbu) ==   (VWBU_MAXV)))  goto fail;
@@ -4476,55 +5553,55 @@ resolve the appropriate function designator.
 #if 0 // enter min_
 {
 #endif
-//  MINL=YDR
-    if (!TASSERT(minl_funcof( kyu) ==   (BOOL_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kbu) ==  (UINT8_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kbi) ==   (INT8_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( khu) == (UINT16_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( khi) ==  (INT16_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( khf) ==  (FLT16_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kwu) == (UINT32_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kwi) ==  (INT32_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kwf) ==    (FLT_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kdu) == (UINT64_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kdi) ==  (INT64_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof( kdf) ==    (DBL_MINL)))  goto fail;
-//  MINLW=YWR
-    if (!TASSERT(minl_funcof(vwyu) ==   (VWYU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwbu) ==   (VWBU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwbi) ==   (VWBI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwhu) ==   (VWHU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwhi) ==   (VWHI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwhf) ==   (VWHF_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwwu) ==   (VWWU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwwi) ==   (VWWI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vwwf) ==   (VWWF_MINL)))  goto fail;
-//  MINLD=YDR
-    if (!TASSERT(minl_funcof(vdyu) ==   (VDYU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdbu) ==   (VDBU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdbi) ==   (VDBI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdhu) ==   (VDHU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdhi) ==   (VDHI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdhf) ==   (VDHF_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdwu) ==   (VDWU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdwi) ==   (VDWI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vdwf) ==   (VDWF_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vddu) ==   (VDDU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vddi) ==   (VDDI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vddf) ==   (VDDF_MINL)))  goto fail;
-//  MINLQ=YDR
-    if (!TASSERT(minl_funcof(vqyu) ==   (VQYU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqbu) ==   (VQBU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqbi) ==   (VQBI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqhu) ==   (VQHU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqhi) ==   (VQHI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqhf) ==   (VQHF_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqwu) ==   (VQWU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqwi) ==   (VQWI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqwf) ==   (VQWF_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqdu) ==   (VQDU_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqdi) ==   (VQDI_MINL)))  goto fail;
-    if (!TASSERT(minl_funcof(vqdf) ==   (VQDF_MINL)))  goto fail;
+//  CGTR=YDR
+    if (!TASSERT(cgtr_funcof( kyu) ==   (BOOL_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kbu) ==  (UINT8_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kbi) ==   (INT8_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( khu) == (UINT16_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( khi) ==  (INT16_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( khf) ==  (FLT16_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kwu) == (UINT32_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kwi) ==  (INT32_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kwf) ==    (FLT_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kdu) == (UINT64_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kdi) ==  (INT64_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof( kdf) ==    (DBL_CGTR)))  goto fail;
+//  CGTRW=YWR
+    if (!TASSERT(cgtr_funcof(vwyu) ==   (VWYU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwbu) ==   (VWBU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwbi) ==   (VWBI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwhu) ==   (VWHU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwhi) ==   (VWHI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwhf) ==   (VWHF_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwwu) ==   (VWWU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwwi) ==   (VWWI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vwwf) ==   (VWWF_CGTR)))  goto fail;
+//  CGTRD=YDR
+    if (!TASSERT(cgtr_funcof(vdyu) ==   (VDYU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdbu) ==   (VDBU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdbi) ==   (VDBI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdhu) ==   (VDHU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdhi) ==   (VDHI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdhf) ==   (VDHF_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdwu) ==   (VDWU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdwi) ==   (VDWI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vdwf) ==   (VDWF_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vddu) ==   (VDDU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vddi) ==   (VDDI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vddf) ==   (VDDF_CGTR)))  goto fail;
+//  CGTRQ=YDR
+    if (!TASSERT(cgtr_funcof(vqyu) ==   (VQYU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqbu) ==   (VQBU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqbi) ==   (VQBI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqhu) ==   (VQHU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqhi) ==   (VQHI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqhf) ==   (VQHF_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqwu) ==   (VQWU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqwi) ==   (VQWI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqwf) ==   (VQWF_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqdu) ==   (VQDU_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqdi) ==   (VQDI_CGTR)))  goto fail;
+    if (!TASSERT(cgtr_funcof(vqdf) ==   (VQDF_CGTR)))  goto fail;
 //  MINVW=YHR
     if (!TASSERT(minv_funcof(vwyu) ==   (VWYU_MINV)))  goto fail;
     if (!TASSERT(minv_funcof(vwbu) ==   (VWBU_MINV)))  goto fail;
@@ -4562,62 +5639,62 @@ resolve the appropriate function designator.
 #if 0 // enter mod_
 {
 #endif
-//  MODL=BDZ
-    if (!TASSERT(modl_funcof( kbu) ==  (UINT8_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof( kbi) ==   (INT8_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof( khu) == (UINT16_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof( khi) ==  (INT16_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof( kwu) == (UINT32_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof( kwi) ==  (INT32_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof( kdu) == (UINT64_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof( kdi) ==  (INT64_MODL)))  goto fail;
-//  MODLW=BWZ
-    if (!TASSERT(modl_funcof(vwbu) ==   (VWBU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vwbi) ==   (VWBI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vwhu) ==   (VWHU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vwhi) ==   (VWHI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vwwu) ==   (VWWU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vwwi) ==   (VWWI_MODL)))  goto fail;
-//  MODLD=BDZ
-    if (!TASSERT(modl_funcof(vdbu) ==   (VDBU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vdbi) ==   (VDBI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vdhu) ==   (VDHU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vdhi) ==   (VDHI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vdwu) ==   (VDWU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vdwi) ==   (VDWI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vddu) ==   (VDDU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vddi) ==   (VDDI_MODL)))  goto fail;
-//  MODLQ=BDZ
-    if (!TASSERT(modl_funcof(vqbu) ==   (VQBU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vqbi) ==   (VQBI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vqhu) ==   (VQHU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vqhi) ==   (VQHI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vqwu) ==   (VQWU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vqwi) ==   (VQWI_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vqdu) ==   (VQDU_MODL)))  goto fail;
-    if (!TASSERT(modl_funcof(vqdi) ==   (VQDI_MODL)))  goto fail;
-//  MOD2=HDZ
-    if (!TASSERT(mod2_funcof( khu) == (UINT16_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof( khi) ==  (INT16_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof( kwu) == (UINT32_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof( kwi) ==  (INT32_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof( kdu) == (UINT64_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof( kdi) ==  (INT64_MOD2)))  goto fail;
-//  MOD2W=NONE
-//  MOD2D=HDZ
-    if (!TASSERT(mod2_funcof(vdhu) ==   (VDHU_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vdhi) ==   (VDHI_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vdwu) ==   (VDWU_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vdwi) ==   (VDWI_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vddu) ==   (VDDU_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vddi) ==   (VDDI_MOD2)))  goto fail;
-//  MOD2Q=HDZ
-    if (!TASSERT(mod2_funcof(vqhu) ==   (VQHU_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vqhi) ==   (VQHI_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vqwu) ==   (VQWU_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vqwi) ==   (VQWI_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vqdu) ==   (VQDU_MOD2)))  goto fail;
-    if (!TASSERT(mod2_funcof(vqdi) ==   (VQDI_MOD2)))  goto fail;
+//  REML=BDZ
+    if (!TASSERT(reml_funcof( kbu) ==  (UINT8_REML)))  goto fail;
+    if (!TASSERT(reml_funcof( kbi) ==   (INT8_REML)))  goto fail;
+    if (!TASSERT(reml_funcof( khu) == (UINT16_REML)))  goto fail;
+    if (!TASSERT(reml_funcof( khi) ==  (INT16_REML)))  goto fail;
+    if (!TASSERT(reml_funcof( kwu) == (UINT32_REML)))  goto fail;
+    if (!TASSERT(reml_funcof( kwi) ==  (INT32_REML)))  goto fail;
+    if (!TASSERT(reml_funcof( kdu) == (UINT64_REML)))  goto fail;
+    if (!TASSERT(reml_funcof( kdi) ==  (INT64_REML)))  goto fail;
+//  REMLW=BWZ
+    if (!TASSERT(reml_funcof(vwbu) ==   (VWBU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vwbi) ==   (VWBI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vwhu) ==   (VWHU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vwhi) ==   (VWHI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vwwu) ==   (VWWU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vwwi) ==   (VWWI_REML)))  goto fail;
+//  REMLD=BDZ
+    if (!TASSERT(reml_funcof(vdbu) ==   (VDBU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vdbi) ==   (VDBI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vdhu) ==   (VDHU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vdhi) ==   (VDHI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vdwu) ==   (VDWU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vdwi) ==   (VDWI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vddu) ==   (VDDU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vddi) ==   (VDDI_REML)))  goto fail;
+//  REMLQ=BDZ
+    if (!TASSERT(reml_funcof(vqbu) ==   (VQBU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vqbi) ==   (VQBI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vqhu) ==   (VQHU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vqhi) ==   (VQHI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vqwu) ==   (VQWU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vqwi) ==   (VQWI_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vqdu) ==   (VQDU_REML)))  goto fail;
+    if (!TASSERT(reml_funcof(vqdi) ==   (VQDI_REML)))  goto fail;
+//  REM2=HDZ
+    if (!TASSERT(rem2_funcof( khu) == (UINT16_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof( khi) ==  (INT16_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof( kwu) == (UINT32_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof( kwi) ==  (INT32_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof( kdu) == (UINT64_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof( kdi) ==  (INT64_REM2)))  goto fail;
+//  REM2W=NONE
+//  REM2D=HDZ
+    if (!TASSERT(rem2_funcof(vdhu) ==   (VDHU_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vdhi) ==   (VDHI_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vdwu) ==   (VDWU_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vdwi) ==   (VDWI_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vddu) ==   (VDDU_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vddi) ==   (VDDI_REM2)))  goto fail;
+//  REM2Q=HDZ
+    if (!TASSERT(rem2_funcof(vqhu) ==   (VQHU_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vqhi) ==   (VQHI_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vqwu) ==   (VQWU_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vqwi) ==   (VQWI_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vqdu) ==   (VQDU_REM2)))  goto fail;
+    if (!TASSERT(rem2_funcof(vqdi) ==   (VQDI_REM2)))  goto fail;
 #if 0 // leave mod_
 }
 #endif
@@ -6395,6 +7472,93 @@ resolve the appropriate function designator.
 }
 #endif
 
+#endif // DONE AND DUSTED
+
+
+
+#if 0 // DONE AND DUSTED 2
+
+#if 0 // enter uno_
+{
+#endif
+//  UNOL=BDZ
+    if (!TASSERT(unol_funcof(uint8_t) ==  (UINT8_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof( int8_t) ==   (INT8_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(uint16_t) == (UINT16_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof( int16_t) ==  (INT16_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(uint32_t) == (UINT32_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof( int32_t) ==  (INT32_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(uint64_t) == (UINT64_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof( int64_t) ==  (INT64_UNOL)))  goto fail;
+//  UNOLW=BWZ
+    if (!TASSERT(unol_funcof(Vwbu) ==   (VWBU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vwbi) ==   (VWBI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vwhu) ==   (VWHU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vwhi) ==   (VWHI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vwwu) ==   (VWWU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vwwi) ==   (VWWI_UNOL)))  goto fail;
+//  UNOLD=BDZ
+    if (!TASSERT(unol_funcof(Vdbu) ==   (VDBU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vdbi) ==   (VDBI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vdhu) ==   (VDHU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vdhi) ==   (VDHI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vdwu) ==   (VDWU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vdwi) ==   (VDWI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vddu) ==   (VDDU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vddi) ==   (VDDI_UNOL)))  goto fail;
+//  UNOLQ=BDZ
+    if (!TASSERT(unol_funcof(Vqbu) ==   (VQBU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vqbi) ==   (VQBI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vqhu) ==   (VQHU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vqhi) ==   (VQHI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vqwu) ==   (VQWU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vqwi) ==   (VQWI_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vqdu) ==   (VQDU_UNOL)))  goto fail;
+    if (!TASSERT(unol_funcof(Vqdi) ==   (VQDI_UNOL)))  goto fail;
+//  UNOR=BDZ
+    if (!TASSERT(unor_funcof(uint8_t) ==  (UINT8_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof( int8_t) ==   (INT8_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(uint16_t) == (UINT16_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof( int16_t) ==  (INT16_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(uint32_t) == (UINT32_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof( int32_t) ==  (INT32_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(uint64_t) == (UINT64_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof( int64_t) ==  (INT64_UNOR)))  goto fail;
+//  UNORW=BWZ
+    if (!TASSERT(unor_funcof(Vwbu) ==   (VWBU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vwbi) ==   (VWBI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vwhu) ==   (VWHU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vwhi) ==   (VWHI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vwwu) ==   (VWWU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vwwi) ==   (VWWI_UNOR)))  goto fail;
+//  UNORD=BDZ
+    if (!TASSERT(unor_funcof(Vdbu) ==   (VDBU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vdbi) ==   (VDBI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vdhu) ==   (VDHU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vdhi) ==   (VDHI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vdwu) ==   (VDWU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vdwi) ==   (VDWI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vddu) ==   (VDDU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vddi) ==   (VDDI_UNOR)))  goto fail;
+//  UNORQ=BDZ
+    if (!TASSERT(unor_funcof(Vqbu) ==   (VQBU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vqbi) ==   (VQBI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vqhu) ==   (VQHU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vqhi) ==   (VQHI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vqwu) ==   (VQWU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vqwi) ==   (VQWI_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vqdu) ==   (VQDU_UNOR)))  goto fail;
+    if (!TASSERT(unor_funcof(Vqdi) ==   (VQDI_UNOR)))  goto fail;
+#if 0 // leave uno_
+}
+#endif
+
+#endif // DONE AND DUSTED 2
+
+
+
+#if 0 // DONE AND DUSTED 3
+
 #if 0 // enter uzp_
 {
 #endif
@@ -7236,12 +8400,118 @@ resolve the appropriate function designator.
 }
 #endif
 
-#endif // DONE AND DUSTED
+#endif // DONE AND DUSTED 3
+
+
+#if 0 // enter mvw_
+{
+#endif
+//  MVWL=YDR
+    if (!TASSERT(mvwl_funcof( kyu) ==   (BOOL_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( kbu) ==  (UINT8_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( kbi) ==   (INT8_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( khu) == (UINT16_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( khi) ==  (INT16_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( khf) ==  (FLT16_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( kwu) == (UINT32_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( kwi) ==  (INT32_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof( kwf) ==    (FLT_MVWL)))  goto fail;
+//  MVWLW=NONE
+    if (!TASSERT(mvwl_funcof(vwyu) ==   (VWYU_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwbu) ==   (VWBU_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwbi) ==   (VWBI_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwhu) ==   (VWHU_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwhi) ==   (VWHI_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwhf) ==   (VWHF_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwwu) ==   (VWWU_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwwi) ==   (VWWI_MVWL)))  goto fail;
+    if (!TASSERT(mvwl_funcof(vwwf) ==   (VWWF_MVWL)))  goto fail;
+//  MVWLD=NONE;
+//  MVWLQ=NONE;
+#if 0 // leave mvw_
+}
+#endif
+
+#if 0 // enter mvd_
+{
+#endif
+//  MVDL=YDR
+    if (!TASSERT(mvdl_funcof( kyu) ==   (BOOL_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kbu) ==  (UINT8_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kbi) ==   (INT8_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( khu) == (UINT16_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( khi) ==  (INT16_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( khf) ==  (FLT16_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kwu) == (UINT32_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kwi) ==  (INT32_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kwf) ==    (FLT_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kdu) == (UINT64_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kdi) ==  (INT64_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof( kdf) ==    (DBL_MVDL)))  goto fail;
+//  MVDLW=NONE
+//  MVDLD=BDR
+    if (!TASSERT(mvdl_funcof(vdyu) ==   (VDYU_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdbu) ==   (VDBU_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdbi) ==   (VDBI_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdhu) ==   (VDHU_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdhi) ==   (VDHI_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdhf) ==   (VDHF_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdwu) ==   (VDWU_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdwi) ==   (VDWI_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vdwf) ==   (VDWF_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vddu) ==   (VDDU_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vddi) ==   (VDDI_MVDL)))  goto fail;
+    if (!TASSERT(mvdl_funcof(vddf) ==   (VDDF_MVDL)))  goto fail;
+//  MVDLQ=NONE
+#if 0 // leave mvd_
+}
+#endif
+
+#if 0 // enter mvq_
+{
+#endif
+//  MVQL=YDR
+    if (!TASSERT(mvql_funcof( kyu) ==   (BOOL_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kbu) ==  (UINT8_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kbi) ==   (INT8_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( khu) == (UINT16_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( khi) ==  (INT16_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( khf) ==  (FLT16_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kwu) == (UINT32_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kwi) ==  (INT32_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kwf) ==    (FLT_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kdu) == (UINT64_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kdi) ==  (INT64_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof( kdf) ==    (DBL_MVQL)))  goto fail;
+//  MVQLW=NONE
+//  MVQLD=NONE
+//  MVQLQ=YDR
+    if (!TASSERT(mvql_funcof(vqyu) ==   (VQYU_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqbu) ==   (VQBU_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqbi) ==   (VQBI_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqhu) ==   (VQHU_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqhi) ==   (VQHI_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqhf) ==   (VQHF_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqwu) ==   (VQWU_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqwi) ==   (VQWI_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqwf) ==   (VQWF_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqdu) ==   (VQDU_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqdi) ==   (VQDI_MVQL)))  goto fail;
+    if (!TASSERT(mvql_funcof(vqdf) ==   (VQDF_MVQL)))  goto fail;
+#if 0 // leave mvq_
+}
+#endif
 
 #endif // MY_FUNCOF_TESTS
 
-// enter test absu
+#if 0 // leave ___
+}
+#endif
 
+
+
+// enter test absu
+#if 0
     if (!TASSERT(0x0000000000000080ULL == absubi(( INT8_MIN+0)))) goto fail;
     if (!TASSERT(0x000000000000007fULL == absubi(( INT8_MIN+1)))) goto fail;
     if (!TASSERT(0x0000000000008000ULL == absuhi((INT16_MIN+0)))) goto fail;
@@ -7285,11 +8555,138 @@ resolve the appropriate function designator.
     if (!TASSERT((int8_t) 0x0000000000000080ULL == abslbi(( INT8_MIN+0)))) goto fail;
     if (!TASSERT((int8_t) 0x000000000000007fULL == abslbi(( INT8_MIN+1)))) goto fail;
     if (!TASSERT((int16_t)0x0000000000008000ULL == abslhi((INT16_MIN+0)))) goto fail;
-    if (!TASSERT((int16_t) 0x0000000000007fffULL == abslhi((INT16_MIN+1)))) goto fail;
+    if (!TASSERT((int16_t)0x0000000000007fffULL == abslhi((INT16_MIN+1)))) goto fail;
     if (!TASSERT((int32_t)0x0000000080000000ULL == abslwi((INT32_MIN+0)))) goto fail;
     if (!TASSERT((int32_t)0x000000007fffffffULL == abslwi((INT32_MIN+1)))) goto fail;
     if (!TASSERT((int64_t)0x8000000000000000ULL == absldi((INT64_MIN+0)))) goto fail;
     if (!TASSERT((int64_t)0x7fffffffffffffffULL == absldi((INT64_MIN+1)))) goto fail;
+
+    kbu = -1;
+    kbi = -1;
+    khu = -1;
+    khi = -1;
+    kwu = -1;
+    kwi = -1;
+    kdu = -1;
+    kdi = -1;
+
+    if (!TASSERT(kbu == ceqsbu(1, 1))) goto fail;
+    if (!TASSERT(kbu != ceqsbu(1, 0))) goto fail;
+
+    if (!TASSERT(kbu == cnesbu(1, 0))) goto fail;
+    if (!TASSERT(kbu != cnesbu(1, 1))) goto fail;
+
+    if (!TASSERT(kbu == cgtsbu(1, 0))) goto fail;
+    if (!TASSERT(kbu != cgtsbu(1, 1))) goto fail;
+
+    if (!TASSERT(kbu == cgesbu(1, 0))) goto fail;
+    if (!TASSERT(kbu == cgesbu(1, 1))) goto fail;
+    if (!TASSERT(kbu != cgesbu(0, 1))) goto fail;
+
+    if (!TASSERT(kbu == cltsbu(0, 1))) goto fail;
+    if (!TASSERT(kbu != cltsbu(1, 1))) goto fail;
+
+    if (!TASSERT(kbu == clesbu(0, 1))) goto fail;
+    if (!TASSERT(kbu == clesbu(1, 1))) goto fail;
+    if (!TASSERT(kbu != clesbu(1, 0))) goto fail;
+    
+    kyu = 1;
+    kbc= INT8_MAX;
+    kbi= INT8_MIN, khi= INT16_MIN, kwi= INT32_MIN, kdi= INT64_MIN;
+    kbu=UINT8_MAX, khu=UINT16_MAX, kwu=UINT32_MAX, kdu=UINT64_MAX;
+
+    if (!TASSERT(cvbzbu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvbzbu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvbzbi(kbi) == 0))         goto fail;
+    if (!TASSERT(cvbzbc(kbc) == kbc))       goto fail;
+    if (!TASSERT(cvbzhu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvbzhi(khi) == 0))         goto fail;
+    if (!TASSERT(cvbzwu(kwu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvbzwi(kwi) == 0))         goto fail;
+    if (!TASSERT(cvbzdu(kdu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvbzdi(kdi) == 0))         goto fail;
+
+    if (!TASSERT(cvbsyu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvbsbu(kbu) == INT8_MAX))  goto fail;
+    if (!TASSERT(cvbsbi(kbi) == INT8_MIN))  goto fail;
+    if (!TASSERT(cvbsbc(kbc) == kbc))       goto fail;
+    if (!TASSERT(cvbshu(khu) == INT8_MAX))  goto fail;
+    if (!TASSERT(cvbshi(khi) == INT8_MIN))  goto fail;
+    if (!TASSERT(cvbswu(kwu) == INT8_MAX))  goto fail;
+    if (!TASSERT(cvbswi(kwi) == INT8_MIN))  goto fail;
+    if (!TASSERT(cvbsdu(kdu) == INT8_MAX))  goto fail;
+    if (!TASSERT(cvbsdi(kdi) == INT8_MIN))  goto fail;
+    if (!TASSERT(cvbsdu(kdu) == INT8_MAX))  goto fail;
+
+    if (!TASSERT(cvhzyu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvhzbu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvhzbi(kbi) == 0))         goto fail;
+    if (!TASSERT(cvhzbc(kbc) == kbc))       goto fail;
+    if (!TASSERT(cvhzhu(khu) == UINT16_MAX))goto fail;
+    if (!TASSERT(cvhzhi(khi) == 0))         goto fail;
+    if (!TASSERT(cvhzwu(kwu) == UINT16_MAX))goto fail;
+    if (!TASSERT(cvhzwi(kwi) == 0))         goto fail;
+    if (!TASSERT(cvhzdu(kdu) == UINT16_MAX))goto fail;
+    if (!TASSERT(cvhzdi(kdi) == 0))         goto fail;
+
+    if (!TASSERT(cvhsyu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvhsbu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvhsbi(kbi) ==  INT8_MIN)) goto fail;
+    if (!TASSERT(cvhsbc(kbc) ==  kbc))      goto fail;
+    if (!TASSERT(cvhshu(khu) == INT16_MAX)) goto fail;
+    if (!TASSERT(cvhshi(khi) == INT16_MIN)) goto fail;
+    if (!TASSERT(cvhswu(kwu) == INT16_MAX)) goto fail;
+    if (!TASSERT(cvhswi(kwi) == INT16_MIN)) goto fail;
+    if (!TASSERT(cvhsdu(kdu) == INT16_MAX)) goto fail;
+    if (!TASSERT(cvhsdi(kdi) == INT16_MIN)) goto fail;
+    if (!TASSERT(cvhsdu(kdu) == INT16_MAX)) goto fail;
+
+    if (!TASSERT(cvwzyu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvwzbu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvwzbi(kbi) == 0))         goto fail;
+    if (!TASSERT(cvwzbc(kbc) == kbc))       goto fail;
+    if (!TASSERT(cvwzhu(khu) == UINT16_MAX))goto fail;
+    if (!TASSERT(cvwzhi(khi) == 0))         goto fail;
+    if (!TASSERT(cvwzwu(kwu) == UINT32_MAX))goto fail;
+    if (!TASSERT(cvwzwi(kwi) == 0))         goto fail;
+    if (!TASSERT(cvwzdu(kdu) == UINT32_MAX))goto fail;
+    if (!TASSERT(cvwzdi(kdi) == 0))         goto fail;
+
+    if (!TASSERT(cvwsyu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvwsbu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvwsbi(kbi) ==  INT8_MIN)) goto fail;
+    if (!TASSERT(cvwsbc(kbc) ==  kbc))      goto fail;
+    if (!TASSERT(cvwshu(khu) == UINT16_MAX))goto fail;
+    if (!TASSERT(cvwshi(khi) ==  INT16_MIN))goto fail;
+    if (!TASSERT(cvwswu(kwu) == INT32_MAX)) goto fail;
+    if (!TASSERT(cvwswi(kwi) == INT32_MIN)) goto fail;
+    if (!TASSERT(cvwsdu(kdu) == INT32_MAX)) goto fail;
+    if (!TASSERT(cvwsdi(kdi) == INT32_MIN)) goto fail;
+    if (!TASSERT(cvwsdu(kdu) == INT32_MAX)) goto fail;
+
+    if (!TASSERT(cvdzyu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvdzbu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvdzbi(kbi) == 0))         goto fail;
+    if (!TASSERT(cvdzbc(kbc) == kbc))       goto fail;
+    if (!TASSERT(cvdzhu(khu) == UINT16_MAX))goto fail;
+    if (!TASSERT(cvdzhi(khi) == 0))         goto fail;
+    if (!TASSERT(cvdzwu(kwu) == UINT32_MAX))goto fail;
+    if (!TASSERT(cvdzwi(kwi) == 0))         goto fail;
+    if (!TASSERT(cvdzdu(kdu) == UINT64_MAX))goto fail;
+    if (!TASSERT(cvdzdi(kdi) == 0))         goto fail;
+
+    if (!TASSERT(cvdsyu(kyu) == 1))         goto fail;
+    if (!TASSERT(cvdsbu(kbu) == UINT8_MAX)) goto fail;
+    if (!TASSERT(cvdsbi(kbi) ==  INT8_MIN)) goto fail;
+    if (!TASSERT(cvdsbc(kbc) ==  kbc))      goto fail;
+    if (!TASSERT(cvdshu(khu) == UINT16_MAX))goto fail;
+    if (!TASSERT(cvdshi(khi) ==  INT16_MIN))goto fail;
+    if (!TASSERT(cvdswu(kwu) == UINT32_MAX))goto fail;
+    if (!TASSERT(cvdswi(kwi) ==  INT32_MIN))goto fail;
+    if (!TASSERT(cvdsdu(kdu) ==  INT64_MAX))goto fail;
+    if (!TASSERT(cvdsdi(kdi) ==  INT64_MIN))goto fail;
+    if (!TASSERT(cvdsdu(kdu) ==  INT64_MAX))goto fail;
+#endif
 
 #if 0
     union {
@@ -7313,6 +8710,7 @@ resolve the appropriate function designator.
         ((uint64_t) dgh.Boy)
     );
 #endif
+
 #if 0
     Vdhu t = newldhu(0, 1,0,0);
     t = vrev32_u16(t);
@@ -7363,11 +8761,2165 @@ resolve the appropriate function designator.
     printf("yu64#4 => %s\n", yu64);
     printf("vddu => %" UINT64_DFMT "\n", astvddu(c));
 #endif
-    vwhu = newlwhu(1,1);
-    vwhu = sill(vwhu, vwhu, 1);
-    printf("%hu\n", get1whu(vwhu, 0));
-    return 0;
 
+#if 0
+    vwhu = unorwhu(15);
+    printf("0x%04"  UINT16_XFMT ", ", get1whu(vwhu, 0));
+    vdwu = unordwu(31);
+    printf("0x%08"  UINT32_XFMT ", ", get1dwu(vdwu, 0));
+    vqdu = unorqdu(63);
+    printf("0x%016" UINT64_XFMT ", ", get1qdu(vqdu, 0));
+    printf("\n");
+
+#endif
+
+#if 0
+    printf("shl2hi(-12345, 1) => %i\n", shl2hi(-12345, 1));
+    printf("shl2hi(-12345, 6) => %i\n", shl2hi(-12345, 6));
+#endif
+#if 0
+    Quad q = {.B1.U=0, .B2.I=INT8_MIN};
+    printf("q[8:24].i => %hi\n", lunnachu(&q.B1));
+#endif
+#if 0
+    vqdu = mvql(0xdeadbeefULL);
+
+    printf("vqdu[0] => 0x%" UINT64_XFMT "\n", vgetq_lane_u64(vqdu,0));
+    printf("vqdu[1] => 0x%" UINT64_XFMT "\n", vgetq_lane_u64(vqdu,1));
+#endif
+#if 0
+    printf(
+        "yu  => 0x%04x\n"
+        "bu  => 0x%04x\n""bi  => 0x%04x\n"
+        "hu  => 0x%04x\n""hi  => 0x%04x\n""hf  => 0x%04x\n"
+        "wu  => 0x%04x\n""wi  => 0x%04x\n""wf  => 0x%04x\n"
+        "du  => 0x%04x\n""di  => 0x%04x\n""df  => 0x%04x\n",
+        BOOL_REPR,
+        UINT8_REPR, INT8_REPR,
+        UINT16_REPR, INT16_REPR, FLT16_REPR,
+        UINT32_REPR, INT32_REPR, FLT_REPR,
+        UINT64_REPR, INT64_REPR, DBL_REPR
+    );
+#endif
+#if 0
+    printf(
+        "kyu => 0x%04x\n"
+        "kbu => 0x%04x\n""kbi => 0x%04x\n"
+        ,
+        reprof(kyu),
+        reprof(kbu),reprof(kbi)
+    );
+    printf(
+        "kyu => \"%s\"\n"
+        "kbu => \"%s\"\n""kbi => \"%s\"\n"
+        "khu => \"%s\"\n""khi => \"%s\"\n""khf => \"%s\"\n"
+        "kwu => \"%s\"\n""kwi => \"%s\"\n""kwf => \"%s\"\n"
+        "kdu => \"%s\"\n""kdi => \"%s\"\n""kdf => \"%s\"\n"
+        ,
+        reprof_sfx(reprof(kyu)),
+        reprof_sfx(reprof(kbu)),reprof_sfx(reprof(kbi)),
+        reprof_sfx(reprof(khu)),reprof_sfx(reprof(khi)),reprof_sfx(reprof(khf)),
+        reprof_sfx(reprof(kwu)),reprof_sfx(reprof(kwi)),reprof_sfx(reprof(kwf)),
+        reprof_sfx(reprof(kdu)),reprof_sfx(reprof(kdi)),reprof_sfx(reprof(kdf))
+    );
+#endif
+    /*
+    printf("kyu => \"%s\"\n", reprof_sfx(kyu));
+    printf("kbu => \"%s\"\n", reprof_sfx(kbu));
+    printf("kbi => \"%s\"\n", reprof_sfx(kbi));
+    printf("khu => \"%s\"\n", reprof_sfx(khu));
+    printf("khi => \"%s\"\n", reprof_sfx(khi));
+    printf("khf => \"%s\"\n", reprof_sfx(FLT16_REPR));
+    */
+#if 0
+    printf("reprof(khf) => 0x%04x\n", reprof(khf));
+    printf("FLT16_REPR  => 0x%04x\n", FLT16_REPR);
+    printf("reprof(khi) => 0x%04x\n", reprof(khi));
+    printf("INT16_REPR  => 0x%04x\n", INT16_REPR);
+#endif
+    char const *rof;
+
+#if 0
+    if ((rof=reprof_sfx(  BOOL_REPR))) printf("_Bool:    \"%s\"\n",rof);
+    if ((rof=reprof_sfx( UINT8_REPR))) printf("uint8_t:  \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  INT8_REPR))) printf("int8_t:   \"%s\"\n",rof);
+    if ((rof=reprof_sfx(UINT16_REPR))) printf("uint16_t: \"%s\"\n",rof);
+    if ((rof=reprof_sfx( INT16_REPR))) printf("int16_t:  \"%s\"\n",rof);
+    if ((rof=reprof_sfx( FLT16_REPR))) printf("flt16_t:  \"%s\"\n",rof);
+    if ((rof=reprof_sfx(UINT32_REPR))) printf("uint32_t: \"%s\"\n",rof);
+    if ((rof=reprof_sfx( INT32_REPR))) printf("int32_t:  \"%s\"\n",rof);
+    if ((rof=reprof_sfx(   FLT_REPR))) printf("float:    \"%s\"\n",rof);
+    if ((rof=reprof_sfx(UINT64_REPR))) printf("uint64_t: \"%s\"\n",rof);
+    if ((rof=reprof_sfx( INT64_REPR))) printf("int64_t:  \"%s\"\n",rof);
+    if ((rof=reprof_sfx(   DBL_REPR))) printf("double:   \"%s\"\n",rof);
+#endif
+
+#if 0
+    if ((rof=reprof_sfx(  VWYU_REPR))) printf("Vwyu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWBU_REPR))) printf("Vwbu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWBI_REPR))) printf("Vwbi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWHU_REPR))) printf("Vwhu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWHI_REPR))) printf("Vwhi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWHF_REPR))) printf("Vwhf: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWWU_REPR))) printf("Vwwu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWWI_REPR))) printf("Vwwi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VWWF_REPR))) printf("Vwwf: \"%s\"\n",rof);
+#endif
+
+#if 0
+    if ((rof=reprof_sfx(  VDYU_REPR))) printf("Vdyu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDBU_REPR))) printf("Vdbu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDBI_REPR))) printf("Vdbi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDHU_REPR))) printf("Vdhu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDHI_REPR))) printf("Vdhi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDHF_REPR))) printf("Vdhf: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDWU_REPR))) printf("Vdwu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDWI_REPR))) printf("Vdwi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDWF_REPR))) printf("Vdwf: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDDU_REPR))) printf("Vddu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDDI_REPR))) printf("Vddi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VDDF_REPR))) printf("Vddf: \"%s\"\n",rof);
+#endif
+
+#if 0
+    if ((rof=reprof_sfx(  VQYU_REPR))) printf("Vqyu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQBU_REPR))) printf("Vqbu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQBI_REPR))) printf("Vqbi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQHU_REPR))) printf("Vqhu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQHI_REPR))) printf("Vqhi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQHF_REPR))) printf("Vqhf: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQWU_REPR))) printf("Vqwu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQWI_REPR))) printf("Vqwi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQWF_REPR))) printf("Vqwf: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQDU_REPR))) printf("Vqdu: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQDI_REPR))) printf("Vqdi: \"%s\"\n",rof);
+    if ((rof=reprof_sfx(  VQDF_REPR))) printf("Vqdf: \"%s\"\n",rof);
+#endif
+
+#if 0
+    rof = reprof_sfx(reprof( kyu)); printf("kyu:%s\n", rof);
+    rof = reprof_sfx(reprof( kbu)); printf("kbu:%s\n", rof);
+    rof = reprof_sfx(reprof( kbi)); printf("kbi:%s\n", rof);
+    rof = reprof_sfx(reprof( khu)); printf("khu:%s\n", rof);
+    rof = reprof_sfx(reprof( khi)); printf("khi:%s\n", rof);
+    rof = reprof_sfx(reprof( khf)); printf("khf:%s\n", rof);
+    rof = reprof_sfx(reprof( kwu)); printf("kwu:%s\n", rof);
+    rof = reprof_sfx(reprof( kwi)); printf("kwi:%s\n", rof);
+    rof = reprof_sfx(reprof( kwf)); printf("kwf:%s\n", rof);
+    rof = reprof_sfx(reprof( kdu)); printf("kdu:%s\n", rof);
+    rof = reprof_sfx(reprof( kdi)); printf("kdi:%s\n", rof);
+    rof = reprof_sfx(reprof( kdf)); printf("kdf:%s\n", rof);
+#endif
+
+#if 0
+    rof = reprof_sfx(reprof(vwyu)); printf("wyu:%s\n", rof);
+    rof = reprof_sfx(reprof(vwbu)); printf("wbu:%s\n", rof);
+    rof = reprof_sfx(reprof(vwbi)); printf("wbi:%s\n", rof);
+    rof = reprof_sfx(reprof(vwhu)); printf("whu:%s\n", rof);
+    rof = reprof_sfx(reprof(vwhi)); printf("whi:%s\n", rof);
+    rof = reprof_sfx(reprof(vwhf)); printf("whf:%s\n", rof);
+    rof = reprof_sfx(reprof(vwwu)); printf("wwu:%s\n", rof);
+    rof = reprof_sfx(reprof(vwwi)); printf("wwi:%s\n", rof);
+    rof = reprof_sfx(reprof(vwwf)); printf("wwf:%s\n", rof);
+
+    rof = reprof_sfx(reprof(vdyu)); printf("dyu:%s\n", rof);
+    rof = reprof_sfx(reprof(vdbu)); printf("dbu:%s\n", rof);
+    rof = reprof_sfx(reprof(vdbi)); printf("dbi:%s\n", rof);
+    rof = reprof_sfx(reprof(vdhu)); printf("dhu:%s\n", rof);
+    rof = reprof_sfx(reprof(vdhi)); printf("dhi:%s\n", rof);
+    rof = reprof_sfx(reprof(vdhf)); printf("dhf:%s\n", rof);
+    rof = reprof_sfx(reprof(vdwu)); printf("dwu:%s\n", rof);
+    rof = reprof_sfx(reprof(vdwi)); printf("dwi:%s\n", rof);
+    rof = reprof_sfx(reprof(vdwf)); printf("dwf:%s\n", rof);
+    rof = reprof_sfx(reprof(vddu)); printf("ddu:%s\n", rof);
+    rof = reprof_sfx(reprof(vddi)); printf("ddi:%s\n", rof);
+    rof = reprof_sfx(reprof(vddf)); printf("ddf:%s\n", rof);
+
+    rof = reprof_sfx(reprof(vqyu)); printf("qyu:%s\n", rof);
+    rof = reprof_sfx(reprof(vqbu)); printf("qbu:%s\n", rof);
+    rof = reprof_sfx(reprof(vqbi)); printf("qbi:%s\n", rof);
+    rof = reprof_sfx(reprof(vqhu)); printf("qhu:%s\n", rof);
+    rof = reprof_sfx(reprof(vqhi)); printf("qhi:%s\n", rof);
+    rof = reprof_sfx(reprof(vqhf)); printf("qhf:%s\n", rof);
+    rof = reprof_sfx(reprof(vqwu)); printf("qwu:%s\n", rof);
+    rof = reprof_sfx(reprof(vqwi)); printf("qwi:%s\n", rof);
+    rof = reprof_sfx(reprof(vqwf)); printf("qwf:%s\n", rof);
+    rof = reprof_sfx(reprof(vqdu)); printf("qdu:%s\n", rof);
+    rof = reprof_sfx(reprof(vqdi)); printf("qdi:%s\n", rof);
+    rof = reprof_sfx(reprof(vqdf)); printf("qdf:%s\n", rof);
+    
+    kbu = 250;
+    kbi = -50;
+    printf("addlbu((kbu=250), (kbi=-50)) => %" UINT8_DFMT "\n", addlbu(kbu, kbi));
+    /*
+    else        printf("FLT16_REPR: NULL\n");
+    */
+#endif
+#if 0
+    printf("shllbi(-1, 0) => %hhi\n", shllbi(-1, 0));
+    printf("shllbi(-1, 1) => %hhi\n", shllbi(-1, 1));
+    printf("shllbi(-1, 6) => %hhi\n", shllbi(-1, 6));
+    printf("shllbi(-1, 7) => %hhi\n", shllbi(-1, 7));
+    printf("shllbi(-1, 8) => %hhi\n", shllbi(-1, 8));
+#endif
+#if 0
+    vdbi = newldbi(-8, -4, -2, -1,   +0, +1, +3, +7);
+    vdbi = shlldbi(vdbi,4);
+    (void) outfdbi(vdbi, stdout, "{" DUP8("%hhi", ", ") "}");
+    vwbu = lunwacbu("smfd");
+    vdhu = newdhu(0xcdef, 0x89ab, 0x4567, 0x0123);
+    vdhu = newddhu(vdhu, 3, 2, 1, 0);
+    (void) outfdhu(vdhu, stdout, "{" DUP4("0x%hx", ", ") "}\n");
+    printf("%x\n", unorwu(16));
+    kwu = bfglwu(0xff0, 4, 4);
+    printf("%x\n", kwu);
+    vdbi = vcreate_u8(0x0706050403020100ULL);
+    vdbu = bfgl(vdbu, 4, 4);
+#endif
+    struct {
+        union {signed V0; struct {signed     I_0_7:7, :0;};};
+        union {signed V1; struct {signed :1, I_1_7:7, :0;};};
+        union {signed V2; struct {signed :2, I_2_7:7, :0;};};
+        union {signed V3; struct {signed :3, I_3_7:7, :0;};};
+    } bfgli = {
+        .I_0_7=-64, 
+        .I_1_7=-64,
+        .I_2_7=-64, 
+        .I_3_7=-64
+    };
+
+#if 0
+    printf("I_0_7 = %hhi\n", (bfglbi)(bfgli.V0, 0, 7));
+    printf("I_1_7 = %hhi\n", (bfglbi)(bfgli.V1, 1, 7));
+    printf("I_2_7 = %hhi\n", (bfglbi)(bfgli.V2, 2, 7));
+    printf("I_3_7 = %hhi\n", (bfglbi)(bfgli.V3, 3, 7));
+#endif
+
+#if 0
+    struct {
+        union {long V0; struct {long :1, Di_1_27:27, :0;};};
+        union {long V1; struct {long :2, Di_2_27:27, :0;};};
+    } bfgldi = {
+        .Di_1_27=-67108864,
+        .Di_2_27=+67108863,
+    };
+    printf("Di_1_27 = %li\n", bfgldi(bfgldi.V0, 1, 27));
+    printf("Di_2_27 = %li\n", bfgldi(bfgldi.V1, 2, 27));
+#endif
+
+#if 0
+    vdbu = vcreate_u8(0x0706050403020100ULL);
+    vqbu = vcombine_u8(vdbu, vcreate_u8(0x0f0e0d0c0b0a0908ULL));
+    vqbu = VQBU_BFGL(vqbu, 6, 4);
+    (void) outfqbu(vqbu, stdout, "{" DUP16("0x%hhx", ", ") "}\n");
+#endif
+
+#if 0
+    vdhu = vcreate_u16(0x0003000200010000ULL);
+    vqhu = vcombine_u16(vdhu, vcreate_u8(0x0007000600050004ULL));
+    vqhu = bfglqhu(vqhu, 5, 3);
+    (void) outfqhu(vqhu, stdout, "{" DUP8("0x%hx", ", ") "}\n");
+#endif
+
+#if 0
+    vdhu = vcreate_u16(0x0003000200010000ULL);
+    vdhu = bfgldhu(vdhu, 1, 3);
+    (void) outfdhu(vdhu, stdout, "{" DUP4("0x%hx", ", ") "}\n");
+    printf("absuwi(INT_MAX) => %u\n", absuwi(INT_MAX));
+    printf("absuwi(INT_MIN) => %u\n", absuwi(INT_MIN));
+#endif
+
+#if 0
+    printf("absuwi(INT_MAX-0) => %u\n", abslwi((INT_MAX-0)));
+    printf("absuwi(INT_MIN+1) => %u\n", abslwi((INT_MIN+1)));
+#endif
+#if 0
+    printf("shl2bi( INT8_MIN, 8) => %hi\n",INT8_SHL2(INT8_MIN, 8));
+    printf("shl2hi(INT16_MIN,16) => %i\n", INT16_SHL2(INT16_MIN,16));
+#endif
+#if 0
+    q.W0.I = shllwi(-100,3);
+    q.W1.I = shlrwi(-100,3);
+    printf("(-100<<3) => %+" INT64_DFMT " (-800?)\n", q.D0.I);
+    q.W0.I = shllwi(+100,3);
+    q.W1.I = shlrwi(+100,3);
+    printf("(-100<<3) => %+" INT64_DFMT " (+800?)\n", q.D0.I);
+    printf("mul2(255,255) => %hu\n", mul2bu(255,255));
+#endif
+
+
+#if 0
+    Vdbu nie    = newdbu('1','2','3','.',  '.','.','.','.');
+    vdbu = bfsldbu(vdbu, 1, 3, nie);
+    Vddu sel = unolddu(24);
+    sel = vshl_n_u64(sel, 8);
+    nie = vshl_n_u64(nie, 8);
+    nie = vand_u64(nie, sel);
+    (void) outfdbu(nie, stdout, "nie => '" DUP8("%hhu",",") "'\n");
+   // printf("sel = 0x%016" UINT64_XFMT "\n", vget_lane_u64(sel,0));
+    vdbu = vbic_u64(vdbu, sel);
+    vdbu = vorr_u64(vdbu, nie);
+#endif
+
+#if 0
+    vddu = asdudbu(nie);
+    vddu = vshl_n_u64(vddu, 8);
+    Vddu sel = vdup_n_u64( ((UINT64_MAX>>(64-24))<<8) );
+    vddu = vbic_u64(vddu, sel);
+    nie = vand_u64(nie, sel);
+    vddu = vorr_u64(vddu, nie);
+    vdbu = asbuddu(vddu);
+#endif
+
+#if 0
+    vqbu        = newqbu(
+        '0','_','_','_',  '_','_','_','_',
+        '_','_','a','b',  'c','d','e','f'
+    );
+    Vqbu nie    = newqbu(
+        '1','2','3','4',  '5','6','7','8',
+        '9','.','.','.', '.','.','.','.'
+    );
+    //vqbu = bfslqbu(vqbu, 1, 9, nie);
+    vqbu = bfslqbu(vqbu, 0,16,nie);
+    (void) outfqbu(vqbu, stdout, "qbu => " DUP16("'%c'",",") "\n");
+  //  (void) outfqbu(vqbu, stdout, "qbu => '" DUP16("%hhu",",") "'\n");
+#endif
+    char str[256] = {0};
+    char *end = str;
+    
+#if 0
+    vqbu = dupqbu(' ');
+    (void) outfqbu(vqbu, stdout, "qbu => " DUP16("'%c'",",") "\n");
+    vqbu = (dupqbu)(' ',+5);
+    (void) outfqbu(vqbu, stdout, "qbu => " DUP16("'\\x%02hhx'",",") "\n");
+#endif
+
+#if 0
+    vqhu = dupqhu(0xbeef);
+    outfqhu(vqhu, stdout, "dupqhu(0xbeef) => " DUP8("%04hx", ", ") "\n");
+    vqhu = dupqhu(0xbeef,+2);
+    outfqhu(vqhu, stdout, "dupqhu(0xbeef,+2) => " DUP8("%04hx", ", ") "\n");
+    vqhu = dupqhu(0xbeef,-2);
+    outfqhu(vqhu, stdout, "dupqhu(0xbeef,-2) => " DUP8("%04hx", ", ") "\n");
+    vqhu = (dupqhu)(0xbeef, 0);
+    outfqhu(vqhu, stdout, "(dupqhu)(0xbeef) => " DUP8("%04hx", ", ") "\n");
+    vqhu = (dupqhu)(0xbeef,+2);
+    outfqhu(vqhu, stdout, "(dupqhu)(0xbeef,+2) => " DUP8("%04hx", ", ") "\n");
+    vqhu = (dupqhu)(0xbeef,-2);
+    outfqhu(vqhu, stdout, "(dupqhu)(0xbeef,-2) => " DUP8("%04hx", ", ") "\n");
+    vqwu = dupqwu(0xdeadbeef, 0);
+    outfqwu(vqwu, stdout, "dupqwu(0xdeadbeef, 0) => " DUP4("%04x", ", ") "\n");
+#endif
+
+#if 0
+    vdbu = dupdbu(8, +0);
+    outfdbu(vdbu, stdout, "(dupdbu(8,+0)) => " DUP8("%hhd", "," ) "\n");
+    vdbu = (dupdbu)(8, +0);
+    outfdbu(vdbu, stdout, "(dupdbu)(8,+0) => " DUP8("%hhd", "," ) "\n");
+
+    vdbu = dupdbu(8, +2);
+    outfdbu(vdbu, stdout, "(dupdbu(8,+2)) => " DUP8("%hhd", "," ) "\n");
+    vdbu = (dupdbu)(8, +2);
+    outfdbu(vdbu, stdout, "(dupdbu)(8,+2) => " DUP8("%hhd", "," ) "\n");
+
+    vdbu = dupdbu(8, -2);
+    outfdbu(vdbu, stdout, "(dupdbu(8,-2)) => " DUP8("%hhd", "," ) "\n");
+    vdbu = (dupdbu)(8, -2);
+    outfdbu(vdbu, stdout, "(dupdbu)(8,-2) => " DUP8("%hhd", "," ) "\n");
+#endif
+
+#if 0
+// +7
+    vdbu = (dupdbu(123,+7));
+    outfdbu(vdbu, stdout, "(dupdbu(123,+7)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,+7);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,+7) => " DUP8("%hhu", "," ) "\n");
+
+// +6
+    vdbu = (dupdbu(123,+6));
+    outfdbu(vdbu, stdout, "(dupdbu(123,+6)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,+6);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,+6) => " DUP8("%hhu", "," ) "\n");
+
+// +1
+    vdbu = (dupdbu(123,+1));
+    outfdbu(vdbu, stdout, "(dupdbu(123,+1)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,+1);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,+1) => " DUP8("%hhu", "," ) "\n");
+
+// +0
+    vdbu = (dupdbu(123,+0));
+    outfdbu(vdbu, stdout, "(dupdbu(123,+0)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu(123));
+    outfdbu(vdbu, stdout, "(dupdbu(123))    => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,+0);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,+0) => " DUP8("%hhu", "," ) "\n");
+
+// -1
+    vdbu = (dupdbu(123,-1));
+    outfdbu(vdbu, stdout, "(dupdbu(123,-1)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,-1);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,-1) => " DUP8("%hhu", "," ) "\n");
+
+// -2
+    vdbu = (dupdbu(123,-2));
+    outfdbu(vdbu, stdout, "(dupdbu(123,-2)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,-2);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,-2) => " DUP8("%hhu", "," ) "\n");
+
+// -7
+    vdbu = (dupdbu(123,-7));
+    outfdbu(vdbu, stdout, "(dupdbu(123,-7)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,-7);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,-7) => " DUP8("%hhu", "," ) "\n");
+
+// -7
+    vdbu = (dupdbu(123,-8));
+    outfdbu(vdbu, stdout, "(dupdbu(123,-8)) => " DUP8("%hhu", "," ) "\n");
+    vdbu = (dupdbu)(123,-8);
+    outfdbu(vdbu, stdout, "(dupdbu)(123,-8) => " DUP8("%hhu", "," ) "\n");
+#endif
+
+#if 0
+// +3
+    vdhi = (dupdhi(12345,+3));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,+3)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,+3);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,+3) => " DUP4("%hi", "," ) "\n");
+
+// +2
+    vdhi = (dupdhi(12345,+2));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,+2)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,+2);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,+2) => " DUP4("%hi", "," ) "\n");
+
+// +1
+    vdhi = (dupdhi(12345,+1));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,+1)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,+1);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,+1) => " DUP4("%hi", "," ) "\n");
+
+// 0
+    vdhi = (dupdhi(12345,0));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,+0)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi(12345));
+    outfdhi(vdhi, stdout, "(dupdhi(12345))    => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,0);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,+0) => " DUP4("%hi", "," ) "\n");
+
+// -1
+    vdhi = (dupdhi(12345,-1));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,-1)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,-1);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,-1) => " DUP4("%hi", "," ) "\n");
+
+// -2
+    vdhi = (dupdhi(12345,-2));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,-2)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,-2);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,-2) => " DUP4("%hi", "," ) "\n");
+
+// -3
+    vdhi = (dupdhi(12345,-3));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,-3)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,-3);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,-3) => " DUP4("%hi", "," ) "\n");
+
+// -4
+    vdhi = (dupdhi(12345,-4));
+    outfdhi(vdhi, stdout, "(dupdhi(12345,-4)) => " DUP4("%hi", "," ) "\n");
+
+    vdhi = (dupdhi)(12345,-4);
+    outfdhi(vdhi, stdout, "(dupdhi)(12345,-4) => " DUP4("%hi", "," ) "\n");
+#endif
+
+#if 0
+
+// +1
+    vdwu = (dupdwu(0xf00d,+2));
+    outfdwu(vdwu, stdout, "(dupdwu(0xf00d,+2)) => " DUP2("%04x", "," ) "\n");
+
+    vdwu = (dupdwu)(0xf00d,+2);
+    outfdwu(vdwu, stdout, "(dupdwu)(0xf00d,+2) => " DUP2("%04x", "," ) "\n");
+
+// +1
+    vdwu = (dupdwu(0xf00d,+1));
+    outfdwu(vdwu, stdout, "(dupdwu(0xf00d,+1)) => " DUP2("%04x", "," ) "\n");
+
+    vdwu = (dupdwu)(0xf00d,+1);
+    outfdwu(vdwu, stdout, "(dupdwu)(0xf00d,+1) => " DUP2("%04x", "," ) "\n");
+
+// 0
+    vdwu = (dupdwu(0xf00d,0));
+    outfdwu(vdwu, stdout, "(dupdwu(0xf00d,+0)) => " DUP2("%04x", "," ) "\n");
+
+    vdwu = (dupdwu(0xf00d));
+    outfdwu(vdwu, stdout, "(dupdwu(0xf00d))    => " DUP2("%04x", "," ) "\n");
+
+    vdwu = (dupdwu)(0xf00d,0);
+    outfdwu(vdwu, stdout, "(dupdwu)(0xf00d,+0) => " DUP2("%04x", "," ) "\n");
+
+// -1
+    vdwu = (dupdwu(0xf00d,-1));
+    outfdwu(vdwu, stdout, "(dupdwu(0xf00d,-1)) => " DUP2("%04x", "," ) "\n");
+
+    vdwu = (dupdwu)(0xf00d,-1);
+    outfdwu(vdwu, stdout, "(dupdwu)(0xf00d,-1) => " DUP2("%04x", "," ) "\n");
+
+// -2
+    vdwu = (dupdwu(0xf00d,-2));
+    outfdwu(vdwu, stdout, "(dupdwu(0xf00d,-2)) => " DUP2("%04x", "," ) "\n");
+
+    vdwu = (dupdwu)(0xf00d,-2);
+    outfdwu(vdwu, stdout, "(dupdwu)(0xf00d,-2) => " DUP2("%04x", "," ) "\n");
+
+#endif
+
+// +3
+#if 0
+    vwbu = (dupwbu(1,+3));
+    outfwbu(vwbu, stdout, "(dupwbu(1,+3)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,+3);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,+3) => " DUP4("%hhu", "," ) "\n");
+
+// +2
+    vwbu = (dupwbu(1,+2));
+    outfwbu(vwbu, stdout, "(dupwbu(1,+2)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,+2);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,+2) => " DUP4("%hhu", "," ) "\n");
+
+// +1
+    vwbu = (dupwbu(1,+1));
+    outfwbu(vwbu, stdout, "(dupwbu(1,+1)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,+1);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,+1) => " DUP4("%hhu", "," ) "\n");
+
+// +0
+    vwbu = (dupwbu(1,+0));
+    outfwbu(vwbu, stdout, "(dupwbu(1,+0)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu(1));
+    outfwbu(vwbu, stdout, "(dupwbu(1))    => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,+0);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,+0) => " DUP4("%hhu", "," ) "\n");
+
+// -1
+    vwbu = (dupwbu(1,-1));
+    outfwbu(vwbu, stdout, "(dupwbu(1,-1)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,-1);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,-1) => " DUP4("%hhu", "," ) "\n");
+
+// -2
+    vwbu = (dupwbu(1,-2));
+    outfwbu(vwbu, stdout, "(dupwbu(1,-2)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,-2);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,-2) => " DUP4("%hhu", "," ) "\n");
+
+// -3
+    vwbu = (dupwbu(1,-3));
+    outfwbu(vwbu, stdout, "(dupwbu(1,-3)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,-3);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,-3) => " DUP4("%hhu", "," ) "\n");
+
+// -4
+    vwbu = (dupwbu(1,-4));
+    outfwbu(vwbu, stdout, "(dupwbu(1,-4)) => " DUP4("%hhu", "," ) "\n");
+    vwbu = (dupwbu)(1,-4);
+    outfwbu(vwbu, stdout, "(dupwbu)(1,-4) => " DUP4("%hhu", "," ) "\n");
+#endif
+
+    
+#if 0
+    printf("SCHAR_ABSU(SCHAR_MIN+0) => %hhu\n", SCHAR_ABSU((SCHAR_MIN+0)));
+    printf("SCHAR_ABSU(SCHAR_MIN+1) => %hhu\n", SCHAR_ABSU((SCHAR_MIN+1)));
+    printf("SCHAR_ABSU(         -2) => %hhu\n", SCHAR_ABSU(-2));
+    printf("SCHAR_ABSU(         -1) => %hhu\n", SCHAR_ABSU(-1));
+    printf("SCHAR_ABSU(         +0) => %hhu\n", SCHAR_ABSU(+0));
+    printf("SCHAR_ABSU(         +1) => %hhu\n", SCHAR_ABSU(+1));
+    printf("SCHAR_ABSU(SCHAR_MAX-1) => %hhu\n", SCHAR_ABSU((SCHAR_MAX-1)));
+    printf("SCHAR_ABSU(SCHAR_MAX-0) => %hhu\n", SCHAR_ABSU((SCHAR_MAX-0)));
+    printf("\n");
+
+    printf("SHRT_ABSU(SHRT_MIN+0) => %hu\n", SHRT_ABSU((SHRT_MIN+0)));
+    printf("SHRT_ABSU(SHRT_MIN+1) => %hu\n", SHRT_ABSU((SHRT_MIN+1)));
+    printf("SHRT_ABSU(        -2) => %hu\n", SHRT_ABSU(-2));
+    printf("SHRT_ABSU(        -1) => %hu\n", SHRT_ABSU(-1));
+    printf("SHRT_ABSU(        +0) => %hu\n", SHRT_ABSU(+0));
+    printf("SHRT_ABSU(        +1) => %hu\n", SHRT_ABSU(+1));
+    printf("SHRT_ABSU(SHRT_MAX-1) => %hu\n", SHRT_ABSU((SHRT_MAX-1)));
+    printf("SHRT_ABSU(SHRT_MAX-0) => %hu\n", SHRT_ABSU((SHRT_MAX-0)));
+    printf("\n");
+
+    printf("INT_ABSU(INT_MIN+0) => %u\n", INT_ABSU((INT_MIN+0)));
+    printf("INT_ABSU(INT_MIN+1) => %u\n", INT_ABSU((INT_MIN+1)));
+    printf("INT_ABSU(       -2) => %u\n", INT_ABSU(-2));
+    printf("INT_ABSU(       -1) => %u\n", INT_ABSU(-1));
+    printf("INT_ABSU(       +0) => %u\n", INT_ABSU(+0));
+    printf("INT_ABSU(       +1) => %u\n", INT_ABSU(+1));
+    printf("INT_ABSU(INT_MAX-1) => %u\n", INT_ABSU((INT_MAX-1)));
+    printf("INT_ABSU(INT_MAX-0) => %u\n", INT_ABSU((INT_MAX-0)));
+
+    printf("LONG_ABSU(LONG_MIN+0) => %lu\n", LONG_ABSU((LONG_MIN+0)));
+    printf("LONG_ABSU(LONG_MIN+1) => %lu\n", LONG_ABSU((LONG_MIN+1)));
+    printf("LONG_ABSU(        -2) => %lu\n", LONG_ABSU(-2));
+    printf("LONG_ABSU(        -1) => %lu\n", LONG_ABSU(-1));
+    printf("LONG_ABSU(        +0) => %lu\n", LONG_ABSU(+0));
+    printf("LONG_ABSU(        +1) => %lu\n", LONG_ABSU(+1));
+    printf("LONG_ABSU(LONG_MAX-1) => %lu\n", LONG_ABSU((LONG_MAX-1)));
+    printf("LONG_ABSU(LONG_MAX-0) => %lu\n", LONG_ABSU((LONG_MAX-0)));
+    printf("\n");
+
+    printf("LLONG_ABSU(LLONG_MIN+0) => %llu\n", LLONG_ABSU((LLONG_MIN+0)));
+    printf("LLONG_ABSU(LLONG_MIN+1) => %llu\n", LLONG_ABSU((LLONG_MIN+1)));
+    printf("LLONG_ABSU(         -2) => %llu\n", LLONG_ABSU(-2));
+    printf("LLONG_ABSU(         -1) => %llu\n", LLONG_ABSU(-1));
+    printf("LLONG_ABSU(         +0) => %llu\n", LLONG_ABSU(+0));
+    printf("LLONG_ABSU(         +1) => %llu\n", LLONG_ABSU(+1));
+    printf("LLONG_ABSU(LLONG_MAX-1) => %llu\n", LLONG_ABSU((LLONG_MAX-1)));
+    printf("LLONG_ABSU(LLONG_MAX-0) => %llu\n", LLONG_ABSU((LLONG_MAX-0)));
+    printf("\n");
+
+    printf("absuqi(QUAD_IMIN+0) => %s\n",toadqu(absuqi(QUAD_IMIN.I), str, &end));
+    printf("absuqi(QUAD_IMIN+1) => %s\n",toadqu(absuqi(icrlqi(QUAD_IMIN.I)),str,&end));
+    printf("absuqi(INT64_MIN+0) => %s\n",toadqu(absuqi(cvqidi((INT64_MIN+0))),str,&end));
+    printf("absuqi(INT64_MIN+1) => %s\n",toadqu(absuqi(cvqidi((INT64_MIN+1))),str,&end));
+    printf("absuqi(INT32_MIN+0) => %s\n",toadqu(absuqi(cvqidi((INT32_MIN+0))),str,&end));
+    printf("absuqi(INT32_MIN+1) => %s\n",toadqu(absuqi(cvqidi((INT32_MIN+1))),str,&end));
+    printf("absuqi(INT16_MIN+0) => %s\n",toadqu(absuqi(cvqidi((INT16_MIN+0))),str,&end));
+    printf("absuqi(INT16_MIN+1) => %s\n",toadqu(absuqi(cvqidi((INT16_MIN+1))),str,&end));
+    printf("absuqi( INT8_MIN+0) => %s\n",toadqu(absuqi(cvqidi((INT8_MIN+0))),str,&end));
+    printf("absuqi( INT8_MIN+1) => %s\n",toadqu(absuqi(cvqidi((INT8_MIN+1))),str,&end));
+    printf("absuqi(         -2) => %s\n",toadqu(absuqi(cvqiwi(-2)),str,&end));
+    printf("absuqi(         -1) => %s\n",toadqu(absuqi(cvqiwi(-1)),str,&end));
+    printf("absuqi(         +0) => %s\n",toadqu(absuqi(cvqiwi(+0)),str,&end));
+    printf("absuqi(         +1) => %s\n",toadqu(absuqi(cvqiwi(+1)),str,&end));
+    printf("absuqi(         +2) => %s\n",toadqu(absuqi(cvqiwi(+2)),str,&end));
+    printf("absuqi( INT8_MAX-1) => %s\n",toadqu(absuqi(cvqidi((INT8_MAX-1))),str,&end));
+    printf("absuqi( INT8_MAX-0) => %s\n",toadqu(absuqi(cvqidi((INT8_MAX-0))),str,&end));
+    printf("absuqi(INT16_MAX-1) => %s\n",toadqu(absuqi(cvqidi((INT16_MAX-1))),str,&end));
+    printf("absuqi(INT16_MAX-0) => %s\n",toadqu(absuqi(cvqidi((INT16_MAX-0))),str,&end));
+    printf("absuqi(INT32_MAX-1) => %s\n",toadqu(absuqi(cvqidi((INT32_MAX-1))),str,&end));
+    printf("absuqi(INT32_MAX-0) => %s\n",toadqu(absuqi(cvqidi((INT32_MAX-0))),str,&end));
+    printf("absuqi(INT64_MAX-1) => %s\n",toadqu(absuqi(cvqidi((INT64_MAX-1))),str,&end));
+    printf("absuqi(INT64_MAX-0) => %s\n",toadqu(absuqi(cvqidi((INT64_MAX-0))),str,&end));
+    printf("absuqi(QUAD_IMAX-1) => %s\n",toadqu(absuqi(dcrlqi(QUAD_IMAX.I)),str,&end));
+    printf("absuqi(QUAD_IMAX-0) => %s\n",toadqu(absuqi(QUAD_IMAX.I), str, &end));
+#endif
+
+#if 0
+    printf("SCHAR_REMN(+5, +2) => %+hhi\n", SCHAR_REMN(+5,+2));
+    printf("SCHAR_REMN(+4, +2) => %+hhi\n", SCHAR_REMN(+4,+2));
+    printf("SCHAR_REMN(+3, +2) => %+hhi\n", SCHAR_REMN(+3,+2));
+    printf("SCHAR_REMN(+2, +2) => %+hhi\n", SCHAR_REMN(+2,+2));
+    printf("SCHAR_REMN(+1, +2) => %+hhi\n", SCHAR_REMN(+1,+2));
+    printf("SCHAR_REMN(+0, +2) => %+hhi\n", SCHAR_REMN(+0,+2));
+    printf("SCHAR_REMN(-1, +2) => %+hhi\n", SCHAR_REMN(-1,+2));
+    printf("SCHAR_REMN(-2, +2) => %+hhi\n", SCHAR_REMN(-2,+2));
+    printf("SCHAR_REMN(-3, +2) => %+hhi\n", SCHAR_REMN(-3,+2));
+    printf("SCHAR_REMN(-4, +2) => %+hhi\n", SCHAR_REMN(-4,+2));
+    printf("SCHAR_REMN(-5, +2) => %+hhi\n", SCHAR_REMN(-5,+2));
+#endif
+
+#if 0
+    printf("SCHAR_REMN(+5, -2) => %+hhi\n", SCHAR_REMN(+5,-2));
+    printf("SCHAR_REMN(+4, -2) => %+hhi\n", SCHAR_REMN(+4,-2));
+    printf("SCHAR_REMN(+3, -2) => %+hhi\n", SCHAR_REMN(+3,-2));
+    printf("SCHAR_REMN(+2, -2) => %+hhi\n", SCHAR_REMN(+2,-2));
+    printf("SCHAR_REMN(+1, -2) => %+hhi\n", SCHAR_REMN(+1,-2));
+    printf("SCHAR_REMN(+0, -2) => %+hhi\n", SCHAR_REMN(+0,-2));
+    printf("SCHAR_REMN(-1, -2) => %+hhi\n", SCHAR_REMN(-1,-2));
+    printf("SCHAR_REMN(-2, -2) => %+hhi\n", SCHAR_REMN(-2,-2));
+    printf("SCHAR_REMN(-3, -2) => %+hhi\n", SCHAR_REMN(-3,-2));
+    printf("SCHAR_REMN(-4, -2) => %+hhi\n", SCHAR_REMN(-4,-2));
+    printf("SCHAR_REMN(-5, -2) => %+hhi\n", SCHAR_REMN(-5,-2));
+#endif
+
+#if 0
+    for (int lhs=-2; lhs < 3; lhs++)
+    {
+        printf("lhs=%+i\n", lhs);
+        for (int rhs=1; rhs < 4; rhs++)
+        {
+            if (lhs > 0)
+            printf(" UCHAR_DIVN(%+i, %+i) => %+hhi\n", lhs, rhs, UCHAR_DIVN(lhs,rhs));
+            printf(" SCHAR_DIVN(%+i, %+i) => %+hhi\n", lhs, rhs, SCHAR_DIVN(lhs,rhs));
+            if (lhs > 0)
+            printf(" USHRT_DIVN(%+i, %+i) => %+hi\n", lhs, rhs, USHRT_DIVN(lhs,rhs));
+            printf("  SHRT_DIVN(%+i, %+i) => %+hi\n", lhs, rhs,  SHRT_DIVN(lhs,rhs));
+            if (lhs > 0)
+            printf("  UINT_DIVN(%+i, %+i) => %+i\n", lhs, rhs, UINT_DIVN(lhs,rhs));
+            printf("   INT_DIVN(%+i, %+i) => %+i\n", lhs, rhs,  INT_DIVN(lhs,rhs));
+            if (lhs > 0)
+            printf(" ULONG_DIVN(%+i, %+i) => %+li\n", lhs, rhs, ULONG_DIVN(lhs,rhs));
+            printf("  LONG_DIVN(%+i, %+i) => %+li\n", lhs, rhs,  LONG_DIVN(lhs,rhs));
+            if (lhs > 0)
+            printf("ULLONG_DIVN(%+i, %+i) => %+lli\n", lhs, rhs, ULLONG_DIVN(lhs,rhs));
+            printf(" LLONG_DIVN(%+i, %+i) => %+lli\n", lhs, rhs,  LLONG_DIVN(lhs,rhs));
+            printf("\n");
+        }
+    }
+#endif
+ 
+#if 0
+    schar rbi;
+    
+    kbi = SCHAR_MODN(+5,+2,&rbi); 
+    printf("SCHAR_MODN(+5, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(+4,+2,&rbi); 
+    printf("SCHAR_MODN(+4, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(+3,+2,&rbi); 
+    printf("SCHAR_MODN(+3, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(+2,+2,&rbi); 
+    printf("SCHAR_MODN(+2, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(+1,+2,&rbi); 
+    printf("SCHAR_MODN(+1, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(+0,+2,&rbi); 
+    printf("SCHAR_MODN(+0, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(-1,+2,&rbi); 
+    printf("SCHAR_MODN(-1, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(-2,+2,&rbi); 
+    printf("SCHAR_MODN(-2, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(-3,+2,&rbi); 
+    printf("SCHAR_MODN(-3, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(-4,+2,&rbi); 
+    printf("SCHAR_MODN(-4, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+    kbi = SCHAR_MODN(-5,+2,&rbi); 
+    printf("SCHAR_MODN(-5, +2) => {%+hhi,%+hhi}\n", kbi,rbi);
+
+#endif
+#if 0
+    if (0)
+    {
+        
+    
+    printf("UCHAR_CSZR( UCHAR_MAX) => %hhu\n", UCHAR_CSZR(UCHAR_MAX));
+    printf("UCHAR_CSZR((0&(1<<0))) => %hhu\n", UCHAR_CSZR(0));
+
+    printf("UCHAR_CSZR((0|(1<<0))) => %hhu\n", UCHAR_CSZR( (0|(1<<0)) ));
+    printf("UCHAR_CSZR((1|(1<<0))) => %hhu\n", UCHAR_CSZR( (1|(1<<0)) ));
+
+    printf("UCHAR_CSZR((0|(1<<1))) => %hhu\n", UCHAR_CSZR( (0|(1<<1)) ));
+    printf("UCHAR_CSZR((1|(1<<1))) => %hhu\n", UCHAR_CSZR( (1|(1<<1)) ));
+
+    printf("UCHAR_CSZR((0|(1<<2))) => %hhu\n", UCHAR_CSZR( (0|(1<<2)) ));
+    printf("UCHAR_CSZR((1|(1<<2))) => %hhu\n", UCHAR_CSZR( (1|(1<<2)) ));
+
+    printf("UCHAR_CSZR((0|(1<<6))) => %hhu\n", UCHAR_CSZR( (0|(1<<6)) ));
+    printf("UCHAR_CSZR((1|(1<<6))) => %hhu\n", UCHAR_CSZR( (1|(1<<6)) ));
+
+    printf("UCHAR_CSZR((0|(1<<7))) => %hhu\n", UCHAR_CSZR( (0|(1<<7)) ));
+    printf("UCHAR_CSZR((1|(1<<7))) => %hhu\n", UCHAR_CSZR( (1|(1<<7)) ));
+
+    printf("UCHAR_CSZR((0|(1<<8))) => %hhu\n", UCHAR_CSZR( (0|(1<<8)) ));
+    printf("UCHAR_CSZR((1|(1<<8))) => %hhu\n", UCHAR_CSZR( (1|(1<<8)) ));
+    printf("\n");
+
+    printf("SCHAR_CSZR( SCHAR_MAX) => %hhi\n", SCHAR_CSZR(SCHAR_MAX));
+    printf("SCHAR_CSZR((0&(1<<0))) => %hhi\n", SCHAR_CSZR(0));
+
+    printf("SCHAR_CSZR((0|(1<<0))) => %hhi\n", SCHAR_CSZR( (0|(1<<0)) ));
+    printf("SCHAR_CSZR((1|(1<<0))) => %hhi\n", SCHAR_CSZR( (1|(1<<0)) ));
+
+    printf("SCHAR_CSZR((0|(1<<1))) => %hhi\n", SCHAR_CSZR( (0|(1<<1)) ));
+    printf("SCHAR_CSZR((1|(1<<1))) => %hhi\n", SCHAR_CSZR( (1|(1<<1)) ));
+
+    printf("SCHAR_CSZR((0|(1<<2))) => %hhi\n", SCHAR_CSZR( (0|(1<<2)) ));
+    printf("SCHAR_CSZR((1|(1<<2))) => %hhi\n", SCHAR_CSZR( (1|(1<<2)) ));
+
+    printf("SCHAR_CSZR((0|(1<<6))) => %hhi\n", SCHAR_CSZR( (0|(1<<6)) ));
+    printf("SCHAR_CSZR((1|(1<<6))) => %hhi\n", SCHAR_CSZR( (1|(1<<6)) ));
+
+    printf("SCHAR_CSZR((0|(1<<7))) => %hhi\n", SCHAR_CSZR( (0|(1<<7)) ));
+    printf("SCHAR_CSZR((1|(1<<7))) => %hhi\n", SCHAR_CSZR( (1|(1<<7)) ));
+
+    printf("SCHAR_CSZR((0|(1<<8))) => %hhi\n", SCHAR_CSZR( (0|(1<<8)) ));
+    printf("SCHAR_CSZR((1|(1<<8))) => %hhi\n", SCHAR_CSZR( (1|(1<<8)) ));
+    printf("\n");
+
+    printf("CHAR_CSZR( CHAR_MAX) => %u\n", CHAR_CSZR(CHAR_MAX));
+    printf("CHAR_CSZR((0&(1<<0))) => %u\n", CHAR_CSZR(0));
+
+    printf("CHAR_CSZR((0|(1<<0))) => %u\n", CHAR_CSZR( (0|(1<<0)) ));
+    printf("CHAR_CSZR((1|(1<<0))) => %u\n", CHAR_CSZR( (1|(1<<0)) ));
+
+    printf("CHAR_CSZR((0|(1<<1))) => %u\n", CHAR_CSZR( (0|(1<<1)) ));
+    printf("CHAR_CSZR((1|(1<<1))) => %u\n", CHAR_CSZR( (1|(1<<1)) ));
+
+    printf("CHAR_CSZR((0|(1<<2))) => %u\n", CHAR_CSZR( (0|(1<<2)) ));
+    printf("CHAR_CSZR((1|(1<<2))) => %u\n", CHAR_CSZR( (1|(1<<2)) ));
+
+    printf("CHAR_CSZR((0|(1<<6))) => %u\n", CHAR_CSZR( (0|(1<<6)) ));
+    printf("CHAR_CSZR((1|(1<<6))) => %u\n", CHAR_CSZR( (1|(1<<6)) ));
+
+    printf("CHAR_CSZR((0|(1<<7))) => %u\n", CHAR_CSZR( (0|(1<<7)) ));
+    printf("CHAR_CSZR((1|(1<<7))) => %u\n", CHAR_CSZR( (1|(1<<7)) ));
+
+    printf("CHAR_CSZR((0|(1<<8))) => %u\n", CHAR_CSZR( (0|(1<<8)) ));
+    printf("CHAR_CSZR((1|(1<<8))) => %u\n", CHAR_CSZR( (1|(1<<8)) ));
+    printf("\n");
+    printf("USHRT_CSZR( USHRT_MAX) => %hu\n", USHRT_CSZR(USHRT_MAX));
+    printf("USHRT_CSZR((0&(1<<0))) => %hu\n", USHRT_CSZR(0));
+
+    printf("USHRT_CSZR((0|(1<<0))) => %hu\n", USHRT_CSZR( (0|(1<<0)) ));
+    printf("USHRT_CSZR((1|(1<<0))) => %hu\n", USHRT_CSZR( (1|(1<<0)) ));
+
+    printf("USHRT_CSZR((0|(1<<1))) => %hu\n", USHRT_CSZR( (0|(1<<1)) ));
+    printf("USHRT_CSZR((1|(1<<1))) => %hu\n", USHRT_CSZR( (1|(1<<1)) ));
+
+    printf("USHRT_CSZR((0|(1<<2))) => %hu\n", USHRT_CSZR( (0|(1<<2)) ));
+    printf("USHRT_CSZR((1|(1<<2))) => %hu\n", USHRT_CSZR( (1|(1<<2)) ));
+
+    printf("USHRT_CSZR((0|(1<<14))) => %hu\n", USHRT_CSZR( (0|(1<<14)) ));
+    printf("USHRT_CSZR((1|(1<<14))) => %hu\n", USHRT_CSZR( (1|(1<<14)) ));
+
+    printf("USHRT_CSZR((0|(1<<15))) => %hu\n", USHRT_CSZR( (0|(1<<15)) ));
+    printf("USHRT_CSZR((1|(1<<15))) => %hu\n", USHRT_CSZR( (1|(1<<15)) ));
+
+    printf("USHRT_CSZR((0|(1<<16))) => %hu\n", USHRT_CSZR( (0|(1<<16)) ));
+    printf("USHRT_CSZR((1|(1<<16))) => %hu\n", USHRT_CSZR( (1|(1<<16)) ));
+    printf("\n");
+
+    printf("SHRT_CSZR( SHRT_MAX) => %hi\n", SHRT_CSZR(SHRT_MAX));
+    printf("SHRT_CSZR((0&(1<<0))) => %hi\n", SHRT_CSZR(0));
+
+    printf("SHRT_CSZR((0|(1<<0))) => %hi\n", SHRT_CSZR( (0|(1<<0)) ));
+    printf("SHRT_CSZR((1|(1<<0))) => %hi\n", SHRT_CSZR( (1|(1<<0)) ));
+
+    printf("SHRT_CSZR((0|(1<<1))) => %hi\n", SHRT_CSZR( (0|(1<<1)) ));
+    printf("SHRT_CSZR((1|(1<<1))) => %hi\n", SHRT_CSZR( (1|(1<<1)) ));
+
+    printf("SHRT_CSZR((0|(1<<2))) => %hi\n", SHRT_CSZR( (0|(1<<2)) ));
+    printf("SHRT_CSZR((1|(1<<2))) => %hi\n", SHRT_CSZR( (1|(1<<2)) ));
+
+    printf("SHRT_CSZR((0|(1<<14))) => %hi\n", SHRT_CSZR( (0|(1<<14)) ));
+    printf("SHRT_CSZR((1|(1<<14))) => %hi\n", SHRT_CSZR( (1|(1<<14)) ));
+
+    printf("SHRT_CSZR((0|(1<<15))) => %hi\n", SHRT_CSZR( (0|(1<<15)) ));
+    printf("SHRT_CSZR((1|(1<<15))) => %hi\n", SHRT_CSZR( (1|(1<<15)) ));
+
+    printf("SHRT_CSZR((0|(1<<16))) => %hi\n", SHRT_CSZR( (0|(1<<16)) ));
+    printf("SHRT_CSZR((1|(1<<16))) => %hi\n", SHRT_CSZR( (1|(1<<16)) ));
+    printf("\n");
+    printf("UINT_CSZR( UINT_MAX) => %u\n", UINT_CSZR(UINT_MAX));
+    printf("UINT_CSZR((0&(1<<0))) => %u\n", UINT_CSZR(0));
+
+    printf("UINT_CSZR((0|(1<<0))) => %u\n", UINT_CSZR( (0|(1<<0)) ));
+    printf("UINT_CSZR((1|(1<<0))) => %u\n", UINT_CSZR( (1|(1<<0)) ));
+
+    printf("UINT_CSZR((0|(1<<1))) => %u\n", UINT_CSZR( (0|(1<<1)) ));
+    printf("UINT_CSZR((1|(1<<1))) => %u\n", UINT_CSZR( (1|(1<<1)) ));
+
+    printf("UINT_CSZR((0|(1<<2))) => %u\n", UINT_CSZR( (0|(1<<2)) ));
+    printf("UINT_CSZR((1|(1<<2))) => %u\n", UINT_CSZR( (1|(1<<2)) ));
+
+    printf("UINT_CSZR((0|(1<<15))) => %u\n", UINT_CSZR( (0|(1<<15)) ));
+    printf("UINT_CSZR((1|(1<<15))) => %u\n", UINT_CSZR( (1|(1<<15)) ));
+
+    printf("UINT_CSZR((0|(1U<<31))) => %u\n", UINT_CSZR( (0|(1U<<31)) ));
+    printf("UINT_CSZR((1|(1U<<31))) => %u\n", UINT_CSZR( (1|(1U<<31)) ));
+    printf("\n");
+
+    printf("INT_CSZR( INT_MAX) => %i\n", INT_CSZR(INT_MAX));
+    printf("INT_CSZR((0&(1<<0))) => %i\n", INT_CSZR(0));
+
+    printf("INT_CSZR((0|(1<<0))) => %i\n", INT_CSZR( (0|(1<<0)) ));
+    printf("INT_CSZR((1|(1<<0))) => %i\n", INT_CSZR( (1|(1<<0)) ));
+
+    printf("INT_CSZR((0|(1<<1))) => %i\n", INT_CSZR( (0|(1<<1)) ));
+    printf("INT_CSZR((1|(1<<1))) => %i\n", INT_CSZR( (1|(1<<1)) ));
+
+    printf("INT_CSZR((0|(1<<2))) => %i\n", INT_CSZR( (0|(1<<2)) ));
+    printf("INT_CSZR((1|(1<<2))) => %i\n", INT_CSZR( (1|(1<<2)) ));
+
+    printf("INT_CSZR((0|(1<<15))) => %i\n", INT_CSZR( (0|(1<<15)) ));
+    printf("INT_CSZR((1|(1<<15))) => %i\n", INT_CSZR( (1|(1<<15)) ));
+
+    printf("INT_CSZR((0|(1U<<31))) => %i\n", INT_CSZR( (0|(1U<<31)) ));
+    printf("INT_CSZR((1|(1U<<31))) => %i\n", INT_CSZR( (1|(1U<<31)) ));
+    printf("\n");
+    printf("ULONG_CSZR( ULONG_MAX) => %lu\n", ULONG_CSZR(ULONG_MAX));
+    printf("ULONG_CSZR((0&(1<<0))) => %lu\n", ULONG_CSZR(0));
+
+    printf("ULONG_CSZR((0|(1<<0))) => %lu\n", ULONG_CSZR( (0|(1<<0)) ));
+    printf("ULONG_CSZR((1|(1<<0))) => %lu\n", ULONG_CSZR( (1|(1<<0)) ));
+
+    printf("ULONG_CSZR((0|(1<<1))) => %lu\n", ULONG_CSZR( (0|(1<<1)) ));
+    printf("ULONG_CSZR((1|(1<<1))) => %lu\n", ULONG_CSZR( (1|(1<<1)) ));
+
+    printf("ULONG_CSZR((0|(1<<2))) => %lu\n", ULONG_CSZR( (0|(1<<2)) ));
+    printf("ULONG_CSZR((1|(1<<2))) => %lu\n", ULONG_CSZR( (1|(1<<2)) ));
+
+    printf("ULONG_CSZR((0|(1<<15))) => %lu\n", ULONG_CSZR( (0|(1<<15)) ));
+    printf("ULONG_CSZR((1|(1<<15))) => %lu\n", ULONG_CSZR( (1|(1<<15)) ));
+
+    printf("ULONG_CSZR((0|(1U<<31))) => %lu\n", ULONG_CSZR( (0|(1U<<31)) ));
+    printf("ULONG_CSZR((1|(1U<<31))) => %lu\n", ULONG_CSZR( (1|(1U<<31)) ));
+    printf("\n");
+
+    printf("LONG_CSZR( LONG_MAX) => %li\n", LONG_CSZR(LONG_MAX));
+    printf("LONG_CSZR((0&(1<<0))) => %li\n", LONG_CSZR(0));
+
+    printf("LONG_CSZR((0|(1<<0))) => %li\n", LONG_CSZR( (0|(1<<0)) ));
+    printf("LONG_CSZR((1|(1<<0))) => %li\n", LONG_CSZR( (1|(1<<0)) ));
+
+    printf("LONG_CSZR((0|(1<<1))) => %li\n", LONG_CSZR( (0|(1<<1)) ));
+    printf("LONG_CSZR((1|(1<<1))) => %li\n", LONG_CSZR( (1|(1<<1)) ));
+
+    printf("LONG_CSZR((0|(1<<2))) => %li\n", LONG_CSZR( (0|(1<<2)) ));
+    printf("LONG_CSZR((1|(1<<2))) => %li\n", LONG_CSZR( (1|(1<<2)) ));
+
+    printf("LONG_CSZR((0|(1<<15))) => %li\n", LONG_CSZR( (0|(1<<15)) ));
+    printf("LONG_CSZR((1|(1<<15))) => %li\n", LONG_CSZR( (1|(1<<15)) ));
+
+    printf("LONG_CSZR((0|(1U<<31))) => %li\n", LONG_CSZR( (0|(1U<<31)) ));
+    printf("LONG_CSZR((1|(1U<<31))) => %li\n", LONG_CSZR( (1|(1U<<31)) ));
+    printf("\n");
+
+    printf("ULLONG_CSZR( ULLONG_MAX) => %llu\n", ULLONG_CSZR(ULLONG_MAX));
+    printf("ULLONG_CSZR((0&(1<<0))) => %llu\n", ULLONG_CSZR(0));
+
+    printf("ULLONG_CSZR((0|(1<<0))) => %llu\n", ULLONG_CSZR( (0|(1<<0)) ));
+    printf("ULLONG_CSZR((1|(1<<0))) => %llu\n", ULLONG_CSZR( (1|(1<<0)) ));
+
+    printf("ULLONG_CSZR((0|(1<<1))) => %llu\n", ULLONG_CSZR( (0|(1<<1)) ));
+    printf("ULLONG_CSZR((1|(1<<1))) => %llu\n", ULLONG_CSZR( (1|(1<<1)) ));
+
+    printf("ULLONG_CSZR((0|(1<<2))) => %llu\n", ULLONG_CSZR( (0|(1<<2)) ));
+    printf("ULLONG_CSZR((1|(1<<2))) => %llu\n", ULLONG_CSZR( (1|(1<<2)) ));
+
+    printf("ULLONG_CSZR((0|(1<<15))) => %llu\n", ULLONG_CSZR( (0|(1<<15)) ));
+    printf("ULLONG_CSZR((1|(1<<15))) => %llu\n", ULLONG_CSZR( (1|(1<<15)) ));
+
+    printf("ULLONG_CSZR((0|(1U<<31))) => %llu\n", ULLONG_CSZR( (0|(1U<<31)) ));
+    printf("ULLONG_CSZR((1|(1U<<31))) => %llu\n", ULLONG_CSZR( (1|(1U<<31)) ));
+    printf("\n");
+
+    printf("LLONG_CSZR( LLONG_MAX) => %lli\n", LLONG_CSZR(LLONG_MAX));
+    printf("LLONG_CSZR((0&(1<<0))) => %lli\n", LLONG_CSZR(0));
+
+    printf("LLONG_CSZR((0|(1<<0))) => %lli\n", LLONG_CSZR( (0|(1<<0)) ));
+    printf("LLONG_CSZR((1|(1<<0))) => %lli\n", LLONG_CSZR( (1|(1<<0)) ));
+
+    printf("LLONG_CSZR((0|(1<<1))) => %lli\n", LLONG_CSZR( (0|(1<<1)) ));
+    printf("LLONG_CSZR((1|(1<<1))) => %lli\n", LLONG_CSZR( (1|(1<<1)) ));
+
+    printf("LLONG_CSZR((0|(1<<2))) => %lli\n", LLONG_CSZR( (0|(1<<2)) ));
+    printf("LLONG_CSZR((1|(1<<2))) => %lli\n", LLONG_CSZR( (1|(1<<2)) ));
+
+    printf("LLONG_CSZR((0|(1<<15))) => %lli\n", LLONG_CSZR( (0|(1<<15)) ));
+    printf("LLONG_CSZR((1|(1<<15))) => %lli\n", LLONG_CSZR( (1|(1<<15)) ));
+
+    printf("LLONG_CSZR((0|(1U<<31))) => %lli\n", LLONG_CSZR( (0|(1U<<31)) ));
+    printf("LLONG_CSZR((1|(1U<<31))) => %lli\n", LLONG_CSZR( (1|(1U<<31)) ));
+    printf("\n");
+    }
+    
+#endif
+    //outfdwu(cnt1dwu(newdwu(-1,-1)), stdout, DUP2("%u", ", ") "\n");
+#if 0
+    QUAD_TYPE qq, qm, qn, qd, qt, qx;
+    char *res;
+    if (1)
+    {
+        qn.U = catldu(0, 67108864ULL);  // 1<<90
+        qd.U = catldu(4, 0);
+        qq.U = divlqu(qn.U, qd.U);
+        //printf("qq.Lo.U = %" UINT64_DFMT "\n", qq.Lo.U);
+        //printf("qq.Hi.U = %" UINT64_DFMT "\n", qq.Hi.U);
+        
+        my_divlqu(qn.U, qd.U);  // (1<<90)/4
+#if 1
+        qn.U = cvquwu(0);
+        qd.U = cvquwu(1);
+        my_divlqu(qn.U, qd.U);
+        my_divlqu(qn.U, icrlqu(qd.U));
+    
+        qn.U = cvquwu(1);
+        qd.U = qn.U;
+        my_divlqu(qn.U, qd.U);
+        my_divlqu(qn.U, icrlqu(qd.U));
+        
+    //#if 1
+    
+        qn.U = catldu(0, 1);        // 18446744073709551616
+        qd.U = cvquwu(536870911U);  // (1<<29)-1
+        // (also (1<<90)>>64)
+        qx.U = cvquwu(67108864U);   // (1<<29)/8
+    
+        my_divlqu(qn.U, qd.U);
+        my_divlqu(qn.U, icrlqu(qd.U));
+    
+        qd.U = addlqu(qd.U, qx.U); 
+        my_divlqu(qn.U, qd.U);
+        my_divlqu(qn.U, icrlqu(qd.U));
+    
+
+        qd.U = catldu(1, 0);            // 1
+        my_divlqu(qn.U, qd.U);          // (1<<90)/1
+        my_divlqu(qn.U, icrlqu(qd.U));  // (1<<90)/2
+
+        qd.U = catldu(3, 0);
+        my_divlqu(qn.U, qd.U);          // (1<<90)/3
+
+
+        qd.U = catldu(5, 0);
+        my_divlqu(qn.U, qd.U);          // (1<<90)/5
+        my_divlqu(qn.U, icrlqu(qd.U));  // (1<<90)/6
+        qd.U = catldu(7, 0);
+        my_divlqu(qn.U, qd.U);          // (1<<90)/7
+        my_divlqu(qn.U, icrlqu(qd.U));  // (1<<90)/8
+    
+        qd.U = catldu(1073741824ULL, 0);// (1<<30)
+        my_divlqu(qn.U, qd.U);          // ((1<<90)/((1<<30)*8/8)
+        qd.U = addlqu(qd.U, qx.U);
+        my_divlqu(qn.U, qd.U); 
+#endif
+    }
+    if (0)
+    {
+
+        div_t dj[] = {
+            div(+5,+2),
+            div(+2,+2),
+            div(+1,+2),
+            div(+0,+2),
+            div(-1,+2),
+            div(-2,+2),
+            div(-5,+2),
+            div(+5,-2),
+            div(+2,-2),
+            div(+1,-2),
+            div(+0,-2),
+            div(-1,-2),
+            div(-2,-2),
+            div(-5,-2),
+        }, *dx=dj;
+    
+        printf("div(+5,+2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(+2,+2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(+1,+2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(+0,+2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(-1,+2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(-2,+2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(-5,+2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(+5,-2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(+2,-2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(+1,-2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(+0,-2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(-1,-2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(-2,-2)==(%+i,%+i)\n",dx->quot,dx->rem);dx++;
+        printf("div(-5,-2)==(%+i,%+i)\n",dx->quot,dx->rem);
+        
+    }
+    //printf("toadqi(-1) => %s\n", toadqi(qq.I, str, &end));
+    if (0)
+    {
+        qn.U = catldu(7766279631452241920ULL, 5ULL);
+        qd.U = cvqudu(3402823669209384634ULL);
+        printf(
+            "(100000000000000000000*3402823669209384634)==%s\n",
+            toadqu(mullqu(qn.U,qd.U),str,&end)
+        );
+        
+    }
+
+    if (0)
+    {
+
+        my_modnqi(cvqiwi(+5), cvqiwi(+2));
+        my_modnqi(cvqiwi(+2), cvqiwi(+2));
+        my_modnqi(cvqiwi(+1), cvqiwi(+2));
+        my_modnqi(cvqiwi(+0), cvqiwi(+2));
+        my_modnqi(cvqiwi(-1), cvqiwi(+2));
+        my_modnqi(cvqiwi(-2), cvqiwi(+2));
+        my_modnqi(cvqiwi(-5), cvqiwi(+2));
+        
+        my_modnqi(cvqiwi(+5), cvqiwi(-2));
+        my_modnqi(cvqiwi(+2), cvqiwi(-2));
+        my_modnqi(cvqiwi(+1), cvqiwi(-2));
+        my_modnqi(cvqiwi(+0), cvqiwi(-2));
+        my_modnqi(cvqiwi(-1), cvqiwi(-2));
+        my_modnqi(cvqiwi(-2), cvqiwi(-2));
+        my_modnqi(cvqiwi(-5), cvqiwi(-2));
+
+        
+    }
+    if (0)
+    {
+        //  when (y == 1) && n=b<<1
+
+        //  when (a == n)
+        //  e.g. (a=24, b=12, n=24)
+        qn.U = catldu(9223372036854775808ULL,1);// 24<<60
+        qd.U = cvqudu(13835058055282163712ULL); // 12<<60
+        my_modlqu(qn.U, qd.U);
+
+        // when (a < n)
+        // e.g. (a=23, b=12, n=24); 23 < 24
+        qn.U = catldu(8070450532247928832ULL,1);// 23<<60
+        my_modlqu(qn.U, qd.U);
+       
+        // when (b > (a-n))
+        // e.g. (a=25, b=12, n=24); 12 > (25-24)=1
+        qn.U = catldu(10376293541461622784ULL,1);//25<<60
+        my_modlqu(qn.U, qd.U);
+        
+        // else 
+        // e.g. (a=25, b=8, n=16); 8 > (t=25-16)=9
+        // q=3, r=t-b
+        qd.U = cvqudu(9223372036854775808ULL); // 8<<60
+        my_modlqu(qn.U, qd.U);
+
+    }
+    if (0)
+    {
+        qn.U = cvquwu(0);
+        qd.U = cvquwu(1);
+        my_modlqu(qn.U, qd.U);
+        my_modlqu(qn.U, icrlqu(qd.U));
+    
+        qn.U = cvquwu(1);
+        qd.U = qn.U;
+        my_modlqu(qn.U, qd.U);
+        my_modlqu(qn.U, icrlqu(qd.U));
+        
+    //#if 1
+    
+        qn.U = catldu(0, 1);        // 18446744073709551616
+        qd.U = cvquwu(536870911U);  // (1<<29)-1
+        // (also (1<<90)>>64)
+        qx.U = cvquwu(67108864U);   // (1<<29)/8
+    
+        my_modlqu(qn.U, qd.U);
+        my_modlqu(qn.U, icrlqu(qd.U));
+    
+        qd.U = addlqu(qd.U, qx.U); 
+        my_modlqu(qn.U, qd.U);
+        my_modlqu(qn.U, icrlqu(qd.U));
+    
+        qn.U = catldu(0, 67108864ULL);  // 1<<90
+
+        qd.U = catldu(1, 0);            // 1
+        my_modlqu(qn.U, qd.U);          // (1<<90)/1
+        my_modlqu(qn.U, icrlqu(qd.U));  // (1<<90)/2
+
+        qd.U = catldu(3, 0);
+        my_modlqu(qn.U, qd.U);          // (1<<90)/3
+        my_modlqu(qn.U, icrlqu(qd.U));  // (1<<90)/4
+
+        qd.U = catldu(5, 0);
+        my_modlqu(qn.U, qd.U);          // (1<<90)/5
+        my_modlqu(qn.U, icrlqu(qd.U));  // (1<<90)/6
+        qd.U = catldu(7, 0);
+        my_modlqu(qn.U, qd.U);          // (1<<90)/7
+        my_modlqu(qn.U, icrlqu(qd.U));  // (1<<90)/8
+    
+        qd.U = catldu(1073741824ULL, 0);// (1<<30)
+        my_modlqu(qn.U, qd.U);          // ((1<<90)/((1<<30)*8/8)
+        qd.U = addlqu(qd.U, qx.U);
+        my_modlqu(qn.U, qd.U); 
+    }
+    
+    if (0)
+    {
+
+    // 1000000000000000000000000
+    // qn.U = catldu(2003764205206896640, 54210);
+    qd.U = cvqudu(1000000000);
+
+    // 1099511627776000000000000000000000000
+    qn.U = addlqu(cvqudu(UINT64_MAX), cvquwu(0));
+    my_modlqu(qn.U, qd.U);
+    
+    qn.U = addlqu(cvqudu(UINT64_MAX), cvquwu(1));
+    my_modlqu(qn.U, qd.U);
+
+    qn.U = addlqu(cvqudu(UINT64_MAX), cvquwu(2));
+    my_modlqu(qn.U, qd.U);
+ 
+    // (1<<64) / 8
+    qt.U = cvqudu(2305843009213693952ULL);
+
+    // UINT64_MAX + (1<<64)*1/8
+    qn.U = addlqu(cvqudu(UINT64_MAX), qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // UINT64_MAX + (1<<64)*2/8
+    qn.U = addlqu(qn.U, qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // UINT64_MAX + (1<<64)*3/8
+    qn.U = addlqu(qn.U, qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // UINT64_MAX + (1<<64)*4/8
+    qn.U = addlqu(qn.U, qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // UINT64_MAX + (1<<64)*5/8
+    qn.U = addlqu(qn.U, qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // UINT64_MAX + (1<<64)*6/8
+    qn.U = addlqu(qn.U, qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // UINT64_MAX + (1<<64)*7/8
+    qn.U = addlqu(qn.U, qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // UINT64_MAX + (1<<64)*8/8
+    qn.U = addlqu(qn.U, qt.U);
+    my_modlqu(qn.U, qd.U);
+
+    // printf("addlqu(UINT64_MAX, 0) => %s\n", toadqu(qn.U, str, &end));
+    // printf("addlqu(UINT64_MAX, 1) => %s\n", toadqu(qn.U, str, &end));
+    // printf("addlqu(UINT64_MAX, 2) => %s\n", toadqu(qn.U, str, &end));
+    
+    // 157826832055758874199829281500807947557
+    qn.U = catldu(0x351f57675571e525ULL, 0x76bc5799a8a2731cULL);
+
+    }
+    
+    // my_modlqu(cvquwu(5), 2);
+    // my_modlqu(qn.U, 2);
+    
+
+    // qn.U = catldu(0, 59604644775390625ULL);
+
+    //qd.U = cvqudu(536870912); // 1<<29
+    // 134152415008314323914487006899938229818
+    // qn.U = catldu(5665841356952796730ULL, 7272416989809569018ULL); 
+
+#endif
+    
+    //vdbc = ldrdbc(0x626f63614aULL);
+    //vdwf = newdwf(1.234F, 5.678F);
+#if 0
+    outfdwu(
+        vhadd_u32(UINT_LDPD(2,3), UINT_LDPD(2,2)),
+        stdout, 
+        "vhadd( {2,3},{2,2}) => {" DUP2("%u",", ") "}\n"
+    );
+    
+    outfdwu(
+        vrhadd_u32(UINT_LDPD(2,3), UINT_LDPD(2,2)),
+        stdout, 
+        "vrhadd({2,3},{2,2}) => {" DUP2("%u",", ") "}\n"
+    );
+#endif
+
+#if 0
+    //printf("%u\n",vget_lane_u32(vclz_u32(vcreate_u32(1)),0));
+    vdbu = VDBU_VEQL(
+        newdbu('S', 'a', 't', 'u', 'r', 'n', '\0', '\0'),
+        dupdbu('u')
+    );
+    outfdbu(vdbu, stdout, "{" DUP8("%u", ", ") "}\n");
+#endif
+
+    char *qstr = ((char[1+QUAD_IDIG]){0});
+    
+#if 0
+    if (MY_CEQTEST()) return 0;
+    
+    printf("SCHAR_AVGL(-4) => %+hhi\n", SCHAR_AVGL(-4,0));
+    printf("SCHAR_AVGL(-3) => %+hhi\n", SCHAR_AVGL(-3,0));
+    printf("SCHAR_AVGL(-2) => %+hhi\n", SCHAR_AVGL(-2,0));
+    printf("SCHAR_AVGL(-1) => %+hhi\n", SCHAR_AVGL(-1,0));
+    printf("SCHAR_AVGL(+0) => %+hhi\n", SCHAR_AVGL(+0,0));
+    printf("SCHAR_AVGL(+1) => %+hhi\n", SCHAR_AVGL(+1,0));
+    printf("SCHAR_AVGL(+2) => %+hhi\n", SCHAR_AVGL(+2,0));
+    printf("SCHAR_AVGL(+3) => %+hhi\n", SCHAR_AVGL(+3,0));
+    printf("SCHAR_AVGL(+4) => %+hhi\n", SCHAR_AVGL(+4,0));
+#endif
+
+#if 0
+    printf("\n");
+    printf("SHRT_AVGL(-4) => %+hi\n", SHRT_AVGL(-4,0));
+    printf("SHRT_AVGL(-3) => %+hi\n", SHRT_AVGL(-3,0));
+    printf("SHRT_AVGL(-2) => %+hi\n", SHRT_AVGL(-2,0));
+    printf("SHRT_AVGL(-1) => %+hi\n", SHRT_AVGL(-1,0));
+    printf("SHRT_AVGL(+0) => %+hi\n", SHRT_AVGL(+0,0));
+    printf("SHRT_AVGL(+1) => %+hi\n", SHRT_AVGL(+1,0));
+    printf("SHRT_AVGL(+2) => %+hi\n", SHRT_AVGL(+2,0));
+    printf("SHRT_AVGL(+3) => %+hi\n", SHRT_AVGL(+3,0));
+    printf("SHRT_AVGL(+4) => %+hi\n", SHRT_AVGL(+4,0));
+#endif
+
+#if 0
+    printf("\n");
+    printf("INT_AVGL(-4) => %+i\n", INT_AVGL(-4,0));
+    printf("INT_AVGL(-3) => %+i\n", INT_AVGL(-3,0));
+    printf("INT_AVGL(-2) => %+i\n", INT_AVGL(-2,0));
+    printf("INT_AVGL(-1) => %+i\n", INT_AVGL(-1,0));
+    printf("INT_AVGL(+0) => %+i\n", INT_AVGL(+0,0));
+    printf("INT_AVGL(+1) => %+i\n", INT_AVGL(+1,0));
+    printf("INT_AVGL(+2) => %+i\n", INT_AVGL(+2,0));
+    printf("INT_AVGL(+3) => %+i\n", INT_AVGL(+3,0));
+    printf("INT_AVGL(+4) => %+i\n", INT_AVGL(+4,0));
+#endif
+
+#if 0
+    printf("\n");
+    printf("LONG_AVGL(-4) => %+li\n", LONG_AVGL(-4,0));
+    printf("LONG_AVGL(-3) => %+li\n", LONG_AVGL(-3,0));
+    printf("LONG_AVGL(-2) => %+li\n", LONG_AVGL(-2,0));
+    printf("LONG_AVGL(-1) => %+li\n", LONG_AVGL(-1,0));
+    printf("LONG_AVGL(+0) => %+li\n", LONG_AVGL(+0,0));
+    printf("LONG_AVGL(+1) => %+li\n", LONG_AVGL(+1,0));
+    printf("LONG_AVGL(+2) => %+li\n", LONG_AVGL(+2,0));
+    printf("LONG_AVGL(+3) => %+li\n", LONG_AVGL(+3,0));
+    printf("LONG_AVGL(+4) => %+li\n", LONG_AVGL(+4,0));
+#endif
+
+#if 0
+    printf("\n");
+    printf("LLONG_AVGL(-4) => %+lli\n", LLONG_AVGL(-4,0));
+    printf("LLONG_AVGL(-3) => %+lli\n", LLONG_AVGL(-3,0));
+    printf("LLONG_AVGL(-2) => %+lli\n", LLONG_AVGL(-2,0));
+    printf("LLONG_AVGL(-1) => %+lli\n", LLONG_AVGL(-1,0));
+    printf("LLONG_AVGL(+0) => %+lli\n", LLONG_AVGL(+0,0));
+    printf("LLONG_AVGL(+1) => %+lli\n", LLONG_AVGL(+1,0));
+    printf("LLONG_AVGL(+2) => %+lli\n", LLONG_AVGL(+2,0));
+    printf("LLONG_AVGL(+3) => %+lli\n", LLONG_AVGL(+3,0));
+    printf("LLONG_AVGL(+4) => %+lli\n", LLONG_AVGL(+4,0));
+#endif
+
+#if 0
+    outfdbi(
+        VDBI_AVGL(newdbi(-4,-3,-2,-1,+1,+2,+3,+4), dupdbi(0)),
+        stdout,
+        "avgldbi(...-4) => %+hhi\n"
+        "avgldbi(...-3) => %+hhi\n"
+        "avgldbi(...-2) => %+hhi\n"
+        "avgldbi(...-1) => %+hhi\n"
+        "avgldbi(...+1) => %+hhi\n"
+        "avgldbi(...+2) => %+hhi\n"
+        "avgldbi(...+3) => %+hhi\n"
+        "avgldbi(...+4) => %+hhi\n"
+    );
+#endif
+
+#if 0
+    outfdwi(
+        VDWI_AVGL(newdwi(-4, -3), dupdwi(0)),
+        stdout,
+        "avgldwi(...-4) => %+i\n"
+        "avgldwi(...-3) => %+i\n"
+    );
+    outfdwi(
+        VDWI_AVGL(newdwi(-2, -1), dupdwi(0)),
+        stdout,
+        "avgldwi(...-2) => %+i\n"
+        "avgldwi(...-1) => %+i\n"
+    );
+    outfdwi(
+        VDWI_AVGL(newdwi(+1, +2), dupdwi(0)),
+        stdout,
+        "avgldwi(...+1) => %+i\n"
+        "avgldwi(...+2) => %+i\n"
+    );
+    outfdwi(
+        VDWI_AVGL(newdwi(+3, +4), dupdwi(0)),
+        stdout,
+        "avgldwi(...+3) => %+i\n"
+        "avgldwi(...+4) => %+i\n"
+    );
+#endif
+
+#if 0
+    printf( "LONG_AVGP(-4) => %+li\n",   LONG_AVGP(-4,0));
+    printf( "LONG_AVGP(-3) => %+li\n",   LONG_AVGP(-3,0));
+    printf( "LONG_AVGP(-2) => %+li\n",   LONG_AVGP(-2,0));
+    printf( "LONG_AVGP(-1) => %+li\n",   LONG_AVGP(-1,0));
+    printf( "LONG_AVGP(+0) => %+li\n",   LONG_AVGP(+0,0));
+    printf( "LONG_AVGP(+1) => %+li\n",   LONG_AVGP(+1,0));
+    printf( "LONG_AVGP(+2) => %+li\n",   LONG_AVGP(+2,0));
+    printf( "LONG_AVGP(+3) => %+li\n",   LONG_AVGP(+3,0));
+    printf( "LONG_AVGP(+4) => %+li\n",   LONG_AVGP(+4,0));
+
+    printf( "\n");
+    printf("LLONG_AVGP(-4) => %+lli\n", LLONG_AVGP(-4,0));
+    printf("LLONG_AVGP(-3) => %+lli\n", LLONG_AVGP(-3,0));
+    printf("LLONG_AVGP(-2) => %+lli\n", LLONG_AVGP(-2,0));
+    printf("LLONG_AVGP(-1) => %+lli\n", LLONG_AVGP(-1,0));
+    printf("LLONG_AVGP(+0) => %+lli\n", LLONG_AVGP(+0,0));
+    printf("LLONG_AVGP(+1) => %+lli\n", LLONG_AVGP(+1,0));
+    printf("LLONG_AVGP(+2) => %+lli\n", LLONG_AVGP(+2,0));
+    printf("LLONG_AVGP(+3) => %+lli\n", LLONG_AVGP(+3,0));
+    printf("LLONG_AVGP(+4) => %+lli\n", LLONG_AVGP(+4,0));
+#endif
+
+#if 0
+    printf( "INT_AVGN(-2,-3) @-5 => %+i\n", INT_AVGN(-2,-3));
+    printf( "INT_AVGN(-2,-2) @-4 => %+i\n", INT_AVGN(-2,-2));
+    printf( "INT_AVGN(-2,-1) @-3 => %+i\n", INT_AVGN(-2,-1));
+    printf( "INT_AVGN(-2,+0) @-2 => %+i\n", INT_AVGN(-2,+0));
+    printf( "INT_AVGN(-2,+1) @-1 => %+i\n", INT_AVGN(-2,+1));
+    printf( "INT_AVGN(-2,+2) @+0 => %+i\n", INT_AVGN(-2,+2));
+    printf( "INT_AVGN(-2,+3) @+1 => %+i\n", INT_AVGN(-2,+3));
+    printf( "INT_AVGN(-2,+4) @+2 => %+i\n", INT_AVGN(-2,+4));
+    printf( "\n");
+    printf( "INT_AVGN(-1,-3) @-4 => %+i\n", INT_AVGN(-1,-3));
+    printf( "INT_AVGN(-1,-2) @-3 => %+i\n", INT_AVGN(-1,-2));
+    printf( "INT_AVGN(-1,-1) @-2 => %+i\n", INT_AVGN(-1,-1));
+    printf( "INT_AVGN(-1,+0) @-1 => %+i\n", INT_AVGN(-1,+0));
+    printf( "INT_AVGN(-1,+1) @+0 => %+i\n", INT_AVGN(-1,+1));
+    printf( "INT_AVGN(-1,+2) @+1 => %+i\n", INT_AVGN(-1,+2));
+    printf( "INT_AVGN(-1,+3) @+2 => %+i\n", INT_AVGN(-1,+3));
+    printf( "INT_AVGN(-1,+4) @+3 => %+i\n", INT_AVGN(-1,+4));
+    printf( "\n");
+    printf( "LONG_AVGN(-2,-3) @-5 => %+li\n", LONG_AVGN(-2,-3));
+    printf( "LONG_AVGN(-2,-2) @-4 => %+li\n", LONG_AVGN(-2,-2));
+    printf( "LONG_AVGN(-2,-1) @-3 => %+li\n", LONG_AVGN(-2,-1));
+    printf( "LONG_AVGN(-2,+0) @-2 => %+li\n", LONG_AVGN(-2,+0));
+    printf( "LONG_AVGN(-2,+1) @-1 => %+li\n", LONG_AVGN(-2,+1));
+    printf( "LONG_AVGN(-2,+2) @+0 => %+li\n", LONG_AVGN(-2,+2));
+    printf( "LONG_AVGN(-2,+3) @+1 => %+li\n", LONG_AVGN(-2,+3));
+    printf( "LONG_AVGN(-2,+4) @+2 => %+li\n", LONG_AVGN(-2,+4));
+    printf( "\n");
+    printf( "LONG_AVGN(-1,-3) @-4 => %+li\n", LONG_AVGN(-1,-3));
+    printf( "LONG_AVGN(-1,-2) @-3 => %+li\n", LONG_AVGN(-1,-2));
+    printf( "LONG_AVGN(-1,-1) @-2 => %+li\n", LONG_AVGN(-1,-1));
+    printf( "LONG_AVGN(-1,+0) @-1 => %+li\n", LONG_AVGN(-1,+0));
+    printf( "LONG_AVGN(-1,+1) @+0 => %+li\n", LONG_AVGN(-1,+1));
+    printf( "LONG_AVGN(-1,+2) @+1 => %+li\n", LONG_AVGN(-1,+2));
+    printf( "LONG_AVGN(-1,+3) @+2 => %+li\n", LONG_AVGN(-1,+3));
+    printf( "LONG_AVGN(-1,+4) @+3 => %+li\n", LONG_AVGN(-1,+4));
+#endif
+
+    
+#if 0
+    outfqwi(
+        avgnqwi(newqwi(-2,-2,-2,-2),newqwi(-4,-3,-2,-1)),
+        stdout,
+        "AVGN "
+        "{-2,-4}=%+" INT32_DFMT ", "
+        "{-2,-3}=%+" INT32_DFMT ", "
+        "{-2,-2}=%+" INT32_DFMT ", "
+        "{-2,-1}=%+" INT32_DFMT ", "
+        "\n"
+    );
+    outfqwi(
+        avgnqwi(newqwi(-2,-2,-2,-2),newqwi(+1,+2,+3,+4)),
+        stdout,
+        "AVGN "
+        "{-2,+1}=%+" INT32_DFMT ", "
+        "{-2,+2}=%+" INT32_DFMT ", "
+        "{-2,+3}=%+" INT32_DFMT ", "
+        "{-2,+4}=%+" INT32_DFMT ", "
+        "\n"
+    );
+    outfqwi(
+        avgnqwi(newqwi(-1,-1,-1,-1),newqwi(-4,-3,-2,-1)),
+        stdout,
+        "AVGN "
+        "{-1,-4}=%+" INT32_DFMT ", "
+        "{-1,-3}=%+" INT32_DFMT ", "
+        "{-1,-2}=%+" INT32_DFMT ", "
+        "{-1,-1}=%+" INT32_DFMT ", "
+        "\n"
+    );
+    outfqwi(
+        avgnqwi(newqwi(-1,-1,-1,-1),newqwi(+1,+2,+3,+4)),
+        stdout,
+        "AVGN "
+        "{-1,+1}=%+" INT32_DFMT ", "
+        "{-1,+2}=%+" INT32_DFMT ", "
+        "{-1,+3}=%+" INT32_DFMT ", "
+        "{-1,+4}=%+" INT32_DFMT ", "
+        "\n"
+    );
+
+#endif
+
+/*
+
+    return (n < 0)
+    ?   (d < 0)
+        ?   ((*r=x.rem),   x.quot)  
+        :   ((*r=x.rem+d), x.quot-1)
+    :   (d < 0)                     
+        ?   ((*r=x.rem+d), x.quot-1)
+        :   ((*r=x.rem),   x.quot); 
+
+
+n=±3
+    div(-3,-2) => {+1,-1} pyd(-3,-2) => (+1,-1) 
+    div(-3,-1) => {+3,+0} pyd(-3,-1) => (+3,+0)
+    div(-3,+1) => {-3,+0} pyd(-3,+1) => (-3,+0)
+    div(-3,+2) => {-1,-1} pyd(-3,+2) => (-2,+1)
+    div(+3,-2) => {-1,+1} pyd(+3,-2) => (-2,-1) 
+    div(+3,-1) => {-3,+0} pyd(+3,-1) => (-3,+0)  
+    div(+3,+1) => {+3,+0} pyd(+3,+1) => (+3,+0)
+    div(+3,+2) => {+1,+1} pyd(+3,+2) => (+1,+1)
+
+n=±2
+    div(-2,-2) => {+1,+0} pyd(-2,-2) => (+1, 0)
+    div(-2,-1) => {+2,+0} pyd(-2,-1) => (+2, 0)
+    div(-2,+1) => {-2,+0} pyd(-2,+1) => (-2, 0)
+    div(-2,+2) => {-1,+0} pyd(-2,+2) => (-1, 0)
+    div(+2,-2) => {-1,+0} pyd(+2,-2) => (-1, 0)
+    div(+2,-1) => {-2,+0} pyd(+2,-1) => (-2, 0)
+    div(+2,+1) => {+2,+0} pyd(+2,+1) => (+2, 0)
+    div(+2,+2) => {+1,+0} pyd(+2,+2) => (+1, 0)
+
+n=±1
+    div(-1,-2) => {+0,-1} pyd(-1,-2) => (+0,-1)
+    div(-1,-1) => {+1,+0} pyd(-1,-1) => (+1,+0)
+    div(-1,+1) => {-1,+0} pyd(-1,+1) => (-1,+0)
+
+    div(-1,+2) => {+0,-1} pyd(-1,+2) => (-1,+1)
+    div(+1,-2) => {+0,+1} pyd(+1,-2) => (-1,-1)
+
+    div(+1,-1) => {-1,+0} pyd(+1,-1) => (-1,+0)
+    div(+1,+1) => {+1,+0} pyd(+1,+1) => (+1,+0) 
+    div(+1,+2) => {+0,+1} pyd(+1,+2) => (+0,+1)
+
+
+    printf("div(+3, -2), => {%+i,%+i}\n",(dr+0)->quot,(dr+0)->rem);
+    
+    +3 / -2 = {-1,+1} (-2,-1)
+    
+    -3 / +2 = {-1,-1} (-2,+1)
+    
+    div(-3, +2) => {-1,-1}
+        +3 / +2: 
+            q = -1
+        -1 * +2 = -2
+        -3 - -2 = r = -1
+   
+    div(+3, -2) => {-1, +1}
+        +3 / +2:
+            q = -1
+        -1 * -2=+2
+               /
+        +3 - +2 = +1
+    
+    +3/-2 = -1 % -1
+        +3 / +2 = -1
+        
+        -1 * -2 = =2
+        2-3 = -1
+        
+*/
+
+    //int8_t  dn[8] = {-3,-3,-3,-3, +3,+3,+3,+3};
+    int8_t  dn[8] = {-2,-2,-2,-2, +2,+2,+2,+2};
+    int8_t  dd[8] = {-2,-1,+1,+2, -2,-1,+1,+2};
+
+#if 0
+
+#   define TWOP "%+hhi,%+hhi"
+    struct {int8_t quot, rem;} dr[8];
+    dr[0].quot = INT8_DIVR(dn[0], dd[0], &dr[0].rem);
+    dr[1].quot = INT8_DIVR(dn[1], dd[1], &dr[1].rem);
+    dr[2].quot = INT8_DIVR(dn[2], dd[2], &dr[2].rem);
+    dr[3].quot = INT8_DIVR(dn[3], dd[3], &dr[3].rem);
+    dr[4].quot = INT8_DIVR(dn[4], dd[4], &dr[4].rem);
+    dr[5].quot = INT8_DIVR(dn[5], dd[5], &dr[5].rem);
+    dr[6].quot = INT8_DIVR(dn[6], dd[6], &dr[6].rem);
+    dr[7].quot = INT8_DIVR(dn[7], dd[7], &dr[7].rem);
+#elif 0
+#   define TWOP "%+i,%+i"
+    div_t dr[8];
+    dr[0] = div(dn[0], dd[0]);
+    dr[1] = div(dn[1], dd[1]);
+    dr[2] = div(dn[2], dd[2]);
+    dr[3] = div(dn[3], dd[3]);
+    dr[4] = div(dn[4], dd[4]);
+    dr[5] = div(dn[5], dd[5]);
+    dr[6] = div(dn[6], dd[6]);
+    dr[7] = div(dn[7], dd[7]);
+#else
+#   define TWOP "%+i,%+i"
+    div_t dr[8];
+    dr[0].quot = mydiv(dn[0], dd[0], &dr[0].rem);
+    dr[1].quot = mydiv(dn[1], dd[1], &dr[1].rem);
+    dr[2].quot = mydiv(dn[2], dd[2], &dr[2].rem);
+    dr[3].quot = mydiv(dn[3], dd[3], &dr[3].rem);
+    dr[4].quot = mydiv(dn[4], dd[4], &dr[4].rem);
+    dr[5].quot = mydiv(dn[5], dd[5], &dr[5].rem);
+    dr[6].quot = mydiv(dn[6], dd[6], &dr[6].rem);
+    dr[7].quot = mydiv(dn[7], dd[7], &dr[7].rem);
+#endif
+
+#if 0
+#   define SMFD(I) dn[I], dd[I], dr[I].quot, dr[I].rem
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(0));
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(1));
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(2));
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(3));
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(4));
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(5));
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(6));
+    printf("div(" TWOP ") => {" TWOP "}\n",SMFD(7));
+
+#endif
+
+#if 0
+    printf("avglwi(-2,+1) => %i\n", INT_AVGL(-2,+1));
+    printf("avglwi(-2,-1) => %i\n", INT_AVGL(-2,-1));
+#endif
+
+#if 0
+    printf("toadqi(cvqidi(-2)) => %s\n", toadqi(cvqidi(-2),qstr,&qstr));
+    printf("toadqi(cvqidi(-1)) => %s\n", toadqi(cvqidi(-1),qstr,&qstr));
+    printf("toadqi(cvqidi(+0)) => %s\n", toadqi(cvqidi(+0),qstr,&qstr));
+    printf("toadqi(cvqidi(+1)) => %s\n", toadqi(cvqidi(+1),qstr,&qstr));
+    printf("toadqi(cvqidi(+2)) => %s\n", toadqi(cvqidi(+2),qstr,&qstr));
+#endif
+
+#if 0
+    printf(
+        "avglqi(+0,+1) => %s\n",
+        toadqi(avglqi(cvqidi(+0),cvqidi(+1)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(+1,+1) => %s\n",
+        toadqi(avglqi(cvqidi(+1),cvqidi(+1)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(+1,+2) => %s\n",
+        toadqi(avglqi(cvqidi(+1),cvqidi(+2)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(+2,+2) => %s\n",
+        toadqi(avglqi(cvqidi(+2),cvqidi(+2)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(-2,+2) => %s\n",
+        toadqi(avglqi(cvqidi(-2),cvqidi(+2)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(-2,+1) => %s\n",
+        toadqi(avglqi(cvqidi(-2),cvqidi(+1)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(-2,+0) => %s\n",
+        toadqi(avglqi(cvqidi(-2),cvqidi(+0)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(-2,-1) => %s\n",
+        toadqi(avglqi(cvqidi(-2),cvqidi(-1)), qstr, &qstr)
+    );
+    printf(
+        "avglqi(-2,-2) => %s\n",
+        toadqi(avglqi(cvqidi(-2),cvqidi(-2)), qstr, &qstr)
+    );
+#endif
+
+#if 0
+    printf(
+        "vshld_s64(-64, 1) => %" INT64_DFMT "\n",
+        (vshld_s64(-64,-1))
+    );
+    
+    vdwf = ldrdwf(0x40b5b22d3f9df3b6ULL);
+    printf(
+        "%g, %g\n", 
+        vget_lane_f32(vdwf,0),
+        vget_lane_f32(vdwf,1)
+    );
+#endif
+//    printf(
+//        "{1.234F, 5.678F} => (0x%016" UINT64_XFMT "ULL)\n",
+//        ldrddwf(vdwf)
+//    );
+//    outfdbc(vdbc, stdout, "{" DUP8("'%c'", ", ") "}\n");
+    
+#if 0
+    QUAD_TYPE qq, qr;
+    qq.U = MY_DIVRQU(qn.U, qd.U, &qr.U);
+    (void) toadqu(qq.U, str);
+    printf("qq.U => \"%s\"\n", str);
+        
+    // 123456789876543212345678987654321
+    // nbit=107
+    QUAD_TYPE m;
+    m.U = catldu(0, 9223372036854775808ULL);
+    vqqu = dupqqu(m.U);
+    
+    m.I = cvqibi(-1);
+    m.U = catldu(13449124896223392945ULL, 6692605989611ULL);
+    m.I = neglqi(m.I);
+    printf("absubi(-1) => %hhu\n", absubi(-1));
+    printf("absubi(-128) => %hhu\n", absubi(-128));
+    m.U = absuqi(m.I);
+    (void) toadqu(m.I, str);
+#endif
+
+#if 0
+// veql
+    outfqbu(
+        QBU_VEQL(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('f')
+        ),
+        stdout,
+        "veqlqbc(\"f00dfeeddeadbeef\", 'f') => "
+        "{" DUP16("%hhu", ", ") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQL(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('0')
+        ),
+        stdout,
+        "veqlqbc(\"f00dfeeddeadbeef\", '0') => "
+        "{" DUP16("%hhu", ", ") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQL(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('d')
+        ),
+        stdout,
+        "veqlqbc(\"f00dfeeddeadbeef\", 'd') => "
+        "{" DUP16("%hhu", ", ") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQL(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('e')
+        ),
+        stdout,
+        "veqlqbc(\"f00dfeeddeadbeef\", 'e') => "
+        "{" DUP16("%hhu", ", ") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQL(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('a')
+        ),
+        stdout,
+        "veqlqbc(\"f00dfeeddeadbeef\", 'a') => "
+        "{" DUP16("%hhu", ", ") "}\n"
+    );
+#endif
+
+#if 0
+    outfqhu(
+        QHU_VEQL(
+            newqhu(0,1,2,3, 4,5,6,7),
+            dupqhu(6)
+        ),
+        stdout,
+        "veqlqbc({0,1,2,3,4,5,6,7}, 6) => "
+        "{" DUP8("%hu", ", ") "}\n"
+    );
+#endif
+
+#if 0
+    outfdbu(
+        DBU_VEQR(
+            newdbu(0,1,2,3, 4,5,6,7),
+            dupdbu(1)
+        ),
+        stdout,
+        "veqrdbu({0,1,2,3, 4,5,6,7}, 1) => "
+        "{" DUP8("%hu", ",") "}\n"
+    );
+
+    outfdbu(
+        DBU_VEQR(
+            newdbu(0,1,6,3, 4,5,6,7),
+            dupdbu(6)
+        ),
+        stdout,
+        "veqrdbu({0,1,6,3, 4,5,6,7}, 6) => "
+        "{" DUP8("%hu", ",") "}\n"
+    );
+    outfdbu(
+        DBU_VEQR(
+            newdbu(0,1,2,3, 4,5,6,7),
+            dupdbu(8)
+        ),
+        stdout,
+        "veqrdbu({0,1,2,3, 4,5,6,7}, 8) => "
+        "{" DUP8("%hu", ",") "}\n"
+    );
+#endif
+
+#if 0
+    outfdhu(
+        DHU_VEQR(
+            newdhu(0xf, 0xe, 0xe, 0xd),
+            dupdhu(0xf)
+        ),
+        stdout,
+        "veqrdhu({0xf,0xe,0xe,0xd}, 0xf) => "
+        "{" DUP4("0x%hx", ",") "}\n"
+    );
+
+    outfdhu(
+        DHU_VEQR(
+            newdhu(0xf, 0xe, 0xe, 0xd),
+            dupdhu(0xe)
+        ),
+        stdout,
+        "veqrdhu({0xf,0xe,0xe,0xd}, 0xe) => "
+        "{" DUP4("0x%hx", ",") "}\n"
+    );
+
+    outfdhu(
+        DHU_VEQR(
+            newdhu(0xf, 0xe, 0xe, 0xd),
+            dupdhu(0xd)
+        ),
+        stdout,
+        "veqrdhu({0xf,0xe,0xe,0xd}, 0xd) => "
+        "{" DUP4("0x%hx", ",") "}\n"
+    );
+
+    outfdhu(
+        DHU_VEQR(
+            newdhu(0xf, 0xe, 0xe, 0xd),
+            dupdhu(0xfeed)
+        ),
+        stdout,
+        "veqrdhu({0xf,0xe,0xe,0xd}, 0xfeed) => "
+        "{" DUP4("0x%hx", ",") "}\n"
+    );
+#endif
+
+#if 0
+// veqr
+    outfqbu(
+        QBU_VEQR(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('f')
+        ),
+        stdout,
+        "veqrqbc(\"f00dfeeddeadbeef\",'f')=>"
+        "{" DUP16("%hhu", ",") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQR(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('0')
+        ),
+        stdout,
+        "veqrqbc(\"f00dfeeddeadbeef\",'0')=>"
+        "{" DUP16("%hhu", ",") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQR(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('d')
+        ),
+        stdout,
+        "veqrqbc(\"f00dfeeddeadbeef\",'d')=>"
+        "{" DUP16("%hhu", ",") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQR(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('e')
+        ),
+        stdout,
+        "veqrqbc(\"f00dfeeddeadbeef\",'e')=>"
+        "{" DUP16("%hhu", ",") "}\n"
+    );
+
+    outfqbu(
+        QBU_VEQR(
+            VQBC_ASBU(lunqacbc("f00dfeeddeadbeef")),
+            dupqbu('a')
+        ),
+        stdout,
+        "veqrqbc(\"f00dfeeddeadbeef\",'a')=>"
+        "{" DUP16("%hhu", ",") "}\n"
+    );
+#endif
+
+#if 0
+    outfdbu(
+        DBU_VEQL(
+            VDBC_ASBU(lundacbc("01234567")),
+            dupdbu('6')
+        ),
+        stdout,
+        "{" DUP8("%hhu", ", ") "}\n"
+    );
+#endif
+
+#if 0
+    outfqhu(
+        QHU_VEQL(
+            ldpqhu(
+                0x0003beef00010000ULL,
+                0x0007beef00050004ULL
+            ),
+            dupqhu(0xbeef)
+        ),
+        stdout,
+        "{" DUP8("%hu", ", ") "}\n"
+    );
+#endif
+
+#if 0
+    outfqhu(
+        QHU_VEQS(
+            newqhu(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhu(0xf)
+        ),
+        stdout,
+        "veqsqhu(\"deafbeef\", 0xf)=>"
+        "{" DUP8("%hu", ",") "}\n"
+    );
+
+    outfqhu(
+        QHU_VEQS(
+            newqhu(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhu(0x9)
+        ),
+        stdout,
+        "veqsqhu(\"deafbeef\", 0x9)=>"
+        "{" DUP8("%hu", ",") "}\n"
+    );
+#endif
+    
+#if 0
+    outfwbu(
+        VWBU_VNES(newwbu(+0,+1,+2,+3),newwbu(+0,+1,+2,+3)),
+        stdout,
+        "vneswbu({+0,+1,+2,+3},{+0,+1,+2,+3}) => "
+        "{" DUP4("%+hhi", ",") "}\n"
+    );
+
+    outfwbu(
+        VWBU_VNES(newwbu(-1,+1,+2,+3),newwbu(+0,+1,+2,+3)),
+        stdout,
+        "vneswbu({-1,+1,+2,+3},{+0,+1,+2,+3}) => "
+        "{" DUP4("%+hhi", ",") "}\n"
+    );
+#endif
+
+#if 0
+    outfdbu(
+        DBU_VNES(
+            newdbu(+0,+1,+2,+3,+4,+5,+6,+7),
+            newdbu(+0,+1,+2,+3,+4,+5,+6,+7)
+        ),
+        stdout,
+        "vnesdbu({+0,+1,+2,+3,+4,+5,+6,+7},{...[0..7]}) => "
+        "{" DUP8("%+hhi", ",") "}\n"
+    );
+    outfdbu(
+        DBU_VNES(
+            newdbu(+0,+1,+2,+3,+4,+5,+6,+7),
+            newdbu(+0,+1,+2,+3,+4,+5,+6,+8)
+        ),
+        stdout,
+        "vnesdbu({+0,+1,+2,+3,+4,+5,+6,+8},{...[0..7]}) => "
+        "{" DUP8("%+hhi", ",") "}\n"
+    );
+#endif
+#if 0
+    outfqwi(
+        QWI_VNES(
+            newqwi(-1,-1,-1,-1),
+            newqwi(-1,-1,-1,-1)
+        ),
+        stdout,
+        "vnesqwi({-1,-1,-1,-1},{-1,-1,-1,-1})=>"
+        "{" DUP4("%+i", ",") "}\n"
+    );
+    outfqwi(
+        QWI_VNES(
+            newqwi(-1,-1,-1,-2),
+            newqwi(-1,-1,-1,-1)
+        ),
+        stdout,
+        "vnesqwi({-1,-1,-1,-2},{-1,-1,-1,-1})=>"
+        "{" DUP4("%+i", ",") "}\n"
+    );
+    outfqwi(
+        QWI_VNES(
+            newqwi(+0,+0,+0,+0),
+            newqwi(+0,+0,+0,+0)
+        ),
+        stdout,
+        "vnesqwi({+0,+0,+0,+0},{+0,+0,+0,+0})=>"
+        "{" DUP4("%+i", ",") "}\n"
+    );
+    outfqwi(
+        QWI_VNES(
+            newqwi(+0,+0,+0,+1),
+            newqwi(+0,+0,+0,+0)
+        ),
+        stdout,
+        "vnesqwi({+0,+0,+0,+1},{+0,+0,+0,+0})=>"
+        "{" DUP4("%+i", ",") "}\n"
+    );
+    outfqwi(
+        QWI_VNES(
+            newqwi(+0,+0,+0,+0),
+            newqwi(+0,+0,+0,+1)
+        ),
+        stdout,
+        "vnesqwi({+0,+0,+0,+0},{+0,+0,+0,+1})=>"
+        "{" DUP4("%+i", ",") "}\n"
+    );
+    outfqwi(
+        QWI_VNES(
+            newqwi(+0,+1,+2,+3),
+            newqwi(+0,+1,+2,+3)
+        ),
+        stdout,
+        "vnesqwi({+0,+1,+2,+3},{+0,+1,+2,+3})=>"
+        "{" DUP4("%+i", ",") "}\n"
+    );
+#endif
+
+#if 0
+    outfqhi(
+        QHI_VEQR(
+            newqhi(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhi(0xf)
+        ),
+        stdout,
+        "veqrqhi(\"deafbeef\", 0xf)=>"
+        "{" DUP8("%hi", ",") "}\n"
+    );
+    outfqhi(
+        QHI_VEQR(
+            newqhi(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhi(0xe)
+        ),
+        stdout,
+        "veqrqhi(\"deafbeef\", 0xe)=>"
+        "{" DUP8("%hi", ",") "}\n"
+    );
+    outfqhi(
+        QHI_VEQR(
+            newqhi(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhi(0xb)
+        ),
+        stdout,
+        "veqrqhi(\"deafbeef\", 0xb)=>"
+        "{" DUP8("%hi", ",") "}\n"
+    );
+    outfqhi(
+        QHI_VEQR(
+            newqhi(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhi(0xa)
+        ),
+        stdout,
+        "veqrqhi(\"deafbeef\", 0xa)=>"
+        "{" DUP8("%hi", ",") "}\n"
+    );
+    outfqhi(
+        QHI_VEQR(
+            newqhi(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhi(0xd)
+        ),
+        stdout,
+        "veqrqhi(\"deafbeef\", 0xd)=>"
+        "{" DUP8("%hi", ",") "}\n"
+    );
+    outfqhi(
+        QHI_VEQR(
+            newqhi(0xd,0xe,0xa,0xf, 0xb,0xe,0xe,0xf),
+            dupqhi(-1)
+        ),
+        stdout,
+        "veqrqhi(\"deafbeef\", -1)=>"
+        "{" DUP8("%hi", ",") "}\n"
+    );
+
+#endif
+
+#if 0
+    outfqbc(
+        VQBC_VEQL(
+            lunqacbc("deadf00d" "faadba7s"),
+            dupqbc('5')
+        ),
+        stdout,
+        "{" DUP16("%hhu", ", ") "}\n"
+    );
+#endif
+
+#if 0
+    outfdbu(
+        DBU_MULR(seqdbu(1,1), vdup_n_u8(255)),
+        stdout,
+        "{" DUP8("%hhu", ",") "}\n"
+    );
+#endif
+#if 0
+    printf(
+        "vneydwi({+0,+0}, {+0,+0}) => %i\n",
+        VDWI_VNEY(newdwi(0,0), newdwi(0,0))
+    );
+    printf(
+        "vneydwi({+0,+0}, {+0,+1}) => %i\n",
+        VDWI_VNEY(newdwi(0,0), newdwi(0,1))
+    );
+#endif
+#if 0
+    outfdbu(
+        DBU_VNEN(seqdbu(1,1), newdbu(1,2,3,0, 0,0,0,0)),
+        stdout,
+        "{" DUP8("%hhu", ",") "}\n"
+    );
+#endif
+    outfdbu(
+        DBU_VNEL(
+            newdbu(0,1,2,3, 4,5,6,7), 
+            newdbu(0,1,2,3, 9,5,6,7)
+        ),
+        stdout,
+        "vneldbu({0,1,2,3, 4,5,6,7}, {0,1,2,3, 9,5,6,7}) => "
+        "{" DUP8("%hhu", ",") "}\n"
+    );
+
+    if (0)
+    {
+        struct my_tests t;
+        int verbose = 1;
+        if (!inittests(&t, AT_FDCWD, "ungop.shm"))
+            return  printf("inittests failed??");
+        if (opentests(&t)) 
+            return -1;
+        do 
+        {
+            if (absl_test(&t, verbose)) break;
+            if (addl_test(&t, verbose)) break;
+        } 
+        while (0);
+        
+        (void) snprintf(t.Mm, t.Fs.st_size, "%s", "hell nah");
+        return shuttests(&t);
+    }
+    
+#if 0
+    vdbu = DBU_VEQN(
+        newdbu('i','n','i','t', 't','e','s','t'),
+        dupdbu('t')
+    );
+    outfdbu(vdbu,stdout,"{"DUP8("%hhu",",")"}\n");
+#endif
+
+    return 0;
     fail:
     {
         return printf("failed test on line %d: %s\n", line, expr);

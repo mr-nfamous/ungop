@@ -10,6 +10,55 @@ clang
 /sdcard/C/ungop.c
 -I/sdcard/C
 '''
+PSEUDOCODE ≈> C equivalent 
+
+    A.width => 
+        Total width in bits of A
+
+    A.nel   => 
+        Number of elements in A. Equivalent to .width for 
+        scalars.
+
+    A.type  => typeof(A)
+    A.ktype => typeof(A[0])
+    A.utype => // u=u, i=u, f=u
+    A.itype => // u=i, i=i, f=i
+    A.ftype => // u=f, i=f, f=f
+    A.stype => // u=u, i=i, f=i
+    A.ztype => // u=u, i=i, f=u
+    
+    <length> => 
+        A range whose start will be 0. Ranges are constrained
+        with the slicing syntax mentioned elsewhere.
+
+    A[0]    =>
+        Access zero-indexed element 0. For scalars, including
+        bool, the element type is bool. For everything else,
+        it should be obvious, including that void and void *
+        don't have an element type. Negative indices are 
+        used to reference an element from right to left.
+
+    A[start:stop]  =>
+        Slice. The syntax is identical to basic Python slices.
+        If start is omitted, it equals 0. If stop is omitted,
+        it equals -1. The effective start and stop values are
+        computed by adding negative values to A.nel, so if 
+        start=-4 and A.nel is 8, the effective start is 8+-4
+        or 4. The resulting range doesn't include the end 
+        point, so if start=2 and stop=6, the slice is equal
+        to {A[2], A[3], A[4], A[5]}
+    
+    A[start:stop:step]
+        Three argument slice, which allows alternate steps
+        between elements, including negative for reverse. If
+        step is negative and start is omitted, start defaults
+        to A.nel-1 instead of 0. E.g. A.nel is 32, A[::-8] is
+        {A[31], A[23], A[15], A[7]}.
+        
+
+    *A      => 
+        Alias for 'A[0]'
+
 
 CHANGES:
 
@@ -74,12 +123,285 @@ CHANGES:
     'ushort' to 'unsigned'
     'short' to 'signed'
 
-24-06-05..24-06-
+24-06-05..24-06-18
 *   Transferring relevant ops from <a64op.h> to <allop.h>
 *   Applying lvalue parameter type changes and making too
     many small corrections to document
+*   Added cvyu to convert scalars to _Bool
+*   Implemented most 128 bit ops, generically.
+*   Added y(eq|ne|lt|le|gt|ge)(y) to test whether all 
+    comparisons were true. Use e.g. ceqyqu to perform a 128
+    bit equality comparison that's actually useable in an 
+    if/else statement since the return value is _Bool instead
+    if QUAD_UTYPE like ceqlqu returns.
+    
+*   Added variants of ldrw, ldrd, and ldrq that "load" the 
+    vector from the representation of the equivalent width 
+    unsigned int. Although it kinda doesn't make sense, the
+    vector variants, e.g. ldrddbu, perform the inverse - they
+    convert the vector to an unsigned int. TODO: consider
+    making this a different op
 
+24-06-19
+*   Implement invs, and*, orr*, and xor* for floats
+*   Plans to add 16 bit vectors, with the primary value
+    being the ability to define operations that take a pair
+    of values as the second operand. E.g. cbn/cnb could 
+    benefit from specifying the lo/hi as a 2 element vector.
+    At present, the performance of 16 bit SIMD vectors is 
+    likely to be atrocious, but armv8 ABIs already handle
+    16 bit floats gracefully, and __fp16 or _Float16 will be
+    the underlying representation of 16 bit vectors on that 
+    arch, similar to the way float handles 32 bit vectors.
+    
+*   Debate changing c-comparisons c__y to c__l to reflect 
+    that the result has the same type as the operand and 
+    the lowest bit is set to 1 when true. This would result
+    in the new y__y ops being renamed to c__y, and we could
+    also do the same for tst.
+
+        Bu ceqsbu(Bu, Bu);  Vdbu ceqsdbu(Vdbu, Vdbu);
+        Bu ceqlbu(Bu, Bu);  Vdbu ceqldbu(Vdbu, Vdbu);
+        Yu ceqlbu(Bu, Bu);  Yu   ceqldbu(Vdbu, Vdbu);
+                            Vdbu veqldbu(Vdbu, Bu);
+                            Vdbu veqrdbu(Vdbu, Bu);
+                            Vdbu veqndbu(Vdbu, Bu);
+        Bu ceqlbu(Bu, Bu);
+        
+        Bu ceqlbu(Bu, Bu);
+        Yu ceqlbu(Bu, Bu);
+        Bu ceqsbu(Bu, Bu);
+        
+        Bu ceqlbu(Bu,Bu) => Bu ceqlbu(Bu,Bu);
+        Bu ceq
+
+24-06-21
+*   Added sign extension ops.
+
+    XRDS: "eXtend Right Double (with signs)" doubles the 
+    element size of the operand with new space filled with
+    copies of the corresponding element's most significant 
+    bit. Each element in the result is numerically equal to
+    the corresponding element in the operand.
+    
+    XRDZ: "eXtend Right Double (with zeros)" is identical
+    to xrds except the upper bits are always zero filled.
+    For vectors, the result is semantically equivalent to
+    using zipp followed by the appropriate reinterpret cast.
+    For scalars, xrdz may simply be an alias for catl with 
+    a default second operand of zero.
+
+    XRQS: "eXtend Right Quadruple (signs)"
+
+    XRQZ: "eXtend Right Quadruple (zeros)"
+
+    XROS: "eXtend Right Octuple (signs)"
+    
+    XROS: "eXtend Right Octuple (zeros)"
+
+*   Redesign veq and add corresponding variants for vne, vlt,
+    vle, vgt, vge, vbn, and vnb
+
+    VEQL(a, b): compares each corresponding pair of elements 
+    for equality then sets each lane of the result to the 
+    lane number of the first match. E.g.
+    
+        veqlwbc(newwbc('a', '.', 'c', 'd'), dupwbc('.'))
+    
+    would return 
+        
+        {1, 1, 1, 1}
+   
+    since the first match is in lane #1. When none of the 
+    comparisons are true, the result is saturated with ones.
+    
+    VEQR(a, b): identical to veql except it's the highest
+    matching lane number 
+    
+    VEQY(a, b): returns 1 if any match occurred
+    
+    VEQS(a, b): saturates an equivalent vector if any match
+    occurred 
+
+24-06-22
+*   Each operation has an associated macro with a name like
+    SPC_SHRS, which indicates what, if any, hardware support
+    is available for the operation. E.g. on arm, which has 
+    signed right shifts, SPC_SHRS should be defined with the
+    bits SPC_BQI set.
+    
+    Since SIMD operations are already defined in their own
+    file, we can use the implementation defined methods to 
+    check for supplementary processor capabilities.
+
+24-06-23
+*   Total division redesign. There are now three prefixes:
+    DIV, for pure division; REM, for pure remainder; and 
+    MOD, which computes both. The operand types are always
+    the same now.
+    
+    Since C99, the C "/" and "%" operators have been based 
+    on truncated division. However, floored division is
+    just as common if not moreso, so we might as well make
+    variants for both 
+
+24-06-29
+*   renamed minl to cgtr and maxl to cltr
+
+
+
+
+NOTES:
+    {wi,wi} = wi
+    {wi,wu} = wu
+    {wu,di} = di
+    {wu,du} = du
+    {wi,di} = di
+    {di,du} = du
 */
+
+#define SPC_F 0b001
+#define SPC_U 0b010
+#define SPC_I 0b100
+#define SPC_R 0b111
+#define SPC_Z (SPC_U|SPC_I)
+#define SPC_N (SPC_F|SPC_U)
+#define SPC_S (SPC_I|SPC_F)
+
+#define SPC_YR 0b000000000000000110
+//                              YY.
+#define SPC_YU 0b000000000000000010
+#define SPC_YI 0b000000000000000100
+#define SPC_YZ (SPC_YU|SPC_YI)
+#define SPC_YS (SPC_YI)
+#define SPC_YN (SPC_YU)
+
+//                           BBB
+#define SPC_BR 0b000000000000111000
+#define SPC_BC 0b000000000000001000
+#define SPC_BU 0b000000000000010000
+#define SPC_BI 0b000000000000100000
+#define SPC_BZ (SPC_BU|SPC_BI|SPC_BC)
+#define SPC_BN (SPC_BU|SPC_BC)
+#define SPC_BS (SPC_BI|SPC_BC)
+
+//                        HHH
+#define SPC_HR 0b000000000111000000
+#define SPC_HU 0b000000000010000000
+#define SPC_HI 0b000000000100000000
+#define SPC_HZ (SPC_HU|SPC_HI)
+#define SPC_HN (SPC_HU|SPC_HF)
+#define SPC_HS (SPC_HI|SPC_HF)
+
+//                     WWW
+#define SPC_WR 0b000000111000000000
+#define SPC_WF 0b000000001000000000
+#define SPC_WU 0b000000010000000000
+#define SPC_WI 0b000000100000000000
+#define SPC_WZ (SPC_WU|SPC_WI)
+#define SPC_WN (SPC_WU|SPC_WF)
+#define SPC_WS (SPC_WI|SPC_WF)
+
+//                  DDD
+#define SPC_DR 0b000111000000000000
+#define SPC_DF 0b000001000000000000
+#define SPC_DU 0b000010000000000000
+#define SPC_DI 0b000100000000000000
+#define SPC_DZ (SPC_DU|SPC_DI)
+#define SPC_DN (SPC_DU|SPC_DF)
+#define SPC_DS (SPC_DI|SPC_DF)
+
+//               QQQ
+#define SPC_QR 0b111000000000000000
+#define SPC_QF 0b001000000000000000
+#define SPC_QU 0b010000000000000000
+#define SPC_QI  0b0000100000000000000000
+#define SPC_QZ (SPC_QU|SPC_QI)
+#define SPC_QN (SPC_QU|SPC_QF)
+#define SPC_QS (SPC_QI|SPC_QF)
+
+#define SPC_YBU (SPC_YU|SPC_BU)
+#define SPC_YHU (SPC_YU|SPC_BU|SPC_HU)
+#define SPC_YWU (SPC_YU|SPC_BU|SPC_HU|SPC_WU)
+#define SPC_YDU (SPC_YU|SPC_BU|SPC_HU|SPC_WU|SPC_DU)
+#define SPC_YQU (SPC_YU|SPC_BU|SPC_HU|SPC_WU|SPC_DU|SPC_QU)
+#define SPC_BHU        (SPC_BU|SPC_HU)
+#define SPC_BWU        (SPC_BU|SPC_HU|SPC_WU)
+#define SPC_BDU        (SPC_BU|SPC_HU|SPC_WU|SPC_DU)
+#define SPC_BQU        (SPC_BU|SPC_HU|SPC_WU|SPC_DU|SPC_QU)
+#define SPC_HWU               (SPC_HU|SPC_WU)
+#define SPC_HDU               (SPC_HU|SPC_WU|SPC_DU)
+#define SPC_HQU               (SPC_HU|SPC_WU|SPC_DU|SPC_QU)
+#define SPC_WDU                      (SPC_WU|SPC_DU)
+#define SPC_WQU                      (SPC_WU|SPC_DU|SPC_QU)
+#define SPC_DQU                             (SPC_DU|SPC_QU)
+#define SPC_YBI (SPC_YI|SPC_BI)
+#define SPC_YHI (SPC_YI|SPC_BI|SPC_HI)
+#define SPC_YWI (SPC_YI|SPC_BI|SPC_HI|SPC_WI)
+#define SPC_YDI (SPC_YI|SPC_BI|SPC_HI|SPC_WI|SPC_DI)
+#define SPC_YQI (SPC_YI|SPC_BI|SPC_HI|SPC_WI|SPC_DI|SPC_QI)
+#define SPC_BHI        (SPC_BI|SPC_HI)
+#define SPC_BWI        (SPC_BI|SPC_HI|SPC_WI)
+#define SPC_BDI        (SPC_BI|SPC_HI|SPC_WI|SPC_DI)
+#define SPC_BQI        (SPC_BI|SPC_HI|SPC_WI|SPC_DI|SPC_QI)
+#define SPC_HWI               (SPC_HI|SPC_WI)
+#define SPC_HDI               (SPC_HI|SPC_WI|SPC_DI)
+#define SPC_HQI               (SPC_HI|SPC_WI|SPC_DI|SPC_QI)
+#define SPC_WDI                      (SPC_WI|SPC_DI)
+#define SPC_WQI                      (SPC_WI|SPC_DI|SPC_QI)
+#define SPC_DQI                             (SPC_DI|SPC_QI)
+#define SPC_HWF               (SPC_HF|SPC_WF)
+#define SPC_HDF               (SPC_HF|SPC_WF|SPC_DF)
+#define SPC_HQF               (SPC_HF|SPC_WF|SPC_DF|SPC_QF)
+#define SPC_WDF                      (SPC_WF|SPC_DF)
+#define SPC_WQF                      (SPC_WF|SPC_DF|SPC_QF)
+#define SPC_DQF                             (SPC_DF|SPC_QF)
+#define SPC_YBN (SPC_YN|SPC_BN)
+#define SPC_YHN (SPC_YN|SPC_BN|SPC_HN)
+#define SPC_YWN (SPC_YN|SPC_BN|SPC_HN|SPC_WN)
+#define SPC_YDN (SPC_YN|SPC_BN|SPC_HN|SPC_WN|SPC_DN)
+#define SPC_YQN (SPC_YN|SPC_BN|SPC_HN|SPC_WN|SPC_DN|SPC_QN)
+#define SPC_BHN        (SPC_BN|SPC_HN)
+#define SPC_BWN        (SPC_BN|SPC_HN|SPC_WN)
+#define SPC_BDN        (SPC_BN|SPC_HN|SPC_WN|SPC_DN)
+#define SPC_BQN        (SPC_BN|SPC_HN|SPC_WN|SPC_DN|SPC_QN)
+#define SPC_HWN               (SPC_HN|SPC_WN)
+#define SPC_HDN               (SPC_HN|SPC_WN|SPC_DN)
+#define SPC_HQN               (SPC_HN|SPC_WN|SPC_DN|SPC_QN)
+#define SPC_WDN                      (SPC_WN|SPC_DN)
+#define SPC_WQN                      (SPC_WN|SPC_DN|SPC_QN)
+#define SPC_DQN                             (SPC_DN|SPC_QN)
+#define SPC_YBS (SPC_YS|SPC_BS)
+#define SPC_YHS (SPC_YS|SPC_BS|SPC_HS)
+#define SPC_YWS (SPC_YS|SPC_BS|SPC_HS|SPC_WS)
+#define SPC_YDS (SPC_YS|SPC_BS|SPC_HS|SPC_WS|SPC_DS)
+#define SPC_YQS (SPC_YS|SPC_BS|SPC_HS|SPC_WS|SPC_DS|SPC_QS)
+#define SPC_BHS        (SPC_BS|SPC_HS)
+#define SPC_BWS        (SPC_BS|SPC_HS|SPC_WS)
+#define SPC_BDS        (SPC_BS|SPC_HS|SPC_WS|SPC_DS)
+#define SPC_BQS        (SPC_BS|SPC_HS|SPC_WS|SPC_DS|SPC_QS)
+#define SPC_HWS               (SPC_HS|SPC_WS)
+#define SPC_HDS               (SPC_HS|SPC_WS|SPC_DS)
+#define SPC_HQS               (SPC_HS|SPC_WS|SPC_DS|SPC_QS)
+#define SPC_WDS                      (SPC_WS|SPC_DS)
+#define SPC_WQS                      (SPC_WS|SPC_DS|SPC_QS)
+#define SPC_DQS                             (SPC_DS|SPC_QS)
+#define SPC_YBR (SPC_YR|SPC_BR)
+#define SPC_YHR (SPC_YR|SPC_BR|SPC_HR)
+#define SPC_YWR (SPC_YR|SPC_BR|SPC_HR|SPC_WR)
+#define SPC_YDR (SPC_YR|SPC_BR|SPC_HR|SPC_WR|SPC_DR)
+#define SPC_YQR (SPC_YR|SPC_BR|SPC_HR|SPC_WR|SPC_DR|SPC_QR)
+#define SPC_BHR        (SPC_BR|SPC_HR)
+#define SPC_BWR        (SPC_BR|SPC_HR|SPC_WR)
+#define SPC_BDR        (SPC_BR|SPC_HR|SPC_WR|SPC_DR)
+#define SPC_BQR        (SPC_BR|SPC_HR|SPC_WR|SPC_DR|SPC_QR)
+#define SPC_HWR               (SPC_HR|SPC_WR)
+#define SPC_HDR               (SPC_HR|SPC_WR|SPC_DR)
+#define SPC_HQR               (SPC_HR|SPC_WR|SPC_DR|SPC_QR)
+#define SPC_WDR                      (SPC_WR|SPC_DR)
+#define SPC_WQR                      (SPC_WR|SPC_DR|SPC_QR)
+#define SPC_DQR                             (SPC_DR|SPC_QR)
+
 
 #if _ENTER_EXTDEF
 {
@@ -275,7 +597,7 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 #   if defined(_MSC_VER)
 #       define  UNUSED(...) _Pragma("warning(suppress:4100)\n") __VA_ARGS__
 #   elif defined(__clang__) || !defined(__GNUC__)
-#       define  UNUSED(...) __VA_ARGS__ __attribute__((unused))__
+#       define  UNUSED(...) __VA_ARGS__ __attribute__((unused))
 #   endif
 
 #endif
@@ -421,6 +743,9 @@ MY_NOT_IMPLEMENTED(FILE *dst, char const *why, ...)
 #   define  MY_ARM_ACLE_H
 #   include  <arm_acle.h>
 #   endif
+
+#   define  SPC_SHRSWI
+#   define  SPC_SHRSDI
 
 #   ifndef __ARM_ARCH_PROFILE
 #   error "__ARM_ARCH_PROFILE undefined"
@@ -1637,6 +1962,10 @@ fractional part of the float is exactly ½.
 #define DWRD_NINF   ((DWRD_TYPE){.U=UINT64_C(0xfff0000000000000)})
 #define DWRD_PINF   ((DWRD_TYPE){.U=UINT64_C(0x7ff0000000000000)})
 #define DWRD_QNAN   ((DWRD_TYPE){.U=UINT64_C(0x7ff8000000000000)})
+#define DWRD_NLONG  (1+(LONG_MAX==INT_MAX))
+
+#define QUAD_NLONG  (2*DWRD_NLONG)
+#define QUAD_NLLONG (1+(LONG_MAX==LLONG_MAX))
 
 #define QUAD_(_)    QUAD_##_
 #define QUAD_SN(_)  _##q
@@ -1657,9 +1986,17 @@ fractional part of the float is exactly ½.
 #define QUAD_IDIG   NDIG_C(40)
 #define QUAD_UDIG   NDIG_C(39)
 #define QUAD_FDIG   NDIG_C(33)
-#define QUAD_IMIN   ((QUAD_TYPE){.I=QUAD_I(MIN)})
-#define QUAD_IMAX   ((QUAD_TYPE){.I=QUAD_I(MAX)})
-#define QUAD_UMAX   ((QUAD_TYPE){.I=QUAD_U(MAX)})
+
+#if QUAD_NLLONG == 2
+#   define QUAD_IMIN   ((QUAD_TYPE){.Hi.I=INT64_MIN})
+#   define QUAD_IMAX   ((QUAD_TYPE){.Hi.I=INT64_MAX,.Lo.I=-1})
+#   define QUAD_UMAX   ((QUAD_TYPE){.Hi.I=-1,.Lo.I=-1})
+#else
+#   define QUAD_IMIN    ((QUAD_TYPE){.I=LLONG_MIN})
+#   define QUAD_IMAX    ((QUAD_TYPE){.I=LLONG_MAX})
+#   define QUAD_UMAX    ((QUAD_TYPE){.U=ULLONG_MAX})
+#endif
+
 
 // Minimum negative normal number representation
 #define QUAD_NMIN   \
@@ -1670,6 +2007,7 @@ fractional part of the float is exactly ½.
         .Hi.U=UINT64_C(0x8001000000000000), \
     }               \
 )
+
 // Minimum positive normal number representation
 #define QUAD_PMIN   \
 (                   \
@@ -1744,10 +2082,6 @@ fractional part of the float is exactly ½.
 #define SEXD_LOG2SZ (6)
 #define SEXD_SIZE   (16*WORD_SIZE)
 #define SEXD_WIDTH  (BYTE_WIDTH<<SEXD_LOG2SZ)
-
-#define DWRD_NLONG  (1+(LONG_MAX==INT_MAX))
-#define QUAD_NLONG  (2*DWRD_NLONG)
-#define QUAD_NLLONG (1+(LONG_MAX==LLONG_MAX))
 
 #if QUAD_NLONG == 4
 #   define  ULONG_SN(_)     _##lu
@@ -2288,17 +2622,17 @@ fractional part of the float is exactly ½.
 {
 #endif
 
-#define MY_BIG_PAIR(Lo, Hi, Z)  Hi Z, Lo Z
-#define MY_LIL_PAIR(Lo, Hi, Z)  Lo Z, Hi Z
+#define MY_LIL_PAIR(LO, HI, Z)  LO Z, HI Z
+#define MY_BIG_PAIR(LO, HI, Z)  LO Z, HI Z
 
 #define MY_LV1(M, N) M##0 N
-#define MY_LV2(M, N) MY_LV1(M,N),M##1 N
-#define MY_LV3(M, N) MY_LV2(M,N),M##2 N
-#define MY_LV4(M, N) MY_LV3(M,N),M##3 N
-#define MY_LV5(M, N) MY_LV4(M,N),M##4 N
-#define MY_LV6(M, N) MY_LV5(M,N),M##5 N
-#define MY_LV7(M, N) MY_LV6(M,N),M##6 N
-#define MY_LV8(M, N) MY_LV7(M,N),M##7 N
+#define MY_LV2(M, N) M##0 N,M##1 N
+#define MY_LV3(M, N) M##0 N,M##1 N,M##2 N
+#define MY_LV4(M, N) M##0 N,M##1 N,M##2 N,M##3 N
+#define MY_LV5(M, N) M##0 N,M##1 N,M##2 N,M##3 N,M##4 N
+#define MY_LV6(M, N) M##0 N,M##1 N,M##2 N,M##3 N,M##4 N,M##5 N
+#define MY_LV7(M, N) M##0 N,M##1 N,M##2 N,M##3 N,M##4 N,M##5 N,M##6 N
+#define MY_LV8(M, N) M##0 N,M##1 N,M##2 N,M##3 N,M##4 N,M##5 N,M##6 N,M##7 N
 
 #define MY_LV16(M,N) MY_LV8(M,N),\
 M## 8 N,M## 9 N,M##10 N,M##11 N,M##12 N,M##13 N,M##14 N,M##15 N
@@ -2360,8 +2694,8 @@ M## 71 N,M## 70 N,M## 69 N,M## 68 N,M## 67 N,M## 66 N,M## 65 N,M## 64 N,\
 MY_BV64(M,N)
 
 #if MY_ENDIAN == ENDIAN_LIL
-#   ifndef  MY_PAIR
-#   define  MY_PAIR     MY_LIL_PAIR
+#   ifndef  MY_NAT_PAIR
+#   define  MY_NAT_PAIR     MY_LIL_PAIR
 #   endif
 
 #   ifndef  MY_NVX
@@ -2371,8 +2705,8 @@ MY_BV64(M,N)
 #endif
 
 #if MY_ENDIAN == ENDIAN_BIG
-#   ifndef  MY_PAIR
-#   define  MY_PAIR     MY_BIG_PAIR
+#   ifndef  MY_NAT_PAIR
+#   define  MY_NAT_PAIR     MY_BIG_PAIR
 #   endif
 
 #   ifndef  MY_NVX
@@ -2680,6 +3014,14 @@ typedef union Byte {
     int8_t  I;
     _Bool   Y;
     union   {Bu1 U; Bi1 I; Bc1 C;} M1;
+    union {
+        struct {uint8_t MY_NV2(U,:4);};
+        struct  {int8_t MY_NV2(I,:4);};
+    } M2;
+    union {
+        struct {uint8_t MY_NV4(U,:2);};
+        struct  {int8_t MY_NV4(I,:2);};
+    } M4;
     union   {Yu8 U;} M8;
     struct  {char     MY_NV1(C,);};
     struct  {uint8_t  MY_NV1(U,);};
@@ -2698,7 +3040,7 @@ typedef union Half {
     flt16_t     F;
     struct      {char   MY_NV2( C,  );      };
     struct      {Byte   MY_NV2( B,  );      };
-    struct      {Byte   MY_PAIR(Lo, Hi,  ); };
+    struct      {Byte   MY_NAT_PAIR(Lo, Hi,  ); };
 #if HALF_NPTR
     void        *A[HALF_NPTR];
     struct      {void   MY_NV1(*A,  );      };
@@ -2734,7 +3076,7 @@ typedef union Word {
     struct      {char   MY_NV4( C,  );      };
     struct      {Byte   MY_NV4( B,  );      };
     struct      {Half   MY_NV2( H,  );      };
-    struct      {Half   MY_PAIR(Lo, Hi,  ); };
+    struct      {Half   MY_NAT_PAIR(Lo, Hi,  ); };
     char        C[4];
     Byte        B[4];
     Half        H[2];
@@ -2781,11 +3123,11 @@ typedef union Word {
 
 typedef union Dwrd {
     struct      {bool   MY_NV64(Y, :1), :0; };
-    struct      {char   MY_NV8( C,  );      };
-    struct      {Byte   MY_NV8( B,  );      };
-    struct      {Half   MY_NV4( H,  );      };
-    struct      {Word   MY_NV2( W,  );      };
-    struct      {Word   MY_PAIR(Lo, Hi,  ); };
+    struct      {char   MY_NV8( C,);};
+    struct      {Byte   MY_NV8( B,);};
+    struct      {Half   MY_NV4( H,);};
+    struct      {Word   MY_NV2( W,);};
+    struct      {Word   MY_NAT_PAIR(Lo,Hi,);};
     char        C[8];
     Byte        B[8];
     Half        H[4];
@@ -2801,11 +3143,11 @@ typedef union Dwrd {
 #if DWRD_NPTR
     void    *A[DWRD_NPTR];
 #   if   DWRD_NPTR == 4
-    struct      {void   MY_NV4(*A,  );      };
+    struct      {void MY_NV4(*A,);};
 #   elif DWRD_NPTR == 2
-    struct      {void   MY_NV2(*A,  );      };
+    struct      {void MY_NV2(*A,);};
 #   else
-    struct      {void   MY_NV1(*A,  );      };
+    struct      {void MY_NV1(*A,);};
 #   endif
 
 #endif
@@ -2840,7 +3182,7 @@ typedef union Quad {
     struct  {Half   MY_NV8(  H, );      };
     struct  {Word   MY_NV4(  W, );      };
     struct  {Dwrd   MY_NV2(  D, );      };
-    struct  {Dwrd   MY_PAIR(Lo, Hi,  ); };
+    struct  {Dwrd   MY_NAT_PAIR(Lo, Hi,  ); };
     char    C[16];
     Byte    B[16];
     Half    H[ 8];
@@ -6646,7 +6988,7 @@ struct Qdf4 {
 };
 #endif
 
-#if 0 // Vqq*
+#if 1 // Vqq*
 
 #if  defined(VQQU_MTYPE)
 typedef      VQQU_MTYPE Qqu;
@@ -6915,45 +7257,6 @@ typedef VQQF_TYPE   Vqqf;
 }
 #endif
 
-INLINE(Vwyu,VWYU_ASYU) (Vwyu v) {return v;}
-INLINE(Vwbu,VWBU_ASBU) (Vwbu v) {return v;}
-INLINE(Vwbi,VWBI_ASBI) (Vwbi v) {return v;}
-INLINE(Vwbc,VWBC_ASBC) (Vwbc v) {return v;}
-INLINE(Vwhu,VWHU_ASHU) (Vwhu v) {return v;}
-INLINE(Vwhi,VWHI_ASHI) (Vwhi v) {return v;}
-INLINE(Vwhf,VWHF_ASHF) (Vwhf v) {return v;}
-INLINE(Vwwu,VWWU_ASWU) (Vwwu v) {return v;}
-INLINE(Vwwi,VWWI_ASWI) (Vwwi v) {return v;}
-INLINE(Vwwf,VWWF_ASWF) (Vwwf v) {return v;}
-
-INLINE(Vdyu,VDYU_ASYU) (Vdyu v) {return v;}
-INLINE(Vdbu,VDBU_ASBU) (Vdbu v) {return v;}
-INLINE(Vdbi,VDBI_ASBI) (Vdbi v) {return v;}
-INLINE(Vdbc,VDBC_ASBC) (Vdbc v) {return v;}
-INLINE(Vdhu,VDHU_ASHU) (Vdhu v) {return v;}
-INLINE(Vdhi,VDHI_ASHI) (Vdhi v) {return v;}
-INLINE(Vdhf,VDHF_ASHF) (Vdhf v) {return v;}
-INLINE(Vdwu,VDWU_ASWU) (Vdwu v) {return v;}
-INLINE(Vdwi,VDWI_ASWI) (Vdwi v) {return v;}
-INLINE(Vdwf,VDWF_ASWF) (Vdwf v) {return v;}
-INLINE(Vddu,VDDU_ASDU) (Vddu v) {return v;}
-INLINE(Vddi,VDDI_ASDI) (Vddi v) {return v;}
-INLINE(Vddf,VDDF_ASDF) (Vddf v) {return v;}
-
-INLINE(Vqyu,VQYU_ASYU) (Vqyu v) {return v;}
-INLINE(Vqbu,VQBU_ASBU) (Vqbu v) {return v;}
-INLINE(Vqbi,VQBI_ASBI) (Vqbi v) {return v;}
-INLINE(Vqbc,VQBC_ASBC) (Vqbc v) {return v;}
-INLINE(Vqhu,VQHU_ASHU) (Vqhu v) {return v;}
-INLINE(Vqhi,VQHI_ASHI) (Vqhi v) {return v;}
-INLINE(Vqhf,VQHF_ASHF) (Vqhf v) {return v;}
-INLINE(Vqwu,VQWU_ASWU) (Vqwu v) {return v;}
-INLINE(Vqwi,VQWI_ASWI) (Vqwi v) {return v;}
-INLINE(Vqwf,VQWF_ASWF) (Vqwf v) {return v;}
-INLINE(Vqdu,VQDU_ASDU) (Vqdu v) {return v;}
-INLINE(Vqdi,VQDI_ASDI) (Vqdi v) {return v;}
-INLINE(Vqdf,VQDF_ASDF) (Vqdf v) {return v;}
-
 #define     VWYU_ASTU   VWYU_ASYU
 #define     VWBU_ASTU   VWBU_ASBU
 #define     VWBI_ASTI   VWBI_ASBI
@@ -6992,6 +7295,9 @@ INLINE(Vqdf,VQDF_ASDF) (Vqdf v) {return v;}
 #define     VQDU_ASTU   VQDU_ASDU
 #define     VQDI_ASTI   VQDI_ASDI
 #define     VQDF_ASTF   VQDF_ASDF
+#define     VQQU_ASTU   VQQU_ASQU
+#define     VQQI_ASTI   VQQI_ASQI
+#define     VQQF_ASTF   VQQF_ASQF
 
 #endif // EOF("extvec.h")
 
@@ -8028,29 +8334,43 @@ _Generic(   \
 
 #define     UINT8_CATL      UINT8_BASE(CATL)
 
+#define     UINT8_CKTY      UINT8_BASE(CKTY)
+#define     UINT8_CKTYA     UINT8_BASE(CKTYA)
+#define     UINT8_CKTYAC    UINT8_BASE(CKTYAC)
+
 #define     UINT8_CBNS      UINT8_BASE(CBNS)
 #define     UINT8_CBNY      UINT8_BASE(CBNY)
 
 #define     UINT8_CEQS      UINT8_BASE(CEQS)
+#define     UINT8_CEQL      UINT8_BASE(CEQL)
 #define     UINT8_CEQY      UINT8_BASE(CEQY)
 
 #define     UINT8_CGES      UINT8_BASE(CGES)
-#define     UINT8_CGEY      UINT8_BASE(CGEY)
+#define     UINT8_CGEL      UINT8_BASE(CGEL)
 
 #define     UINT8_CGTS      UINT8_BASE(CGTS)
-#define     UINT8_CGTY      UINT8_BASE(CGTY)
+#define     UINT8_CGTL      UINT8_BASE(CGTL)
 
 #define     UINT8_CLES      UINT8_BASE(CLES)
+#define     UINT8_CLEL      UINT8_BASE(CLEL)
 #define     UINT8_CLEY      UINT8_BASE(CLEY)
 
 #define     UINT8_CLTS      UINT8_BASE(CLTS)
+#define     UINT8_CLTL      UINT8_BASE(CLTL)
+#define     UINT8_CLTR      UINT8_BASE(CLTR)
 #define     UINT8_CLTY      UINT8_BASE(CLTY)
 
 #define     UINT8_CNBS      UINT8_BASE(CNBS)
 #define     UINT8_CNBY      UINT8_BASE(CNBY)
 
 #define     UINT8_CNES      UINT8_BASE(CNES)
+#define     UINT8_CNEL      UINT8_BASE(CNEL)
+
+#define     UINT8_TSTS      UINT8_BASE(TSTS)
+#define     UINT8_TSTY      UINT8_BASE(TSTY)
 #define     UINT8_CNEY      UINT8_BASE(CNEY)
+#define     UINT8_CGTY      UINT8_BASE(CGTY)
+#define     UINT8_CGEY      UINT8_BASE(CGEY)
 
 #define     UINT8_CNT0      UINT8_BASE(CNT0)
 #define     UINT8_CNT1      UINT8_BASE(CNT1)
@@ -8065,12 +8385,6 @@ _Generic(   \
 #define     UINT8_CVBU      UINT8_BASE(CVBU)
 #define     UINT8_CVBZ      UINT8_BASE(CVBZ)
 
-#define     UINT8_CVDF      UINT8_BASE(CVDF)
-#define     UINT8_CVDI      UINT8_BASE(CVDI)
-#define     UINT8_CVDS      UINT8_BASE(CVDS)
-#define     UINT8_CVDU      UINT8_BASE(CVDU)
-#define     UINT8_CVDZ      UINT8_BASE(CVDZ)
-
 #define     UINT8_CVHF      UINT8_BASE(CVHF)
 #define     UINT8_CVHI      UINT8_BASE(CVHI)
 #define     UINT8_CVHS      UINT8_BASE(CVHS)
@@ -8083,11 +8397,23 @@ _Generic(   \
 #define     UINT8_CVWU      UINT8_BASE(CVWU)
 #define     UINT8_CVWZ      UINT8_BASE(CVWZ)
 
+#define     UINT8_CVDF      UINT8_BASE(CVDF)
+#define     UINT8_CVDI      UINT8_BASE(CVDI)
+#define     UINT8_CVDS      UINT8_BASE(CVDS)
+#define     UINT8_CVDU      UINT8_BASE(CVDU)
+#define     UINT8_CVDZ      UINT8_BASE(CVDZ)
+
+#define     UINT8_CVQU      UINT8_BASE(CVQU)
+#define     UINT8_CVQI      UINT8_BASE(CVQI)
+#define     UINT8_CVQF      UINT8_BASE(CVQF)
+
 #define     UINT8_DIFU      UINT8_BASE(DIFU)
 #define     UINT8_DIFS      UINT8_BASE(DIFS)
 
 #define     UINT8_DIVL      UINT8_BASE(DIVL)
+#define     UINT8_DIVN      UINT8_BASE(DIVN)
 #define     UINT8_DIV2      UINT8_BASE(DIV2)
+#define     UINT8_DIVR      UINT8_BASE(DIVR)
 #define     UINT8_DIVH      UINT8_BASE(DIVH)
 #define     UINT8_DIVW      UINT8_BASE(DIVW)
 #define     UINT8_DIVD      UINT8_BASE(DIVD)
@@ -8124,12 +8450,18 @@ _Generic(   \
 
 #define     UINT8_LDR1AC    UINT8_BASE(LDR1AC)
 #define     UINT8_LDRAAC    UINT8_BASE(LDRAAC)
-#define     UINT8_LDRDAC    UINT8_BASE(LDRDAC)
-#define     UINT8_LDROAC    UINT8_BASE(LDROAC)
-#define     UINT8_LDRQAC    UINT8_BASE(LDRQAC)
-#define     UINT8_LDRSAC    UINT8_BASE(LDRSAC)
 #define     UINT8_LDRTAC    UINT8_BASE(LDRTAC)
+#define     UINT8_LDRW      UINT8_BASE(LDRW)
 #define     UINT8_LDRWAC    UINT8_BASE(LDRWAC)
+#define     UINT8_LDRD      UINT8_BASE(LDRD)
+#define     UINT8_LDRDAC    UINT8_BASE(LDRDAC)
+#define     UINT8_LDRQ      UINT8_BASE(LDRQ)
+#define     UINT8_LDRQAC    UINT8_BASE(LDRQAC)
+#define     UINT8_LDROAC    UINT8_BASE(LDROAC)
+#define     UINT8_LDRSAC    UINT8_BASE(LDRSAC)
+
+#define     UINT8_LDPD      UINT8_BASE(LDPD)
+#define     UINT8_LDPQ      UINT8_BASE(LDPQ)
 
 #define     UINT8_LUNNAC    UINT8_BASE(LUNNAC)
 #define     UINT8_LUNLAC    UINT8_BASE(LUNLAC)
@@ -8144,12 +8476,14 @@ _Generic(   \
 #define     UINT8_FAML      UINT8_BASE(FAML)
 #define     UINT8_FAMS      UINT8_BASE(FAMS)
 
-#define     UINT8_MAXL      UINT8_BASE(MAXL)
 
-#define     UINT8_MINL      UINT8_BASE(MINL)
+#define     UINT8_CGTR      UINT8_BASE(CGTR)
+
+#define     UINT8_REML      UINT8_BASE(REML)
+#define     UINT8_REM2      UINT8_BASE(REM2)
 
 #define     UINT8_MODL      UINT8_BASE(MODL)
-#define     UINT8_MOD2      UINT8_BASE(MOD2)
+#define     UINT8_MODN      UINT8_BASE(MODN)
 #define     UINT8_MODH      UINT8_BASE(MODH)
 #define     UINT8_MODW      UINT8_BASE(MODW)
 #define     UINT8_MODD      UINT8_BASE(MODD)
@@ -8240,8 +8574,6 @@ _Generic(   \
 #define     UINT8_SWPEA     UINT8_BASE(SWPEA)
 #define     UINT8_SWPTA     UINT8_BASE(SWPTA)
 
-#define     UINT8_TSTS      UINT8_BASE(TSTS)
-#define     UINT8_TSTY      UINT8_BASE(TSTY)
 
 #define     UINT8_UNOL      UINT8_BASE(UNOL)
 #define     UINT8_UNOR      UINT8_BASE(UNOR)
@@ -8258,10 +8590,18 @@ _Generic(   \
 #define     UINT8_XORN      UINT8_BASE(XORN)
 #define     UINT8_XORTA     UINT8_BASE(XORTA)
 
+
+#define     UINT8_XRDS      UINT8_BASE(XRDS)
+#define     UINT8_XRDZ      UINT8_BASE(XRDZ)
+
+#define     UINT8_XRQS      UINT8_BASE(XRQS)
+#define     UINT8_XRQZ      UINT8_BASE(XRQZ)
+
+#define     UINT8_XROS      UINT8_BASE(XROS)
+#define     UINT8_XROZ      UINT8_BASE(XROZ)
+
 #define     UINT8_ZEQS      UINT8_BASE(ZEQS)
 #define     UINT8_ZEQY      UINT8_BASE(ZEQY)
-
-#define     UINT8_ZIPP      UINT8_BASE(ZIPP)
 
 #define     UINT8_ZLTS      UINT8_BASE(ZLTS)
 #define     UINT8_ZLTY      UINT8_BASE(ZLTY)
@@ -8269,6 +8609,11 @@ _Generic(   \
 #define     UINT8_ZNES      UINT8_BASE(ZNES)
 #define     UINT8_ZNEY      UINT8_BASE(ZNEY)
 
+#define     UINT8_ZIPP      UINT8_BASE(ZIPP)
+
+#define     UINT8_VOID      UINT8_BASE(VOID)
+#define     UINT8_VOIDA     UINT8_BASE(VOIDA)
+#define     UINT8_VOIDAC    UINT8_BASE(VOIDAC)
 
 #define     INT8_ABSL       INT8_BASE(ABSL)
 #define     INT8_ABSS       INT8_BASE(ABSS)
@@ -8314,29 +8659,33 @@ _Generic(   \
 
 #define     INT8_CATL       INT8_BASE(CATL)
 
+#define     INT8_CKTY       INT8_BASE(CKTY)
+#define     INT8_CKTYA      INT8_BASE(CKTYA)
+#define     INT8_CKTYAC     INT8_BASE(CKTYAC)
+
 #define     INT8_CBNS       INT8_BASE(CBNS)
 #define     INT8_CBNY       INT8_BASE(CBNY)
 
 #define     INT8_CEQS       INT8_BASE(CEQS)
-#define     INT8_CEQY       INT8_BASE(CEQY)
+#define     INT8_CEQL       INT8_BASE(CEQL)
 
 #define     INT8_CGES       INT8_BASE(CGES)
-#define     INT8_CGEY       INT8_BASE(CGEY)
+#define     INT8_CGEL       INT8_BASE(CGEL)
 
 #define     INT8_CGTS       INT8_BASE(CGTS)
-#define     INT8_CGTY       INT8_BASE(CGTY)
+#define     INT8_CGTL       INT8_BASE(CGTL)
 
 #define     INT8_CLES       INT8_BASE(CLES)
-#define     INT8_CLEY       INT8_BASE(CLEY)
+#define     INT8_CLEL       INT8_BASE(CLEL)
 
 #define     INT8_CLTS       INT8_BASE(CLTS)
-#define     INT8_CLTY       INT8_BASE(CLTY)
+#define     INT8_CLTL       INT8_BASE(CLTL)
 
 #define     INT8_CNBS       INT8_BASE(CNBS)
 #define     INT8_CNBY       INT8_BASE(CNBY)
 
 #define     INT8_CNES       INT8_BASE(CNES)
-#define     INT8_CNEY       INT8_BASE(CNEY)
+#define     INT8_CNEL       INT8_BASE(CNEL)
 
 #define     INT8_CNT0       INT8_BASE(CNT0)
 #define     INT8_CNT1       INT8_BASE(CNT1)
@@ -8369,10 +8718,16 @@ _Generic(   \
 #define     INT8_CVWU       INT8_BASE(CVWU)
 #define     INT8_CVWZ       INT8_BASE(CVWZ)
 
+#define     INT8_CVQU       INT8_BASE(CVQU)
+#define     INT8_CVQI       INT8_BASE(CVQI)
+#define     INT8_CVQF       INT8_BASE(CVQF)
+
 #define     INT8_DIFU       INT8_BASE(DIFU)
 #define     INT8_DIFS       INT8_BASE(DIFS)
 
+#define     INT8_DIVN       INT8_BASE(DIVN)
 #define     INT8_DIVL       INT8_BASE(DIVL)
+#define     INT8_DIVR       INT8_BASE(DIVR)
 #define     INT8_DIV2       INT8_BASE(DIV2)
 #define     INT8_DIVH       INT8_BASE(DIVH)
 #define     INT8_DIVW       INT8_BASE(DIVW)
@@ -8411,11 +8766,17 @@ _Generic(   \
 #define     INT8_LDR1AC     INT8_BASE(LDR1AC)
 #define     INT8_LDRAAC     INT8_BASE(LDRAAC)
 #define     INT8_LDRDAC     INT8_BASE(LDRDAC)
+#define     INT8_LDRD       INT8_BASE(LDRD)
 #define     INT8_LDROAC     INT8_BASE(LDROAC)
 #define     INT8_LDRQAC     INT8_BASE(LDRQAC)
+#define     INT8_LDRQ       INT8_BASE(LDRQ)
 #define     INT8_LDRSAC     INT8_BASE(LDRSAC)
 #define     INT8_LDRTAC     INT8_BASE(LDRTAC)
 #define     INT8_LDRWAC     INT8_BASE(LDRWAC)
+#define     INT8_LDRW       INT8_BASE(LDRW)
+
+#define     INT8_LDPD       INT8_BASE(LDPD)
+#define     INT8_LDPQ       INT8_BASE(LDPQ)
 
 #define     INT8_LUNNAC     INT8_BASE(LUNNAC)
 #define     INT8_LUNLAC     INT8_BASE(LUNLAC)
@@ -8430,12 +8791,16 @@ _Generic(   \
 #define     INT8_FAML       INT8_BASE(FAML)
 #define     INT8_FAMS       INT8_BASE(FAMS)
 
-#define     INT8_MAXL       INT8_BASE(MAXL)
+#define     INT8_CLTR       INT8_BASE(CLTR)
 
-#define     INT8_MINL       INT8_BASE(MINL)
+#define     INT8_CGTR       INT8_BASE(CGTR)
+
+#define     INT8_REML       INT8_BASE(REML)
+#define     INT8_REMN       INT8_BASE(REMN)
+#define     INT8_REM2       INT8_BASE(REM2)
 
 #define     INT8_MODL       INT8_BASE(MODL)
-#define     INT8_MOD2       INT8_BASE(MOD2)
+#define     INT8_MODN       INT8_BASE(MODN)
 #define     INT8_MODH       INT8_BASE(MODH)
 #define     INT8_MODW       INT8_BASE(MODW)
 #define     INT8_MODD       INT8_BASE(MODD)
@@ -8547,6 +8912,22 @@ _Generic(   \
 #define     INT8_XORN       INT8_BASE(XORN)
 #define     INT8_XORTA      INT8_BASE(XORTA)
 
+#define     INT8_CEQY       INT8_BASE(CEQY)
+#define     INT8_CNEY       INT8_BASE(CNEY)
+#define     INT8_CLTY       INT8_BASE(CLTY)
+#define     INT8_CLEY       INT8_BASE(CLEY)
+#define     INT8_CGTY       INT8_BASE(CGTY)
+#define     INT8_CGEY       INT8_BASE(CGEY)
+
+#define     INT8_XRDS       INT8_BASE(XRDS)
+#define     INT8_XRDZ       INT8_BASE(XRDZ)
+
+#define     INT8_XRQS       INT8_BASE(XRQS)
+#define     INT8_XRQZ       INT8_BASE(XRQZ)
+
+#define     INT8_XROS       INT8_BASE(XROS)
+#define     INT8_XROZ       INT8_BASE(XROZ)
+
 #define     INT8_ZEQS       INT8_BASE(ZEQS)
 #define     INT8_ZEQY       INT8_BASE(ZEQY)
 
@@ -8564,6 +8945,10 @@ _Generic(   \
 
 #define     INT8_ZNES       INT8_BASE(ZNES)
 #define     INT8_ZNEY       INT8_BASE(ZNEY)
+
+#define     INT8_VOID       INT8_BASE(VOID)
+#define     INT8_VOIDA      INT8_BASE(VOIDA)
+#define     INT8_VOIDAC     INT8_BASE(VOIDAC)
 
 
 #define     UINT16_ADD2     UINT16_BASE(ADD2)
@@ -8603,32 +8988,36 @@ _Generic(   \
 
 #define     UINT16_CATL     UINT16_BASE(CATL)
 
+#define     UINT16_CKTY     UINT16_BASE(CKTY)
+#define     UINT16_CKTYA    UINT16_BASE(CKTYA)
+#define     UINT16_CKTYAC   UINT16_BASE(CKTYAC)
+
 #define     UINT16_CBNS     UINT16_BASE(CBNS)
 #define     UINT16_CBNY     UINT16_BASE(CBNY)
 
 #define     UINT16_CEQS     UINT16_BASE(CEQS)
-#define     UINT16_CEQY     UINT16_BASE(CEQY)
+#define     UINT16_CEQL     UINT16_BASE(CEQL)
 
 #define     UINT16_CGES     UINT16_BASE(CGES)
-#define     UINT16_CGEY     UINT16_BASE(CGEY)
+#define     UINT16_CGEL     UINT16_BASE(CGEL)
 
 #define     UINT16_CGTS     UINT16_BASE(CGTS)
-#define     UINT16_CGTY     UINT16_BASE(CGTY)
+#define     UINT16_CGTL     UINT16_BASE(CGTL)
 
 #define     UINT16_CLES     UINT16_BASE(CLES)
-#define     UINT16_CLEY     UINT16_BASE(CLEY)
+#define     UINT16_CLEL     UINT16_BASE(CLEL)
 
 #define     UINT16_CLEZ     UINT16_BASE(CLEZ)
 #define     UINT16_CLTS     UINT16_BASE(CLTS)
 
-#define     UINT16_CLTY     UINT16_BASE(CLTY)
+#define     UINT16_CLTL     UINT16_BASE(CLTL)
 #define     UINT16_CLTZ     UINT16_BASE(CLTZ)
 
 #define     UINT16_CNBS     UINT16_BASE(CNBS)
 #define     UINT16_CNBY     UINT16_BASE(CNBY)
 
 #define     UINT16_CNES     UINT16_BASE(CNES)
-#define     UINT16_CNEY     UINT16_BASE(CNEY)
+#define     UINT16_CNEL     UINT16_BASE(CNEL)
 
 #define     UINT16_CNT0     UINT16_BASE(CNT0)
 #define     UINT16_CNT1     UINT16_BASE(CNT1)
@@ -8661,10 +9050,16 @@ _Generic(   \
 #define     UINT16_CVWU     UINT16_BASE(CVWU)
 #define     UINT16_CVWZ     UINT16_BASE(CVWZ)
 
+#define     UINT16_CVQU     UINT16_BASE(CVQU)
+#define     UINT16_CVQI     UINT16_BASE(CVQI)
+#define     UINT16_CVQF     UINT16_BASE(CVQF)
+
 #define     UINT16_DIFU     UINT16_BASE(DIFU)
 #define     UINT16_DIFS     UINT16_BASE(DIFS)
 
+#define     UINT16_DIVN     UINT16_BASE(DIVN)
 #define     UINT16_DIVL     UINT16_BASE(DIVL)
+#define     UINT16_DIVR     UINT16_BASE(DIVR)
 #define     UINT16_DIV2     UINT16_BASE(DIV2)
 #define     UINT16_DIVH     UINT16_BASE(DIVH)
 #define     UINT16_DIVW     UINT16_BASE(DIVW)
@@ -8706,11 +9101,17 @@ _Generic(   \
 #define     UINT16_LDR1AC   UINT16_BASE(LDR1AC)
 #define     UINT16_LDRAAC   UINT16_BASE(LDRAAC)
 #define     UINT16_LDRDAC   UINT16_BASE(LDRDAC)
+#define     UINT16_LDRD     UINT16_BASE(LDRD)
 #define     UINT16_LDROAC   UINT16_BASE(LDROAC)
 #define     UINT16_LDRQAC   UINT16_BASE(LDRQAC)
+#define     UINT16_LDRQ     UINT16_BASE(LDRQ)
 #define     UINT16_LDRSAC   UINT16_BASE(LDRSAC)
 #define     UINT16_LDRTAC   UINT16_BASE(LDRTAC)
 #define     UINT16_LDRWAC   UINT16_BASE(LDRWAC)
+#define     UINT16_LDRW     UINT16_BASE(LDRW)
+
+#define     UINT16_LDPD     UINT16_BASE(LDPD)
+#define     UINT16_LDPQ     UINT16_BASE(LDPQ)
 
 #define     UINT16_LUNNAC   UINT16_BASE(LUNNAC)
 #define     UINT16_LUNLAC   UINT16_BASE(LUNLAC)
@@ -8725,12 +9126,16 @@ _Generic(   \
 #define     UINT16_FAML     UINT16_BASE(FAML)
 #define     UINT16_FAMS     UINT16_BASE(FAMS)
 
-#define     UINT16_MAXL     UINT16_BASE(MAXL)
+#define     UINT16_CLTR     UINT16_BASE(CLTR)
 
-#define     UINT16_MINL     UINT16_BASE(MINL)
+#define     UINT16_CGTR     UINT16_BASE(CGTR)
+
+#define     UINT16_REML     UINT16_BASE(REML)
+#define     UINT16_REMN     UINT16_BASE(REMN)
+#define     UINT16_REM2     UINT16_BASE(REM2)
 
 #define     UINT16_MODL     UINT16_BASE(MODL)
-#define     UINT16_MOD2     UINT16_BASE(MOD2)
+#define     UINT16_MODN     UINT16_BASE(MODN)
 #define     UINT16_MODH     UINT16_BASE(MODH)
 #define     UINT16_MODW     UINT16_BASE(MODW)
 #define     UINT16_MODD     UINT16_BASE(MODD)
@@ -8847,6 +9252,22 @@ _Generic(   \
 #define     UINT16_XORN     UINT16_BASE(XORN)
 #define     UINT16_XORTA    UINT16_BASE(XORTA)
 
+#define     UINT16_CEQY     UINT16_BASE(CEQY)
+#define     UINT16_CNEY     UINT16_BASE(CNEY)
+#define     UINT16_CLTY     UINT16_BASE(CLTY)
+#define     UINT16_CLEY     UINT16_BASE(CLEY)
+#define     UINT16_CGTY     UINT16_BASE(CGTY)
+#define     UINT16_CGEY     UINT16_BASE(CGEY)
+
+#define     UINT16_XRDS     UINT16_BASE(XRDS)
+#define     UINT16_XRDZ     UINT16_BASE(XRDZ)
+
+#define     UINT16_XRQS     UINT16_BASE(XRQS)
+#define     UINT16_XRQZ     UINT16_BASE(XRQZ)
+
+#define     UINT16_XROS     UINT16_BASE(XROS)
+#define     UINT16_XROZ     UINT16_BASE(XROZ)
+
 #define     UINT16_ZEQS     UINT16_BASE(ZEQS)
 #define     UINT16_ZEQY     UINT16_BASE(ZEQY)
 
@@ -8857,6 +9278,10 @@ _Generic(   \
 
 #define     UINT16_ZNES     UINT16_BASE(ZNES)
 #define     UINT16_ZNEY     UINT16_BASE(ZNEY)
+
+#define     UINT16_VOID     UINT16_BASE(VOID)
+#define     UINT16_VOIDA    UINT16_BASE(VOIDA)
+#define     UINT16_VOIDAC   UINT16_BASE(VOIDAC)
 
 
 #define     INT16_ABSL      INT16_BASE(ABSL)
@@ -8904,29 +9329,33 @@ _Generic(   \
 
 #define     INT16_CATL      INT16_BASE(CATL)
 
+#define     INT16_CKTY      INT16_BASE(CKTY)
+#define     INT16_CKTYA     INT16_BASE(CKTYA)
+#define     INT16_CKTYAC    INT16_BASE(CKTYAC)
+
 #define     INT16_CBNS      INT16_BASE(CBNS)
 #define     INT16_CBNY      INT16_BASE(CBNY)
 
 #define     INT16_CEQS      INT16_BASE(CEQS)
-#define     INT16_CEQY      INT16_BASE(CEQY)
+#define     INT16_CEQL      INT16_BASE(CEQL)
 
 #define     INT16_CGES      INT16_BASE(CGES)
-#define     INT16_CGEY      INT16_BASE(CGEY)
+#define     INT16_CGEL      INT16_BASE(CGEL)
 
 #define     INT16_CGTS      INT16_BASE(CGTS)
-#define     INT16_CGTY      INT16_BASE(CGTY)
+#define     INT16_CGTL      INT16_BASE(CGTL)
 
 #define     INT16_CLES      INT16_BASE(CLES)
-#define     INT16_CLEY      INT16_BASE(CLEY)
+#define     INT16_CLEL      INT16_BASE(CLEL)
 
 #define     INT16_CLTS      INT16_BASE(CLTS)
-#define     INT16_CLTY      INT16_BASE(CLTY)
+#define     INT16_CLTL      INT16_BASE(CLTL)
 
 #define     INT16_CNBS      INT16_BASE(CNBS)
 #define     INT16_CNBY      INT16_BASE(CNBY)
 
 #define     INT16_CNES      INT16_BASE(CNES)
-#define     INT16_CNEY      INT16_BASE(CNEY)
+#define     INT16_CNEL      INT16_BASE(CNEL)
 
 #define     INT16_CNT0      INT16_BASE(CNT0)
 #define     INT16_CNT1      INT16_BASE(CNT1)
@@ -8959,10 +9388,16 @@ _Generic(   \
 #define     INT16_CVWU      INT16_BASE(CVWU)
 #define     INT16_CVWZ      INT16_BASE(CVWZ)
 
+#define     INT16_CVQU      INT16_BASE(CVQU)
+#define     INT16_CVQI      INT16_BASE(CVQI)
+#define     INT16_CVQF      INT16_BASE(CVQF)
+
 #define     INT16_DIFU      INT16_BASE(DIFU)
 #define     INT16_DIFS      INT16_BASE(DIFS)
 
+#define     INT16_DIVN      INT16_BASE(DIVN)
 #define     INT16_DIVL      INT16_BASE(DIVL)
+#define     INT16_DIVR      INT16_BASE(DIVR)
 #define     INT16_DIV2      INT16_BASE(DIV2)
 #define     INT16_DIVH      INT16_BASE(DIVH)
 #define     INT16_DIVW      INT16_BASE(DIVW)
@@ -9004,11 +9439,17 @@ _Generic(   \
 #define     INT16_LDR1AC    INT16_BASE(LDR1AC)
 #define     INT16_LDRAAC    INT16_BASE(LDRAAC)
 #define     INT16_LDRDAC    INT16_BASE(LDRDAC)
+#define     INT16_LDRD      INT16_BASE(LDRD)
 #define     INT16_LDROAC    INT16_BASE(LDROAC)
 #define     INT16_LDRQAC    INT16_BASE(LDRQAC)
+#define     INT16_LDRQ      INT16_BASE(LDRQ)
 #define     INT16_LDRSAC    INT16_BASE(LDRSAC)
 #define     INT16_LDRTAC    INT16_BASE(LDRTAC)
 #define     INT16_LDRWAC    INT16_BASE(LDRWAC)
+#define     INT16_LDRW      INT16_BASE(LDRW)
+
+#define     INT16_LDPD      INT16_BASE(LDPD)
+#define     INT16_LDPQ      INT16_BASE(LDPQ)
 
 #define     INT16_LUNNAC    INT16_BASE(LUNNAC)
 #define     INT16_LUNLAC    INT16_BASE(LUNLAC)
@@ -9023,11 +9464,16 @@ _Generic(   \
 #define     INT16_FAML      INT16_BASE(FAML)
 #define     INT16_FAMS      INT16_BASE(FAMS)
 
-#define     INT16_MAXL      INT16_BASE(MAXL)
+#define     INT16_CLTR      INT16_BASE(CLTR)
 
-#define     INT16_MINL      INT16_BASE(MINL)
+#define     INT16_CGTR      INT16_BASE(CGTR)
+
+#define     INT16_REML      INT16_BASE(REML)
+#define     INT16_REMN      INT16_BASE(REMN)
+#define     INT16_REM2      INT16_BASE(REM2)
 
 #define     INT16_MODL      INT16_BASE(MODL)
+#define     INT16_MODN      INT16_BASE(MODN)
 #define     INT16_MOD2      INT16_BASE(MOD2)
 #define     INT16_MODH      INT16_BASE(MODH)
 #define     INT16_MODW      INT16_BASE(MODW)
@@ -9142,6 +9588,22 @@ _Generic(   \
 #define     INT16_XORN      INT16_BASE(XORN)
 #define     INT16_XORTA     INT16_BASE(XORTA)
 
+#define     INT16_CEQY      INT16_BASE(CEQY)
+#define     INT16_CNEY      INT16_BASE(CNEY)
+#define     INT16_CLTY      INT16_BASE(CLTY)
+#define     INT16_CLEY      INT16_BASE(CLEY)
+#define     INT16_CGTY      INT16_BASE(CGTY)
+#define     INT16_CGEY      INT16_BASE(CGEY)
+
+#define     INT16_XRDS      INT16_BASE(XRDS)
+#define     INT16_XRDZ      INT16_BASE(XRDZ)
+
+#define     INT16_XRQS      INT16_BASE(XRQS)
+#define     INT16_XRQZ      INT16_BASE(XRQZ)
+
+#define     INT16_XROS      INT16_BASE(XROS)
+#define     INT16_XROZ      INT16_BASE(XROZ)
+
 #define     INT16_ZEQS      INT16_BASE(ZEQS)
 #define     INT16_ZEQY      INT16_BASE(ZEQY)
 
@@ -9159,6 +9621,10 @@ _Generic(   \
 
 #define     INT16_ZNES      INT16_BASE(ZNES)
 #define     INT16_ZNEY      INT16_BASE(ZNEY)
+
+#define     INT16_VOID      INT16_BASE(VOID)
+#define     INT16_VOIDA     INT16_BASE(VOIDA)
+#define     INT16_VOIDAC    INT16_BASE(VOIDAC)
 
 
 #define     UINT32_ADD2     UINT32_BASE(ADD2)
@@ -9199,29 +9665,33 @@ _Generic(   \
 
 #define     UINT32_CATL     UINT32_BASE(CATL)
 
+#define     UINT32_CKTY     UINT32_BASE(CKTY)
+#define     UINT32_CKTYA    UINT32_BASE(CKTYA)
+#define     UINT32_CKTYAC   UINT32_BASE(CKTYAC)
+
 #define     UINT32_CBNS     UINT32_BASE(CBNS)
 #define     UINT32_CBNY     UINT32_BASE(CBNY)
 
 #define     UINT32_CEQS     UINT32_BASE(CEQS)
-#define     UINT32_CEQY     UINT32_BASE(CEQY)
+#define     UINT32_CEQL     UINT32_BASE(CEQL)
 
 #define     UINT32_CGES     UINT32_BASE(CGES)
-#define     UINT32_CGEY     UINT32_BASE(CGEY)
+#define     UINT32_CGEL     UINT32_BASE(CGEL)
 
 #define     UINT32_CGTS     UINT32_BASE(CGTS)
-#define     UINT32_CGTY     UINT32_BASE(CGTY)
+#define     UINT32_CGTL     UINT32_BASE(CGTL)
 
 #define     UINT32_CLES     UINT32_BASE(CLES)
-#define     UINT32_CLEY     UINT32_BASE(CLEY)
+#define     UINT32_CLEL     UINT32_BASE(CLEL)
 
 #define     UINT32_CLTS     UINT32_BASE(CLTS)
-#define     UINT32_CLTY     UINT32_BASE(CLTY)
+#define     UINT32_CLTL     UINT32_BASE(CLTL)
 
 #define     UINT32_CNBS     UINT32_BASE(CNBS)
 #define     UINT32_CNBY     UINT32_BASE(CNBY)
 
 #define     UINT32_CNES     UINT32_BASE(CNES)
-#define     UINT32_CNEY     UINT32_BASE(CNEY)
+#define     UINT32_CNEL     UINT32_BASE(CNEL)
 
 #define     UINT32_CNT0     UINT32_BASE(CNT0)
 #define     UINT32_CNT1     UINT32_BASE(CNT1)
@@ -9254,10 +9724,16 @@ _Generic(   \
 #define     UINT32_CVWU     UINT32_BASE(CVWU)
 #define     UINT32_CVWZ     UINT32_BASE(CVWZ)
 
+#define     UINT32_CVQU     UINT32_BASE(CVQU)
+#define     UINT32_CVQI     UINT32_BASE(CVQI)
+#define     UINT32_CVQF     UINT32_BASE(CVQF)
+
 #define     UINT32_DIFU     UINT32_BASE(DIFU)
 #define     UINT32_DIFS     UINT32_BASE(DIFS)
 
+#define     UINT32_DIVN     UINT32_BASE(DIVN)
 #define     UINT32_DIVL     UINT32_BASE(DIVL)
+#define     UINT32_DIVR     UINT32_BASE(DIVR)
 #define     UINT32_DIV2     UINT32_BASE(DIV2)
 #define     UINT32_DIVH     UINT32_BASE(DIVH)
 #define     UINT32_DIVW     UINT32_BASE(DIVW)
@@ -9299,11 +9775,17 @@ _Generic(   \
 #define     UINT32_LDR1AC   UINT32_BASE(LDR1AC)
 #define     UINT32_LDRAAC   UINT32_BASE(LDRAAC)
 #define     UINT32_LDRDAC   UINT32_BASE(LDRDAC)
+#define     UINT32_LDRD     UINT32_BASE(LDRD)
 #define     UINT32_LDROAC   UINT32_BASE(LDROAC)
 #define     UINT32_LDRQAC   UINT32_BASE(LDRQAC)
+#define     UINT32_LDRQ     UINT32_BASE(LDRQ)
 #define     UINT32_LDRSAC   UINT32_BASE(LDRSAC)
 #define     UINT32_LDRTAC   UINT32_BASE(LDRTAC)
 #define     UINT32_LDRWAC   UINT32_BASE(LDRWAC)
+#define     UINT32_LDRW     UINT32_BASE(LDRW)
+
+#define     UINT32_LDPD     UINT32_BASE(LDPD)
+#define     UINT32_LDPQ     UINT32_BASE(LDPQ)
 
 #define     UINT32_LUNNAC   UINT32_BASE(LUNNAC)
 #define     UINT32_LUNLAC   UINT32_BASE(LUNLAC)
@@ -9318,12 +9800,16 @@ _Generic(   \
 #define     UINT32_FAML     UINT32_BASE(FAML)
 #define     UINT32_FAMS     UINT32_BASE(FAMS)
 
-#define     UINT32_MAXL     UINT32_BASE(MAXL)
+#define     UINT32_CLTR     UINT32_BASE(CLTR)
 
-#define     UINT32_MINL     UINT32_BASE(MINL)
+#define     UINT32_CGTR     UINT32_BASE(CGTR)
+
+#define     UINT32_REML     UINT32_BASE(REML)
+#define     UINT32_REMN     UINT32_BASE(REMN)
+#define     UINT32_REM2     UINT32_BASE(REM2)
 
 #define     UINT32_MODL     UINT32_BASE(MODL)
-#define     UINT32_MOD2     UINT32_BASE(MOD2)
+#define     UINT32_MODN     UINT32_BASE(MODN)
 #define     UINT32_MODH     UINT32_BASE(MODH)
 #define     UINT32_MODW     UINT32_BASE(MODW)
 #define     UINT32_MODD     UINT32_BASE(MODD)
@@ -9439,6 +9925,22 @@ _Generic(   \
 #define     UINT32_XORN     UINT32_BASE(XORN)
 #define     UINT32_XORTA    UINT32_BASE(XORTA)
 
+#define     UINT32_CEQY     UINT32_BASE(CEQY)
+#define     UINT32_CNEY     UINT32_BASE(CNEY)
+#define     UINT32_CLTY     UINT32_BASE(CLTY)
+#define     UINT32_CLEY     UINT32_BASE(CLEY)
+#define     UINT32_CGTY     UINT32_BASE(CGTY)
+#define     UINT32_CGEY     UINT32_BASE(CGEY)
+
+#define     UINT32_XRDS     UINT32_BASE(XRDS)
+#define     UINT32_XRDZ     UINT32_BASE(XRDZ)
+
+#define     UINT32_XRQS     UINT32_BASE(XRQS)
+#define     UINT32_XRQZ     UINT32_BASE(XRQZ)
+
+#define     UINT32_XROS     UINT32_BASE(XROS)
+#define     UINT32_XROZ     UINT32_BASE(XROZ)
+
 #define     UINT32_ZEQS     UINT32_BASE(ZEQS)
 #define     UINT32_ZEQY     UINT32_BASE(ZEQY)
 
@@ -9450,6 +9952,9 @@ _Generic(   \
 #define     UINT32_ZNES     UINT32_BASE(ZNES)
 #define     UINT32_ZNEY     UINT32_BASE(ZNEY)
 
+#define     UINT32_VOID     UINT32_BASE(VOID)
+#define     UINT32_VOIDA    UINT32_BASE(VOIDA)
+#define     UINT32_VOIDAC   UINT32_BASE(VOIDAC)
 
 #define     INT32_ABSL      INT32_BASE(ABSL)
 #define     INT32_ABSS      INT32_BASE(ABSS)
@@ -9497,29 +10002,33 @@ _Generic(   \
 
 #define     INT32_CATL      INT32_BASE(CATL)
 
+#define     INT32_CKTY      INT32_BASE(CKTY)
+#define     INT32_CKTYA     INT32_BASE(CKTYA)
+#define     INT32_CKTYAC    INT32_BASE(CKTYAC)
+
 #define     INT32_CBNS      INT32_BASE(CBNS)
 #define     INT32_CBNY      INT32_BASE(CBNY)
 
 #define     INT32_CEQS      INT32_BASE(CEQS)
-#define     INT32_CEQY      INT32_BASE(CEQY)
+#define     INT32_CEQL      INT32_BASE(CEQL)
 
 #define     INT32_CGES      INT32_BASE(CGES)
-#define     INT32_CGEY      INT32_BASE(CGEY)
+#define     INT32_CGEL      INT32_BASE(CGEL)
 
 #define     INT32_CGTS      INT32_BASE(CGTS)
-#define     INT32_CGTY      INT32_BASE(CGTY)
+#define     INT32_CGTL      INT32_BASE(CGTL)
 
 #define     INT32_CLES      INT32_BASE(CLES)
-#define     INT32_CLEY      INT32_BASE(CLEY)
+#define     INT32_CLEL      INT32_BASE(CLEL)
 
 #define     INT32_CLTS      INT32_BASE(CLTS)
-#define     INT32_CLTY      INT32_BASE(CLTY)
+#define     INT32_CLTL      INT32_BASE(CLTL)
 
 #define     INT32_CNBS      INT32_BASE(CNBS)
 #define     INT32_CNBY      INT32_BASE(CNBY)
 
 #define     INT32_CNES      INT32_BASE(CNES)
-#define     INT32_CNEY      INT32_BASE(CNEY)
+#define     INT32_CNEL      INT32_BASE(CNEL)
 
 #define     INT32_CNT0      INT32_BASE(CNT0)
 #define     INT32_CNT1      INT32_BASE(CNT1)
@@ -9552,10 +10061,16 @@ _Generic(   \
 #define     INT32_CVWU      INT32_BASE(CVWU)
 #define     INT32_CVWZ      INT32_BASE(CVWZ)
 
+#define     INT32_CVQU      INT32_BASE(CVQU)
+#define     INT32_CVQI      INT32_BASE(CVQI)
+#define     INT32_CVQF      INT32_BASE(CVQF)
+
 #define     INT32_DIFU      INT32_BASE(DIFU)
 #define     INT32_DIFS      INT32_BASE(DIFS)
 
+#define     INT32_DIVN      INT32_BASE(DIVN)
 #define     INT32_DIVL      INT32_BASE(DIVL)
+#define     INT32_DIVR      INT32_BASE(DIVR)
 #define     INT32_DIV2      INT32_BASE(DIV2)
 #define     INT32_DIVH      INT32_BASE(DIVH)
 #define     INT32_DIVW      INT32_BASE(DIVW)
@@ -9597,11 +10112,17 @@ _Generic(   \
 #define     INT32_LDR1AC    INT32_BASE(LDR1AC)
 #define     INT32_LDRAAC    INT32_BASE(LDRAAC)
 #define     INT32_LDRDAC    INT32_BASE(LDRDAC)
+#define     INT32_LDRD      INT32_BASE(LDRD)
 #define     INT32_LDROAC    INT32_BASE(LDROAC)
 #define     INT32_LDRQAC    INT32_BASE(LDRQAC)
+#define     INT32_LDRQ      INT32_BASE(LDRQ)
 #define     INT32_LDRSAC    INT32_BASE(LDRSAC)
 #define     INT32_LDRTAC    INT32_BASE(LDRTAC)
 #define     INT32_LDRWAC    INT32_BASE(LDRWAC)
+#define     INT32_LDRW      INT32_BASE(LDRW)
+
+#define     INT32_LDPD      INT32_BASE(LDPD)
+#define     INT32_LDPQ      INT32_BASE(LDPQ)
 
 #define     INT32_LUNNAC    INT32_BASE(LUNNAC)
 #define     INT32_LUNLAC    INT32_BASE(LUNLAC)
@@ -9616,12 +10137,16 @@ _Generic(   \
 #define     INT32_FAML      INT32_BASE(FAML)
 #define     INT32_FAMS      INT32_BASE(FAMS)
 
-#define     INT32_MAXL      INT32_BASE(MAXL)
+#define     INT32_CLTR      INT32_BASE(CLTR)
 
-#define     INT32_MINL      INT32_BASE(MINL)
+#define     INT32_CGTR      INT32_BASE(CGTR)
+
+#define     INT32_REML      INT32_BASE(REML)
+#define     INT32_REMN      INT32_BASE(REMN)
+#define     INT32_REM2      INT32_BASE(REM2)
 
 #define     INT32_MODL      INT32_BASE(MODL)
-#define     INT32_MOD2      INT32_BASE(MOD2)
+#define     INT32_MODN      INT32_BASE(MODN)
 #define     INT32_MODH      INT32_BASE(MODH)
 #define     INT32_MODW      INT32_BASE(MODW)
 #define     INT32_MODD      INT32_BASE(MODD)
@@ -9734,8 +10259,25 @@ _Generic(   \
 #define     INT32_XORN      INT32_BASE(XORN)
 #define     INT32_XORTA     INT32_BASE(XORTA)
 
+#define     INT32_CEQY      INT32_BASE(CEQY)
+#define     INT32_CNEY      INT32_BASE(CNEY)
+#define     INT32_CLTY      INT32_BASE(CLTY)
+#define     INT32_CLEY      INT32_BASE(CLEY)
+#define     INT32_CGTY      INT32_BASE(CGTY)
+#define     INT32_CGEY      INT32_BASE(CGEY)
+
+#define     INT32_XRDS      INT32_BASE(XRDS)
+#define     INT32_XRDZ      INT32_BASE(XRDZ)
+
+#define     INT32_XRQS      INT32_BASE(XRQS)
+#define     INT32_XRQZ      INT32_BASE(XRQZ)
+
 #define     INT32_ZEQS      INT32_BASE(ZEQS)
 #define     INT32_ZEQY      INT32_BASE(ZEQY)
+
+#define     INT32_VOID      INT32_BASE(VOID)
+#define     INT32_VOIDA     INT32_BASE(VOIDA)
+#define     INT32_VOIDAC    INT32_BASE(VOIDAC)
 
 #define     INT32_ZGES      INT32_BASE(ZGES)
 #define     INT32_ZGEY      INT32_BASE(ZGEY)
@@ -9791,29 +10333,33 @@ _Generic(   \
 
 #define     UINT64_CATL     UINT64_BASE(CATL)
 
+#define     UINT64_CKTY     UINT64_BASE(CKTY)
+#define     UINT64_CKTYA    UINT64_BASE(CKTYA)
+#define     UINT64_CKTYAC   UINT64_BASE(CKTYAC)
+
 #define     UINT64_CBNS     UINT64_BASE(CBNS)
 #define     UINT64_CBNY     UINT64_BASE(CBNY)
 
 #define     UINT64_CEQS     UINT64_BASE(CEQS)
-#define     UINT64_CEQY     UINT64_BASE(CEQY)
+#define     UINT64_CEQL     UINT64_BASE(CEQL)
 
 #define     UINT64_CGES     UINT64_BASE(CGES)
-#define     UINT64_CGEY     UINT64_BASE(CGEY)
+#define     UINT64_CGEL     UINT64_BASE(CGEL)
 
 #define     UINT64_CGTS     UINT64_BASE(CGTS)
-#define     UINT64_CGTY     UINT64_BASE(CGTY)
+#define     UINT64_CGTL     UINT64_BASE(CGTL)
 
 #define     UINT64_CLES     UINT64_BASE(CLES)
-#define     UINT64_CLEY     UINT64_BASE(CLEY)
+#define     UINT64_CLEL     UINT64_BASE(CLEL)
 
 #define     UINT64_CLTS     UINT64_BASE(CLTS)
-#define     UINT64_CLTY     UINT64_BASE(CLTY)
+#define     UINT64_CLTL     UINT64_BASE(CLTL)
 
 #define     UINT64_CNBS     UINT64_BASE(CNBS)
 #define     UINT64_CNBY     UINT64_BASE(CNBY)
 
 #define     UINT64_CNES     UINT64_BASE(CNES)
-#define     UINT64_CNEY     UINT64_BASE(CNEY)
+#define     UINT64_CNEL     UINT64_BASE(CNEL)
 
 #define     UINT64_CNT0     UINT64_BASE(CNT0)
 #define     UINT64_CNT1     UINT64_BASE(CNT1)
@@ -9846,10 +10392,16 @@ _Generic(   \
 #define     UINT64_CVWU     UINT64_BASE(CVWU)
 #define     UINT64_CVWZ     UINT64_BASE(CVWZ)
 
+#define     UINT64_CVQU     UINT64_BASE(CVQU)
+#define     UINT64_CVQI     UINT64_BASE(CVQI)
+#define     UINT64_CVQF     UINT64_BASE(CVQF)
+
 #define     UINT64_DIFU     UINT64_BASE(DIFU)
 #define     UINT64_DIFS     UINT64_BASE(DIFS)
 
+#define     UINT64_DIVN     UINT64_BASE(DIVN)
 #define     UINT64_DIVL     UINT64_BASE(DIVL)
+#define     UINT64_DIVR     UINT64_BASE(DIVR)
 #define     UINT64_DIV2     UINT64_BASE(DIV2)
 #define     UINT64_DIVH     UINT64_BASE(DIVH)
 #define     UINT64_DIVW     UINT64_BASE(DIVW)
@@ -9891,10 +10443,15 @@ _Generic(   \
 #define     UINT64_LDR1AC   UINT64_BASE(LDR1AC)
 #define     UINT64_LDRAAC   UINT64_BASE(LDRAAC)
 #define     UINT64_LDRDAC   UINT64_BASE(LDRDAC)
+#define     UINT64_LDRD     UINT64_BASE(LDRD)
 #define     UINT64_LDROAC   UINT64_BASE(LDROAC)
 #define     UINT64_LDRQAC   UINT64_BASE(LDRQAC)
+#define     UINT64_LDRQ     UINT64_BASE(LDRQ)
 #define     UINT64_LDRSAC   UINT64_BASE(LDRSAC)
 #define     UINT64_LDRTAC   UINT64_BASE(LDRTAC)
+
+#define     UINT64_LDPD     UINT64_BASE(LDPD)
+#define     UINT64_LDPQ     UINT64_BASE(LDPQ)
 
 #define     UINT64_LUNNAC   UINT64_BASE(LUNNAC)
 #define     UINT64_LUNLAC   UINT64_BASE(LUNLAC)
@@ -9909,12 +10466,17 @@ _Generic(   \
 #define     UINT64_FAML     UINT64_BASE(FAML)
 #define     UINT64_FAMS     UINT64_BASE(FAMS)
 
-#define     UINT64_MAXL     UINT64_BASE(MAXL)
+#define     UINT64_CLTR     UINT64_BASE(CLTR)
 
-#define     UINT64_MINL     UINT64_BASE(MINL)
+#define     UINT64_CGTR     UINT64_BASE(CGTR)
 
-#define     UINT64_MODL     UINT64_BASE(MODL)
+#define     UINT64_REML     UINT64_BASE(REML)
+#define     UINT64_REMN     UINT64_BASE(REMN)
+#define     UINT64_REM2     UINT64_BASE(REM2)
+
 #define     UINT64_MOD2     UINT64_BASE(MOD2)
+#define     UINT64_MODL     UINT64_BASE(MODL)
+#define     UINT64_MODN     UINT64_BASE(MODN)
 #define     UINT64_MODH     UINT64_BASE(MODH)
 #define     UINT64_MODW     UINT64_BASE(MODW)
 #define     UINT64_MODD     UINT64_BASE(MODD)
@@ -10031,6 +10593,16 @@ _Generic(   \
 #define     UINT64_XORN     UINT64_BASE(XORN)
 #define     UINT64_XORTA    UINT64_BASE(XORTA)
 
+#define     UINT64_CEQY     UINT64_BASE(CEQY)
+#define     UINT64_CNEY     UINT64_BASE(CNEY)
+#define     UINT64_CLTY     UINT64_BASE(CLTY)
+#define     UINT64_CLEY     UINT64_BASE(CLEY)
+#define     UINT64_CGTY     UINT64_BASE(CGTY)
+#define     UINT64_CGEY     UINT64_BASE(CGEY)
+
+#define     UINT64_XRDS     UINT64_BASE(XRDS)
+#define     UINT64_XRDZ     UINT64_BASE(XRDZ)
+
 #define     UINT64_ZEQS     UINT64_BASE(ZEQS)
 #define     UINT64_ZEQY     UINT64_BASE(ZEQY)
 
@@ -10039,6 +10611,10 @@ _Generic(   \
 
 #define     UINT64_ZNES     UINT64_BASE(ZNES)
 #define     UINT64_ZNEY     UINT64_BASE(ZNEY)
+
+#define     UINT64_VOID     UINT64_BASE(VOID)
+#define     UINT64_VOIDA    UINT64_BASE(VOIDA)
+#define     UINT64_VOIDAC   UINT64_BASE(VOIDAC)
 
 #define     INT64_ABSL      INT64_BASE(ABSL)
 #define     INT64_ABSS      INT64_BASE(ABSS)
@@ -10086,29 +10662,33 @@ _Generic(   \
 
 #define     INT64_CATL      INT64_BASE(CATL)
 
+#define     INT64_CKTY      INT64_BASE(CKTY)
+#define     INT64_CKTYA     INT64_BASE(CKTYA)
+#define     INT64_CKTYAC    INT64_BASE(CKTYAC)
+
 #define     INT64_CBNS      INT64_BASE(CBNS)
 #define     INT64_CBNY      INT64_BASE(CBNY)
 
 #define     INT64_CEQS      INT64_BASE(CEQS)
-#define     INT64_CEQY      INT64_BASE(CEQY)
+#define     INT64_CEQL      INT64_BASE(CEQL)
 
 #define     INT64_CGES      INT64_BASE(CGES)
-#define     INT64_CGEY      INT64_BASE(CGEY)
+#define     INT64_CGEL      INT64_BASE(CGEL)
 
 #define     INT64_CGTS      INT64_BASE(CGTS)
-#define     INT64_CGTY      INT64_BASE(CGTY)
+#define     INT64_CGTL      INT64_BASE(CGTL)
 
 #define     INT64_CLES      INT64_BASE(CLES)
-#define     INT64_CLEY      INT64_BASE(CLEY)
+#define     INT64_CLEL      INT64_BASE(CLEL)
 
 #define     INT64_CLTS      INT64_BASE(CLTS)
-#define     INT64_CLTY      INT64_BASE(CLTY)
+#define     INT64_CLTL      INT64_BASE(CLTL)
 
 #define     INT64_CNBS      INT64_BASE(CNBS)
 #define     INT64_CNBY      INT64_BASE(CNBY)
 
 #define     INT64_CNES      INT64_BASE(CNES)
-#define     INT64_CNEY      INT64_BASE(CNEY)
+#define     INT64_CNEL      INT64_BASE(CNEL)
 
 #define     INT64_CNT0      INT64_BASE(CNT0)
 #define     INT64_CNT1      INT64_BASE(CNT1)
@@ -10141,10 +10721,16 @@ _Generic(   \
 #define     INT64_CVWU      INT64_BASE(CVWU)
 #define     INT64_CVWZ      INT64_BASE(CVWZ)
 
+#define     INT64_CVQU      INT64_BASE(CVQU)
+#define     INT64_CVQI      INT64_BASE(CVQI)
+#define     INT64_CVQF      INT64_BASE(CVQF)
+
 #define     INT64_DIFU      INT64_BASE(DIFU)
 #define     INT64_DIFS      INT64_BASE(DIFS)
 
+#define     INT64_DIVN      INT64_BASE(DIVN)
 #define     INT64_DIVL      INT64_BASE(DIVL)
+#define     INT64_DIVR      INT64_BASE(DIVR)
 #define     INT64_DIV2      INT64_BASE(DIV2)
 #define     INT64_DIVH      INT64_BASE(DIVH)
 #define     INT64_DIVW      INT64_BASE(DIVW)
@@ -10186,10 +10772,15 @@ _Generic(   \
 #define     INT64_LDR1AC    INT64_BASE(LDR1AC)
 #define     INT64_LDRAAC    INT64_BASE(LDRAAC)
 #define     INT64_LDRDAC    INT64_BASE(LDRDAC)
+#define     INT64_LDRD      INT64_BASE(LDRD)
 #define     INT64_LDROAC    INT64_BASE(LDROAC)
 #define     INT64_LDRQAC    INT64_BASE(LDRQAC)
+#define     INT64_LDRQ      INT64_BASE(LDRQ)
 #define     INT64_LDRSAC    INT64_BASE(LDRSAC)
 #define     INT64_LDRTAC    INT64_BASE(LDRTAC)
+
+#define     INT64_LDPD      INT64_BASE(LDPD)
+#define     INT64_LDPQ      INT64_BASE(LDPQ)
 
 #define     INT64_LUNNAC    INT64_BASE(LUNNAC)
 #define     INT64_LUNLAC    INT64_BASE(LUNLAC)
@@ -10204,12 +10795,15 @@ _Generic(   \
 #define     INT64_FAML      INT64_BASE(FAML)
 #define     INT64_FAMS      INT64_BASE(FAMS)
 
-#define     INT64_MAXL      INT64_BASE(MAXL)
+#define     INT64_CLTR      INT64_BASE(CLTR)
 
-#define     INT64_MINL      INT64_BASE(MINL)
+#define     INT64_CGTR      INT64_BASE(CGTR)
+
+#define     INT64_REML      INT64_BASE(REML)
+#define     INT64_REM2      INT64_BASE(REM2)
 
 #define     INT64_MODL      INT64_BASE(MODL)
-#define     INT64_MOD2      INT64_BASE(MOD2)
+#define     INT64_MODN      INT64_BASE(MODN)
 #define     INT64_MODH      INT64_BASE(MODH)
 #define     INT64_MODW      INT64_BASE(MODW)
 #define     INT64_MODD      INT64_BASE(MODD)
@@ -10322,6 +10916,17 @@ _Generic(   \
 #define     INT64_XORN      INT64_BASE(XORN)
 #define     INT64_XORTA     INT64_BASE(XORTA)
 
+#define     INT64_CEQY      INT64_BASE(CEQY)
+#define     INT64_CNEY      INT64_BASE(CNEY)
+#define     INT64_CLTY      INT64_BASE(CLTY)
+#define     INT64_CLEY      INT64_BASE(CLEY)
+#define     INT64_CGTY      INT64_BASE(CGTY)
+#define     INT64_CGEY      INT64_BASE(CGEY)
+
+#define     INT64_XRDS      INT64_BASE(XRDS)
+#define     INT64_XRDZ      INT64_BASE(XRDZ)
+
+
 #define     INT64_ZEQS      INT64_BASE(ZEQS)
 #define     INT64_ZEQY      INT64_BASE(ZEQY)
 
@@ -10340,30 +10945,162 @@ _Generic(   \
 #define     INT64_ZNES      INT64_BASE(ZNES)
 #define     INT64_ZNEY      INT64_BASE(ZNEY)
 
+#define     INT64_VOID      INT64_BASE(VOID)
+#define     INT64_VOIDA     INT64_BASE(VOIDA)
+#define     INT64_VOIDAC    INT64_BASE(VOIDAC)
+
 #if MY_ISA != ISA_ARM
 #error "???"
+#endif
+
+INLINE(HALF_FTYPE,FLT16_INVS) (HALF_FTYPE x);
+INLINE(WORD_FTYPE,  FLT_INVS) (WORD_FTYPE x);
+INLINE(DWRD_FTYPE,  DBL_INVS) (DWRD_FTYPE x);
+INLINE(QUAD_FTYPE,    invsqf) (QUAD_FTYPE x);
+
+INLINE(HALF_FTYPE,FLT16_ANDS) (HALF_FTYPE a, HALF_FTYPE b);
+INLINE(WORD_FTYPE,  FLT_ANDS) (WORD_FTYPE a, WORD_FTYPE b);
+INLINE(DWRD_FTYPE,  DBL_ANDS) (DWRD_FTYPE a, DWRD_FTYPE b);
+INLINE(QUAD_FTYPE,    andsqf) (QUAD_FTYPE a, QUAD_FTYPE b);
+
+INLINE(HALF_FTYPE,FLT16_ANDN) (HALF_FTYPE a, HALF_FTYPE b);
+INLINE(WORD_FTYPE,  FLT_ANDN) (WORD_FTYPE a, WORD_FTYPE b);
+INLINE(DWRD_FTYPE,  DBL_ANDN) (DWRD_FTYPE a, DWRD_FTYPE b);
+INLINE(QUAD_FTYPE,    andnqf) (QUAD_FTYPE a, QUAD_FTYPE b);
+
+INLINE(HALF_FTYPE,FLT16_ORRS) (HALF_FTYPE a, HALF_FTYPE b);
+INLINE(WORD_FTYPE,  FLT_ORRS) (WORD_FTYPE a, WORD_FTYPE b);
+INLINE(DWRD_FTYPE,  DBL_ORRS) (DWRD_FTYPE a, DWRD_FTYPE b);
+INLINE(QUAD_FTYPE,    orrsqf) (QUAD_FTYPE a, QUAD_FTYPE b);
+
+INLINE(HALF_FTYPE,FLT16_ORRN) (HALF_FTYPE a, HALF_FTYPE b);
+INLINE(WORD_FTYPE,  FLT_ORRN) (WORD_FTYPE a, WORD_FTYPE b);
+INLINE(DWRD_FTYPE,  DBL_ORRN) (DWRD_FTYPE a, DWRD_FTYPE b);
+INLINE(QUAD_FTYPE,    orrnqf) (QUAD_FTYPE a, QUAD_FTYPE b);
+
+INLINE(HALF_FTYPE,FLT16_XORS) (HALF_FTYPE a, HALF_FTYPE b);
+INLINE(WORD_FTYPE,  FLT_XORS) (WORD_FTYPE a, WORD_FTYPE b);
+INLINE(DWRD_FTYPE,  DBL_XORS) (DWRD_FTYPE a, DWRD_FTYPE b);
+INLINE(QUAD_FTYPE,    xorsqf) (QUAD_FTYPE a, QUAD_FTYPE b);
+
+INLINE(HALF_FTYPE,FLT16_XORN) (HALF_FTYPE a, HALF_FTYPE b);
+INLINE(WORD_FTYPE,  FLT_XORN) (WORD_FTYPE a, WORD_FTYPE b);
+INLINE(DWRD_FTYPE,  DBL_XORN) (DWRD_FTYPE a, DWRD_FTYPE b);
+INLINE(QUAD_FTYPE,    xornqf) (QUAD_FTYPE a, QUAD_FTYPE b);
+
+#define BOOL_SPC SPC_YU
+#define UCHAR_SPC SPC_BU
+#define SCHAR_SPC SPC_BI
+#define  CHAR_SPC SPC_BC
+#define  USHRT_SPC SPC_HU
+#define   SHRT_SPC SPC_HI
+#define  UINT_SPC SPC_WU
+#define  INT_SPC SPC_WI
+
+#if DWRD_NLONG == 2
+#   define ULONG_SPC SPC_WU
+#   define LONG_SPC SPC_WI
+#else
+#   define ULONG_SPC SPC_DU
+#   define LONG_SPC SPC_DI
+#endif
+
+#if QUAD_NLLONG == 2
+#   define ULLONG_SPC SPC_DI
+#   define  LLONG_SPC SPC_DI
+#else
+#   define ULLONG_SPC SPC_QU
+#   define  LLONG_SPC SPC_QI
 #endif
 
 #if 0
 #undef MY_ISA
 #define MY_ISA ISA_ANY
 #endif
+// woof woof
 
-#if MY_ISA == ISA_ARM
 
-#   include "a64op.h"
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-#elif MY_ISA == ISA_X86
+struct my_tests {
+    void        *Mm;
+    int         At;
+    char        Fp[256];
+    struct stat Fs;
+};
 
-#   include "x64op.h"
+struct my_tests *inittests
+(
+    struct my_tests *restrict t, 
+    int             at, 
+    char const     *restrict fp
+)
+{
+    
+    t->Mm = MAP_FAILED;
+    t->At = at;
+    if (!memset(t->Fp, 0, sizeof t->Fp))
+        return  NULL;
+    if (!strncpy(t->Fp, fp, sizeof t->Fp))
+        return  NULL;
+    return  t;
+}
 
-#else
-#   include "anyop.h"
+int opentests(struct my_tests *restrict t)
+{
+    char why[256];
+    errno = 0;
+    int fd = openat(t->At, t->Fp, O_RDWR, 0777);
+    if (fd < 0)
+    {
+        (void) snprintf(why, sizeof why, "openat with %d", errno);
+        goto fail;
+    }
 
-#endif
+    if (fstat(fd, &t->Fs) < 0)
+    {
+        (void) snprintf(why, sizeof why, "fstat with %d", errno);
+        goto fail;
+    }
+    
+    t->Mm = mmap(
+        NULL,
+        t->Fs.st_size,
+        (PROT_READ|PROT_WRITE),
+        MAP_SHARED,
+        fd,
+        0
+    );
+    close(fd);
+    if (t->Mm == MAP_FAILED)
+    {
+        (void) snprintf(why, sizeof why, "mmap with %d", errno);
+        goto fail;
+    }
+    return  0;
+    fail: printf("%s failed cuz: \"%s\"\n", __func__, why);
+    return errno;
+}
 
-#undef MY_ISA
-#define MY_ISA ISA_ARM
+int shuttests(struct my_tests *restrict t)
+{
+    errno = 0;
+    void *mm = t->Mm;
+    t->Mm = MAP_FAILED;
+    if (mm != MAP_FAILED)
+        (void) munmap(mm, t->Fs.st_size);
+    if (errno)
+    {
+        char why[256];
+        why[0] = 0;
+        (void) snprintf(why, sizeof why, "munmap failed: %d",errno);
+        (void) printf("%s\n", why);
+    }
+    return errno;
+}
 
 /*
     catldbu(l, r) takes two Df1 HVAs and returns a Qdf1.
@@ -10398,25 +11135,144 @@ _Generic(   \
     to for 64 bit operands...
 */
 
-#if defined(_MSC_VER)
-#   include "winsync.h"
-#elif defined(__GNUC__)
-#   include "gnusync.h"
-#endif
 
 //  TODO: add the 128 bit scalar ops
 //  TODO: preemptively add the 256/512 bit vector op defs
 //  TODO: implement the remaining 32 bit vector ops
 //  TODO: fix parameter names
 
+#define RUN_CKTY
+
+#if _ENTER_CKTY
+{
+#endif
+/*  ChecK Type (boolean)
+
+Check if the type of an expression matches the expected
+type.
+
+*/
+
+#define     cktyyu     BOOL_CKTY
+#define     cktybu    UINT8_CKTY
+#define     cktybi     INT8_CKTY
+#define     cktybc     CHAR_CKTY
+#define     cktyhu   UINT16_CKTY
+#define     cktyhi    INT16_CKTY
+#define     cktyhf    FLT16_CKTY
+#define     cktywu   UINT32_CKTY
+#define     cktywi    INT32_CKTY
+#define     cktywf      FLT_CKTY
+#define     cktydu   UINT64_CKTY
+#define     cktydi    INT64_CKTY
+#define     cktydf      DBL_CKTY
+
+#define     cktya      VOID_CKTYA
+#define     cktyayu    BOOL_CKTYA
+#define     cktyabu   UINT8_CKTYA
+#define     cktyabi    INT8_CKTYA
+#define     cktyabc    CHAR_CKTYA
+#define     cktyahu  UINT16_CKTY
+#define     cktyahi   INT16_CKTYA
+#define     cktyahf   FLT16_CKTYA
+#define     cktyawu  UINT32_CKTYA
+#define     cktyawi   INT32_CKTYA
+#define     cktyawf     FLT_CKTYA
+#define     cktyadu  UINT64_CKTYA
+#define     cktyadi   INT64_CKTYA
+#define     cktyadf     DBL_CKTYA
+
+#define     cktyac     VOID_CKTYAC
+#define     cktyacyu   BOOL_CKTYAC
+#define     cktyacbu  UINT8_CKTYAC
+#define     cktyacbi   INT8_CKTYAC
+#define     cktyacbc   CHAR_CKTYAC
+#define     cktyachu UINT16_CKTYAC
+#define     cktyachi  INT16_CKTYAC
+#define     cktyachf  FLT16_CKTYAC
+#define     cktyacwu UINT32_CKTYAC
+#define     cktyacwi  INT32_CKTYAC
+#define     cktyacwf    FLT_CKTYAC
+#define     cktyacdu UINT64_CKTYAC
+#define     cktyacdi  INT64_CKTYAC
+#define     cktyacdf    DBL_CKTYAC
+
+#if DWRD_NLONG == 2
+#   define  cktylu    ULONG_CKTY
+#   define  cktyli     LONG_CKTY
+
+#   define  cktyalu   ULONG_CKTYA
+#   define  cktyali    LONG_CKTYA
+
+#   define  cktyaclu  ULONG_CKTYAC
+#   define  cktyacli   LONG_CKTYAC
+#elif QUAD_NLLONG == 2
+#   define  cktylu   ULLONG_CKTY
+#   define  cktyli    LLONG_CKTY
+
+#   define  cktyalu  ULLONG_CKTYA
+#   define  cktyali   LLONG_CKTYA
+
+#   define  cktyaclu ULLONG_CKTYAC
+#   define  cktyacli  LLONG_CKTYAC
+#else
+#   define  cktyqu   ULLONG_CKTY
+#   define  cktyqi    LLONG_CKTY
+
+#   define  cktyaqu  ULLONG_CKTY
+#   define  cktyaqi   LLONG_CKTY
+
+#   define  cktyacqu ULLONG_CKTY
+#   define  cktyacqi  LLONG_CKTY
+#endif
+
+#if _LEAVE_CKTY
+}
+#endif
+
 #if _ENTER_ABSL
 {
 #endif
 /*  ABSolute value (truncated)
 
-Compute the absolute value of each signed integer in the
-operand.
+For each signed N bit integer A in the operand X, compute 
+|A| as an unlimited precision unsigned integer Z then save 
+the least significant N bits of Z to the corresponding
+result element.
+
+If the target ISA lack a truncating ABS instruction, the 
+operation should be implemented using unsigned arithmetic.
+
 */
+
+INLINE(schar,SCHAR_ABSL) (signed x);
+INLINE(schar, CHAR_ABSL)    (int x);
+INLINE(short, SHRT_ABSL) (signed x);
+INLINE(  int,  INT_ABSL)    (int x);
+INLINE( long, LONG_ABSL)   (long x);
+INLINE(llong,LLONG_ABSL)  (llong x);
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_ITYPE,abslqi)  (QUAD_ITYPE x);
+#endif
+
+INLINE(Vwbi,VWBI_ABSL) (Vwbi x);
+INLINE(Vwbi,VWBC_ABSL) (Vwbc x);
+INLINE(Vwhi,VWHI_ABSL) (Vwhi x);
+INLINE(Vwwi,VWWI_ABSL) (Vwwi x);
+
+INLINE(Vdbi,VDBI_ABSL) (Vdbi x);
+INLINE(Vdbi,VDBC_ABSL) (Vdbc x);
+INLINE(Vdhi,VDHI_ABSL) (Vdhi x);
+INLINE(Vdwi,VDWI_ABSL) (Vdwi x);
+INLINE(Vddi,VDDI_ABSL) (Vddi x);
+
+INLINE(Vqbi,VQBI_ABSL) (Vqbi x);
+INLINE(Vqbi,VQBC_ABSL) (Vqbc x);
+INLINE(Vqhi,VQHI_ABSL) (Vqhi x);
+INLINE(Vqwi,VQWI_ABSL) (Vqwi x);
+INLINE(Vqdi,VQDI_ABSL) (Vqdi x);
+INLINE(Vqqi,VQQI_ABSL) (Vqqi x);
 
 #define     absl(X) (absl_funcof(X)(X))
 #define     absl_funcof(X, ...)  \
@@ -10431,16 +11287,18 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     abslbi   INT8_ABSL
-#define     abslbc   CHAR_ABSL
-#define     abslhi  INT16_ABSL
-#define     abslwi  INT32_ABSL
-#define     absldi  INT64_ABSL
+#define     abslbi    INT8_ABSL
+#define     abslbc    CHAR_ABSL
+#define     abslhi   INT16_ABSL
+#define     abslwi   INT32_ABSL
+#define     absldi   INT64_ABSL
+
 #if DWRD_NLONG == 2
-#   define  abslli LONG_ABSL
+#   define  abslli    LONG_ABSL
 #elif QUAD_NLLONG == 2
-#   define  abslli LLONG_ABSL
+#   define  abslli   LLONG_ABSL
 #else
+#   define  abslqi   LLONG_ABSL
 #endif
 
 #define     abslwbi   VWBI_ABSL
@@ -10459,6 +11317,8 @@ FUNCOF(             \
 #define     abslqhi   VQHI_ABSL
 #define     abslqwi   VQWI_ABSL
 #define     abslqdi   VQDI_ABSL
+#define     abslqqi   VQQI_ABSL
+
 #if _LEAVE_ABSL
 }
 #endif
@@ -10522,21 +11382,48 @@ FUNCOF(             \
 #endif
 /*  ABSolute value (unsigned)
 
-Compute absolute value as a saturated, unsigned result of
-equivalent width.
+Compute the absolute value of an N bit signed int before
+storing the result as an N bit unsigned int.
 
-TODO: debate renaming to absz since float ops saturate the
-result
 */
+
+INLINE( uchar,SCHAR_ABSU) (signed x);
+INLINE( uchar, CHAR_ABSU)    (int x);
+INLINE(ushort, SHRT_ABSU) (signed x);
+INLINE(  uint,  INT_ABSU)    (int x);
+INLINE( ulong, LONG_ABSU)   (long x);
+INLINE(ullong,LLONG_ABSU)  (llong x);
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,absuqi)  (QUAD_ITYPE x);
+#endif
+
+INLINE(Vwbu,VWBI_ABSU) (Vwbi x);
+INLINE(Vwbu,VWBC_ABSU) (Vwbc x);
+INLINE(Vwhu,VWHI_ABSU) (Vwhi x);
+INLINE(Vwwu,VWWI_ABSU) (Vwwi x);
+
+INLINE(Vdbu,VDBI_ABSU) (Vdbi x);
+INLINE(Vdbu,VDBC_ABSU) (Vdbc x);
+INLINE(Vdhu,VDHI_ABSU) (Vdhi x);
+INLINE(Vdwu,VDWI_ABSU) (Vdwi x);
+INLINE(Vddu,VDDI_ABSU) (Vddi x);
+
+INLINE(Vqbu,VQBI_ABSU) (Vqbi x);
+INLINE(Vqbu,VQBC_ABSU) (Vqbc x);
+INLINE(Vqhu,VQHI_ABSU) (Vqhi x);
+INLINE(Vqwu,VQWI_ABSU) (Vqwi x);
+INLINE(Vqdu,VQDI_ABSU) (Vqdi x);
+INLINE(Vqqu,VQQI_ABSU) (Vqqi x);
 
 #define     absu(X) (absu_funcof(X)(X))
 #define     absu_funcof(X, ...)  \
 FUNCOF(             \
     absu, (   X   ),\
-    BDS,  /* TGK */ \
-    BWS,  /* TGW */ \
-    BDS,  /* TGD */ \
-    BDS,  /* TGQ */ \
+    BDI,  /* TGK */ \
+    BWI,  /* TGW */ \
+    BDI,  /* TGD */ \
+    BDI,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
@@ -10545,11 +11432,8 @@ FUNCOF(             \
 #define     absubi   INT8_ABSU
 #define     absubc   CHAR_ABSU
 #define     absuhi  INT16_ABSU
-#define     absuhf  FLT16_ABSU
 #define     absuwi  INT32_ABSU
-#define     absuwf    FLT_ABSU
 #define     absudi  INT64_ABSU
-#define     absudf    DBL_ABSU
 #if DWRD_NLONG == 2
 #   define  absuli    LONG_ABSU
 #elif QUAD_NLLONG == 2
@@ -10562,27 +11446,20 @@ FUNCOF(             \
 #define     absuwbi   VWBI_ABSU
 #define     absuwbc   VWBC_ABSU
 #define     absuwhi   VWHI_ABSU
-#define     absuwhf   VWHF_ABSU
 #define     absuwwi   VWWI_ABSU
 #define     absuwwf   VWWF_ABSU
 
 #define     absudbi   VDBI_ABSU
 #define     absudbc   VDBC_ABSU
 #define     absudhi   VDHI_ABSU
-#define     absudhf   VDHF_ABSU
 #define     absudwi   VDWI_ABSU
-#define     absudwf   VDWF_ABSU
 #define     absuddi   VDDI_ABSU
-#define     absuddf   VDDF_ABSU
 
 #define     absuqbi   VQBI_ABSU
 #define     absuqbc   VQBC_ABSU
 #define     absuqhi   VQHI_ABSU
-#define     absuqhf   VQHF_ABSU
 #define     absuqwi   VQWI_ABSU
-#define     absuqwf   VQWF_ABSU
 #define     absuqdi   VQDI_ABSU
-#define     absuqdf   VQDF_ABSU
 #if _LEAVE_ABSU
 }
 #endif
@@ -11062,6 +11939,8 @@ FUNCOF(             \
 #define     addlqwi   VQWI_ADDL
 #define     addlqdu   VQDU_ADDL
 #define     addlqdi   VQDI_ADDL
+#define     addlqqu   VQQU_ADDL
+#define     addlqqi   VQQI_ADDL
 #if _LEAVE_ADDL
 }
 #endif
@@ -11073,22 +11952,9 @@ FUNCOF(             \
 
 Add each N bit integer element in the first operand to the
 corresponding N bit integer element in the second operand,
-producing a N×2 bit sum.
+storing the sum in the corresponding 2N bit element of the
+result.
 
-HINT: use add2 if it's important to detect overflow.
-
-    Vdhu a = ...;
-    Vdhu b = ...;
-    Vqwu c = add2dhu(a, b);
-    a = uzplqhu(ashuqwu(c)); // gets lo 16 bits of each elem
-    a = uzprqhu(ashuqwu(c)); // gets hi 16 bits
-    
-    uint32_t x = ...;
-    uint32_t y = ...;
-    uint64_t z = add2wu(x, y);
-    if (getrdu(z)) // equal to (z>>32)
-        ...
-        
 */
 
 #define     add2(A, B) (add2_funcof(A,B)(A,B))
@@ -11116,12 +11982,6 @@ FUNCOF(             \
 #if   DWRD_NLONG == 2
 #   define  add2lu   ULONG_ADD2
 #   define  add2li    LONG_ADD2
-#elif QUAD_NLLONG == 2
-#   define  add2lu  ULLONG_ADD2
-#   define  add2li   LLONG_ADD2
-#else
-#   define  add2qu  ULLONG_ADD2
-#   define  add2qi   LLONG_ADD2
 #endif
 
 #define     add2wbu   VWBU_ADD2
@@ -11163,26 +12023,8 @@ FUNCOF(             \
 
 Add each N bit integer element in the first operand to the
 corresponding N bit integer element in the second operand,
-producing a N bit sum.
-
-If a sum exceeds the maximum representable by the element
-type it is clamped to the maximum. Likewise, if the sum
-of two negative integers is less than the minimum the
-element type can represent, it is clamped to the minimum.
-
-E.g.:
-    addsbi(-100, -100)
-
-computes:
-
-    -100 + -100 = -200
-
-Because -200 is less than -128, the result is clamped to
--128, as if:
-
-    cvbshi(add2bi(-100, -100))
-
-had been used instead.
+producing a 1+N bit sum, which is then used to saturate
+the corresponding N bit result element.
 */
 
 #define     adds(A, B) (adds_funcof(A,B)(A,B))
@@ -11961,6 +12803,10 @@ FUNCOF(             \
 #define     astvddu    VDDU_ASTV
 #define     astvddi    VDDI_ASTV
 #define     astvddf    VDDF_ASTV
+
+#define     astvqqu    VQQU_ASTV
+#define     astvqqi    VQQI_ASTV
+#define     astvqqf    VQQF_ASTV
 #if _LEAVE_ASTV
 }
 #endif
@@ -13077,33 +13923,50 @@ FUNCOF(             \
 #endif
 /*  AVeraGe (truncated)
 
-Compute the truncated average of each corresponding pair
-of elements in the two operands.
+For each element I in the first operand A and each element
+J in the second operand B, compute (I+J)÷2. If the mean is
+not an integer, it is rounded by truncating the fractional
+part.
+ 
+    AVG          L   P   N
+    +1.5   =>   +1  +2  +1
+    +0.5   =>   +0  +1  +0
+    -0.5   =>   -0  +0  -1
+    -1.5   =>   -1  -1  -2
+
+Implementations are encouraged to permit making the second
+operand optional, in which case, AVGL(X) is equivalent to 
+AVGL(X, 0), which is itself a highly optimized DIVL(X, 2).
+The one operand form of the other AVG variants should also
+be equivalent to the corresponding division by 2.
 */
 
 #define     avgl(...) (avgl_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     avgl_funcof(A, ...)  \
 FUNCOF(             \
     avgl, (   A   ),\
-    YDZ,  /* TGK */ \
-    YWZ,  /* TGW */ \
-    YDZ,  /* TGD */ \
-    YDZ,  /* TGQ */ \
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
     NONE, /* TGO */ \
     NONE, /* TGS */ \
     default: NULL   \
 )
 
-#define     avglyu    BOOL_AVGL
 #define     avglbu   UINT8_AVGL
 #define     avglbi    INT8_AVGL
 #define     avglbc    CHAR_AVGL
+
 #define     avglhu  UINT16_AVGL
 #define     avglhi   INT16_AVGL
+
 #define     avglwu  UINT32_AVGL
 #define     avglwi   INT32_AVGL
+
 #define     avgldu  UINT64_AVGL
 #define     avgldi   INT64_AVGL
+
 #if   DWRD_NLONG == 2
 #   define  avgllu   ULONG_AVGL
 #   define  avglli    LONG_AVGL
@@ -13111,11 +13974,10 @@ FUNCOF(             \
 #   define  avgllu  ULLONG_AVGL
 #   define  avglli   LLONG_AVGL
 #else
-#   define  avglqu  ULLONG_AVGL
-#   define  avglqi   LLONG_AVGL
+#   define  avglqu(...) MY_BINOP(ULLONG_AVGL,__VA_ARGS__,0)
+#   define  avglqi(...) MY_BINOP( LLONG_AVGL,__VA_ARGS__,0)
 #endif
 
-#define     avglwyu   VWYU_AVGL
 #define     avglwbu   VWBU_AVGL
 #define     avglwbi   VWBI_AVGL
 #define     avglwbc   VWBC_AVGL
@@ -13146,6 +14008,194 @@ FUNCOF(             \
 #define     avglqdu   VQDU_AVGL
 #define     avglqdi   VQDI_AVGL
 #if _LEAVE_AVGL
+}
+#endif
+
+#if _ENTER_AVGN
+{
+#endif
+/*  AVeraGe (round to -inf)
+
+For each element I in the first operand A and each element
+J in the second operand B, compute (I+J)÷2. If the mean is
+not an integer, it is rounded down, i.e. towards negative ∞.
+ 
+    AVG          L   P  (N)
+    +1.5   =>   +1  +2  +1
+    +0.5   =>   +0  +1  +0
+    -0.5   =>   -0  +0  -1
+    -1.5   =>   -1  -1  -2
+
+Implementations are encouraged to permit making the second
+operand optional, in which case, AVGN(X) is equivalent to 
+AVGN(X, 0), which is itself a highly optimized DIVL(X, 2).
+The one operand form of the other AVG variants should also
+be equivalent to the corresponding division by 2.
+*/
+
+#define     avgn(...) (avgn_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     avgn_funcof(A, ...)  \
+FUNCOF(             \
+    avgn, (   A   ),\
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     avgnbu   UINT8_AVGN
+#define     avgnbi    INT8_AVGN
+#define     avgnbc    CHAR_AVGN
+
+#define     avgnhu  UINT16_AVGN
+#define     avgnhi   INT16_AVGN
+
+#define     avgnwu  UINT32_AVGN
+#define     avgnwi   INT32_AVGN
+
+#define     avgndu  UINT64_AVGN
+#define     avgndi   INT64_AVGN
+
+#if   DWRD_NLONG == 2
+#   define  avgnlu   ULONG_AVGN
+#   define  avgnli    LONG_AVGN
+#elif QUAD_NLLONG == 2
+#   define  avgnlu  ULLONG_AVGN
+#   define  avgnli   LLONG_AVGN
+#else
+#   define  avgnqu(...) MY_BINOP(ULLONG_AVGN,__VA_ARGS__,0)
+#   define  avgnqi(...) MY_BINOP( LLONG_AVGN,__VA_ARGS__,0)
+#endif
+
+#define     avgnwbu   VWBU_AVGN
+#define     avgnwbi   VWBI_AVGN
+#define     avgnwbc   VWBC_AVGN
+#define     avgnwhu   VWHU_AVGN
+#define     avgnwhi   VWHI_AVGN
+#define     avgnwwu   VWWU_AVGN
+#define     avgnwwi   VWWI_AVGN
+
+#define     avgndyu   VDYU_AVGN
+#define     avgndbu   VDBU_AVGN
+#define     avgndbi   VDBI_AVGN
+#define     avgndbc   VDBC_AVGN
+#define     avgndhu   VDHU_AVGN
+#define     avgndhi   VDHI_AVGN
+#define     avgndwu   VDWU_AVGN
+#define     avgndwi   VDWI_AVGN
+#define     avgnddu   VDDU_AVGN
+#define     avgnddi   VDDI_AVGN
+
+#define     avgnqyu   VQYU_AVGN
+#define     avgnqbu   VQBU_AVGN
+#define     avgnqbi   VQBI_AVGN
+#define     avgnqbc   VQBC_AVGN
+#define     avgnqhu   VQHU_AVGN
+#define     avgnqhi   VQHI_AVGN
+#define     avgnqwu   VQWU_AVGN
+#define     avgnqwi   VQWI_AVGN
+#define     avgnqdu   VQDU_AVGN
+#define     avgnqdi   VQDI_AVGN
+#define     avgnqqu   VQQU_AVGN
+#define     avgnqqi   VQQI_AVGN
+#if _LEAVE_AVGN
+}
+#endif
+
+#if _ENTER_AVGP
+{
+#endif
+/*  AVeraGe (round to +inf)
+
+For each element I in the first operand A and each element
+J in the second operand B, compute (I+J)÷2. If the mean is
+not an integer, it is rounded down, i.e. towards positive ∞.
+ 
+    AVG          L   P  (N)
+    +1.5   =>   +1  +2  +1
+    +0.5   =>   +0  +1  +0
+    -0.5   =>   -0  +0  -1
+    -1.5   =>   -1  -1  -2
+
+Implementations are encouraged to permit making the second
+operand optional, in which case, AVGP(X) is equivalent to 
+AVGP(X, 0), which is itself a highly optimized DIVL(X, 2).
+The one operand form of the other AVG variants should also
+be equivalent to the corresponding division by 2.
+*/
+
+#define     avgp(...) (avgp_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     avgp_funcof(A, ...)  \
+FUNCOF(             \
+    avgp, (   A   ),\
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     avgpbu   UINT8_AVGP
+#define     avgpbi    INT8_AVGP
+#define     avgpbc    CHAR_AVGP
+
+#define     avgphu  UINT16_AVGP
+#define     avgphi   INT16_AVGP
+
+#define     avgpwu  UINT32_AVGP
+#define     avgpwi   INT32_AVGP
+
+#define     avgpdu  UINT64_AVGP
+#define     avgpdi   INT64_AVGP
+
+#if   DWRD_NLONG == 2
+#   define  avgplu   ULONG_AVGP
+#   define  avgpli    LONG_AVGP
+#elif QUAD_NLLONG == 2
+#   define  avgplu  ULLONG_AVGP
+#   define  avgpli   LLONG_AVGP
+#else
+#   define  avgpqu(...) MY_BINOP(ULLONG_AVGP,__VA_ARGS__,0)
+#   define  avgpqi(...) MY_BINOP( LLONG_AVGP,__VA_ARGS__,0)
+#endif
+
+#define     avgpwbu   VWBU_AVGP
+#define     avgpwbi   VWBI_AVGP
+#define     avgpwbc   VWBC_AVGP
+#define     avgpwhu   VWHU_AVGP
+#define     avgpwhi   VWHI_AVGP
+#define     avgpwwu   VWWU_AVGP
+#define     avgpwwi   VWWI_AVGP
+
+#define     avgpdyu   VDYU_AVGP
+#define     avgpdbu   VDBU_AVGP
+#define     avgpdbi   VDBI_AVGP
+#define     avgpdbc   VDBC_AVGP
+#define     avgpdhu   VDHU_AVGP
+#define     avgpdhi   VDHI_AVGP
+#define     avgpdwu   VDWU_AVGP
+#define     avgpdwi   VDWI_AVGP
+#define     avgpddu   VDDU_AVGP
+#define     avgpddi   VDDI_AVGP
+
+#define     avgpqyu   VQYU_AVGP
+#define     avgpqbu   VQBU_AVGP
+#define     avgpqbi   VQBI_AVGP
+#define     avgpqbc   VQBC_AVGP
+#define     avgpqhu   VQHU_AVGP
+#define     avgpqhi   VQHI_AVGP
+#define     avgpqwu   VQWU_AVGP
+#define     avgpqwi   VQWI_AVGP
+#define     avgpqdu   VQDU_AVGP
+#define     avgpqdi   VQDI_AVGP
+#define     avgpqqu   VQQU_AVGP
+#define     avgpqqi   VQQI_AVGP
+#if _LEAVE_AVGP
 }
 #endif
 
@@ -13999,6 +15049,14 @@ FUNCOF(             \
 #if _ENTER_CEQS
 {
 #endif
+/*  Compare EQual (saturated)
+
+    CEQS(A, B) => (A.stype){A == B ? -1 : 0}
+    CEQSV(A, B) => MAP(CEQS, A, B)
+
+For floats, comparisons of NaN and subnormal numbers 
+produce implementation defined results.
+*/
 
 #define     ceqs(...) (ceqs_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     ceqs_funcof(A, ...)  \
@@ -14034,7 +15092,6 @@ FUNCOF(             \
 #else
 #   define  ceqsqu  ULLONG_CEQS
 #   define  ceqsqi   LLONG_CEQS
-#   define  ceqsqf    LDBL_CEQS
 #endif
 
 #define     ceqswbu   VWBU_CEQS
@@ -14076,34 +15133,22 @@ FUNCOF(             \
 }
 #endif
 
-#if _ENTER_CEQY
+#if _ENTER_CEQL
 {
 #endif
-/*  Compare EQual (boolean)
+/*  Compare EQual (lsb)
 
-Let I be an element from the first operand and J be the 
-corresponding element of the second operand. Set the
-corresponding element of the result to +1 if I = J, 
-otherwise set it to 0.
+    CEQL(A, B) => (A.stype){A==B}
+    CEQLV(A, B) => MAP(CEQL, A, B)
 
-The first and second operands have identical types. For 
-vectors, the result has an integer element type of the
-same width and signeness as I. For scalars, the result 
-type is boolean.
+For floats, comparisons of NaN and subnormal numbers 
+produce implementation defined results.
 
-NaN equality comparisons have implementation defined
-results.
-
-Note ceqy is theoretically more computationally expensive
-compared to ceqs on all presently supported architectures.
-Only use the -y suffixed comparisons when it matters that
-results are exactly 1 when true and exactly 0 when false.
 */
-
-#define     ceqy(...) (ceqy_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     ceqy_funcof(A, ...)  \
+#define     ceql(...) (ceql_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     ceql_funcof(A, ...)  \
 FUNCOF(             \
-    ceqy, (   A   ),\
+    ceql, (   A   ),\
     YDR,  /* TGK */ \
     BWR,  /* TGW */ \
     BDR,  /* TGD */ \
@@ -14113,7 +15158,110 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     ceqyyu    BOOL_CEQY
+#define     ceqlyu    BOOL_CEQL
+#define     ceqlbu   UINT8_CEQL
+#define     ceqlbi    INT8_CEQL
+#define     ceqlbc    CHAR_CEQL
+#define     ceqlhu  UINT16_CEQL
+#define     ceqlhi   INT16_CEQL
+#define     ceqlhf   FLT16_CEQL
+#define     ceqlwu  UINT32_CEQL
+#define     ceqlwi   INT32_CEQL
+#define     ceqlwf     FLT_CEQL
+#define     ceqldu  UINT64_CEQL
+#define     ceqldi   INT64_CEQL
+#define     ceqldf     DBL_CEQL
+#if DWRD_NLONG == 2
+#   define  ceqllu   ULONG_CEQL
+#   define  ceqlli    LONG_CEQL
+#elif QUAD_NLLONG == 2
+#   define  ceqllu  ULLONG_CEQL
+#   define  ceqlli   LLONG_CEQL
+#else
+#   define  ceqlqu  ULLONG_CEQL
+#   define  ceqlqi   LLONG_CEQL
+#   define  ceqlqf    LDBL_CEQL
+#endif
+
+#define     ceqlwbu   VWBU_CEQL
+#define     ceqlwbi   VWBI_CEQL
+#define     ceqlwbc   VWBC_CEQL
+#define     ceqlwhu   VWHU_CEQL
+#define     ceqlwhi   VWHI_CEQL
+#define     ceqlwhf   VWHF_CEQL
+#define     ceqlwwu   VWWU_CEQL
+#define     ceqlwwi   VWWI_CEQL
+#define     ceqlwwf   VWWF_CEQL
+
+#define     ceqldbu   VDBU_CEQL
+#define     ceqldbi   VDBI_CEQL
+#define     ceqldbc   VDBC_CEQL
+#define     ceqldhu   VDHU_CEQL
+#define     ceqldhi   VDHI_CEQL
+#define     ceqldhf   VDHF_CEQL
+#define     ceqldwu   VDWU_CEQL
+#define     ceqldwi   VDWI_CEQL
+#define     ceqldwf   VDWF_CEQL
+#define     ceqlddu   VDDU_CEQL
+#define     ceqlddi   VDDI_CEQL
+#define     ceqlddf   VDDF_CEQL
+
+#define     ceqlqbu   VQBU_CEQL
+#define     ceqlqbi   VQBI_CEQL
+#define     ceqlqbc   VQBC_CEQL
+#define     ceqlqhu   VQHU_CEQL
+#define     ceqlqhi   VQHI_CEQL
+#define     ceqlqhf   VQHF_CEQL
+#define     ceqlqwu   VQWU_CEQL
+#define     ceqlqwi   VQWI_CEQL
+#define     ceqlqwf   VQWF_CEQL
+#define     ceqlqdu   VQDU_CEQL
+#define     ceqlqdi   VQDI_CEQL
+#define     ceqlqdf   VQDF_CEQL
+#if _LEAVE_CEQL
+}
+#endif
+
+#if _ENTER_CEQY
+{
+#endif
+/*  Compare EQual (boolean)
+
+    CEQY(A, B) => (A == B ? true : false)
+    CEQYV(A, B) => ALL(MAP(CEQY, A, B))
+
+For scalars, the difference between CEQY and CEQL is the
+result type with CEQY always returning bool. When used in
+a C conditional expression, CEQY is virtually guaranteed
+to result in the most efficient instruction sequence. Use
+CEQL only when it is important that the result of the 
+comparison is exactly 1 for true and 0 for false.
+
+For vectors, the result is true only when all comparisons
+were true. For int vectors, the operation is semantically
+equivalent to checking if A^B is all zero. For floats, 
+it's a little more complicated due to ±zero needing to be
+true.
+
+The result of comparisons involving NaN or subnormal 
+numbers is implementation defined.
+
+To test if *any* comparison was true, see VEQ.
+*/
+
+#define     ceqy(...) (ceqy_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     ceqy_funcof(A, ...)  \
+FUNCOF(             \
+    ceqy, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
 #define     ceqybu   UINT8_CEQY
 #define     ceqybi    INT8_CEQY
 #define     ceqybc    CHAR_CEQY
@@ -14135,7 +15283,6 @@ FUNCOF(             \
 #else
 #   define  ceqyqu  ULLONG_CEQY
 #   define  ceqyqi   LLONG_CEQY
-#   define  ceqyqf    LDBL_CEQY
 #endif
 
 #define     ceqywbu   VWBU_CEQY
@@ -14173,30 +15320,23 @@ FUNCOF(             \
 #define     ceqyqdu   VQDU_CEQY
 #define     ceqyqdi   VQDI_CEQY
 #define     ceqyqdf   VQDF_CEQY
+#define     ceqyqqu   VQQU_CEQY
+#define     ceqyqqi   VQQI_CEQY
+#define     ceqyqqf   VQQF_CEQY
 #if _LEAVE_CEQY
 }
 #endif
 
-
 #if _ENTER_CNES
 {
 #endif
-/*  Compare Not Equal (saturated) 
+/*  Compare Not Equal (saturated)
 
-Let I be an element from the first operand and J be the 
-corresponding element of the second operand. Set the
-corresponding element of the result to -1 (all ones) if
-I ≠ J, otherwise set it to 0.
+    CNES(A, B) => (A.stype){A != B ? -1 : 0}
+    CNESV(A, B) => MAP(CNES, A, B)
 
-The first and second operands are of identical types. The
-result has the same number of elements, which are integers
-of the same signedness and width of I. I.e. comparisons of
-unsigned ints generate an unsigned result while signed int
-and floating point comparisons generate a signed result.
-
-NaN inequality comparisons have implementation defined
-results.
-
+For floats, comparisons of NaN and subnormal numbers 
+produce implementation defined results.
 */
 
 #define     cnes(...) (cnes_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -14275,34 +15415,32 @@ FUNCOF(             \
 }
 #endif
 
-#if _ENTER_CNEY
+#if _ENTER_CNEL
 {
 #endif
-/*  Compare Not Equal (boolean)
+/*  Compare Not Equal (set lsb)
 
-Let I be an element from the first operand and J be the 
-corresponding element of the second operand. Set the
-corresponding element of the result to +1 if I ≠ J, 
-otherwise set it to 0.
+    CNEL(A, B) => (A.stype){A != B}
+    CNELV(A, B) => MAP(CNEL, A, B)
 
-The first and second operands have identical types. For 
-vectors, the result has an integer element type of the
-same width and signeness as I. For scalars, the result 
-type is boolean.
+Compare each element of the first operand A to the
+corresponding element of the second operand 
+For scalars, the result is true if A does not equal B and
+false otherwise. For vectors, let I be an element of A and
+J be the corresponding element of B. In the corresponding
+element of the result, which is an equivalent width vector
+of integers with the same signedness as A, set all bits to
+zero, except for the lowest bit, which is set to one if I
+doesn't equal J and zero otherwise.
 
-NaN inequality comparisons have implementation defined
-results.
-
-Note cney is theoretically more computationally expensive
-compared to cnes on all presently supported architectures.
-Only use the -y suffixed comparisons when it matters that
-results are exactly 1 when true and exactly 0 when false.
+For floats, comparisons of NaN and subnormal numbers 
+produce implementation defined results.
 */
 
-#define     cney(...) (cney_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cney_funcof(A, ...)  \
+#define     cnel(...) (cnel_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cnel_funcof(A, ...)  \
 FUNCOF(             \
-    cney, (   A   ),\
+    cnel, (   A   ),\
     YDR,  /* TGK */ \
     BWR,  /* TGW */ \
     BDR,  /* TGD */ \
@@ -14312,7 +15450,97 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     cneyyu    BOOL_CNEY
+#define     cnelyu    BOOL_CNEL
+#define     cnelbu   UINT8_CNEL
+#define     cnelbi    INT8_CNEL
+#define     cnelbc    CHAR_CNEL
+#define     cnelhu  UINT16_CNEL
+#define     cnelhi   INT16_CNEL
+#define     cnelhf   FLT16_CNEL
+#define     cnelwu  UINT32_CNEL
+#define     cnelwi   INT32_CNEL
+#define     cnelwf     FLT_CNEL
+#define     cneldu  UINT64_CNEL
+#define     cneldi   INT64_CNEL
+#define     cneldf     DBL_CNEL
+#if DWRD_NLONG == 2
+#   define  cnellu   ULONG_CNEL
+#   define  cnelli    LONG_CNEL
+#elif QUAD_NLLONG == 2
+#   define  cnellu  ULLONG_CNEL
+#   define  cnelli   LLONG_CNEL
+#else
+#   define  cnelqu  ULLONG_CNEL
+#   define  cnelqi   LLONG_CNEL
+#   define  cnelqf    LDBL_CNEL
+#endif
+
+#define     cnelwbu   VWBU_CNEL
+#define     cnelwbi   VWBI_CNEL
+#define     cnelwbc   VWBC_CNEL
+#define     cnelwhu   VWHU_CNEL
+#define     cnelwhi   VWHI_CNEL
+#define     cnelwhf   VWHF_CNEL
+#define     cnelwwu   VWWU_CNEL
+#define     cnelwwi   VWWI_CNEL
+#define     cnelwwf   VWWF_CNEL
+
+#define     cneldbu   VDBU_CNEL
+#define     cneldbi   VDBI_CNEL
+#define     cneldbc   VDBC_CNEL
+#define     cneldhu   VDHU_CNEL
+#define     cneldhi   VDHI_CNEL
+#define     cneldhf   VDHF_CNEL
+#define     cneldwu   VDWU_CNEL
+#define     cneldwi   VDWI_CNEL
+#define     cneldwf   VDWF_CNEL
+#define     cnelddu   VDDU_CNEL
+#define     cnelddi   VDDI_CNEL
+#define     cnelddf   VDDF_CNEL
+
+#define     cnelqbu   VQBU_CNEL
+#define     cnelqbi   VQBI_CNEL
+#define     cnelqbc   VQBC_CNEL
+#define     cnelqhu   VQHU_CNEL
+#define     cnelqhi   VQHI_CNEL
+#define     cnelqhf   VQHF_CNEL
+#define     cnelqwu   VQWU_CNEL
+#define     cnelqwi   VQWI_CNEL
+#define     cnelqwf   VQWF_CNEL
+#define     cnelqdu   VQDU_CNEL
+#define     cnelqdi   VQDI_CNEL
+#define     cnelqdf   VQDF_CNEL
+#if _LEAVE_CNEL
+}
+#endif
+
+#if _ENTER_CNEY
+{
+#endif
+/*  Compare Not Equal (y'all)
+
+Compare each element in the first operand for numerical
+inequality with the corresponding element from the second 
+operand. Evaluates to true if all comparisons were true and
+false otherwise.
+
+Comparisons involving subnormal numbers and Nan generate 
+implementation defined results.
+
+*/
+#define     cney(...) (cney_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cney_funcof(A, ...)  \
+FUNCOF(             \
+    cney, (   A   ),\
+    BDR,  /* TGK */ \
+    BWR,  /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
 #define     cneybu   UINT8_CNEY
 #define     cneybi    INT8_CNEY
 #define     cneybc    CHAR_CNEY
@@ -14334,7 +15562,6 @@ FUNCOF(             \
 #else
 #   define  cneyqu  ULLONG_CNEY
 #   define  cneyqi   LLONG_CNEY
-#   define  cneyqf    LDBL_CNEY
 #endif
 
 #define     cneywbu   VWBU_CNEY
@@ -14372,10 +15599,12 @@ FUNCOF(             \
 #define     cneyqdu   VQDU_CNEY
 #define     cneyqdi   VQDI_CNEY
 #define     cneyqdf   VQDF_CNEY
+#define     cneyqqu   VQQU_CNEY
+#define     cneyqqi   VQQI_CNEY
+#define     cneyqqf   VQQF_CNEY
 #if _LEAVE_CNEY
 }
 #endif
-
 
 #if _ENTER_CLTS
 {
@@ -14457,28 +15686,125 @@ FUNCOF(             \
 }
 #endif
 
-#if _ENTER_CLTY
+#if _ENTER_CLTL
 {
 #endif
 /*  Compare Less Than (boolean)
 
-Let I be an element from the first operand and J be the 
-corresponding element of the second operand. Set the
-corresponding element of the result to +1 if I < J, 
-otherwise set it to 0.
+For scalars, returns true if A < B and false otherwise.
+For vectors, let I be an element of A and J be the 
+corresponding element of B. In the corresponding element
+of the result, which is an equivalent width vector of 
+integers with the same signedness as A, set all bits to
+zero, except for the lowest bit, which is set to one if I
+is less than J and zero otherwise.
 
-The first and second operands have identical types. For 
-vectors, the result has an integer element type of the
-same width and signeness as I. For scalars, the result 
-type is boolean.
+For floats, comparisons of NaN and subnormal numbers 
+produce implementation defined results.
 
-Ordered NaN comparisons have implementation defined
-results.
+*/
+#define     cltl(...) (cltl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cltl_funcof(A, ...)  \
+FUNCOF(             \
+    cltl, (   A   ),\
+    YDR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
 
-Note clty is theoretically more computationally expensive
-compared to clts on all presently supported architectures.
-Only use the -y suffixed comparisons when it matters that
-results are exactly 1 when true and exactly 0 when false.
+#define     cltlyu    BOOL_CLTL
+#define     cltlbu   UINT8_CLTL
+#define     cltlbi    INT8_CLTL
+#define     cltlbc    CHAR_CLTL
+#define     cltlhu  UINT16_CLTL
+#define     cltlhi   INT16_CLTL
+#define     cltlhf   FLT16_CLTL
+#define     cltlwu  UINT32_CLTL
+#define     cltlwi   INT32_CLTL
+#define     cltlwf     FLT_CLTL
+#define     cltldu  UINT64_CLTL
+#define     cltldi   INT64_CLTL
+#define     cltldf     DBL_CLTL
+#if DWRD_NLONG == 2
+#   define  cltllu   ULONG_CLTL
+#   define  cltlli    LONG_CLTL
+#elif QUAD_NLLONG == 2
+#   define  cltllu  ULLONG_CLTL
+#   define  cltlli   LLONG_CLTL
+#else
+#   define  cltlqu  ULLONG_CLTL
+#   define  cltlqi   LLONG_CLTL
+#   define  cltlqf    LDBL_CLTL
+#endif
+
+#define     cltlwbu   VWBU_CLTL
+#define     cltlwbi   VWBI_CLTL
+#define     cltlwbc   VWBC_CLTL
+#define     cltlwhu   VWHU_CLTL
+#define     cltlwhi   VWHI_CLTL
+#define     cltlwhf   VWHF_CLTL
+#define     cltlwwu   VWWU_CLTL
+#define     cltlwwi   VWWI_CLTL
+#define     cltlwwf   VWWF_CLTL
+
+#define     cltldbu   VDBU_CLTL
+#define     cltldbi   VDBI_CLTL
+#define     cltldbc   VDBC_CLTL
+#define     cltldhu   VDHU_CLTL
+#define     cltldhi   VDHI_CLTL
+#define     cltldhf   VDHF_CLTL
+#define     cltldwu   VDWU_CLTL
+#define     cltldwi   VDWI_CLTL
+#define     cltldwf   VDWF_CLTL
+#define     cltlddu   VDDU_CLTL
+#define     cltlddi   VDDI_CLTL
+#define     cltlddf   VDDF_CLTL
+
+#define     cltlqbu   VQBU_CLTL
+#define     cltlqbi   VQBI_CLTL
+#define     cltlqbc   VQBC_CLTL
+#define     cltlqhu   VQHU_CLTL
+#define     cltlqhi   VQHI_CLTL
+#define     cltlqhf   VQHF_CLTL
+#define     cltlqwu   VQWU_CLTL
+#define     cltlqwi   VQWI_CLTL
+#define     cltlqwf   VQWF_CLTL
+#define     cltlqdu   VQDU_CLTL
+#define     cltlqdi   VQDI_CLTL
+#define     cltlqdf   VQDF_CLTL
+#if _LEAVE_CLTL
+}
+#endif
+
+#if _ENTER_CLTY
+{
+#endif
+/*  Compare Less Than (y'all)
+
+Evaluates to true if each element in the first operand is 
+less than the corresponding element from the second operand,
+otherwise false.
+
+Comparisons involving subnormal numbers and Nan generate 
+implementation defined results.
+
+E.g.
+    cltywhi((newwhi(1,2), newwhi(3,4)))
+    // same as (1<3) && (2<4)
+
+For vectors, vlty may be used if only one match per test
+is needed.
+
+
+NOTE: always use clty for comparisons in conditional 
+expressions.
+
+TODO: debate defining a macro form that doesn't bother with
+the _Bool cast
 */
 
 #define     clty(...) (clty_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -14494,6 +15820,7 @@ FUNCOF(             \
     default: NULL   \
 )
 
+#define     cltyac    ADDR_CLTY
 #define     cltyyu    BOOL_CLTY
 #define     cltybu   UINT8_CLTY
 #define     cltybi    INT8_CLTY
@@ -14516,9 +15843,9 @@ FUNCOF(             \
 #else
 #   define  cltyqu  ULLONG_CLTY
 #   define  cltyqi   LLONG_CLTY
-#   define  cltyqf    LDBL_CLTY
 #endif
 
+#define     cltywyu   VWYU_CLTY
 #define     cltywbu   VWBU_CLTY
 #define     cltywbi   VWBI_CLTY
 #define     cltywbc   VWBC_CLTY
@@ -14529,6 +15856,7 @@ FUNCOF(             \
 #define     cltywwi   VWWI_CLTY
 #define     cltywwf   VWWF_CLTY
 
+#define     cltydyu   VDYU_CLTY
 #define     cltydbu   VDBU_CLTY
 #define     cltydbi   VDBI_CLTY
 #define     cltydbc   VDBC_CLTY
@@ -14542,6 +15870,7 @@ FUNCOF(             \
 #define     cltyddi   VDDI_CLTY
 #define     cltyddf   VDDF_CLTY
 
+#define     cltyqyu   VQYU_CLTY
 #define     cltyqbu   VQBU_CLTY
 #define     cltyqbi   VQBI_CLTY
 #define     cltyqbc   VQBC_CLTY
@@ -14554,6 +15883,9 @@ FUNCOF(             \
 #define     cltyqdu   VQDU_CLTY
 #define     cltyqdi   VQDI_CLTY
 #define     cltyqdf   VQDF_CLTY
+#define     cltyqqu   VQQU_CLTY
+#define     cltyqqi   VQQI_CLTY
+#define     cltyqqf   VQQF_CLTY
 #if _LEAVE_CLTY
 }
 #endif
@@ -14640,7 +15972,7 @@ FUNCOF(             \
 }
 #endif
 
-#if _ENTER_CLEY
+#if _ENTER_CLEL
 {
 #endif
 /*  Compare Less or Equal (boolean)
@@ -14658,16 +15990,16 @@ type is boolean.
 Ordered NaN comparisons have implementation defined
 results.
 
-Note cley is theoretically more computationally expensive
+Note clel is theoretically more computationally expensive
 compared to cles on all presently supported architectures.
 Only use the -y suffixed comparisons when it matters that
 results are exactly 1 when true and exactly 0 when false.
 */
 
-#define     cley(...) (cley_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cley_funcof(A, ...)  \
+#define     clel(...) (clel_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     clel_funcof(A, ...)  \
 FUNCOF(             \
-    cley, (   A   ),\
+    clel, (   A   ),\
     YDR,  /* TGK */ \
     BWR,  /* TGW */ \
     BDR,  /* TGD */ \
@@ -14677,7 +16009,107 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     cleyyu    BOOL_CLEY
+#define     clelyu    BOOL_CLEL
+#define     clelbu   UINT8_CLEL
+#define     clelbi    INT8_CLEL
+#define     clelbc    CHAR_CLEL
+#define     clelhu  UINT16_CLEL
+#define     clelhi   INT16_CLEL
+#define     clelhf   FLT16_CLEL
+#define     clelwu  UINT32_CLEL
+#define     clelwi   INT32_CLEL
+#define     clelwf     FLT_CLEL
+#define     cleldu  UINT64_CLEL
+#define     cleldi   INT64_CLEL
+#define     cleldf     DBL_CLEL
+#if DWRD_NLONG == 2
+#   define  clellu   ULONG_CLEL
+#   define  clelli    LONG_CLEL
+#elif QUAD_NLLONG == 2
+#   define  clellu  ULLONG_CLEL
+#   define  clelli   LLONG_CLEL
+#else
+#   define  clelqu  ULLONG_CLEL
+#   define  clelqi   LLONG_CLEL
+#   define  clelqf    LDBL_CLEL
+#endif
+
+#define     clelwbu   VWBU_CLEL
+#define     clelwbi   VWBI_CLEL
+#define     clelwbc   VWBC_CLEL
+#define     clelwhu   VWHU_CLEL
+#define     clelwhi   VWHI_CLEL
+#define     clelwhf   VWHF_CLEL
+#define     clelwwu   VWWU_CLEL
+#define     clelwwi   VWWI_CLEL
+#define     clelwwf   VWWF_CLEL
+
+#define     cleldbu   VDBU_CLEL
+#define     cleldbi   VDBI_CLEL
+#define     cleldbc   VDBC_CLEL
+#define     cleldhu   VDHU_CLEL
+#define     cleldhi   VDHI_CLEL
+#define     cleldhf   VDHF_CLEL
+#define     cleldwu   VDWU_CLEL
+#define     cleldwi   VDWI_CLEL
+#define     cleldwf   VDWF_CLEL
+#define     clelddu   VDDU_CLEL
+#define     clelddi   VDDI_CLEL
+#define     clelddf   VDDF_CLEL
+
+#define     clelqbu   VQBU_CLEL
+#define     clelqbi   VQBI_CLEL
+#define     clelqbc   VQBC_CLEL
+#define     clelqhu   VQHU_CLEL
+#define     clelqhi   VQHI_CLEL
+#define     clelqhf   VQHF_CLEL
+#define     clelqwu   VQWU_CLEL
+#define     clelqwi   VQWI_CLEL
+#define     clelqwf   VQWF_CLEL
+#define     clelqdu   VQDU_CLEL
+#define     clelqdi   VQDI_CLEL
+#define     clelqdf   VQDF_CLEL
+#if _LEAVE_CLEL
+}
+#endif
+
+#if _ENTER_CLEY
+{
+#endif
+/*  Compare Less or Equal (y'all)
+
+Evaluates to true if each element in the first operand is 
+less than or equal to the corresponding element from the 
+second operand, otherwise false.
+
+Comparisons involving subnormal numbers and Nan generate 
+implementation defined results.
+
+E.g.
+    cleywhi((newwhi(1,2), newwhi(3,2)))
+    // same as (1<=3) && (2<=2)
+
+NOTE: always use cley for comparisons in conditional 
+expressions.
+
+TODO: debate permitting arbitrary expression types for the
+macro forms.
+
+*/
+
+#define     cley(...) (cley_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cley_funcof(A, ...)  \
+FUNCOF(             \
+    cley, (   A   ),\
+    YDR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
 #define     cleybu   UINT8_CLEY
 #define     cleybi    INT8_CLEY
 #define     cleybc    CHAR_CLEY
@@ -14699,7 +16131,6 @@ FUNCOF(             \
 #else
 #   define  cleyqu  ULLONG_CLEY
 #   define  cleyqi   LLONG_CLEY
-#   define  cleyqf    LDBL_CLEY
 #endif
 
 #define     cleywbu   VWBU_CLEY
@@ -14737,6 +16168,9 @@ FUNCOF(             \
 #define     cleyqdu   VQDU_CLEY
 #define     cleyqdi   VQDI_CLEY
 #define     cleyqdf   VQDF_CLEY
+#define     cleyqqu   VQQU_CLEY
+#define     cleyqqi   VQQI_CLEY
+#define     cleyqqf   VQQF_CLEY
 #if _LEAVE_CLEY
 }
 #endif
@@ -14823,7 +16257,7 @@ FUNCOF(             \
 }
 #endif
 
-#if _ENTER_CGTY
+#if _ENTER_CGTL
 {
 #endif
 /*  Compare Greater Than (boolean)
@@ -14841,10 +16275,110 @@ type is boolean.
 Ordered NaN comparisons have implementation defined
 results.
 
-Note cgty is theoretically more computationally expensive
+Note cgtl is theoretically more computationally expensive
 compared to cgts on all presently supported architectures.
 Only use the -y suffixed comparisons when it matters that
 results are exactly 1 when true and exactly 0 when false.
+*/
+
+#define     cgtl(...) (cgtl_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cgtl_funcof(A, ...)  \
+FUNCOF(             \
+    cgtl, (   A   ),\
+    YDR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cgtlyu    BOOL_CGTL
+#define     cgtlbu   UINT8_CGTL
+#define     cgtlbi    INT8_CGTL
+#define     cgtlbc    CHAR_CGTL
+#define     cgtlhu  UINT16_CGTL
+#define     cgtlhi   INT16_CGTL
+#define     cgtlhf   FLT16_CGTL
+#define     cgtlwu  UINT32_CGTL
+#define     cgtlwi   INT32_CGTL
+#define     cgtlwf     FLT_CGTL
+#define     cgtldu  UINT64_CGTL
+#define     cgtldi   INT64_CGTL
+#define     cgtldf     DBL_CGTL
+#if DWRD_NLONG == 2
+#   define  cgtllu   ULONG_CGTL
+#   define  cgtlli    LONG_CGTL
+#elif QUAD_NLLONG == 2
+#   define  cgtllu  ULLONG_CGTL
+#   define  cgtlli   LLONG_CGTL
+#else
+#   define  cgtlqu  ULLONG_CGTL
+#   define  cgtlqi   LLONG_CGTL
+#   define  cgtlqf    LDBL_CGTL
+#endif
+
+#define     cgtlwbu   VWBU_CGTL
+#define     cgtlwbi   VWBI_CGTL
+#define     cgtlwbc   VWBC_CGTL
+#define     cgtlwhu   VWHU_CGTL
+#define     cgtlwhi   VWHI_CGTL
+#define     cgtlwhf   VWHF_CGTL
+#define     cgtlwwu   VWWU_CGTL
+#define     cgtlwwi   VWWI_CGTL
+#define     cgtlwwf   VWWF_CGTL
+
+#define     cgtldbu   VDBU_CGTL
+#define     cgtldbi   VDBI_CGTL
+#define     cgtldbc   VDBC_CGTL
+#define     cgtldhu   VDHU_CGTL
+#define     cgtldhi   VDHI_CGTL
+#define     cgtldhf   VDHF_CGTL
+#define     cgtldwu   VDWU_CGTL
+#define     cgtldwi   VDWI_CGTL
+#define     cgtldwf   VDWF_CGTL
+#define     cgtlddu   VDDU_CGTL
+#define     cgtlddi   VDDI_CGTL
+#define     cgtlddf   VDDF_CGTL
+
+#define     cgtlqbu   VQBU_CGTL
+#define     cgtlqbi   VQBI_CGTL
+#define     cgtlqbc   VQBC_CGTL
+#define     cgtlqhu   VQHU_CGTL
+#define     cgtlqhi   VQHI_CGTL
+#define     cgtlqhf   VQHF_CGTL
+#define     cgtlqwu   VQWU_CGTL
+#define     cgtlqwi   VQWI_CGTL
+#define     cgtlqwf   VQWF_CGTL
+#define     cgtlqdu   VQDU_CGTL
+#define     cgtlqdi   VQDI_CGTL
+#define     cgtlqdf   VQDF_CGTL
+#if _LEAVE_CGTL
+}
+#endif
+
+#if _ENTER_CGTY
+{
+#endif
+/*  Y'all Greater Than (boolean)
+
+Evaluates to true if each element in the first operand is 
+greater than the corresponding element from the second
+operand, otherwise false.
+
+Comparisons involving subnormal numbers and Nan generate 
+implementation defined results.
+
+E.g.
+    cgtywhi((newwhi(1,2), newwhi(3,4)))
+    // same as (1>3) && (2>4)
+
+NOTE: always use cgty for comparisons in conditional 
+expressions.
+
+TODO: debate defining a macro form that doesn't bother with
+the _Bool cast
 */
 
 #define     cgty(...) (cgty_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -14860,6 +16394,7 @@ FUNCOF(             \
     default: NULL   \
 )
 
+#define     cgtyac    ADDR_CGTY
 #define     cgtyyu    BOOL_CGTY
 #define     cgtybu   UINT8_CGTY
 #define     cgtybi    INT8_CGTY
@@ -14874,17 +16409,17 @@ FUNCOF(             \
 #define     cgtydi   INT64_CGTY
 #define     cgtydf     DBL_CGTY
 #if DWRD_NLONG == 2
-#   define  cgtylu   ULONG_CGTY
-#   define  cgtyli    LONG_CGTY
+#   define  cgtygu   ULONG_CGTY
+#   define  cgtygi    LONG_CGTY
 #elif QUAD_NLLONG == 2
-#   define  cgtylu  ULLONG_CGTY
-#   define  cgtyli   LLONG_CGTY
+#   define  cgtygu  ULLONG_CGTY
+#   define  cgtygi   LLONG_CGTY
 #else
 #   define  cgtyqu  ULLONG_CGTY
 #   define  cgtyqi   LLONG_CGTY
-#   define  cgtyqf    LDBL_CGTY
 #endif
 
+#define     cgtywyu   VWYU_CGTY
 #define     cgtywbu   VWBU_CGTY
 #define     cgtywbi   VWBI_CGTY
 #define     cgtywbc   VWBC_CGTY
@@ -14895,6 +16430,7 @@ FUNCOF(             \
 #define     cgtywwi   VWWI_CGTY
 #define     cgtywwf   VWWF_CGTY
 
+#define     cgtydyu   VDYU_CGTY
 #define     cgtydbu   VDBU_CGTY
 #define     cgtydbi   VDBI_CGTY
 #define     cgtydbc   VDBC_CGTY
@@ -14908,6 +16444,7 @@ FUNCOF(             \
 #define     cgtyddi   VDDI_CGTY
 #define     cgtyddf   VDDF_CGTY
 
+#define     cgtyqyu   VQYU_CGTY
 #define     cgtyqbu   VQBU_CGTY
 #define     cgtyqbi   VQBI_CGTY
 #define     cgtyqbc   VQBC_CGTY
@@ -14920,10 +16457,12 @@ FUNCOF(             \
 #define     cgtyqdu   VQDU_CGTY
 #define     cgtyqdi   VQDI_CGTY
 #define     cgtyqdf   VQDF_CGTY
+#define     cgtyqqu   VQQU_CGTY
+#define     cgtyqqi   VQQI_CGTY
+#define     cgtyqqf   VQQF_CGTY
 #if _LEAVE_CGTY
 }
 #endif
-
 
 #if _ENTER_CGES
 {
@@ -14943,7 +16482,7 @@ type is boolean.
 Ordered NaN comparisons have implementation defined
 results.
 
-Note cgey is theoretically more computationally expensive
+Note cgel is theoretically more computationally expensive
 compared to cges on all presently supported architectures.
 Only use the -y suffixed comparisons when it matters that
 results are exactly 1 when true and exactly 0 when false.
@@ -15025,15 +16564,15 @@ FUNCOF(             \
 }
 #endif
 
-#if _ENTER_CGEY
+#if _ENTER_CGEL
 {
 #endif
 /*  Elementwise compare 'A ≥ B' (boolean) */
 
-#define     cgey(...) (cgey_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     cgey_funcof(A, ...)  \
+#define     cgel(...) (cgel_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cgel_funcof(A, ...)  \
 FUNCOF(             \
-    cgey, (   A   ),\
+    cgel, (   A   ),\
     YDR,  /* TGK */ \
     BWR,  /* TGW */ \
     BDR,  /* TGD */ \
@@ -15043,7 +16582,107 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     cgeyyu    BOOL_CGEY
+#define     cgelyu    BOOL_CGEL
+#define     cgelbu   UINT8_CGEL
+#define     cgelbi    INT8_CGEL
+#define     cgelbc    CHAR_CGEL
+#define     cgelhu  UINT16_CGEL
+#define     cgelhi   INT16_CGEL
+#define     cgelhf   FLT16_CGEL
+#define     cgelwu  UINT32_CGEL
+#define     cgelwi   INT32_CGEL
+#define     cgelwf     FLT_CGEL
+#define     cgeldu  UINT64_CGEL
+#define     cgeldi   INT64_CGEL
+#define     cgeldf     DBL_CGEL
+
+#if DWRD_NLONG == 2
+#   define  cgellu   ULONG_CGEL
+#   define  cgelli    LONG_CGEL
+#elif QUAD_NLLONG == 2
+#   define  cgellu  ULLONG_CGEL
+#   define  cgelli   LLONG_CGEL
+#else
+#   define  cgelqu  ULLONG_CGEL
+#   define  cgelqi   LLONG_CGEL
+#   define  cgelqf    LDBL_CGEL
+#endif
+
+#define     cgelwbu   VWBU_CGEL
+#define     cgelwbi   VWBI_CGEL
+#define     cgelwbc   VWBC_CGEL
+#define     cgelwhu   VWHU_CGEL
+#define     cgelwhi   VWHI_CGEL
+#define     cgelwhf   VWHF_CGEL
+#define     cgelwwu   VWWU_CGEL
+#define     cgelwwi   VWWI_CGEL
+#define     cgelwwf   VWWF_CGEL
+
+#define     cgeldbu   VDBU_CGEL
+#define     cgeldbi   VDBI_CGEL
+#define     cgeldbc   VDBC_CGEL
+#define     cgeldhu   VDHU_CGEL
+#define     cgeldhi   VDHI_CGEL
+#define     cgeldhf   VDHF_CGEL
+#define     cgeldwu   VDWU_CGEL
+#define     cgeldwi   VDWI_CGEL
+#define     cgeldwf   VDWF_CGEL
+#define     cgelddu   VDDU_CGEL
+#define     cgelddi   VDDI_CGEL
+#define     cgelddf   VDDF_CGEL
+
+#define     cgelqbu   VQBU_CGEL
+#define     cgelqbi   VQBI_CGEL
+#define     cgelqbc   VQBC_CGEL
+#define     cgelqhu   VQHU_CGEL
+#define     cgelqhi   VQHI_CGEL
+#define     cgelqhf   VQHF_CGEL
+#define     cgelqwu   VQWU_CGEL
+#define     cgelqwi   VQWI_CGEL
+#define     cgelqwf   VQWF_CGEL
+#define     cgelqdu   VQDU_CGEL
+#define     cgelqdi   VQDI_CGEL
+#define     cgelqdf   VQDF_CGEL
+#if _LEAVE_CGEL
+}
+#endif
+
+#if _ENTER_CGEY
+{
+#endif
+/*  Y'all Less than or Equal (boolean)
+
+Evaluates to true if each element in the first operand is 
+greater than or equal to the corresponding element from the 
+second operand, otherwise false.
+
+Comparisons involving subnormal numbers and Nan generate 
+implementation defined results.
+
+E.g.
+    cgeywhi((newwhi(1,2), newwhi(3,2)))
+    // same as (1<=3) && (2<=2)
+
+NOTE: always use cgey for comparisons in conditional 
+expressions.
+
+TODO: debate defining a macro form that doesn't bother with
+the _Bool cast
+*/
+
+#define     cgey(...) (cgey_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cgey_funcof(A, ...)  \
+FUNCOF(             \
+    cgey, (   A   ),\
+    YDR,  /* TGK */ \
+    YWR,  /* TGW */ \
+    YDR,  /* TGD */ \
+    YDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
 #define     cgeybu   UINT8_CGEY
 #define     cgeybi    INT8_CGEY
 #define     cgeybc    CHAR_CGEY
@@ -15056,17 +16695,15 @@ FUNCOF(             \
 #define     cgeydu  UINT64_CGEY
 #define     cgeydi   INT64_CGEY
 #define     cgeydf     DBL_CGEY
-
 #if DWRD_NLONG == 2
-#   define  cgeylu   ULONG_CGEY
-#   define  cgeyli    LONG_CGEY
+#   define  cgeygu   ULONG_CGEY
+#   define  cgeygi    LONG_CGEY
 #elif QUAD_NLLONG == 2
-#   define  cgeylu  ULLONG_CGEY
-#   define  cgeyli   LLONG_CGEY
+#   define  cgeygu  ULLONG_CGEY
+#   define  cgeygi   LLONG_CGEY
 #else
 #   define  cgeyqu  ULLONG_CGEY
 #   define  cgeyqi   LLONG_CGEY
-#   define  cgeyqf    LDBL_CGEY
 #endif
 
 #define     cgeywbu   VWBU_CGEY
@@ -15104,10 +16741,12 @@ FUNCOF(             \
 #define     cgeyqdu   VQDU_CGEY
 #define     cgeyqdi   VQDI_CGEY
 #define     cgeyqdf   VQDF_CGEY
+#define     cgeyqqu   VQQU_CGEY
+#define     cgeyqqi   VQQI_CGEY
+#define     cgeyqqf   VQQF_CGEY
 #if _LEAVE_CGEY
 }
 #endif
-
 
 #if _ENTER_CNT1
 {
@@ -15278,7 +16917,6 @@ FUNCOF(             \
 }
 #endif
 
-
 #if _ENTER_CSZL
 {
 #endif
@@ -15435,6 +17073,107 @@ FUNCOF(             \
 }
 #endif
 
+
+#if _ENTER_CVYU
+{
+#endif
+/*  ConVert bool 
+
+Convert each element in the operand to an equal number of 
+boolean values. 
+
+For scalars, the result is equivalent to casting to bool.
+
+For each element of a vector, the corresponding element of 
+an equivalent width boolean vector is set to its truth value.
+
+The truth value of NaN and subnormal flots is implementation
+defined.
+*/
+
+
+#define     cvyu(...) (cvyu_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cvyu_funcof(X, ...)  \
+FUNCOF(             \
+    cvyu, (   X   ),\
+    BDR,  /* TGK */ \
+    BWR,   /* TGW */ \
+    BDR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     cvyubu   UINT8_CVYU
+#define     cvyubi    INT8_CVYU
+#define     cvyubc    CHAR_CVYU
+
+#define     cvyuhu  UINT16_CVYU
+#define     cvyuhi   INT16_CVYU
+#define     cvyuhf   FLT16_CVYU
+
+#define     cvyuwu  UINT32_CVYU
+#define     cvyuwi   INT32_CVYU
+#define     cvyuwf     FLT_CVYU
+
+#define     cvyudu  UINT64_CVYU
+#define     cvyudi   INT64_CVYU
+#define     cvyudf     DBL_CVYU
+
+#if   DWRD_NLONG == 2
+#   define  cvyulu   ULONG_CVYU
+#   define  cvyuli    LONG_CVYU
+#elif QUAD_NLLONG == 2
+#   define  cvyulu  ULLONG_CVYU
+#   define  cvyuli   LLONG_CVYU
+#else
+#   define  cvyuqu  ULLONG_CVYU
+#   define  cvyuqi   LLONG_CVYU
+#endif
+
+#define     cvyuwbu   VWBU_CVYU
+#define     cvyuwbi   VWBI_CVYU
+#define     cvyuwbc   VWBC_CVYU
+#define     cvyuwhu   VWHU_CVYU
+#define     cvyuwhi   VWHI_CVYU
+#define     cvyuwhf   VWHF_CVYU
+#define     cvyuwwu   VWWU_CVYU
+#define     cvyuwwi   VWWI_CVYU
+#define     cvyuwwf   VWWF_CVYU
+
+#define     cvyudbu   VDBU_CVYU
+#define     cvyudbi   VDBI_CVYU
+#define     cvyudbc   VDBC_CVYU
+#define     cvyudhu   VDHU_CVYU
+#define     cvyudhi   VDHI_CVYU
+#define     cvyudhf   VDHF_CVYU
+#define     cvyudwu   VDWU_CVYU
+#define     cvyudwi   VDWI_CVYU
+#define     cvyudwf   VDWF_CVYU
+#define     cvyuddu   VDDU_CVYU
+#define     cvyuddi   VDDI_CVYU
+#define     cvyuddf   VDDF_CVYU
+
+#define     cvyuqbu   VQBU_CVYU
+#define     cvyuqbi   VQBI_CVYU
+#define     cvyuqbc   VQBC_CVYU
+#define     cvyuqhu   VQHU_CVYU
+#define     cvyuqhi   VQHI_CVYU
+#define     cvyuqhf   VQHF_CVYU
+#define     cvyuqwu   VQWU_CVYU
+#define     cvyuqwi   VQWI_CVYU
+#define     cvyuqwf   VQWF_CVYU
+#define     cvyuqdu   VQDU_CVYU
+#define     cvyuqdi   VQDI_CVYU
+#define     cvyuqdf   VQDF_CVYU
+#define     cvyuqqu   VQQU_CVYU
+#define     cvyuqqi   VQQI_CVYU
+#define     cvyuqqf   VQQF_CVYU
+
+#if _LEAVE_CVYU
+}
+#endif
 
 #if _ENTER_CVBU
 {
@@ -16834,8 +18573,9 @@ signed integer S, by rounding toward zero. The 64 least
 significant bits of S are then copied to the corresponding
 element of the N element result.
 
-Attempting to convert NaN, inf, or subnormal floats result
-in undefined behavior.
+The result of subnormal number conversion is implementation
+defined. If any element in the operand is infinity or NaN, 
+the result is undefined.
 */
 
 
@@ -16909,18 +18649,9 @@ signed integer S, by rounding toward zero. S is then used
 to saturate the corresponding unsigned 64 bit int element 
 of the N element result.
 
-E.g.
-
-    #define cvdz(X)                                     \
-    (                                                   \
-        (uint64_t)                                      \
-        (                                               \
-            (long double) X < 0x00000000 ? UINT64_MIN : \
-            (long double) X > UINT64_MAX ? UINT64_MAX : \
-            X                                           \
-        )                                               \
-    )
-
+The result of subnormal number conversion is implementation
+defined. If any element in the operand is infinity or NaN, 
+the result is undefined.
 */
 
 #define     cvdz(...) (cvdz_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17241,12 +18972,154 @@ FUNCOF(             \
 #endif
 
 
+#if _ENTER_CVQU
+{
+#endif
+/*  ConVert to Quadword (truncated unsigned int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 128 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+The result of subnormal number conversion is implementation
+defined. If any element in the operand is infinity or NaN, 
+the result is undefined.
+*/
+
+#if 0
+#define     cvqu(...) (cvqu_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cvqu_funcof(X, ...)  \
+FUNCOF(             \
+    cvqu, (   X   ),\
+    YQR,  /* TGK */ \
+    WR,   /* TGW */ \
+    DR,   /* TGD */ \
+    QR,   /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+#endif
+
+#define     cvquyu    BOOL_CVQU
+#define     cvqubu   UINT8_CVQU
+#define     cvqubi    INT8_CVQU
+#define     cvqubc    CHAR_CVQU
+#define     cvquhu  UINT16_CVQU
+#define     cvquhi   INT16_CVQU
+#define     cvquhf   FLT16_CVQU
+#define     cvquwu  UINT32_CVQU
+#define     cvquwi   INT32_CVQU
+#define     cvquwf     FLT_CVQU
+#define     cvqudu  UINT64_CVQU
+#define     cvqudi   INT64_CVQU
+#define     cvqudf     DBL_CVQU
+#if   DWRD_NLONG == 2
+#   define  cvqulu   ULONG_CVQU
+#   define  cvquli    LONG_CVQU
+#elif QUAD_NLLONG == 2
+#   define  cvqulu  ULLONG_CVQU
+#   define  cvquli   LLONG_CVQU
+#else
+#   define  cvququ  ULLONG_CVQU
+#   define  cvquqi   LLONG_CVQU
+#   define  cvquqf    LDBL_CVQU
+#endif
+
+#define     cvquwwu   VWWU_CVQU
+#define     cvquwwi   VWWI_CVQU
+#define     cvquwwf   VWWF_CVQU
+
+#define     cvquddu   VDDU_CVQU
+#define     cvquddi   VDDI_CVQU
+#define     cvquddf   VDDF_CVQU
+
+#define     cvquqqu   VQQU_CVQU
+#define     cvquqqi   VQQI_CVQU
+#define     cvquqqf   VQQF_CVQU
+#if _LEAVE_CVQU
+}
+#endif
+
+#if _ENTER_CVQI
+{
+#endif
+/*  ConVert to Quadword (truncated signed int)
+
+Let E be the name of a particular element in the N element
+operand. E is first converted to an infinite precision
+signed integer S, by rounding toward zero. The 128 least
+significant bits of S are then copied to the corresponding
+element of the N element result.
+
+The result of subnormal number conversion is implementation
+defined. If any element in the operand is infinity or NaN, 
+the result is undefined.
+*/
+
+#if 0
+#define     cvqi(...) (cvqi_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cvqi_funcof(X, ...)  \
+FUNCOF(             \
+    cvqi, (   X   ),\
+    YQR,  /* TGK */ \
+    WR,   /* TGW */ \
+    DR,   /* TGD */ \
+    QR,   /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+#endif
+
+#define     cvqiyu    BOOL_CVQI
+#define     cvqibu   UINT8_CVQI
+#define     cvqibi    INT8_CVQI
+#define     cvqibc    CHAR_CVQI
+#define     cvqihu  UINT16_CVQI
+#define     cvqihi   INT16_CVQI
+#define     cvqihf   FLT16_CVQI
+#define     cvqiwu  UINT32_CVQI
+#define     cvqiwi   INT32_CVQI
+#define     cvqiwf     FLT_CVQI
+#define     cvqidu  UINT64_CVQI
+#define     cvqidi   INT64_CVQI
+#define     cvqidf     DBL_CVQI
+#if   DWRD_NLONG == 2
+#   define  cvqilu   ULONG_CVQI
+#   define  cvqili    LONG_CVQI
+#elif QUAD_NLLONG == 2
+#   define  cvqilu  ULLONG_CVQI
+#   define  cvqili   LLONG_CVQI
+#else
+#   define  cvqiqu  ULLONG_CVQI
+#   define  cvqiqi   LLONG_CVQI
+#   define  cvqiqf    LDBL_CVQI
+#endif
+
+#define     cvqiwwu   VWWU_CVQI
+#define     cvqiwwi   VWWI_CVQI
+#define     cvqiwwf   VWWF_CVQI
+
+#define     cvqiddu   VDDU_CVQI
+#define     cvqiddi   VDDI_CVQI
+#define     cvqiddf   VDDF_CVQI
+
+#define     cvqiqqu   VQQU_CVQI
+#define     cvqiqqi   VQQI_CVQI
+#define     cvqiqqf   VQQF_CVQI
+#if _LEAVE_CVQI
+}
+#endif
+
 #if _ENTER_DCRL
 {
 #endif
 /*  DeCRement (truncated)
 
-Subtract 1 from each element in the operand.
+Equivalent to subl by one.
 */
 
 #define     dcrl(...) (dcrl_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -17588,28 +19461,28 @@ FUNCOF(             \
 }
 #endif
 
-
 #if _ENTER_DIVL
 {
 #endif
 /*  integer DIVision (truncated)
 
-Divide each N bit integer in the first operand A by the
-the corresponding N bit integer in the second operand,
-producing a result with the same size as A.
+Integer division without remainder. This operation is 
+identical to MODL except it doesn't take a third operand
+and the remainder is consequently discarded. See MODL for
+more info.
 */
 
 #define     divl(...) (divl_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     divl_funcof(A, ...)  \
-FUNCOF(             \
-    divl, (   A   ),\
-    BDZ,  /* TGK */ \
-    BWZ,  /* TGW */ \
-    BDZ,  /* TGD */ \
-    BDZ,  /* TGQ */ \
-    NONE, /* TGO */ \
-    NONE, /* TGS */ \
-    default: NULL   \
+FUNCOF(                 \
+    divl, (   A   ),    \
+    BDZ,  /* TGK */     \
+    BWZ,  /* TGW */     \
+    BDZ,  /* TGD */     \
+    BDZ,  /* TGQ */     \
+    NONE, /* TGO */     \
+    NONE, /* TGS */     \
+    default: NULL       \
 )
 
 #define     divlbu   UINT8_DIVL
@@ -17621,6 +19494,7 @@ FUNCOF(             \
 #define     divlwi   INT32_DIVL
 #define     divldu  UINT64_DIVL
 #define     divldi   INT64_DIVL
+
 #if   DWRD_NLONG == 2
 #   define  divllu   ULONG_DIVL
 #   define  divlli    LONG_DIVL
@@ -17659,7 +19533,104 @@ FUNCOF(             \
 #define     divlqwi   VQWI_DIVL
 #define     divlqdu   VQDU_DIVL
 #define     divlqdi   VQDI_DIVL
+#define     divlqqu   VQQU_DIVL
+#define     divlqqi   VQQI_DIVL
 #if _LEAVE_DIVL
+}
+#endif
+
+#if _ENTER_DIVN
+{
+#endif
+/*  integer DIVision (floored)
+
+Divide each N bit integer of the first operand, A, by the
+corresponding N bit signed integer of the second operand,
+B. Any inexact results are rounded toward -∞.
+
+    -3 / -2 = +1.5 => +1
+    -3 / +2 = -1.5 => -2
+    +3 / -2 = -1.5 => -2
+    +3 / +2 = -1.5 => -1
+
+If any element in B has a representation requiring more
+than ½N bits, the result is undefined. E.g. the range of
+valid inputs for divnbu's second operand is [-8..+7], 
+since that's the range representable using a signed 4 bit
+field.
+
+For the unsigned variants, if the dividend's MSB is set, 
+the result is undefined. It is expected that users will 
+only use the unsigned variants when it is known that the
+dividend is positive. The return value and second operand
+of the unsigned variants are signed integers of equivalent
+width as the first operand.
+*/
+
+#define     divn(...) (divn_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     divn_funcof(A, ...)  \
+FUNCOF(             \
+    divn, (   A   ),\
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     divnbu   UINT8_DIVN
+#define     divnbi    INT8_DIVN
+#define     divnbc    CHAR_DIVN
+#define     divnhu  UINT16_DIVN
+#define     divnhi   INT16_DIVN
+#define     divnwu  UINT32_DIVN
+#define     divnwi   INT32_DIVN
+#define     divndu  UINT64_DIVN
+#define     divndi   INT64_DIVN
+
+#if   DWRD_NLONG == 2
+#   define  divnlu   ULONG_DIVN
+#   define  divnli    LONG_DIVN
+#elif QUAD_NLLONG == 2
+#   define  divnlu  ULLONG_DIVN
+#   define  divnli   LLONG_DIVN
+#else
+#   define  divnqu  ULLONG_DIVN
+#   define  divnqi   LLONG_DIVN
+#endif
+
+#define     divnwbu   VWBU_DIVN
+#define     divnwbi   VWBI_DIVN
+#define     divnwbc   VWBC_DIVN
+#define     divnwhu   VWHU_DIVN
+#define     divnwhi   VWHI_DIVN
+#define     divnwwu   VWWU_DIVN
+#define     divnwwi   VWWI_DIVN
+
+#define     divndbu   VDBU_DIVN
+#define     divndbi   VDBI_DIVN
+#define     divndbc   VDBC_DIVN
+#define     divndhu   VDHU_DIVN
+#define     divndhi   VDHI_DIVN
+#define     divndwu   VDWU_DIVN
+#define     divndwi   VDWI_DIVN
+#define     divnddu   VDDU_DIVN
+#define     divnddi   VDDI_DIVN
+
+#define     divnqbu   VQBU_DIVN
+#define     divnqbi   VQBI_DIVN
+#define     divnqbc   VQBC_DIVN
+#define     divnqhu   VQHU_DIVN
+#define     divnqhi   VQHI_DIVN
+#define     divnqwu   VQWU_DIVN
+#define     divnqwi   VQWI_DIVN
+#define     divnqdu   VQDU_DIVN
+#define     divnqdi   VQDI_DIVN
+#define     divnqqu   VQQU_DIVN
+#define     divnqqi   VQQI_DIVN
+#if _LEAVE_DIVN
 }
 #endif
 
@@ -17948,14 +19919,50 @@ FUNCOF(             \
 #if _ENTER_DUPW
 {
 #endif
-/*  Copy a scalar into all lanes of a 32 bit vector
+/*  DUPlicate (as word)
 
-The operand can be a scalar (or one's address) or a vector.
+DUPW takes two operands: any scalar or vector A, and an
+integer constant B whose range of valid values depends on
+the operation type.
 
-If the operand is an address, it need not be aligned.
+If A is a scalar or single element vector, B determines 
+the length and directionality of the repeating sequence.
+For nonzero positive values of B, A is copied into each
+of the lowest B lanes of of a zero-initialized 32 bit 
+vector. If B is negative, it is the |B| upper lanes that
+are set to A. If B is zero (or omitted), all lanes in the
+result are set to A. 
 
-For the vector variants, a second operand representing the
-source lane is required.
+If A is a multiple element vector and B is a positive int,
+it is the value of A's lane B that is copied. If B is 
+negative, the result is implementation defined. In the
+reference C implementation, a negative value for B results
+in the source lane being determined starting at the end.
+E.g. for Vwbu, which has 4 elements, if B is -1, the
+source lane is (4+-1)=3.
+
+The following table shows the ranges for B with defined
+behavior, based on the class of A. Note the minimum value
+of B with well defined for the asterisked clases is 0:
+
+    class  |  lo|  hi|B bits
+    yr       -32  +31   6
+    br        -4   +3   3
+    hr        -2   +1   2
+    wr       - 1   +0   1
+    wyr*     -32  +31   6
+    wbr*      -4   +3   3
+    whr*      -2   +1   2
+    wwr       -1   +0   1
+    dyr*     -64  +63   7
+    dbr*      -8   +7   4
+    dhr*      -4   +3   3
+    dwr*      -2   +1   2
+    qyr*    -128 +127   8
+    dbr*     -16  +15   5
+    qhr*      -8   +7   4
+    qwr*      -4   +3   3
+
 */
 
 #define     dupw(...)    (dupw_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18023,14 +20030,53 @@ FUNCOF_AC(                      \
 #if _ENTER_DUPD
 {
 #endif
-/*  Copy a scalar into all lanes of a 64 bit vector
+/* DUPlicate (as 64 bit vector)
 
-The operand can be a scalar (or one's address) or a vector.
+DUPD takes two operands: any scalar or vector A, and an
+integer constant B whose range of valid values depends on
+the operation type.
 
-If the operand is an address, it need not be aligned.
+If A is a scalar or single element vector, B determines 
+the length and directionality of the repeating sequence.
+For nonzero positive values of B, A is copied into each
+of the lowest B lanes of of a zero-initialized 64 bit 
+vector. If B is negative, it is the |B| upper lanes that
+are set to A. If B is zero (or omitted), all lanes in the
+result are set to A. 
 
-For the vector variants, a second operand representing the
-source lane is required.
+If A is a multiple element vector and B is a positive int,
+it is the value of A's lane B that is copied. If B is 
+negative, the result is implementation defined. In the
+reference C implementation, a negative value for B results
+in the source lane being determined starting at the end.
+E.g. for Vwbu, which has 4 elements, if B is -1, the
+source lane is (4+-1)=3.
+
+The following table shows the ranges for B with defined
+behavior, based on the class of A. Note the minimum value
+of B with well defined for the asterisked clases is 0:
+
+    class  |  lo|  hi|B bits
+    yr       -64  +63   7
+    br        -8   +7   4
+    hr        -4   +3   3
+    wr       - 2   +1   2
+    dr       - 1   +0   1
+    wyr*     -32  +31   6
+    wbr*      -4   +3   3
+    whr*      -2   +1   2
+    wwr       -2   +1   2
+    dyr*     -64  +63   7
+    dbr*      -8   +7   4
+    dhr*      -4   +3   3
+    dwr*      -2   +1   2
+    ddr       -1   +0   1
+    qyr*    -128 +127   8
+    dbr*     -16  +15   5
+    qhr*      -8   +7   4
+    qwr*      -4   +3   3
+    qdr*      -2   +1   2
+
 */
 
 #define     dupd(...)    (dupd_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -18131,14 +20177,53 @@ FUNCOF_AC(                      \
 #if _ENTER_DUPQ
 {
 #endif
-/*  Copy a scalar into all lanes of a 128 bit vector
+/*  DUPlicate (quadword)
 
-The operand can be a scalar (or one's address) or a vector.
+DUPQ takes two operands: any scalar or vector A, and an
+integer constant B whose range of valid values depends on
+the operation type.
 
-If the operand is an address, it need not be aligned.
+If A is a scalar or single element vector, B determines 
+the length and directionality of the repeating sequence.
+For nonzero positive values of B, A is copied into each
+of the lowest B lanes of of a zero-initialized 128 bit 
+vector. If B is negative, it is the |B| upper lanes that
+are set to A. If B is zero (or omitted), all lanes in the
+result are set to A. 
 
-For the vector variants, a second operand representing the
-source lane is required.
+If A is a multiple element vector and B is a positive int,
+it is the value of A's lane B that is copied. If B is 
+negative, the result is implementation defined. In the
+reference C implementation, a negative value for B results
+in the source lane being determined starting at the end.
+E.g. for Vwbu, which has 4 elements, if B is -1, the
+source lane is (4+-1)=3.
+
+The following table shows the ranges for B with defined
+behavior, based on the class of A. Note the minimum value
+of B with well defined for the asterisked clases is 0:
+
+    class  |  lo|  hi|B bits
+    yr      -128 +127   8
+    br       -16  +15   5
+    hr        -8   +7   4
+    wr        -4   +3   3
+    dr        -2   +1   2
+    wyr*     -32  +31   6
+    wbr*      -4   +3   3
+    whr*      -2   +1   2
+    wwr       -4   +3   3
+    dyr*     -64  +63   7
+    dbr*      -8   +7   4
+    dhr*      -4   +3   3
+    dwr*      -2   +1   2
+    ddr       -2   +1   2
+    qyr*    -128 +127   8
+    dbr*     -16  +15   5
+    qhr*      -8   +7   4
+    qwr*      -4   +3   3
+    qdr*      -2   +1   2
+    qqr       -1   +0   1
 */
 
 #define     dupq(...)    (dupq_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -19362,15 +21447,25 @@ FUNCOF_AC(                  \
 #if _ENTER_LDRW
 {
 #endif
-/*  LoaD Word (32 bit vector, 4 byte aligned)
+/*  LoaD word Register (4 byte)
+
+Create a new 32 bit vector with the same representation as
+an unsigned 32 bit integer or a 32 bit integer with the
+same representation as a 32 bit vector.
+
+Even though the C function signature shows array used for
+the operands, all pointer variants expect the address to
+be aligned on a 4 byte boundary. If it isn't, the result
+is undefined.
+
 */
 
 #define     ldrw(SRC)  (ldrw_funcof(SRC)(SRC))
 #define     ldrw_funcof(X)  \
 FUNCOF_AC(                  \
     ldrw, (   X  ),\
-    NONE, /* TGK */ \
-    BWR,  /* TGA */ \
+    YWR,  /* TGK */ \
+    YWR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -19379,19 +21474,43 @@ FUNCOF_AC(                  \
     default: NULL   \
 )
 
+#define     ldrwyu        BOOL_LDRW
+#define     ldrwacyu      BOOL_LDRWAC
+#define     ldrwbu       UINT8_LDRW
 #define     ldrwacbu     UINT8_LDRWAC
+#define     ldrwbi        INT8_LDRW
 #define     ldrwacbi      INT8_LDRWAC
+#define     ldrwbc        CHAR_LDRW
 #define     ldrwacbc      CHAR_LDRWAC
+#define     ldrwhu      UINT16_LDRW
 #define     ldrwachu    UINT16_LDRWAC
+#define     ldrwhi       INT16_LDRW
 #define     ldrwachi     INT16_LDRWAC
+#define     ldrwhf       FLT16_LDRW
 #define     ldrwachf     FLT16_LDRWAC
+#define     ldrwwu      UINT32_LDRW
 #define     ldrwacwu    UINT32_LDRWAC
+#define     ldrwwi       INT32_LDRW
 #define     ldrwacwi     INT32_LDRWAC
+#define     ldrwwf         FLT_LDRW
 #define     ldrwacwf       FLT_LDRWAC
 #if (DWRD_NLONG == 2)
+#define     ldrwlu       ULONG_LDRW
 #define     ldrwaclu     ULONG_LDRWAC
+#define     ldrwli        LONG_LDRW
 #define     ldrwacli      LONG_LDRWAC
 #endif
+
+#define     ldrwwyu       VWWU_LDRW
+#define     ldrwwbu       VWBU_LDRW
+#define     ldrwwbi       VWBI_LDRW
+#define     ldrwwbc       VWBC_LDRW
+#define     ldrwwhu       VWHU_LDRW
+#define     ldrwwhi       VWHI_LDRW
+#define     ldrwwhf       VWHF_LDRW
+#define     ldrwwwu       VWWU_LDRW
+#define     ldrwwwi       VWWI_LDRW
+#define     ldrwwwf       VWWF_LDRW
 
 #if _LEAVE_LDRW
 }
@@ -19400,15 +21519,34 @@ FUNCOF_AC(                  \
 #if _ENTER_LDRD
 {
 #endif
-/*  LoaD Doubleword (64 bit vector, from 8 byte aligned)
+/*  LoaD dwrd Register (load 64 bit vector)
+
+Create a new 64 bit vector with the same representation
+as a single 64 bit unsigned integer or by copying each
+element of an array into the corresponding vector lane.
+The array variants expect an 8 byte aligned address. For
+unaligned loads, see lund
+
+Note that the R in LDR is kinda misleading. The scalar 
+variants are named after the element type but since they
+take a uint64_t operand, the generic form would create a
+single element vector with the lowest lane set to the
+operand, which would make, e.g.:
+
+    Vdbu x = ldrd( ((uint8_t){123}) );
+
+equivalent to:
+
+    Vdbu x = mvdl( ((uint8_t){123}) );
+
 */
 
 #define     ldrd(SRC)  (ldrd_funcof(SRC)(SRC))
 #define     ldrd_funcof(X)  \
 FUNCOF_AC(                  \
-    ldrd, (   X  ),\
-    NONE, /* TGK */ \
-    BDR,  /* TGA */ \
+    ldrd, (   X  ), \
+    YDR,  /* TGK */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -19417,25 +21555,68 @@ FUNCOF_AC(                  \
     default: NULL   \
 )
 
+#define     ldrdyu        BOOL_LDRD
+#define     ldrdacyu      BOOL_LDRDAC
+#define     ldrdbu       UINT8_LDRD
 #define     ldrdacbu     UINT8_LDRDAC
+#define     ldrdbi        INT8_LDRD
 #define     ldrdacbi      INT8_LDRDAC
+#define     ldrdbc        CHAR_LDRD
 #define     ldrdacbc      CHAR_LDRDAC
+#define     ldrdhu      UINT16_LDRD
 #define     ldrdachu    UINT16_LDRDAC
+#define     ldrdhi       INT16_LDRD
 #define     ldrdachi     INT16_LDRDAC
+#define     ldrdhf       FLT16_LDRD
 #define     ldrdachf     FLT16_LDRDAC
+#define     ldrdwu      UINT32_LDRD
 #define     ldrdacwu    UINT32_LDRDAC
+#define     ldrdwi       INT32_LDRD
 #define     ldrdacwi     INT32_LDRDAC
+#define     ldrdwf         FLT_LDRD
 #define     ldrdacwf       FLT_LDRDAC
+#define     ldrddu      UINT64_LDRD
 #define     ldrdacdu    UINT64_LDRDAC
+#define     ldrddi       INT64_LDRD
 #define     ldrdacdi     INT64_LDRDAC
+#define     ldrddf         DBL_LDRD
 #define     ldrdacdf       DBL_LDRDAC
 #if (DWRD_NLONG == 2)
-#define     ldrdaclu     ULONG_LDRDAC
-#define     ldrdacli      LONG_LDRDAC
-#elif (QUAD_NLLONG == 2)
-#define     ldrdaclu    ULLONG_LDRDAC
-#define     ldrdacli     LLONG_LDRDAC
+#   define  ldrdlu       ULONG_LDRD
+#   define  ldrdaclu     ULONG_LDRDAC
+#   define  ldrdli        LONG_LDRDAC
+#   define  ldrdacli      LONG_LDRDAC
+#elif (QUAD_NLLONG ==2)
+#   define  ldrdlu      ULLONG_LDRD
+#   define  ldrdaclu    ULLONG_LDRDAC
+#   define  ldrdli       LLONG_LDRD
+#   define  ldrdacli     LLONG_LDRDAC
 #endif
+
+#define     ldrdwyu       VWWU_LDRD
+#define     ldrdwbu       VWBU_LDRD
+#define     ldrdwbi       VWBI_LDRD
+#define     ldrdwbc       VWBC_LDRD
+#define     ldrdwhu       VWHU_LDRD
+#define     ldrdwhi       VWHI_LDRD
+#define     ldrdwhf       VWHF_LDRD
+#define     ldrdwwu       VWWU_LDRD
+#define     ldrdwwi       VWWI_LDRD
+#define     ldrdwwf       VWWF_LDRD
+
+#define     ldrddyu       VDWU_LDRD
+#define     ldrddbu       VDBU_LDRD
+#define     ldrddbi       VDBI_LDRD
+#define     ldrddbc       VDBC_LDRD
+#define     ldrddhu       VDHU_LDRD
+#define     ldrddhi       VDHI_LDRD
+#define     ldrddhf       VDHF_LDRD
+#define     ldrddwu       VDWU_LDRD
+#define     ldrddwi       VDWI_LDRD
+#define     ldrddwf       VDWF_LDRD
+#define     ldrdddu       VDDU_LDRD
+#define     ldrdddi       VDDI_LDRD
+#define     ldrdddf       VDDF_LDRD
 
 #if _LEAVE_LDRD
 }
@@ -19444,15 +21625,25 @@ FUNCOF_AC(                  \
 #if _ENTER_LDRQ
 {
 #endif
-/*  LoaD Quadword (128 bit vector, from 16 byte aligned)
+/*  LoaD qwrd Register (vector from 16 bytes)
+
+Create a new 128 bit vector with the same representation
+as a single 128 bit unsigned integer or by copying each
+element of an array into the corresponding vector lane.
+The array variants expect a 16 byte aligned address. For
+unaligned loads, see lunq
+
+On native 64 bit implementations, LDPQ, which loads the
+vector from two 8 byte values, is oftentimes much more
+convenient.
 */
 
 #define     ldrq(SRC)  (ldrq_funcof(SRC)(SRC))
 #define     ldrq_funcof(X)  \
 FUNCOF_AC(                  \
     ldrq, (   X  ),\
-    NONE, /* TGK */ \
-    BDR,  /* TGA */ \
+    YDR, /* TGK */ \
+    YDR,  /* TGA */ \
     NONE, /* TGW */ \
     NONE, /* TGD */ \
     NONE, /* TGQ */ \
@@ -19461,29 +21652,105 @@ FUNCOF_AC(                  \
     default: NULL   \
 )
 
+#define     ldrqyu        BOOL_LDRQAC
+#define     ldrqacyu      BOOL_LDRQAC
+#define     ldrqbu       UINT8_LDRQAC
 #define     ldrqacbu     UINT8_LDRQAC
+#define     ldrqbi        INT8_LDRQAC
 #define     ldrqacbi      INT8_LDRQAC
+#define     ldrqbc        CHAR_LDRQAC
 #define     ldrqacbc      CHAR_LDRQAC
+#define     ldrqhu      UINT16_LDRQAC
 #define     ldrqachu    UINT16_LDRQAC
+#define     ldrqhi       INT16_LDRQAC
 #define     ldrqachi     INT16_LDRQAC
+#define     ldrqhf       FLT16_LDRQAC
 #define     ldrqachf     FLT16_LDRQAC
+#define     ldrqwu      UINT32_LDRQAC
 #define     ldrqacwu    UINT32_LDRQAC
+#define     ldrqwi       INT32_LDRQAC
 #define     ldrqacwi     INT32_LDRQAC
+#define     ldrqwf         FLT_LDRQAC
 #define     ldrqacwf       FLT_LDRQAC
+#define     ldrqdu      UINT64_LDRQAC
 #define     ldrqacdu    UINT64_LDRQAC
+#define     ldrqdi       INT64_LDRQAC
 #define     ldrqacdi     INT64_LDRQAC
+#define     ldrqdf         DBL_LDRQAC
 #define     ldrqacdf       DBL_LDRQAC
 #if (DWRD_NLONG == 2)
-#define     ldrqaclu     ULONG_LDRQAC
-#define     ldrqacli      LONG_LDRQAC
+#   define  ldrqlu       ULONG_LDRQAC
+#   define  ldrqaclu     ULONG_LDRQAC
+#   define  ldrqli        LONG_LDRQAC
+#   define  ldrqacli      LONG_LDRQAC
 #elif (QUAD_NLLONG == 2)
-#define     ldrqaclu    ULLONG_LDRQAC
-#define     ldrqacli     LLONG_LDRQAC
+#   define  ldrqlu      ULLONG_LDRQAC
+#   define  ldrqaclu    ULLONG_LDRQAC
+#   define  ldrqli       LLONG_LDRQAC
+#   define  ldrqacli     LLONG_LDRQAC
+#else
+#   define  ldrqqu      ULLONG_LDRQAC
+#   define  ldrqacqu    ULLONG_LDRQAC
+#   define  ldrqqi       LLONG_LDRQAC
+#   define  ldrqacqi     LLONG_LDRQAC
 #endif
 
 #if _LEAVE_LDRQ
 }
 #endif
+
+#if _ENTER_LDPQ
+{
+#endif
+/*  LoaD qwrd Register (vector from 2×64 bits)
+
+Create a new 128 bit vector from the representation of two
+concatenated 64 bit unsigned integers.
+
+*/
+
+#define     ldpq(SRC)  (ldpq_funcof(SRC)(SRC))
+#define     ldpq_funcof(X)  \
+FUNCOF_AC(                  \
+    ldpq, (   X  ),\
+    YDR, /* TGK */ \
+    NONE, /* TGA */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     ldpqyu     BOOL_LDPQ
+#define     ldpqbu    UINT8_LDPQ
+#define     ldpqbi     INT8_LDPQ
+#define     ldpqbc     CHAR_LDPQ
+#define     ldpqhu   UINT16_LDPQ
+#define     ldpqhi    INT16_LDPQ
+#define     ldpqhf    FLT16_LDPQ
+#define     ldpqwu   UINT32_LDPQ
+#define     ldpqwi    INT32_LDPQ
+#define     ldpqwf      FLT_LDPQ
+#define     ldpqdu   UINT64_LDPQ
+#define     ldpqdi    INT64_LDPQ
+#define     ldpqdf      DBL_LDPQ
+#if DWRD_NLONG == 2
+#   define  ldpqlu    ULONG_LDPQ
+#   define  ldpqli     LONG_LDPQ
+#elif QUAD_NLLONG == 2
+#   define  ldpqlu   ULLONG_LDPQ
+#   define  ldpqli    LLONG_LDPQ
+#else
+#   define  ldpqqu   ULLONG_LDPQ
+#   define  ldpqqi    LLONG_LDPQ
+#endif
+
+#if _LEAVE_LDPQ
+}
+#endif
+
 
 
 #if _ENTER_LUN1
@@ -19846,22 +22113,26 @@ FUNCOF_AC(          \
 #endif
 
 
-#if _ENTER_MAXL
+#if _ENTER_CLTR
 {
 #endif
-/*  MAXimum (first operand likely)
+/*  Compare Less Than (pick RHS if true else LHS)
 
-For each pair of corresponding elements in both operands,
-determine the numerical maximum. If the order of operands
-affects performance, users should be able to benefit from
-ensuring the first operand is most likely to be greater
-than the second.
+CLTR is approximately equivalent to:
+
+    C = A;
+    for i in [0..A.nel-1]:
+        if (C[i] < B[i])
+            C[i] = B[i]
+
+I.e., CLTR always picks the greater value.
+
 */
 
-#define     maxl(...) (maxl_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     maxl_funcof(A, ...)  \
+#define     cltr(...) (cltr_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cltr_funcof(A, ...)  \
 FUNCOF(             \
-    maxl, (   A   ),\
+    cltr, (   A   ),\
     YDR,  /* TGK */ \
     YWR,  /* TGW */ \
     YDR,  /* TGD */ \
@@ -19871,69 +22142,69 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     maxlyu    BOOL_MAXL
-#define     maxlbu   UINT8_MAXL
-#define     maxlbi    INT8_MAXL
-#define     maxlbc    CHAR_MAXL
-#define     maxlhu  UINT16_MAXL
-#define     maxlhi   INT16_MAXL
-#define     maxlhf   FLT16_MAXL
-#define     maxlwu  UINT32_MAXL
-#define     maxlwi   INT32_MAXL
-#define     maxlwf     FLT_MAXL
-#define     maxldu  UINT64_MAXL
-#define     maxldi   INT64_MAXL
-#define     maxldf     DBL_MAXL
+#define     cltryu    BOOL_CLTR
+#define     cltrbu   UINT8_CLTR
+#define     cltrbi    INT8_CLTR
+#define     cltrbc    CHAR_CLTR
+#define     cltrhu  UINT16_CLTR
+#define     cltrhi   INT16_CLTR
+#define     cltrhf   FLT16_CLTR
+#define     cltrwu  UINT32_CLTR
+#define     cltrwi   INT32_CLTR
+#define     cltrwf     FLT_CLTR
+#define     cltrdu  UINT64_CLTR
+#define     cltrdi   INT64_CLTR
+#define     cltrdf     DBL_CLTR
 #if   DWRD_NLONG == 2
-#   define  maxllu   ULONG_MAXL
-#   define  maxlli    LONG_MAXL
+#   define  cltrlu   ULONG_CLTR
+#   define  cltrli    LONG_CLTR
 #elif QUAD_NLLONG == 2
-#   define  maxllu  ULLONG_MAXL
-#   define  maxlli   LLONG_MAXL
+#   define  cltrlu  ULLONG_CLTR
+#   define  cltrli   LLONG_CLTR
 #else
-#   define  maxlqu  ULLONG_MAXL
-#   define  maxlqi   LLONG_MAXL
+#   define  cltrqu  ULLONG_CLTR
+#   define  cltrqi   LLONG_CLTR
 #endif
 
-#define     maxlwyu   VWYU_MAXL
-#define     maxlwbu   VWBU_MAXL
-#define     maxlwbi   VWBI_MAXL
-#define     maxlwbc   VWBC_MAXL
-#define     maxlwhu   VWHU_MAXL
-#define     maxlwhi   VWHI_MAXL
-#define     maxlwhf   VWHF_MAXL
-#define     maxlwwu   VWWU_MAXL
-#define     maxlwwi   VWWI_MAXL
-#define     maxlwwf   VWWF_MAXL
+#define     cltrwyu   VWYU_CLTR
+#define     cltrwbu   VWBU_CLTR
+#define     cltrwbi   VWBI_CLTR
+#define     cltrwbc   VWBC_CLTR
+#define     cltrwhu   VWHU_CLTR
+#define     cltrwhi   VWHI_CLTR
+#define     cltrwhf   VWHF_CLTR
+#define     cltrwwu   VWWU_CLTR
+#define     cltrwwi   VWWI_CLTR
+#define     cltrwwf   VWWF_CLTR
 
-#define     maxldyu   VDYU_MAXL
-#define     maxldbu   VDBU_MAXL
-#define     maxldbi   VDBI_MAXL
-#define     maxldbc   VDBC_MAXL
-#define     maxldhu   VDHU_MAXL
-#define     maxldhi   VDHI_MAXL
-#define     maxldhf   VDHF_MAXL
-#define     maxldwu   VDWU_MAXL
-#define     maxldwi   VDWI_MAXL
-#define     maxldwf   VDWF_MAXL
-#define     maxlddu   VDDU_MAXL
-#define     maxlddi   VDDI_MAXL
-#define     maxlddf   VDDF_MAXL
+#define     cltrdyu   VDYU_CLTR
+#define     cltrdbu   VDBU_CLTR
+#define     cltrdbi   VDBI_CLTR
+#define     cltrdbc   VDBC_CLTR
+#define     cltrdhu   VDHU_CLTR
+#define     cltrdhi   VDHI_CLTR
+#define     cltrdhf   VDHF_CLTR
+#define     cltrdwu   VDWU_CLTR
+#define     cltrdwi   VDWI_CLTR
+#define     cltrdwf   VDWF_CLTR
+#define     cltrddu   VDDU_CLTR
+#define     cltrddi   VDDI_CLTR
+#define     cltrddf   VDDF_CLTR
 
-#define     maxlqyu   VQYU_MAXL
-#define     maxlqbu   VQBU_MAXL
-#define     maxlqbi   VQBI_MAXL
-#define     maxlqbc   VQBC_MAXL
-#define     maxlqhu   VQHU_MAXL
-#define     maxlqhi   VQHI_MAXL
-#define     maxlqhf   VQHF_MAXL
-#define     maxlqwu   VQWU_MAXL
-#define     maxlqwi   VQWI_MAXL
-#define     maxlqwf   VQWF_MAXL
-#define     maxlqdu   VQDU_MAXL
-#define     maxlqdi   VQDI_MAXL
-#define     maxlqdf   VQDF_MAXL
-#if _LEAVE_MAXL
+#define     cltrqyu   VQYU_CLTR
+#define     cltrqbu   VQBU_CLTR
+#define     cltrqbi   VQBI_CLTR
+#define     cltrqbc   VQBC_CLTR
+#define     cltrqhu   VQHU_CLTR
+#define     cltrqhi   VQHI_CLTR
+#define     cltrqhf   VQHF_CLTR
+#define     cltrqwu   VQWU_CLTR
+#define     cltrqwi   VQWI_CLTR
+#define     cltrqwf   VQWF_CLTR
+#define     cltrqdu   VQDU_CLTR
+#define     cltrqdi   VQDI_CLTR
+#define     cltrqdf   VQDF_CLTR
+#if _LEAVE_CLTR
 }
 #endif
 
@@ -19992,22 +22263,18 @@ FUNCOF(             \
 #endif
 
 
-#if _ENTER_MINL
+#if _ENTER_CGTR
 {
 #endif
-/*  MINimum (first operand likely)
+/*  Compare Greater Than (pick RHS if true else LHS)
 
-For each pair of corresponding elements in both operands,
-determine the numerical minimum. If the order of operands
-affects performance, users should be able to benefit from
-ensuring the first operand is most likely to be less than
-the second.
+(maximum)
 */
 
-#define     minl(...) (minl_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     minl_funcof(A, ...)  \
+#define     cgtr(...) (cgtr_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     cgtr_funcof(A, ...)  \
 FUNCOF(             \
-    minl, (   A   ),\
+    cgtr, (   A   ),\
     YDR,  /* TGK */ \
     YWR,  /* TGW */ \
     YDR,  /* TGD */ \
@@ -20017,69 +22284,72 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     minlyu    BOOL_MINL
-#define     minlbu   UINT8_MINL
-#define     minlbi    INT8_MINL
-#define     minlbc    CHAR_MINL
-#define     minlhu  UINT16_MINL
-#define     minlhi   INT16_MINL
-#define     minlhf   FLT16_MINL
-#define     minlwu  UINT32_MINL
-#define     minlwi   INT32_MINL
-#define     minlwf     FLT_MINL
-#define     minldu  UINT64_MINL
-#define     minldi   INT64_MINL
-#define     minldf     DBL_MINL
+#define     cgtryu    BOOL_CGTR
+#define     cgtrbu   UINT8_CGTR
+#define     cgtrbi    INT8_CGTR
+#define     cgtrbc    CHAR_CGTR
+#define     cgtrhu  UINT16_CGTR
+#define     cgtrhi   INT16_CGTR
+#define     cgtrhf   FLT16_CGTR
+#define     cgtrwu  UINT32_CGTR
+#define     cgtrwi   INT32_CGTR
+#define     cgtrwf     FLT_CGTR
+#define     cgtrdu  UINT64_CGTR
+#define     cgtrdi   INT64_CGTR
+#define     cgtrdf     DBL_CGTR
 #if   DWRD_NLONG == 2
-#   define  minllu   ULONG_MINL
-#   define  minlli    LONG_MINL
+#   define  cgtrlu   ULONG_CGTR
+#   define  cgtrli    LONG_CGTR
 #elif QUAD_NLLONG == 2
-#   define  minllu  ULLONG_MINL
-#   define  minlli   LLONG_MINL
+#   define  cgtrlu  ULLONG_CGTR
+#   define  cgtrli   LLONG_CGTR
 #else
-#   define  minlqu  ULLONG_MINL
-#   define  minlqi   LLONG_MINL
+#   define  cgtrqu  ULLONG_CGTR
+#   define  cgtrqi   LLONG_CGTR
 #endif
 
-#define     minlwyu   VWYU_MINL
-#define     minlwbu   VWBU_MINL
-#define     minlwbi   VWBI_MINL
-#define     minlwbc   VWBC_MINL
-#define     minlwhu   VWHU_MINL
-#define     minlwhi   VWHI_MINL
-#define     minlwhf   VWHF_MINL
-#define     minlwwu   VWWU_MINL
-#define     minlwwi   VWWI_MINL
-#define     minlwwf   VWWF_MINL
+#define     cgtrwyu   VWYU_CGTR
+#define     cgtrwbu   VWBU_CGTR
+#define     cgtrwbi   VWBI_CGTR
+#define     cgtrwbc   VWBC_CGTR
+#define     cgtrwhu   VWHU_CGTR
+#define     cgtrwhi   VWHI_CGTR
+#define     cgtrwhf   VWHF_CGTR
+#define     cgtrwwu   VWWU_CGTR
+#define     cgtrwwi   VWWI_CGTR
+#define     cgtrwwf   VWWF_CGTR
 
-#define     minldyu   VDYU_MINL
-#define     minldbu   VDBU_MINL
-#define     minldbi   VDBI_MINL
-#define     minldbc   VDBC_MINL
-#define     minldhu   VDHU_MINL
-#define     minldhi   VDHI_MINL
-#define     minldhf   VDHF_MINL
-#define     minldwu   VDWU_MINL
-#define     minldwi   VDWI_MINL
-#define     minldwf   VDWF_MINL
-#define     minlddu   VDDU_MINL
-#define     minlddi   VDDI_MINL
-#define     minlddf   VDDF_MINL
+#define     cgtrdyu   VDYU_CGTR
+#define     cgtrdbu   VDBU_CGTR
+#define     cgtrdbi   VDBI_CGTR
+#define     cgtrdbc   VDBC_CGTR
+#define     cgtrdhu   VDHU_CGTR
+#define     cgtrdhi   VDHI_CGTR
+#define     cgtrdhf   VDHF_CGTR
+#define     cgtrdwu   VDWU_CGTR
+#define     cgtrdwi   VDWI_CGTR
+#define     cgtrdwf   VDWF_CGTR
+#define     cgtrddu   VDDU_CGTR
+#define     cgtrddi   VDDI_CGTR
+#define     cgtrddf   VDDF_CGTR
 
-#define     minlqyu   VQYU_MINL
-#define     minlqbu   VQBU_MINL
-#define     minlqbi   VQBI_MINL
-#define     minlqbc   VQBC_MINL
-#define     minlqhu   VQHU_MINL
-#define     minlqhi   VQHI_MINL
-#define     minlqhf   VQHF_MINL
-#define     minlqwu   VQWU_MINL
-#define     minlqwi   VQWI_MINL
-#define     minlqwf   VQWF_MINL
-#define     minlqdu   VQDU_MINL
-#define     minlqdi   VQDI_MINL
-#define     minlqdf   VQDF_MINL
-#if _LEAVE_MINL
+#define     cgtrqyu   VQYU_CGTR
+#define     cgtrqbu   VQBU_CGTR
+#define     cgtrqbi   VQBI_CGTR
+#define     cgtrqbc   VQBC_CGTR
+#define     cgtrqhu   VQHU_CGTR
+#define     cgtrqhi   VQHI_CGTR
+#define     cgtrqhf   VQHF_CGTR
+#define     cgtrqwu   VQWU_CGTR
+#define     cgtrqwi   VQWI_CGTR
+#define     cgtrqwf   VQWF_CGTR
+#define     cgtrqdu   VQDU_CGTR
+#define     cgtrqdi   VQDI_CGTR
+#define     cgtrqdf   VQDF_CGTR
+#define     cgtrqqu   VQQU_CGTR
+#define     cgtrqqi   VQQI_CGTR
+#define     cgtrqqf   VQQF_CGTR
+#if _LEAVE_CGTR
 }
 #endif
 
@@ -20143,14 +22413,31 @@ FUNCOF(             \
 }
 #endif
 
-
 #if _ENTER_MODL
 {
 #endif
-/*  MODulus (truncated)
+/*  MODular division (truncated)
 
-Calculate the remainder after dividing two equivalent
-width integers.
+Takes 3 operands: A, an N bit integer representing the 
+dividend; B, an N bit integer representing the divisor; and
+C, the address of an integer variable of the return type.
+Returns the quotient and stores the remainder in *C.
+
+Inexact results are rounded by truncation, e.g.:
+
+    TODO: add examples 
+    -3 / -2 = +1.5 => {.q=+1, .r=-1}
+    -3 / +2 = -1.5 => {.q=-1, .r=-1}
+    -3 / -6 = +0.5 => {.q=+0, .r=-3}
+
+If B cannot be represented by a bitfield of width ½N, the
+result is undefined. E.g. modlbu expects B to fall exactly
+within the range [1..15]. Since it is extremely common to
+specify the divisor as a compile time constant, and since
+the quotient will always be zero if the divisor is wider
+than ½N, this shouldn't realistically cause any problems,
+and the performance benefit, especially for 8 and 16 bit
+ops, can be significant.
 
 */
 
@@ -20187,40 +22474,169 @@ FUNCOF(             \
 #   define  modlqi   LLONG_MODL
 #endif
 
-#define     modlwbu   VWBU_MODL
-#define     modlwbi   VWBI_MODL
-#define     modlwbc   VWBC_MODL
-#define     modlwhu   VWHU_MODL
-#define     modlwhi   VWHI_MODL
-#define     modlwwu   VWWU_MODL
-#define     modlwwi   VWWI_MODL
-
-#define     modldyu   VDYU_MODL
-#define     modldbu   VDBU_MODL
-#define     modldbi   VDBI_MODL
-#define     modldbc   VDBC_MODL
-#define     modldhu   VDHU_MODL
-#define     modldhi   VDHI_MODL
-#define     modldwu   VDWU_MODL
-#define     modldwi   VDWI_MODL
-#define     modlddu   VDDU_MODL
-#define     modlddi   VDDI_MODL
-
-#define     modlqyu   VQYU_MODL
-#define     modlqbu   VQBU_MODL
-#define     modlqbi   VQBI_MODL
-#define     modlqbc   VQBC_MODL
-#define     modlqhu   VQHU_MODL
-#define     modlqhi   VQHI_MODL
-#define     modlqwu   VQWU_MODL
-#define     modlqwi   VQWI_MODL
-#define     modlqdu   VQDU_MODL
-#define     modlqdi   VQDI_MODL
 #if _LEAVE_MODL
 }
 #endif
 
-#if _ENTER_MOD2
+#if _ENTER_REML
+{
+#endif
+/*  REMainder of division (truncated)
+
+Divide each N bit integer of the first operand, A, by the
+corresponding N bit integer of the second operand, B, 
+rounding inexact results by truncation and returning the
+difference between the A and the quotient.
+
+See MODL for more info
+*/
+
+#define     reml(...) (reml_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     reml_funcof(A, ...)  \
+FUNCOF(             \
+    reml, (   A   ),\
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     remlbu   UINT8_REML
+#define     remlbi    INT8_REML
+#define     remlbc    CHAR_REML
+#define     remlhu  UINT16_REML
+#define     remlhi   INT16_REML
+#define     remlwu  UINT32_REML
+#define     remlwi   INT32_REML
+#define     remldu  UINT64_REML
+#define     remldi   INT64_REML
+#if   DWRD_NLONG == 2
+#   define  remllu   ULONG_REML
+#   define  remlli    LONG_REML
+#elif QUAD_NLLONG == 2
+#   define  remllu  ULLONG_REML
+#   define  remlli   LLONG_REML
+#else
+#   define  remlqu  ULLONG_REML
+#   define  remlqi   LLONG_REML
+#endif
+
+#define     remlwbu   VWBU_REML
+#define     remlwbi   VWBI_REML
+#define     remlwbc   VWBC_REML
+#define     remlwhu   VWHU_REML
+#define     remlwhi   VWHI_REML
+#define     remlwwu   VWWU_REML
+#define     remlwwi   VWWI_REML
+
+#define     remldyu   VDYU_REML
+#define     remldbu   VDBU_REML
+#define     remldbi   VDBI_REML
+#define     remldbc   VDBC_REML
+#define     remldhu   VDHU_REML
+#define     remldhi   VDHI_REML
+#define     remldwu   VDWU_REML
+#define     remldwi   VDWI_REML
+#define     remlddu   VDDU_REML
+#define     remlddi   VDDI_REML
+
+#define     remlqyu   VQYU_REML
+#define     remlqbu   VQBU_REML
+#define     remlqbi   VQBI_REML
+#define     remlqbc   VQBC_REML
+#define     remlqhu   VQHU_REML
+#define     remlqhi   VQHI_REML
+#define     remlqwu   VQWU_REML
+#define     remlqwi   VQWI_REML
+#define     remlqdu   VQDU_REML
+#define     remlqdi   VQDI_REML
+#if _LEAVE_REML
+}
+#endif
+
+#if _ENTER_REMN
+{
+#endif
+/*  REMainder of division (floored)
+
+Divide each N bit integer of the first operand, A, by the
+corresponding N bit signed integer of the second operand, 
+B, rounding inexact results by flooring and returning the
+difference between the A and the quotient.
+
+See MODN for more info
+*/
+
+#define     remn(...) (remn_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     remn_funcof(A, ...)  \
+FUNCOF(             \
+    remn, (   A   ),\
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    BDZ,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     remnbu   UINT8_REMN
+#define     remnbi    INT8_REMN
+#define     remnbc    CHAR_REMN
+#define     remnhu  UINT16_REMN
+#define     remnhi   INT16_REMN
+#define     remnwu  UINT32_REMN
+#define     remnwi   INT32_REMN
+#define     remndu  UINT64_REMN
+#define     remndi   INT64_REMN
+#if   DWRD_NLONG == 2
+#   define  remnlu   ULONG_REMN
+#   define  remnli    LONG_REMN
+#elif QUAD_NLLONG == 2
+#   define  remnlu  ULLONG_REMN
+#   define  remnli   LLONG_REMN
+#else
+#   define  remnqu  ULLONG_REMN
+#   define  remnqi   LLONG_REMN
+#endif
+
+#define     remnwbu   VWBU_REMN
+#define     remnwbi   VWBI_REMN
+#define     remnwbc   VWBC_REMN
+#define     remnwhu   VWHU_REMN
+#define     remnwhi   VWHI_REMN
+#define     remnwwu   VWWU_REMN
+#define     remnwwi   VWWI_REMN
+
+#define     remndyu   VDYU_REMN
+#define     remndbu   VDBU_REMN
+#define     remndbi   VDBI_REMN
+#define     remndbc   VDBC_REMN
+#define     remndhu   VDHU_REMN
+#define     remndhi   VDHI_REMN
+#define     remndwu   VDWU_REMN
+#define     remndwi   VDWI_REMN
+#define     remnddu   VDDU_REMN
+#define     remnddi   VDDI_REMN
+
+#define     remnqyu   VQYU_REMN
+#define     remnqbu   VQBU_REMN
+#define     remnqbi   VQBI_REMN
+#define     remnqbc   VQBC_REMN
+#define     remnqhu   VQHU_REMN
+#define     remnqhi   VQHI_REMN
+#define     remnqwu   VQWU_REMN
+#define     remnqwi   VQWI_REMN
+#define     remnqdu   VQDU_REMN
+#define     remnqdi   VQDI_REMN
+#if _LEAVE_REMN
+}
+#endif
+
+#if _ENTER_REM2
 {
 #endif
 /*  MODulus (wide divisor)
@@ -20231,10 +22647,10 @@ integer in the second operand.
 
 */
 
-#define     mod2(...) (mod2_funcof(__VA_ARGS__)(__VA_ARGS__))
-#define     mod2_funcof(A, ...)  \
+#define     rem2(...) (rem2_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     rem2_funcof(A, ...)  \
 FUNCOF(             \
-    mod2,   (   A   ),  \
+    rem2,   (   A   ),  \
     HDZ,  /* TGK */ \
     NONE, /* TGW */ \
     HDZ,  /* TGD */ \
@@ -20244,37 +22660,37 @@ FUNCOF(             \
     default: NULL   \
 )
 
-#define     mod2hu  UINT16_MOD2
-#define     mod2hi   INT16_MOD2
-#define     mod2wu  UINT32_MOD2
-#define     mod2wi   INT32_MOD2
-#define     mod2du  UINT64_MOD2
-#define     mod2di   INT64_MOD2
+#define     rem2hu  UINT16_REM2
+#define     rem2hi   INT16_REM2
+#define     rem2wu  UINT32_REM2
+#define     rem2wi   INT32_REM2
+#define     rem2du  UINT64_REM2
+#define     rem2di   INT64_REM2
 #if   DWRD_NLONG == 2
-#   define  mod2lu   ULONG_MOD2
-#   define  mod2li    LONG_MOD2
+#   define  rem2lu   ULONG_REM2
+#   define  rem2li    LONG_REM2
 #elif QUAD_NLLONG == 2
-#   define  mod2lu  ULLONG_MOD2
-#   define  mod2li   LLONG_MOD2
+#   define  rem2lu  ULLONG_REM2
+#   define  rem2li   LLONG_REM2
 #else
-#   define  mod2qu  ULLONG_MOD2
-#   define  mod2qi   LLONG_MOD2
+#   define  rem2qu  ULLONG_REM2
+#   define  rem2qi   LLONG_REM2
 #endif
 
-#define     mod2dhu   VDHU_MOD2
-#define     mod2dhi   VDHI_MOD2
-#define     mod2dwu   VDWU_MOD2
-#define     mod2dwi   VDWI_MOD2
-#define     mod2ddu   VDDU_MOD2
-#define     mod2ddi   VDDI_MOD2
+#define     rem2dhu   VDHU_REM2
+#define     rem2dhi   VDHI_REM2
+#define     rem2dwu   VDWU_REM2
+#define     rem2dwi   VDWI_REM2
+#define     rem2ddu   VDDU_REM2
+#define     rem2ddi   VDDI_REM2
 
-#define     mod2qhu   VQHU_MOD2
-#define     mod2qhi   VQHI_MOD2
-#define     mod2qwu   VQWU_MOD2
-#define     mod2qwi   VQWI_MOD2
-#define     mod2qdu   VQDU_MOD2
-#define     mod2qdi   VQDI_MOD2
-#if _LEAVE_MOD2
+#define     rem2qhu   VQHU_REM2
+#define     rem2qhi   VQHI_REM2
+#define     rem2qwu   VQWU_REM2
+#define     rem2qwi   VQWI_REM2
+#define     rem2qdu   VQDU_REM2
+#define     rem2qdi   VQDI_REM2
+#if _LEAVE_REM2
 }
 #endif
 
@@ -20940,6 +23356,9 @@ FUNCOF(             \
 #define     mvqlqdu   VQDU_MVQL
 #define     mvqlqdi   VQDI_MVQL
 #define     mvqlqdf   VQDF_MVQL
+#define     mvqlqqu   VQQU_MVQL
+#define     mvqlqqi   VQQI_MVQL
+#define     mvqlqqf   VQQF_MVQL
 
 #if _LEAVE_MVQL
 }
@@ -20950,6 +23369,17 @@ FUNCOF(             \
 {
 #endif
 /*  NEGation (truncated)
+
+Negate each N bit integer element in the operand. The
+result is truncated to fit in the N bit result, as if the
+operation were performed as twos complement subtraction
+from zero.
+
+    neglbi(+127) => TRUNC8(-127) => -127
+    neglbi(-128) => TRUNC8(+128) => -128
+
+The result type is the operand's element type.
+
 */
 
 #define     negl(X) (negl_funcof(X)(X))
@@ -20970,13 +23400,10 @@ FUNCOF(             \
 #define     neglbc    CHAR_NEGL
 #define     neglhu  UINT16_NEGL
 #define     neglhi   INT16_NEGL
-#define     neglhf   FLT16_NEGL
 #define     neglwu  UINT32_NEGL
 #define     neglwi   INT32_NEGL
-#define     neglwf     FLT_NEGL
 #define     negldu  UINT64_NEGL
 #define     negldi   INT64_NEGL
-#define     negldf     DBL_NEGL
 #if DWRD_NLONG == 2
 #   define  negllu   ULONG_NEGL
 #   define  neglli    LONG_NEGL
@@ -20994,10 +23421,8 @@ FUNCOF(             \
 #define     neglwbc   VWBC_NEGL
 #define     neglwhu   VWHU_NEGL
 #define     neglwhi   VWHI_NEGL
-#define     neglwhf   VWHF_NEGL
 #define     neglwwu   VWWU_NEGL
 #define     neglwwi   VWWI_NEGL
-#define     neglwwf   VWWF_NEGL
 
 #define     negldbu   VDBU_NEGL
 #define     negldbi   VDBI_NEGL
@@ -21026,6 +23451,12 @@ FUNCOF(             \
 {
 #endif
 /*  NEGation (signed saturated)
+
+Negate the N bit operand then saturate a N bit signed int
+with the result.
+
+    negsbu(250) => -128
+    
 */
 
 #define     negs(X) (negs_funcof(X)(X))
@@ -21437,17 +23868,14 @@ FUNCOF(             \
 /*  NEW vector (32 bit)
 
 For scalars, each op takes the same number of operands as
-there are elements in a 32 bit vector and insers them one at
-a time, beginning with the first operand/lane zero.
+there are elements in a 32 bit vector and inserts them one
+at a time, beginning with the first operand in lane zero.
 
-For arrays, the first operand is its address, which is 
-followed by the same number of indices as there are elements
-in the result. The vector is then constructed by gathering
-the elements at the specified indexes.
-
-For vectors, the additional operands are lanes to copy from
-the source. If -1 is specified as a lane number, the 
-corresponding result element is zeroed out.
+For N element vectors, additional operands are lanes to 
+copy from the source. If -1 is specified as a lane number,
+the corresponding result element is zeroed out. If the 
+lane number is outside the range [-1..N-1], the result is
+implementation defined.
 */
 
 #define     neww(T, ...) (neww_funcof(T)(__VA_ARGS__))
@@ -21528,17 +23956,14 @@ FUNCOF_AK(                      \
 /*  NEW vector (64 bit)
 
 For scalars, each op takes the same number of operands as
-there are elements in a 32 bit vector and insers them one at
-a time, beginning with the first operand/lane zero.
+there are elements in a 64 bit vector and inserts them one
+at a time, beginning with the first operand in lane zero.
 
-For arrays, the first operand is its address, which is 
-followed by the same number of indices as there are elements
-in the result. The vector is then constructed by gathering
-the elements at the specified indexes.
-
-For vectors, the additional operands are lanes to copy from
-the source. If -1 is specified as a lane number, the 
-corresponding result element is zeroed out.
+For N element vectors, additional operands are lanes to 
+copy from the source. If -1 is specified as a lane number,
+the corresponding result element is zeroed out. If the 
+lane number is outside the range [-1..N-1], the result is
+implementation defined.
 */
 
 #define     newd(T, ...) (newd_funcof(T)(__VA_ARGS__))
@@ -21573,12 +23998,22 @@ FUNCOF_AK(                      \
 #define     newdacwi    INT32_NEWDAC
 #define     newdwf        FLT_NEWD
 #define     newdacwf      FLT_NEWDAC
+#define     newddf        DBL_NEWD
+#define     newdacdf      DBL_NEWDAC
 #if DWRD_NLONG == 2
 #   define  newdlu      ULONG_NEWD
 #   define  newdaclu    ULONG_NEWDAC
 #   define  newdli       LONG_NEWD
 #   define  newdacli     LONG_NEWDAC
+#   define  newddu     ULLONG_NEWD
+#   define  newdacdu   ULLONG_NEWDAC
+#   define  newddi      LLONG_NEWD
+#   define  newdacdi    LLONG_NEWDAC
 #elif QUAD_NLLONG == 2
+#   define  newddu      ULONG_NEWD
+#   define  newdacdu    ULONG_NEWDAC
+#   define  newddi       LONG_NEWD
+#   define  newdacdi     LONG_NEWDAC
 #   define  newdlu     ULLONG_NEWD
 #   define  newdaclu   ULLONG_NEWDAC
 #   define  newdli      LLONG_NEWD
@@ -22294,7 +24729,7 @@ FUNCOF(             \
 #endif
 /*  REVerse (vector)
 
-Reverse the contents of a vector
+Reverse the order of a multielement vector
 */
 
 #define     revs(S)     (revs_funcof(S)(S))
@@ -22352,8 +24787,7 @@ FUNCOF(             \
 /*  REVerse (binary repr)
 
 Reverse the binary representation of each multibit element
-in the operand. To reverse the binary representation of
-an entire vector, see revs*yu
+in the operand.
 */
 
 #define     revy(S)     (revy_funcof(S)(S))
@@ -22384,6 +24818,10 @@ FUNCOF(             \
 #elif QUAD_NLLONG == 2
 #   define  revylu  ULLONG_REVY
 #   define  revyli   LLONG_REVY
+#else
+#   define  revyqu  ULLONG_REVY
+#   define  revyqi   LLONG_REVY
+
 #endif
 
 #define     revywbu   VWBU_REVY
@@ -22413,6 +24851,9 @@ FUNCOF(             \
 #define     revyqwi   VQWI_REVY
 #define     revyqdu   VQDU_REVY
 #define     revyqdi   VQDI_REVY
+#define     revyqqi   VQQI_REVY
+#define     revyqqu   VQQU_REVY
+#define     revyqqi   VQQI_REVY
 #if _LEAVE_REVY
 }
 #endif
@@ -22422,7 +24863,7 @@ FUNCOF(             \
 #endif
 /*  REVerse (byteorder)
 
-Reverse the byteorder of each multibit element in the
+Reverse the byteorder of each multibyte element in the
 operand.
 */
 
@@ -22454,6 +24895,10 @@ FUNCOF(             \
 #elif QUAD_NLLONG == 2
 #   define  revblu  ULLONG_REVB
 #   define  revbli   LLONG_REVB
+#else
+#   define  revbqu  ULLONG_REVB
+#   define  revbqi   LLONG_REVB
+
 #endif
 
 #define     revbwhu   VWHU_REVB
@@ -22482,6 +24927,9 @@ FUNCOF(             \
 #define     revbqdu   VQDU_REVB
 #define     revbqdi   VQDI_REVB
 #define     revbqdf   VQDF_REVB
+#define     revbqqu   VQQU_REVB
+#define     revbqqi   VQQI_REVB
+#define     revbqqf   VQQF_REVB
 #if _LEAVE_REVB
 }
 #endif
@@ -22491,8 +24939,8 @@ FUNCOF(             \
 #endif
 /*  REVerse (halforder)
 
-Reverse the halfwords in each 32 bit or wider element of
-the operand.
+Reverse the halforder of each multihalfword element in the
+operand.
 */
 
 #define     revh(X)     (revh_funcof(X)(X))
@@ -22520,6 +24968,9 @@ FUNCOF(             \
 #elif QUAD_NLLONG == 2
 #   define  revhlu  ULLONG_REVH
 #   define  revhli   LLONG_REVH
+#else
+#   define  revhqu  ULLONG_REVH
+#   define  revhqi   LLONG_REVH
 #endif
 
 #define     revhwwu   VWWU_REVH
@@ -22539,7 +24990,56 @@ FUNCOF(             \
 #define     revhqdu   VQDU_REVH
 #define     revhqdi   VQDI_REVH
 #define     revhqdf   VQDF_REVH
+#define     revhqqu   VQQU_REVH
+#define     revhqqi   VQQI_REVH
+#define     revhqqf   VQQF_REVH
 #if _LEAVE_REVH
+}
+#endif
+
+#if _ENTER_REVW
+{
+#endif
+/*  REVerse (wordorder)
+
+Reverse the word order of each element.
+*/
+
+#define     revw(X)     (revw_funcof(X)(X))
+#define     revw_funcof(X)  \
+FUNCOF(             \
+    revw, (   X   ),\
+    DR,   /* TGK */ \
+    NONE, /* TGW */ \
+    DR,   /* TGD */ \
+    DR,   /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     revwdu  UINT64_REVW
+#define     revwdi   INT64_REVW
+#define     revwdf     DBL_REVW
+#if QUAD_NLLONG == 2
+#   define  revwlu  ULLONG_REVW
+#   define  revwli   LLONG_REVW
+#else
+#   define  revwqu  ULLONG_REVW
+#   define  revwqi   LLONG_REVW
+#endif
+
+#define     revwddu   VDDU_REVW
+#define     revwddi   VDDI_REVW
+#define     revwddf   VDDF_REVW
+
+#define     revwqdu   VQDU_REVW
+#define     revwqdi   VQDI_REVW
+#define     revwqdf   VQDF_REVW
+#define     revwqqu   VQQU_REVW
+#define     revwqqi   VQQI_REVW
+#define     revwqqf   VQQF_REVW
+#if _LEAVE_REVW
 }
 #endif
 
@@ -22782,8 +25282,13 @@ FUNCOF(             \
 {
 #endif
 /*  ROTate binary representation (left)
-*/
 
+Rotate the binary representation of each N bit element in
+the first operand right by the number of bits specified 
+by the second operand. If the rotation amount is outside
+the range [1..N-1], the results is implementation defined.
+
+*/
 #define     rotl(...) (rotl_funcof(__VA_ARGS__)(__VA_ARGS__))
 #define     rotl_funcof(A, ...)  \
 FUNCOF(             \
@@ -22834,6 +25339,12 @@ FUNCOF(             \
 {
 #endif
 /*  ROTate binary representation (right)
+
+Rotate the binary representation of each N bit element in
+the first operand right by the number of bits specified 
+by the second operand. If the rotation amount is outside
+the range [1..N-1], the results is implementation defined.
+
 */
 
 #define     rotr(...) (rotr_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -22934,16 +25445,15 @@ FUNCOF(             \
 #if _ENTER_ROVR
 {
 #endif
-/*  ROtate by Vector (right)
+/*  ROtate by Variable (right)
 
-Rotated the binary representation of each N bit element in
+Rotate the binary representation of each N bit element in
 the first operand left by the number of bits specified by
 the corresponding N bit unsigned int element of the second
 operand.
 
-If the rotation amount of any element in the second
-operand falls outside the range [0..N], the result is
-implementation defined.
+The effect of rotation amounts outside the range [1..N-1]
+is implementation defined.
 */
 
 #define     rovr(...) (rovr_funcof(__VA_ARGS__)(__VA_ARGS__))
@@ -23941,7 +26451,7 @@ FUNCOF(             \
 #if _ENTER_SHLR
 {
 #endif
-/*  SHift Left (carry upper)
+/*  SHift Left (keep upper)
 
 For B bit integers: shift the operand left by the
 specified number of bits, forming a 2B bit intermediate
@@ -24054,7 +26564,11 @@ FUNCOF(             \
 #if   DWRD_NLONG == 2
 #   define  shl2lu   ULONG_SHL2
 #   define  shl2li    LONG_SHL2
-#elif QUAD_NLLONG == 2
+#   define  shl2du  ULLONG_SHL2
+#   define  shl2di   LLONG_SHL2
+#else
+#   define  shl2du   ULONG_SHL2
+#   define  shl2di    LONG_SHL2
 #   define  shl2lu  ULLONG_SHL2
 #   define  shl2li   LLONG_SHL2
 #endif
@@ -24452,13 +26966,6 @@ FUNCOF(             \
 {
 #endif
 /*  Shift Pair Right (left fill)
-
-Concatenate two N bit multielement vectors then shift the
-N×2 bit intermediate result right by a multiple of its 
-element size. The lower N bits of the intermediate result
-are kept.
-
-    sprldhu(a, b, c) => (a>>(c*16))|b[:c*16]
 
 */
 
@@ -26466,14 +28973,9 @@ FUNCOF(             \
 #if _ENTER_UNOR
 {
 #endif
-/*  Generate consecutive sequence of 1 bits (hi to lo)
+/*  Generate a consecutive sequence of 1 bits (hi to lo)
 
-Given the number of bits N, generate a sequence of N '1'
-bits S, then set the upper N bits of each element in the
-result to S.
 
-For type T of width K, if N is less than zero or greater than
-K, the result is undefined.
 */
 
 #define     unor(T, ...)    (unor_funcof(T)(__VA_ARGS__))
@@ -26784,6 +29286,202 @@ FUNCOF(             \
 }
 #endif
 
+#if _ENTER_VEQN
+{
+#endif
+/*  Vector EQuality match (count)
+
+Count the number times an element in the first operand A is
+equal to the corresponding element in the second operand B.
+If any element in either vector is NaN, the result is 
+undefined. 
+
+The return type is a vector of ints of equivalent width and
+signedness as A.
+
+Operations are not defined for single element vectors since
+semantically, it would be equivalent to the corresponding
+CEQL op.
+*/
+
+#define     veqn(...) (veqn_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     veqn_funcof(A, ...)  \
+FUNCOF(             \
+    veqn, (   A   ),\
+    NONE, /* TGK */ \
+    BHR,  /* TGW */ \
+    BWR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     veqnwbu   VWBU_VEQN
+#define     veqnwbi   VWBI_VEQN
+#define     veqnwbc   VWBC_VEQN
+#define     veqnwhu   VWHU_VEQN
+#define     veqnwhi   VWHI_VEQN
+#define     veqnwhf   VWHF_VEQN
+
+#define     veqndbu   VDBU_VEQN
+#define     veqndbi   VDBI_VEQN
+#define     veqndbc   VDBC_VEQN
+#define     veqndhu   VDHU_VEQN
+#define     veqndhi   VDHI_VEQN
+#define     veqndhf   VDHF_VEQN
+#define     veqndwu   VDWU_VEQN
+#define     veqndwi   VDWI_VEQN
+#define     veqndwf   VDWF_VEQN
+
+#define     veqnqbu   VQBU_VEQN
+#define     veqnqbi   VQBI_VEQN
+#define     veqnqbc   VQBC_VEQN
+#define     veqnqhu   VQHU_VEQN
+#define     veqnqhi   VQHI_VEQN
+#define     veqnqhf   VQHF_VEQN
+#define     veqnqwu   VQWU_VEQN
+#define     veqnqwi   VQWI_VEQN
+#define     veqnqwf   VQWF_VEQN
+#define     veqnqdu   VQDU_VEQN
+#define     veqnqdi   VQDI_VEQN
+#define     veqnqdf   VQDF_VEQN
+
+#if _LEAVE_VEQN
+}
+#endif
+
+#if _ENTER_VEQL
+{
+#endif
+/*  Vector EQuality match (leftmost index)
+
+Equivalent to:
+    
+    A.ztype C = {A.nel};
+    for (int i=0; i < A.nel; i++)
+        if (A[i] == B[i])
+        {
+            C[0] = i;
+            break;
+        }
+
+If any element is NaN, the results are undefined.
+
+*/
+
+#define     veql(...) (veql_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     veql_funcof(A, ...)  \
+FUNCOF(             \
+    veql, (   A   ),\
+    NONE, /* TGK */ \
+    BHR,  /* TGW */ \
+    BWR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     veqlwbu   VWBU_VEQL
+#define     veqlwbi   VWBI_VEQL
+#define     veqlwbc   VWBC_VEQL
+#define     veqlwhu   VWHU_VEQL
+#define     veqlwhi   VWHI_VEQL
+#define     veqlwhf   VWHF_VEQL
+
+#define     veqldbu   VDBU_VEQL
+#define     veqldbi   VDBI_VEQL
+#define     veqldbc   VDBC_VEQL
+#define     veqldhu   VDHU_VEQL
+#define     veqldhi   VDHI_VEQL
+#define     veqldhf   VDHF_VEQL
+#define     veqldwu   VDWU_VEQL
+#define     veqldwi   VDWI_VEQL
+#define     veqldwf   VDWF_VEQL
+
+#define     veqlqbu   VQBU_VEQL
+#define     veqlqbi   VQBI_VEQL
+#define     veqlqbc   VQBC_VEQL
+#define     veqlqhu   VQHU_VEQL
+#define     veqlqhi   VQHI_VEQL
+#define     veqlqhf   VQHF_VEQL
+#define     veqlqwu   VQWU_VEQL
+#define     veqlqwi   VQWI_VEQL
+#define     veqlqwf   VQWF_VEQL
+#define     veqlqdu   VQDU_VEQL
+#define     veqlqdi   VQDI_VEQL
+#define     veqlqdf   VQDF_VEQL
+
+#if _LEAVE_VEQL
+}
+#endif
+
+#if _ENTER_VEQR
+{
+#endif
+/*  Vector EQuality match (rightmost index)
+
+Equivalent to:
+    
+    A.ztype C = {A.nel};
+    for (int i=A.nel-1; i > 0; i--)
+        if (A[i] == B[i])
+        {
+            C[0] = i;
+            break;
+        }
+
+If any element is NaN, the results are undefined.
+
+*/
+
+#define     veqr(...) (veqr_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     veqr_funcof(A, ...)  \
+FUNCOF(             \
+    veqr, (   A   ),\
+    NONE, /* TGK */ \
+    BHR,  /* TGW */ \
+    BWR,  /* TGD */ \
+    BDR,  /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     veqrwbu   VWBU_VEQR
+#define     veqrwbi   VWBI_VEQR
+#define     veqrwbc   VWBC_VEQR
+#define     veqrwhu   VWHU_VEQR
+#define     veqrwhi   VWHI_VEQR
+#define     veqrwhf   VWHF_VEQR
+
+#define     veqrdbu   VDBU_VEQR
+#define     veqrdbi   VDBI_VEQR
+#define     veqrdbc   VDBC_VEQR
+#define     veqrdhu   VDHU_VEQR
+#define     veqrdhi   VDHI_VEQR
+#define     veqrdhf   VDHF_VEQR
+#define     veqrdwu   VDWU_VEQR
+#define     veqrdwi   VDWI_VEQR
+#define     veqrdwf   VDWF_VEQR
+
+#define     veqrqbu   VQBU_VEQR
+#define     veqrqbi   VQBI_VEQR
+#define     veqrqbc   VQBC_VEQR
+#define     veqrqhu   VQHU_VEQR
+#define     veqrqhi   VQHI_VEQR
+#define     veqrqhf   VQHF_VEQR
+#define     veqrqwu   VQWU_VEQR
+#define     veqrqwi   VQWI_VEQR
+#define     veqrqwf   VQWF_VEQR
+#define     veqrqdu   VQDU_VEQR
+#define     veqrqdi   VQDI_VEQR
+#define     veqrqdf   VQDF_VEQR
+
+#if _LEAVE_VEQR
+}
+#endif
 
 #if _ENTER_XEQ1
 {
@@ -27407,6 +30105,272 @@ FUNCOF_AK(          \
 }
 #endif
 
+#if _ENTER_XRDS
+{
+#endif
+/*  eXtend Right Doubling (signs)
+
+*/
+
+#define     xrds(...)    (xrds_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     xrds_funcof(X,...)  \
+FUNCOF(             \
+    xrds, (   X   ),\
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     xrdsbu  UINT8_XRDS
+#define     xrdsbi   INT8_XRDS
+#define     xrdsbc   CHAR_XRDS
+#define     xrdshu UINT16_XRDS
+#define     xrdshi  INT16_XRDS
+#define     xrdswu UINT32_XRDS
+#define     xrdswi  INT32_XRDS
+#define     xrdsdu UINT64_XRDS
+#define     xrdsdi  INT64_XRDS
+#if DWRD_NLONG == 2
+#   define  xrdslu  ULONG_XRDS
+#   define  xrdsli   LONG_XRDS
+#elif QUAD_NLLONG == 2
+#   define  xrdslu ULLONG_XRDS
+#   define  xrdsli  LLONG_XRDS
+#endif
+
+#define     xrdswbu VWBU_XRDS
+#define     xrdswbi VWBI_XRDS
+#define     xrdswbc VWBC_XRDS
+#define     xrdswhu VWHU_XRDS
+#define     xrdswhi VWHI_XRDS
+#define     xrdswwu VWWU_XRDS
+#define     xrdswwi VWWI_XRDS
+
+#define     xrdsdbu VDBU_XRDS
+#define     xrdsdbi VDBI_XRDS
+#define     xrdsdbc VDBC_XRDS
+#define     xrdsdhu VDHU_XRDS
+#define     xrdsdhi VDHI_XRDS
+#define     xrdsdwu VDWU_XRDS
+#define     xrdsdwi VDWI_XRDS
+#define     xrdsddu VDDU_XRDS
+#define     xrdsddi VDDI_XRDS
+#if _LEAVE_XRDS
+}
+#endif
+
+#if _ENTER_XRDZ
+{
+#endif
+/*  eXtend Right Doubling (zeros)
+
+*/
+
+#define     xrdz(...)    (xrdz_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     xrdz_funcof(X,...)  \
+FUNCOF(             \
+    xrdz, (   X   ),\
+    BDZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    BDZ,  /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     xrdzbu  UINT8_XRDZ
+#define     xrdzbi   INT8_XRDZ
+#define     xrdzbc   CHAR_XRDZ
+#define     xrdzhu UINT16_XRDZ
+#define     xrdzhi  INT16_XRDZ
+#define     xrdzwu UINT32_XRDZ
+#define     xrdzwi  INT32_XRDZ
+#define     xrdzdu UINT64_XRDZ
+#define     xrdzdi  INT64_XRDZ
+#if DWRD_NLONG == 2
+#   define  xrdzlu  ULONG_XRDZ
+#   define  xrdzli   LONG_XRDZ
+#elif QUAD_NLLONG == 2
+#   define  xrdzlu ULLONG_XRDZ
+#   define  xrdzli  LLONG_XRDZ
+#endif
+
+#define     xrdzwbu VWBU_XRDZ
+#define     xrdzwbi VWBI_XRDZ
+#define     xrdzwbc VWBC_XRDZ
+#define     xrdzwhu VWHU_XRDZ
+#define     xrdzwhi VWHI_XRDZ
+#define     xrdzwwu VWWU_XRDZ
+#define     xrdzwwi VWWI_XRDZ
+
+#define     xrdzdbu VDBU_XRDZ
+#define     xrdzdbi VDBI_XRDZ
+#define     xrdzdbc VDBC_XRDZ
+#define     xrdzdhu VDHU_XRDZ
+#define     xrdzdhi VDHI_XRDZ
+#define     xrdzdwu VDWU_XRDZ
+#define     xrdzdwi VDWI_XRDZ
+#define     xrdzddu VDDU_XRDZ
+#define     xrdzddi VDDI_XRDZ
+#if _LEAVE_XRDZ
+}
+#endif
+
+#if _ENTER_XRQS
+{
+#endif
+/*  eXtend Right Quadrupling (signs)
+
+*/
+
+#define     xrqs(...)    (xrqs_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     xrqs_funcof(X,...)  \
+FUNCOF(             \
+    xrqs, (   X   ),\
+    BWZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     xrqsbu  UINT8_XRQS
+#define     xrqsbi   INT8_XRQS
+#define     xrqsbc   CHAR_XRQS
+#define     xrqshu UINT16_XRQS
+#define     xrqshi  INT16_XRQS
+#define     xrqswu UINT32_XRQS
+#define     xrqswi  INT32_XRQS
+#define     xrqsdu UINT64_XRQS
+#define     xrqsdi  INT64_XRQS
+#if DWRD_NLONG == 2
+#   define  xrqslu  ULONG_XRQS
+#   define  xrqsli   LONG_XRQS
+#endif
+
+#define     xrqswbu VWBU_XRQS
+#define     xrqswbi VWBI_XRQS
+#define     xrqswbc VWBC_XRQS
+#define     xrqswhu VWHU_XRQS
+#define     xrqswhi VWHI_XRQS
+#define     xrqswwu VWWU_XRQS
+#define     xrqswwi VWWI_XRQS
+#if _LEAVE_XRQS
+}
+#endif
+
+#if _ENTER_XRQZ
+{
+#endif
+/*  eXtend Right Quadrupling (zeros)
+
+*/
+
+#define     xrqz(...)    (xrqz_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     xrqz_funcof(X,...)  \
+FUNCOF(             \
+    xrqz, (   X   ),\
+    BWZ,  /* TGK */ \
+    BWZ,  /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     xrqzbu  UINT8_XRQZ
+#define     xrqzbi   INT8_XRQZ
+#define     xrqzbc   CHAR_XRQZ
+#define     xrqzhu UINT16_XRQZ
+#define     xrqzhi  INT16_XRQZ
+#define     xrqzwu UINT32_XRQZ
+#define     xrqzwi  INT32_XRQZ
+#if DWRD_NLONG == 2
+#   define  xrqzlu  ULONG_XRQZ
+#   define  xrqzli   LONG_XRQZ
+#endif
+
+#define     xrqzwbu VWBU_XRQZ
+#define     xrqzwbi VWBI_XRQZ
+#define     xrqzwbc VWBC_XRQZ
+#define     xrqzwhu VWHU_XRQZ
+#define     xrqzwhi VWHI_XRQZ
+#define     xrqzwwu VWWU_XRQZ
+#define     xrqzwwi VWWI_XRQZ
+
+#if _LEAVE_XRQZ
+}
+#endif
+
+#if _ENTER_XROS
+{
+#endif
+/*  eXtend Right Octupling (signs)
+
+*/
+
+#define     xros(...)    (xros_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     xros_funcof(X,...)  \
+FUNCOF(             \
+    xros, (   X   ),\
+    YHZ,  /* TGK */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     xrosyu   BOOL_XROS
+#define     xrosbu  UINT8_XROS
+#define     xrosbi   INT8_XROS
+#define     xrosbc   CHAR_XROS
+#define     xroshu UINT16_XROS
+#define     xroshi  INT16_XROS
+
+#if _LEAVE_XROS
+}
+#endif
+
+#if _ENTER_XROZ
+{
+#endif
+/*  eXtend Right Octupling (zeros)
+
+*/
+
+#define     xroz(...)    (xroz_funcof(__VA_ARGS__)(__VA_ARGS__))
+#define     xroz_funcof(X,...)  \
+FUNCOF(             \
+    xroz, (   X   ),\
+    YHZ,  /* TGK */ \
+    NONE, /* TGW */ \
+    NONE, /* TGD */ \
+    NONE, /* TGQ */ \
+    NONE, /* TGO */ \
+    NONE, /* TGS */ \
+    default: NULL   \
+)
+
+#define     xrozyu   BOOL_XROZ
+#define     xrozbu  UINT8_XROZ
+#define     xrozbi   INT8_XROZ
+#define     xrozbc   CHAR_XROZ
+#define     xrozhu UINT16_XROZ
+#define     xrozhi  INT16_XROZ
+
+#if _LEAVE_XROZ
+}
+#endif
 
 #if _ENTER_ZEQY
 {
@@ -28552,6 +31516,173 @@ FUNCOF(             \
 }
 #endif
 
+#if _ENTER_VOID
+{
+#endif
+/*  Blank initializer
+
+Used as an indeterminate value of a particular type. Storing
+a void value or using it in an arithmetic expression results 
+in undefined behavior.
+*/
+
+#define     voidyu    BOOL_VOID
+#define     voidbu   UINT8_VOID
+#define     voidbi    INT8_VOID
+#define     voidbc    CHAR_VOID
+#define     voidhu  UINT16_VOID
+#define     voidhi   INT16_VOID
+#define     voidhf   FLT16_VOID
+#define     voidwu  UINT32_VOID
+#define     voidwi   INT32_VOID
+#define     voidwf     FLT_VOID
+#define     voiddu  UINT64_VOID
+#define     voiddi   INT64_VOID
+#define     voiddf     DBL_VOID
+
+#define     voida     VOID_VOIDA
+#define     voidayu    BOOL_VOIDA
+#define     voidabu   UINT8_VOIDA
+#define     voidabi    INT8_VOIDA
+#define     voidabc    CHAR_VOIDA
+#define     voidahu  UINT16_VOID
+#define     voidahi   INT16_VOIDA
+#define     voidahf   FLT16_VOIDA
+#define     voidawu  UINT32_VOIDA
+#define     voidawi   INT32_VOIDA
+#define     voidawf     FLT_VOIDA
+#define     voidadu  UINT64_VOIDA
+#define     voidadi   INT64_VOIDA
+#define     voidadf     DBL_VOIDA
+
+#define     voidac      VOID_VOIDAC
+#define     voidacyu    BOOL_VOIDAC
+#define     voidacbu   UINT8_VOIDAC
+#define     voidacbi    INT8_VOIDAC
+#define     voidacbc    CHAR_VOIDAC
+#define     voidachu  UINT16_VOIDAC
+#define     voidachi   INT16_VOIDAC
+#define     voidachf   FLT16_VOIDAC
+#define     voidacwu  UINT32_VOIDAC
+#define     voidacwi   INT32_VOIDAC
+#define     voidacwf     FLT_VOIDAC
+#define     voidacdu  UINT64_VOIDAC
+#define     voidacdi   INT64_VOIDAC
+#define     voidacdf     DBL_VOIDAC
+
+#if DWRD_NLONG == 2
+#   define  voidlu   ULONG_VOID
+#   define  voidli    LONG_VOID
+
+#   define  voidalu   ULONG_VOIDA
+#   define  voidali    LONG_VOIDA
+
+#   define  voidaclu   ULONG_VOIDAC
+#   define  voidacli    LONG_VOIDAC
+#elif QUAD_NLLONG == 2
+#   define  voidlu  ULLONG_VOID
+#   define  voidli   LLONG_VOID
+
+#   define  voidalu  ULLONG_VOIDA
+#   define  voidali   LLONG_VOIDA
+
+#   define  voidaclu  ULLONG_VOIDAC
+#   define  voidacli   LLONG_VOIDAC
+#else
+#   define  voidqu    ULLONG_VOID
+#   define  voidqi     LLONG_VOID
+
+#   define  voidaqu   ULLONG_VOID
+#   define  voidaqi    LLONG_VOID
+
+#   define  voidacqu  ULLONG_VOID
+#   define  voidacqi   LLONG_VOID
+#endif
+
+#define     voidwyu     VWYU_VOID
+#define     voidwbu     VWBU_VOID
+#define     voidwbi     VWBI_VOID
+#define     voidwbc     VWBC_VOID
+#define     voidwhu     VWHU_VOID
+#define     voidwhi     VWHI_VOID
+#define     voidwhf     VWHF_VOID
+#define     voidwwu     VWWU_VOID
+#define     voidwwi     VWWI_VOID
+#define     voidwwf     VWWF_VOID
+
+#define     voiddyu     VDYU_VOID
+#define     voiddbu     VDBU_VOID
+#define     voiddbi     VDBI_VOID
+#define     voiddbc     VDBC_VOID
+#define     voiddhu     VDHU_VOID
+#define     voiddhi     VDHI_VOID
+#define     voiddhf     VDHF_VOID
+#define     voiddwu     VDWU_VOID
+#define     voiddwi     VDWI_VOID
+#define     voiddwf     VDWF_VOID
+#define     voidddu     VDDU_VOID
+#define     voidddi     VDDI_VOID
+#define     voidddf     VDDF_VOID
+
+#define     voidqyu     VQYU_VOID
+#define     voidqbu     VQBU_VOID
+#define     voidqbi     VQBI_VOID
+#define     voidqbc     VQBC_VOID
+#define     voidqhu     VQHU_VOID
+#define     voidqhi     VQHI_VOID
+#define     voidqhf     VQHF_VOID
+#define     voidqwu     VQWU_VOID
+#define     voidqwi     VQWI_VOID
+#define     voidqwf     VQWF_VOID
+#define     voidqdu     VQDU_VOID
+#define     voidqdi     VQDI_VOID
+#define     voidqdf     VQDF_VOID
+#define     voidqqu     VQQU_VOID
+#define     voidqqi     VQQI_VOID
+#define     voidqqf     VQQF_VOID
+
+#if _LEAVE_VOID
+}
+#endif
+
+#if defined(__SIZEOF_INT128__)
+#   define SPC_ALL_QINT
+#endif
+
+char *
+safe_toadqu(
+    QUAD_UTYPE  val,
+    char        dst[1+QUAD_UDIG],
+    char      **end
+);
+
+#if MY_ISA == ISA_ARM
+
+#   define  SPC_SHRS SPC_YQR
+
+#   include "a64op.h"
+
+#elif MY_ISA == ISA_X86
+
+#   define  SPC_SHRSWI
+#   define  SPC_SHRSDI
+
+#   include "x64op.h"
+
+#else
+#   include "anyop.h"
+
+#endif
+
+#undef MY_ISA
+#define MY_ISA ISA_ARM
+
+#if defined(_MSC_VER)
+#   include "winsync.h"
+#elif defined(__GNUC__)
+#   include "gnusync.h"
+#endif
+
 
 #if _ENTER_WTF_IS_THIS
 {
@@ -28567,7 +31698,6 @@ FUNCOF(             \
 #if _LEAVE_WTF_IS_THIS
 }
 #endif
-
 
 #define     repryu   BOOL_REPR
 #define     reprbu  UINT8_REPR
@@ -28774,6 +31904,31 @@ int         outfdbu(Vdbu src, FILE *dst, char const *fmt)
     );
 }
 
+#if 0
+struct outf {
+    int Type;
+    int Prec;
+    int Size;
+    int Fill;
+};
+
+int outfqu(QUAD_UTYPE src, FILE *dst, struct outf const *fmt)
+{
+    char        tmp[128];
+    QUAD_TYPE   val = {.U=src};
+    QUAD_TYPE   nlz = {.U=cszlqu(src)};
+    if (fmt->Size)
+    {
+        (void) memset(tmp, 0, fmt->Size);
+    }
+    switch (fmt->Type)
+    {
+        case 'd': {
+            while (val.H
+        }
+    }
+}
+#endif
 
 int         outfwbu(Vwbu src, FILE *dst, char const *fmt)
 {
@@ -28839,6 +31994,9 @@ int         outfqbu(Vqbu src, FILE *dst, char const *fmt)
         seq[0xc], seq[0xd], seq[0xe], seq[0xf]
     );
 }
+#define outfqbc(S,D,F) outfqbu(VQBC_ASBU(S),D,F)
+#define outfqbi(S,D,F) outfqbi(VQBI_ASBU(S),D,F)
+
 int         outfqhu(Vqhu src, FILE *dst, char const *fmt)
 {
 #define     outfqhi(src, ...) outfqhu(VQHI_ASTU(src), __VA_ARGS__)
@@ -28850,15 +32008,19 @@ int         outfqhu(Vqhu src, FILE *dst, char const *fmt)
         seq[4], seq[5], seq[6], seq[7]
     );
 }
-#if 0 // NO OUTS
 
 int         outfqwu(Vqwu src, FILE *dst, char const *fmt)
 {
 #define     outfqwi(src, ...) outfqwu(VQWI_ASTU(src), __VA_ARGS__)
-    uint32_t d[4];
-    (void) UINT32_STRQA(d, src);
-    return fprintf(dst, fmt, d[0], d[1], d[2], d[3]);
+    uint32_t seq[4];
+    (void) UINT32_STRQA(seq, src);
+    return fprintf(
+        dst, fmt,
+        seq[0], seq[1], seq[2], seq[3]
+    );
 }
+
+#if 0 // NO OUTS
 
 int         outfqdu(Vqdu src, FILE *dst, char const *fmt)
 {
@@ -28870,14 +32032,194 @@ int         outfqdu(Vqdu src, FILE *dst, char const *fmt)
 
 #endif // NO OUTS 
 
-#if 0 // NO TOAY
-
-void *toayyu(_Bool v, char s[1], size_t n[1])
+char *toayyu(_Bool v, char *dst)
 {
-    s[0] = '0'+v;
-    n[0] = 1;
-    return s;
+    dst++[0] = '0'+v;
+    return dst;
 }
+
+char *toaybu(unsigned val, char dst[8])
+{
+    char src[8] = {
+        [0]='0'+(1&(val>>7)),
+        [1]='0'+(1&(val>>6)),
+        [2]='0'+(1&(val>>5)),
+        [3]='0'+(1&(val>>4)),
+        [4]='0'+(1&(val>>3)),
+        [5]='0'+(1&(val>>2)),
+        [6]='0'+(1&(val>>1)),
+        [7]='0'+(1&(val)),
+    };
+    unsigned    i = cszrbu(val)/8;
+    if (i == 8) 
+        i = 7;
+    unsigned d = 8-i;
+    return  d+memcpy(dst, src+i, d);
+}
+
+char *
+toadbu
+(
+    unsigned    val, 
+    char        dst[1+BYTE_UDIG], 
+    char      **end
+)
+{
+    int c = snprintf(
+        dst, 
+        (1+BYTE_UDIG),
+        ("%" UINT8_DFMT),
+        ((uchar) val) 
+    );
+    if (c < 0)
+    {
+        if (end)
+            end[0] = dst;
+        return  NULL;
+    }
+    if (end)
+        end[0] = dst+c;
+    return  dst;
+}
+
+char *
+toadqu(
+    QUAD_UTYPE  val,
+    char        dst[1+QUAD_UDIG],
+    char      **end
+)
+{
+    static QUAD_TYPE const ten = {.Lo.U=10};
+    QUAD_TYPE   n={.U=val}, r;
+    int         c;
+    char        b[64];
+    ptrdiff_t   i;
+    char       *mid;
+    size_t      len = 1+QUAD_UDIG;
+    b[63] = 0;
+    if (n.Hi.U)
+    {
+        i = 62;
+        for (int T=0;;)
+        {
+            if (T++ > 100) 
+                goto fail;
+            n.U = modlqu(n.U, ten.U, &r.U);
+            b[i] = '0'+cvwiqu(r.U);
+            if (n.Hi.U)
+                i -= 1;
+            else 
+                break;
+        }
+    }
+    else
+    {
+        i = 63;
+    }
+
+    c = snprintf(dst, len, "%"UINT64_DFMT, n.Lo.U);
+    if (c < 0) 
+        goto fail;
+    len = len-c;
+    mid = dst+c;
+    if (i < 63) 
+        i = snprintf(mid, len, "%s", (b+i));
+    if (i < 0)
+        goto fail;
+    if (end != NULL)
+        end[0] = dst+(i+c);
+    return  dst;
+    fail:
+    {
+        if (end != NULL)
+            end[0] = dst;
+    }
+    (void) printf("call to %s is fucked\n", __func__);
+    return NULL;
+}
+
+char *
+safe_toadqu(
+    QUAD_UTYPE  val,
+    char        dst[1+QUAD_UDIG],
+    char      **end
+)
+{
+    static QUAD_TYPE const ten = {.Lo.U=10};
+    QUAD_TYPE   n={.U=val}, r;
+    int         c;
+    char        b[64];
+    ptrdiff_t   i;
+    char       *mid;
+    size_t      len = 1+QUAD_UDIG;
+    b[63] = 0;
+    if (n.Hi.U)
+    {
+        i = 62;
+        for (int T=0;;)
+        {
+            if (T++ > 100) 
+                goto fail;
+            //n.U = modlqu(n.U, ten.U, &r.U);
+            //b[i] = '0'+cvwiqu(r.U);
+            //b[i]    = rem2qu(n.U, ten.U)+'0';
+            //n.U     = divlqu(n.U, ten.U);
+            r.U = n.U%ten.U;
+            b[i] = '0'+r.U;
+            n.U /= ten.U;
+            if (n.Hi.U)
+                i -= 1;
+            else 
+                break;
+        }
+    }
+    else
+    {
+        i = 63;
+    }
+
+    c = snprintf(dst, len, "%"UINT64_DFMT, n.Lo.U);
+    if (c < 0) 
+        goto fail;
+    len = len-c;
+    mid = dst+c;
+    if (i < 63) 
+        i = snprintf(mid, len, "%s", (b+i));
+    if (i < 0)
+        goto fail;
+    if (end != NULL)
+        end[0] = dst+(i+c);
+    return  dst;
+    fail:
+    {
+        if (end != NULL)
+            end[0] = dst;
+    }
+    (void) printf("call to %s is fucked\n", __func__);
+    return NULL;
+}
+
+char *toadqi(QUAD_ITYPE val, char dst[1+QUAD_IDIG], char **end)
+{
+    QUAD_TYPE   n = {.I=val};
+    char *p;
+    if (n.Hi.U>>63) 
+    {
+        p = dst++;
+        n.U = neglqu(n.U);
+    }
+    else      
+    {
+        p = NULL;
+    }
+    dst = toadqu(n.U, dst, end);
+    if (!p)
+        return dst;
+    p[0] = '-';
+    return p;
+}
+
+#if 0 // NO TOAY
 
 INLINE(char *,MY_TOAYBU)
 (
@@ -28984,17 +32326,6 @@ INLINE(char *,MY_TOAYQU) (QUAD_UTYPE v, char a[128],Rc(0, 127) z)
 }
 
 
-char *toaybu(uint8_t v, char s[8])
-{
-    unsigned const z = cszrbu(v);
-    if (z==8)
-    {
-        *s++ = '0';
-        return s;
-    }
-    return  MY_TOAYBU(v, s, z);
-}
-
 char *toayhu(uint16_t v, char s[16])
 {
     unsigned const z = cszrhu(v);
@@ -29048,10 +32379,6 @@ char *toayqyu(Vqyu v, char s[128])
     return toayqu(t.U, s);
 }
 
-void *toadbu(uint8_t v, char s[UINT8_DIG])
-{
-    return s;
-}
 
 #endif // NO TOAY
 #if 0
@@ -29195,3 +32522,592 @@ Vdhu test_addldhu(Vdhu a, Vdhu b)
     return addl(a, b);
 }
 
+
+QUAD_UTYPE 
+MY_DIVRQU(QUAD_UTYPE l, QUAD_UTYPE r, QUAD_UTYPE *m)
+{
+    QUAD_TYPE a, b, n, p, q;
+
+    if (cleyqu(l, r)) 
+    {
+//  if l <= r, the quotient is (1 if l == r else 0)
+        p.Lo.U = 0, p.Hi.U = 0; // p = 0
+        q.Lo.U = 1, q.Hi.U = 0; // q = 1
+        return (ceqyqu(l, r)) ? ((*m=p.U), q.U) :((*m=q.U), p.U);
+    }
+
+    p.U = cszrqu(l);
+    q.U = cszrqu(r);
+//  b = l.bit_length()-r.bit_length()
+    b.U = cvquwu( ((128-p.W0.U)-(128-q.W0.U)) );
+
+//  if b == 1:
+    if ((b.Lo.U == 1) && (b.Hi.U == 0))
+    {
+        n.U = shllqu(r, 1);
+        if (ceqyqu(l, n.U))
+            return  ((*m=cvquwi(0)), cvquwi(2));
+
+        if (cltyqu(l, n.U))
+            return  ((*m=sublqu(l, r)), cvquwi(1));
+
+        p.U = sublqu(l, n.U);
+        if (cltyqu(p.U, r))
+            return ((*m=p.U), cvquwi(2));
+
+        return ((*m=sublqu(p.U, r)), cvquwi(3));
+    }
+
+    for (b.U=icrlqu(b.U);  ; b.U=dcrlqu(b.U))
+    {
+        p.U = (shllqu)(r, cvwiqu(b.U));
+        if (!cltyqu(l, p.U)) 
+            break;
+    }
+
+    n.U = sublqu(l, p.U);
+    q.U = ((shllqu)(cvquwi(1), cvwiqu(b.U)));
+
+    if (cltyqu(n.U, r))
+        return ((*m=n.U), q.U);
+
+    while (1) 
+    {
+        b.U =  dcrlqu(b.U);
+        n.U = (shllqu)(r, cvwiqu(b.U));
+        n.U =  addlqu(p.U, n.U);
+        if (cltlqu(l, n.U))
+        {
+            *m = sublqu(n.U, l);
+            if (cltlqu(*m, r))
+            {
+                *m = sublqu(r, *m);
+                p.U = (shllqu)(cvquwi(1), cvwiqu(b.U));
+                p.U = orrsqu(p.U, q.U);
+                return  dcrlqu(p.U);
+            }
+        }
+        else
+        {
+            q.U = orrsqu(q.U, ((shllqu)(cvquwi(1), cvwiqu(b.U))));
+            *m = sublqu(l, n.U);
+            if (cltyqu(*m, r))
+                return q.U;
+            p = n;
+        }
+        if (!zleyqi(b.I))
+            break;
+    }
+    printf("infinite loop %s\n", __func__);
+    return  cvquwi(-1);
+
+}
+
+int my_modlwi(int i, int j)
+{
+    int r;
+    int q = INT32_MODL(i, j, &r);
+    return printf("modlwi(%+i,%+i) => (%+i,%+i)\n",i,j,q,r);
+    
+}
+
+int my_modlqu(QUAD_UTYPE n, uint64_t d)
+{
+    QUAD_UTYPE r;
+    QUAD_UTYPE q = modlqu(n, UINT64_CVQU(d), &r);
+    char str[256], *end, *res;
+    int t;
+    int x;
+    x = printf("divmod(%s,%" UINT64_DFMT ") == ", toadqu(n, str, &end), d);
+    if (x < 0) return x;
+    t = x;
+    x = printf("(%s, ", toadqu(q, str, &end));
+    if (x < 0) return x;
+    t = x+t;
+    x = printf("%s)\n", toadqu(r, str, &end));
+    if (x < 0) return x;
+    return t+x;
+}
+
+int my_modlqi(QUAD_ITYPE n, int64_t d)
+{
+    QUAD_ITYPE r;
+    QUAD_ITYPE q = modlqi(n, INT64_CVQI(d), &r);
+    char str[256], *end, *res;
+    int t;
+    int x;
+    x = printf("divsod(%s,%" INT64_DFMT ") == ", toadqi(n, str, &end), d);
+    if (x < 0) return x;
+    t = x;
+    x = printf("(%s, ", toadqi(q, str, &end));
+    if (x < 0) return x;
+    t = x+t;
+    x = printf("%s),\n", toadqi(r, str, &end));
+    if (x < 0) return x;
+    return t+x;
+}
+
+
+int my_modnqi(QUAD_ITYPE n, int64_t d)
+{
+    QUAD_TYPE r;
+    QUAD_TYPE q = {.I=modnqi(n, INT64_CVQI(d), &r.I)};
+    char str[256], *end, *res;
+    int t;
+    int x;
+    res = toadqi(n, str, &end);
+    x = printf("divmod(%s,%" INT64_DFMT ") == ", res, d);
+    if (x < 0) return x;
+    t = x;
+    res = toadqi(q.I, str, &end);
+    x = printf("(%s, ", res);
+    if (x < 0) return x;
+    t = x+t;
+    res = toadqi(r.I, str, &end);
+    x = printf("%s)\n", res);
+    if (x < 0) return x;
+    return t+x;
+}
+
+int my_divlqu(QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE q;
+    char stra[256], *enda, *resa;
+    char strb[256], *endb, *resb;
+    char strq[256], *endq, *resq;
+    resa = safe_toadqu(a, stra, &enda);
+    if (!resa) return -1;
+    resb = safe_toadqu(b, strb, &endb);
+    if (!resb) return -1;
+    q.U = divlqu(a, b);
+    if (q.Hi.I < 0) return -1;
+    resq = safe_toadqu(q.U, strq, &endq);
+    if (!resq) return -1;
+    return printf("divlqu(%s, %s)==%s,\n", resa, resb, resq);
+}
+
+int 
+absl_test(struct my_tests *restrict t, int verbose)
+{
+    (void) t;
+    char *why;
+    QUAD_TYPE r = {.Hi.I=INT64_MAX, .Lo.I=-1};
+    QUAD_TYPE m = {.Hi.I=+1};
+    QUAD_TYPE l = {.Hi.I=INT64_MIN};
+    int lno = -1;
+    WORD_VTYPE w0 = {0};
+    DWRD_VTYPE d0 = {0};
+    QUAD_VTYPE q0 = {0};
+ 
+#ifndef TSK_CKTY
+#undef  MY_TEST
+#define MY_TEST(C, F, X) \
+_Static_assert(C(F(X)),"!"#C"("#F"("#X"))\n")
+
+    MY_TEST(SCHAR_CKTY,SCHAR_ABSL,SCHAR_MIN);
+    MY_TEST( SHRT_CKTY, SHRT_ABSL, SHRT_MIN);
+    MY_TEST(  INT_CKTY,  INT_ABSL,  INT_MIN);
+    MY_TEST( LONG_CKTY, LONG_ABSL, LONG_MIN);
+    MY_TEST(LLONG_CKTY,LLONG_ABSL,LLONG_MIN);
+
+    MY_TEST( cktywbi, VWBI_ABSL, w0.B.I);
+    MY_TEST( cktywbi, VWBC_ABSL, w0.B.C);
+    MY_TEST( cktywhi, VWHI_ABSL, w0.H.I);
+    MY_TEST( cktywwi, VWWI_ABSL, w0.W.I);
+    
+    MY_TEST( cktydbi, VDBI_ABSL, d0.B.I);
+    MY_TEST( cktydbi, VDBC_ABSL, d0.B.C);
+    MY_TEST( cktydhi, VDHI_ABSL, d0.H.I);
+    MY_TEST( cktydwi, VDWI_ABSL, d0.W.I);
+    MY_TEST( cktyddi, VDDI_ABSL, d0.D.I);
+
+    MY_TEST( cktyqbi, VQBI_ABSL, q0.B.I);
+    MY_TEST( cktyqbi, VQBC_ABSL, q0.B.C);
+    MY_TEST( cktyqhi, VQHI_ABSL, q0.H.I);
+    MY_TEST( cktyqwi, VQWI_ABSL, q0.W.I);
+    MY_TEST( cktyqdi, VQDI_ABSL, q0.D.I);
+    
+#if QUAD_NLLONG == 2
+    MY_TEST(    cktyqi,    abslqi, m.I);
+#endif
+
+#endif // TSK_CKTY
+
+#undef MY_TEST
+
+#define MY_TEST(F, X, ...)                      \
+lno = __LINE__;                                 \
+do {                                            \
+    if (!ceqy##F(X, absl##F(__VA_ARGS__)))      \
+    {                                           \
+        why = #X " != " #F "("#__VA_ARGS__")";  \
+        goto fail;                              \
+    }                                           \
+} while (0)
+
+    MY_TEST(bi, (  INT8_MAX-0), (  INT8_MAX-0));
+    MY_TEST(bi, (  INT8_MAX-1), (  INT8_MAX-1));
+    MY_TEST(bi, (       +2   ), (       +2   ));
+    MY_TEST(bi, (       +1   ), (       +1   ));
+    MY_TEST(bi, (       +0   ), (       +0   ));
+    MY_TEST(bi, (       +1   ), (       -1   ));
+    MY_TEST(bi, (       +2   ), (       -2   ));
+    MY_TEST(bi, (  INT8_MAX-0), (  INT8_MIN+1));
+    MY_TEST(bi, (  INT8_MIN+0), (  INT8_MIN+0));
+
+    MY_TEST(hi, ( INT16_MAX-0), ( INT16_MAX-0));
+    MY_TEST(hi, ( INT16_MAX-1), ( INT16_MAX-1));
+    MY_TEST(hi, (       +2   ), (       +2   ));
+    MY_TEST(hi, (       +1   ), (       +1   ));
+    MY_TEST(hi, (       +0   ), (       +0   ));
+    MY_TEST(hi, (       +1   ), (       -1   ));
+    MY_TEST(hi, (       +2   ), (       -2   ));
+    MY_TEST(hi, ( INT16_MAX+0), ( INT16_MIN+1));
+    MY_TEST(hi, ( INT16_MIN+0), ( INT16_MIN+0));
+
+    MY_TEST(wi, ( INT32_MAX-0), ( INT32_MAX-0));
+    MY_TEST(wi, ( INT32_MAX-1), ( INT32_MAX-1));
+    MY_TEST(wi, (       +2   ), (       +2   ));
+    MY_TEST(wi, (       +1   ), (       +1   ));
+    MY_TEST(wi, (       +0   ), (       +0   ));
+    MY_TEST(wi, (       +1   ), (       -1   ));
+    MY_TEST(wi, (       +2   ), (       -2   ));
+    MY_TEST(wi, ( INT32_MAX+0), ( INT32_MIN+1));
+    MY_TEST(wi, ( INT32_MIN+0), ( INT32_MIN+0));
+
+    MY_TEST(di, ( INT64_MAX-0), ( INT64_MAX-0));
+    MY_TEST(di, ( INT64_MAX-1), ( INT64_MAX-1));
+    MY_TEST(di, (       +2   ), (       +2   ));
+    MY_TEST(di, (       +1   ), (       +1   ));
+    MY_TEST(di, (       +0   ), (       +0   ));
+    MY_TEST(di, (       +1   ), (       -1   ));
+    MY_TEST(di, (       +2   ), (       -2   ));
+    MY_TEST(di, ( INT64_MAX+0), ( INT64_MIN+1));
+    MY_TEST(di, ( INT64_MIN+0), ( INT64_MIN+0));
+
+    MY_TEST(qi, (        r.I),  (         r.I));
+    MY_TEST(qi,   dcrlqi(r.I),     dcrlqi(r.I));
+    MY_TEST(qi, (        m.I),  (         m.I));
+    MY_TEST(qi,    cvqiwu(+2),      cvqiwu(+2));
+    MY_TEST(qi,    cvqiwu(+1),      cvqiwu(+1));
+    MY_TEST(qi,    cvqiwu(+0),      cvqiwu(+0));
+    MY_TEST(qi,    cvqiwi(+1),      cvqiwi(-1));
+    MY_TEST(qi,    cvqiwi(+2),      cvqiwi(-2));
+    MY_TEST(qi,           r.I,   icrlqi(l.I));
+    r = m;
+    m.Hi.U = -m.Hi.U;
+    MY_TEST(qi, (        r.I),  (         m.I));
+
+    MY_TEST(wbi, seqwbi(+1,+1), seqwbi(+1,+1));
+#if 0
+    outfwbi(
+        seqwbi(-1, -1),
+        stdout,
+        "seqwbi(-1,-1) => {" DUP4("%+hhi", ", ") "}\n"
+    );
+
+    outfwbi(
+        seqwbi(+1, +1),
+        stdout,
+        "seqwbi(+1,+1) => {" DUP4("%+hhi", ", ") "}\n"
+    );
+
+    outfwbi(
+        abslwbi(seqwbi(-1, -1)),
+        stdout,
+        "abslwbi(seqwbi(-1,-1)) => {" DUP4("%+hhi", ", ") "}\n"
+    );
+#endif
+ 
+    WORD_VTYPE wmin, wmax;
+    wmin.B.I = seqwbi((INT8_MIN+0),+1);
+    wmax.B.U = seqwbu((INT8_MAX+1),-1);
+
+    MY_TEST(wbi, seqwbi(+1,+1), seqwbi(-1,-1));
+    
+    MY_TEST(wbi, wmax.B.I, wmax.B.I);
+    MY_TEST(wbi, wmax.B.I, wmin.B.I);
+
+
+    wmin.H.I = seqwhi((INT16_MIN+0), +1);
+    wmax.H.U = seqwhu((INT16_MAX+1), -1);
+    
+    MY_TEST(whi, seqwhi(+1,+1), seqwhi(+1,+1));
+    MY_TEST(whi, seqwhi(+1,+1), seqwhi(-1,-1));
+
+    MY_TEST(whi, wmax.H.I, wmax.H.I);
+    MY_TEST(whi, wmax.H.I, wmin.H.I);
+
+    MY_TEST(wwi, astvwi((INT32_MIN+0)), astvwi((INT32_MIN+0)));
+    MY_TEST(wwi, astvwi((INT32_MAX-0)), astvwi((INT32_MIN+1)));
+    MY_TEST(wwi, astvwi(+2), astvwi(-2));
+    MY_TEST(wwi, astvwi(+1), astvwi(-1));
+    MY_TEST(wwi, astvwi(+0), astvwi(+0));
+    MY_TEST(wwi, astvwi(+1), astvwi(+1));
+    
+#if 0
+    wmax.H.I = ((Vwhi){0});
+
+    outfwhu(
+        wmax.H.I, 
+        stdout, 
+        "wmax.H.I => {" DUP2("%hi", ", ") "}\n"
+    );
+#endif
+
+    if (verbose) 
+        (void) printf("passed all tests in %s\n", __func__);
+
+    return 0;
+    fail: (void) printf(
+        "failed test in %s on line %i: %s\n",
+        __func__, lno, why
+    );
+    return -1;
+}
+
+int 
+addl_test(struct my_tests *restrict t, int verbose)
+{
+    (void) t;
+    char const *why;
+    QUAD_TYPE r = {.Lo.I=-1, .Hi.I=INT64_MAX};
+    QUAD_TYPE m = {          .Hi.I=+1};
+    QUAD_TYPE l = {.Lo.I=+0, .Hi.I=INT64_MIN};
+    QUAD_TYPE s = {.Lo.I=-1, .Hi.I=-1};
+    QUAD_TYPE z = {0};
+    WORD_VTYPE w = {0};
+    DWRD_VTYPE d = {0};
+    QUAD_VTYPE q = {0};
+    
+    int lno = -1;
+
+#ifndef TSK_CKTY
+
+#undef  MY_TEST
+#define MY_TEST(C, F, ...) \
+_Static_assert(C(F(__VA_ARGS__)),"!"#C"("#F"("#__VA_ARGS__"))\n")
+
+    MY_TEST(  BOOL_CKTY,  BOOL_ADDL, 0,0);
+    MY_TEST( UCHAR_CKTY, UCHAR_ADDL, 0,0);
+    MY_TEST( SCHAR_CKTY, SCHAR_ADDL, 0,0);
+    MY_TEST(  CHAR_CKTY,  CHAR_ADDL, 0,0);
+    MY_TEST( USHRT_CKTY, USHRT_ADDL, 0,0);
+    MY_TEST(  SHRT_CKTY,  SHRT_ADDL, 0,0);
+    MY_TEST(  UINT_CKTY,  UINT_ADDL, 0,0);
+    MY_TEST(   INT_CKTY,   INT_ADDL, 0,0);
+    MY_TEST( ULONG_CKTY, ULONG_ADDL, 0,0);
+    MY_TEST(  LONG_CKTY,  LONG_ADDL, 0,0);
+    MY_TEST(ULLONG_CKTY,ULLONG_ADDL, 0,0);
+    MY_TEST( LLONG_CKTY, LLONG_ADDL, 0,0);
+    MY_TEST(cktyqu,addlqu, z.U, z.U);
+    MY_TEST(cktyqi,addlqi, z.I, z.I);
+
+    MY_TEST(cktywyu,addlwyu, w.Y.U, w.Y.U);
+    MY_TEST(cktywbu,addlwbu, w.B.U, w.B.U);
+    MY_TEST(cktywbi,addlwbi, w.B.I, w.B.I);
+    MY_TEST(cktywbc,addlwbc, w.B.C, w.B.C);
+    MY_TEST(cktywhu,addlwhu, w.H.U, w.H.U);
+    MY_TEST(cktywhi,addlwhi, w.H.I, w.H.I);
+    MY_TEST(cktywwu,addlwwu, w.W.U, w.W.U);
+    MY_TEST(cktywwi,addlwwi, w.W.I, w.W.I);
+    MY_TEST(cktydyu,addldyu, d.Y.U, d.Y.U);
+    MY_TEST(cktydbu,addldbu, d.B.U, d.B.U);
+    MY_TEST(cktydbi,addldbi, d.B.I, d.B.I);
+    MY_TEST(cktydbc,addldbc, d.B.C, d.B.C);
+    MY_TEST(cktydhu,addldhu, d.H.U, d.H.U);
+    MY_TEST(cktydhi,addldhi, d.H.I, d.H.I);
+    MY_TEST(cktydwu,addldwu, d.W.U, d.W.U);
+    MY_TEST(cktydwi,addldwi, d.W.I, d.W.I);
+    MY_TEST(cktyddu,addlddu, d.D.U, d.D.U);
+    MY_TEST(cktyddi,addlddi, d.D.I, d.D.I);
+    MY_TEST(cktyqyu,addlqyu, q.Y.U, q.Y.U);
+    MY_TEST(cktyqbu,addlqbu, q.B.U, q.B.U);
+    MY_TEST(cktyqbi,addlqbi, q.B.I, q.B.I);
+    MY_TEST(cktyqbc,addlqbc, q.B.C, q.B.C);
+    MY_TEST(cktyqhu,addlqhu, q.H.U, q.H.U);
+    MY_TEST(cktyqhi,addlqhi, q.H.I, q.H.I);
+    MY_TEST(cktyqwu,addlqwu, q.W.U, q.W.U);
+    MY_TEST(cktyqwi,addlqwi, q.W.I, q.W.I);
+    MY_TEST(cktyqdu,addlqdu, q.D.U, q.D.U);
+    MY_TEST(cktyqdi,addlqdi, q.D.I, q.D.I);
+    MY_TEST(cktyqqu,addlqqu, q.Q.U, q.Q.U);
+    
+#endif
+
+#undef MY_TEST
+
+#define MY_TEST(F, X, ...)              \
+lno = __LINE__;                         \
+do {                                    \
+    if (cney##F(X,addl##F(__VA_ARGS__)))\
+    {                                   \
+        why = #X " != " #F "("#__VA_ARGS__")";    \
+        goto fail;                      \
+    }                                   \
+} while (0)
+
+    MY_TEST(bu, 0x000000ff, 0x00000000, 0x000000ff);
+    MY_TEST(bu, 0x000000ff, 0x00000001, 0x000000fe);
+    MY_TEST(bu, 0x000000ff, 0x00000001, 0x00000ffe);
+
+    MY_TEST(bi, 0x000000ff, 0x00000001, 0x00000ffe);
+    MY_TEST(bi, 0x000000ff, 0x00000001, 0x000000fe);
+    MY_TEST(bi, 0x000000ff, 0x00000001, 0x00000ffe);
+
+    MY_TEST(hu, 0x0000ffff, 0x00000000, 0x0000ffff);
+    MY_TEST(hu, 0x0000ffff, 0x00000001, 0x0000fffe);
+    MY_TEST(hu, 0x0000ffff, 0x00000001, 0x000ffffe);
+
+    MY_TEST(hi, 0x0000ffff, 0x00000000, 0x0000ffff);
+    MY_TEST(hi, 0x0000ffff, 0x00000001, 0x0000fffe);
+    MY_TEST(hi, 0x0000ffff, 0x00000001, 0x000ffffe);
+
+    MY_TEST(wu,   0xffffffffU,   0x00000000U, 0xffffffffU);
+    MY_TEST(wu,   0xffffffffU,   0x00000001U, 0xfffffffeU);
+    MY_TEST(wu,   0x00000000U,   0x00000001U, 0xffffffffU);
+
+    MY_TEST(wi, (INT32_MAX-0), (INT32_MAX-0), (0));
+    MY_TEST(wi, (INT32_MIN+0), (INT32_MAX-0), (1));
+    MY_TEST(wi, (INT32_MIN+1), (INT32_MAX-0), (2));
+    
+    MY_TEST(du, UINT64_MAX, UINT64_MAX, 0);
+    MY_TEST(du,          0, UINT64_MAX, 1);
+
+    MY_TEST(di,  INT64_MAX,  INT64_MAX, 0);
+    MY_TEST(di,  INT64_MIN,  INT64_MAX, 1);
+
+    MY_TEST(qu,  s.U,  s.U, z.U);
+    MY_TEST(qu,  z.U,  s.U, cvquwu(1));
+    MY_TEST(qu, catldu(0,1), cvqudu(-1), cvquwu(1));
+    
+    MY_TEST(qi,  s.I,  s.I, z.I);
+    MY_TEST(qu,  z.I,  s.I, cvqiwu(1));
+
+    MY_TEST(wbu, ldrwbu(0x00000000U), ldrwbu(0x00000000U), ldrwbu(0x00000000U));
+    MY_TEST(wbu, ldrwbu(0xffffffffU), ldrwbu(0x01010101U), ldrwbu(0xfefefefeU));
+    MY_TEST(wbu, ldrwbu(0x00000000U), ldrwbu(0x01010101U), ldrwbu(0xffffffffU));
+
+    MY_TEST(wbi, ldrwbi(0xffffffffU), ldrwbi(0x00000000U), ldrwbi(0xffffffffU));
+    MY_TEST(wbi, ldrwbi(0xffffffffU), ldrwbi(0x01010101U), ldrwbi(0xfefefefeU));
+    MY_TEST(wbi, ldrwbi(0x00000000U), ldrwbi(0x01010101U), ldrwbi(0xffffffffU));
+
+    MY_TEST(wbc, ldrwbc(0x80808080U), ldrwbc(0x01010101U), ldrwbc(0x7f7f7f7fU));
+
+    MY_TEST(whu, ldrwhu(0xffffffffU), ldrwhu(0xffffffffU), ldrwhu(0x00000000U));
+    MY_TEST(whu, ldrwhu(0xffffffffU), ldrwhu(0x00010001U), ldrwhu(0xfffefffeU));
+    MY_TEST(whu, ldrwhu(0x00000000U), ldrwhu(0x00010001U), ldrwhu(0xffffffffU));
+
+    MY_TEST(whi, ldrwhi(0xffffffffU), ldrwhi(0xffffffffU), ldrwhi(0x00000000U));
+    MY_TEST(whi, ldrwhi(0xffffffffU), ldrwhi(0x00010001U), ldrwhi(0xfffefffeU));
+    MY_TEST(whi, ldrwhi(0x00000000U), ldrwhi(0x00010001U), ldrwhi(0xffffffffU));
+
+    MY_TEST(wwu, ldrwwu(0xffffffffU), ldrwwu(0xffffffffU), ldrwwu(0x00000000U));
+    MY_TEST(wwu, ldrwwu(0xffffffffU), ldrwwu(0x00000001U), ldrwwu(0xfffffffeU));
+    MY_TEST(wwu, ldrwwu(0x00000000U), ldrwwu(0x00000001U), ldrwwu(0xffffffffU));
+   
+    MY_TEST(wwi, ldrwwi(0xffffffffU), ldrwwi(0xffffffffU), ldrwwi(0x00000000U));
+    MY_TEST(wwi, ldrwwi(0xffffffffU), ldrwwi(0x00000001U), ldrwwi(0xfffffffeU));
+    MY_TEST(wwi, ldrwwi(0x00000000U), ldrwwi(0x00000001U), ldrwwi(0xffffffffU));
+    
+
+    MY_TEST(dbu, ldrdbu(0x0000000000000000ULL), ldrdbu(0x0000000000000000ULL), ldrdbu(0x0000000000000000ULL));
+    MY_TEST(dbu, ldrdbu(0xffffffffffffffffULL), ldrdbu(0x0101010101010101ULL), ldrdbu(0xfefefefefefefefeULL));
+    MY_TEST(dbu, ldrdbu(0x0000000000000000ULL), ldrdbu(0x0101010101010101ULL), ldrdbu(0xffffffffffffffffULL));
+
+    MY_TEST(dbi, ldrdbi(0xffffffffffffffffULL), ldrdbi(0x0000000000000000ULL), ldrdbi(0xffffffffffffffffULL));
+    MY_TEST(dbi, ldrdbi(0xffffffffffffffffULL), ldrdbi(0x0101010101010101ULL), ldrdbi(0xfefefefefefefefeULL));
+    MY_TEST(dbi, ldrdbi(0x0000000000000000ULL), ldrdbi(0x0101010101010101ULL), ldrdbi(0xffffffffffffffffULL));
+
+    MY_TEST(dbc, ldrdbc(0x8080808080808080ULL), ldrdbc(0x0101010101010101ULL), ldrdbc(0x7f7f7f7f7f7f7f7fULL));
+
+    MY_TEST(dhu, ldrdhu(0xffffffffffffffffULL), ldrdhu(0xffffffffffffffffULL), ldrdhu(0x0000000000000000ULL));
+    MY_TEST(dhu, ldrdhu(0xffffffffffffffffULL), ldrdhu(0x0001000100010001ULL), ldrdhu(0xfffefffefffefffeULL));
+    MY_TEST(dhu, ldrdhu(0x0000000000000000ULL), ldrdhu(0x0001000100010001ULL), ldrdhu(0xffffffffffffffffULL));
+
+    MY_TEST(dhi, ldrdhi(0xffffffffffffffffULL), ldrdhi(0xffffffffffffffffULL), ldrdhi(0x0000000000000000ULL));
+    MY_TEST(dhi, ldrdhi(0xffffffffffffffffULL), ldrdhi(0x0001000100010001ULL), ldrdhi(0xfffefffefffefffeULL));
+    MY_TEST(dhi, ldrdhi(0x0000000000000000ULL), ldrdhi(0x0001000100010001ULL), ldrdhi(0xffffffffffffffffULL));
+
+    MY_TEST(dwu, ldrdwu(0xffffffffffffffffULL), ldrdwu(0xffffffffffffffffULL), ldrdwu(0x0000000000000000ULL));
+    MY_TEST(dwu, ldrdwu(0xffffffffffffffffULL), ldrdwu(0x0000000100000001ULL), ldrdwu(0xfffffffefffffffeULL));
+    MY_TEST(dwu, ldrdwu(0x0000000000000000ULL), ldrdwu(0x0000000100000001ULL), ldrdwu(0xffffffffffffffffULL));
+
+    MY_TEST(dwi, ldrdwi(0xffffffffffffffffULL), ldrdwi(0xffffffffffffffffULL), ldrdwi(0x0000000000000000ULL));
+    MY_TEST(dwi, ldrdwi(0xffffffffffffffffULL), ldrdwi(0x0000000100000001ULL), ldrdwi(0xfffffffefffffffeULL));
+    MY_TEST(dwi, ldrdwi(0x0000000000000000ULL), ldrdwi(0x0000000100000001ULL), ldrdwi(0xffffffffffffffffULL));
+
+    MY_TEST(ddu, ldrddu(0xffffffffffffffffULL), ldrddu(0xffffffffffffffffULL), ldrddu(0x0000000000000000ULL));
+    MY_TEST(ddu, ldrddu(0xffffffffffffffffULL), ldrdwu(0x0000000000000001ULL), ldrdwu(0xfffffffffffffffeULL));
+    MY_TEST(ddu, ldrddu(0x0000000000000000ULL), ldrdwu(0x0000000000000001ULL), ldrdwu(0xffffffffffffffffULL));
+
+    MY_TEST(ddi, ldrddi(0xffffffffffffffffULL), ldrddi(0xffffffffffffffffULL), ldrddi(0x0000000000000000ULL));
+    MY_TEST(ddi, ldrddi(0xffffffffffffffffULL), ldrdwu(0x0000000000000001ULL), ldrdwu(0xfffffffffffffffeULL));
+    MY_TEST(ddi, ldrddi(0x0000000000000000ULL), ldrdwu(0x0000000000000001ULL), ldrdwu(0xffffffffffffffffULL));
+    
+    MY_TEST(qbu, dupqbu(0xff), dupqbu(0xff), dupqbu(0x00));
+    MY_TEST(qbu, dupqbu(0xff), dupqbu(0xfe), dupqbu(0x01));
+    MY_TEST(qbu, dupqbu(0x00), dupqbu(0xff), dupqbu(0x01));
+    
+    MY_TEST(qbi, dupqbi(0xff), dupqbi(0xff), dupqbi(0x00));
+    MY_TEST(qbi, dupqbi(0xff), dupqbi(0xfe), dupqbi(0x01));
+    MY_TEST(qbi, dupqbi(0x00), dupqbi(0xff), dupqbi(0x01));
+    
+    MY_TEST(qbc, dupqbc(0xff), dupqbc(0xff), dupqbc(0x00));
+    MY_TEST(qbc, dupqbc(0xff), dupqbc(0xfe), dupqbc(0x01));
+    MY_TEST(qbc, dupqbc(0x00), dupqbc(0xff), dupqbc(0x01));
+
+    MY_TEST(qhu, dupqhu(0xffff), dupqhu(0xffff), dupqhu(0x0000));
+    MY_TEST(qhu, dupqhu(0xffff), dupqhu(0xfffe), dupqhu(0x0001));
+    MY_TEST(qhu, dupqhu(0x0000), dupqhu(0xffff), dupqhu(0x0001));
+    
+    MY_TEST(qhi, dupqhi(0xffff), dupqhi(0xffff), dupqhi(0x0000));
+    MY_TEST(qhi, dupqhi(0xffff), dupqhi(0xfffe), dupqhi(0x0001));
+    MY_TEST(qhi, dupqhi(0x0000), dupqhi(0xffff), dupqhi(0x0001));
+    
+    MY_TEST(qwu, dupqwu(0xffffffff), dupqwu(0xffffffff), dupqwu(0x00000000));
+    MY_TEST(qwu, dupqwu(0xffffffff), dupqwu(0xfffffffe), dupqwu(0x00000001));
+    MY_TEST(qwu, dupqwu(0x00000000), dupqwu(0xffffffff), dupqwu(0x00000001));
+    
+    MY_TEST(qwi, dupqwi(0xffffffff), dupqwi(0xffffffff), dupqwi(0x00000000));
+    MY_TEST(qwi, dupqwi(0xffffffff), dupqwi(0xfffffffe), dupqwi(0x00000001));
+    MY_TEST(qwi, dupqwi(0x00000000), dupqwi(0xffffffff), dupqwi(0x00000001));
+    
+    QUAD_VTYPE qx0 = {0};
+    QUAD_VTYPE qx1 = {.D.U=dupqdu(1)};
+    QUAD_VTYPE qxm = {.D.U=dupqdu((UINT64_MAX-1))};
+    QUAD_VTYPE qxs = {.D.U=dupqdu(UINT64_MAX)};
+    MY_TEST(qdu, qxs.D.U, qxs.D.U, qx0.D.U);
+    MY_TEST(qdu, qxs.D.U, qxm.D.U, qx1.D.U);
+    MY_TEST(qdu, qx0.D.U, qxs.D.U, qx1.D.U);
+    
+    MY_TEST(qdi, qxs.D.I, qxs.D.I, qx0.D.I);
+    MY_TEST(qdi, qxs.D.I, qxm.D.I, qx1.D.I);
+    MY_TEST(qdi, qx0.D.I, qxs.D.I, qx1.D.I);
+
+    qx1.U = 1;
+    #if 0
+    //qxm.Q.U = //ldpqqu(0xfffffffffffffffeULL, 0xffffffffffffffffULL);    qxm.D.U = vcombine_u64(
+        vdup_n_u64(0xfffffffffffffffeULL),
+        vdup_n_u64(0xffffffffffffffffULL)
+    );
+#endif
+    qxm.U = 
+    MY_TEST(qqu, qxs.Q.U, qxs.Q.U, qx0.Q.U);
+    MY_TEST(qqu, qxs.Q.U, qxm.Q.U, qx1.Q.U);
+    MY_TEST(qqu, qx0.Q.U, qxs.Q.U, qx1.Q.U);
+
+    MY_TEST(qqi, qxs.Q.I, qxs.Q.I, qx0.Q.I);
+    MY_TEST(qqi, qxs.Q.I, qxm.Q.I, qx1.Q.I);
+    MY_TEST(qqi, qx0.Q.I, qxs.Q.I, qx1.Q.I);
+       
+    if (verbose) 
+        (void) printf("passed all tests in %s\n", __func__);
+
+    return 0;
+    fail: (void) printf(
+        "failed test in %s on line %i: %s\n",
+        __func__, lno, why
+    );
+    return -1;
+}

@@ -1,91 +1,3 @@
-
-float 
-cnbywf(float x, float l, float r)
-{
-    if (vclts_f32(x, l)) // x < l
-        return 1.0f;
-    if (vclts_f32(r, x)) // r < x
-        return 1.0f;
-    return 0.0f;
-/*  
-
-https://developer.arm.com/documentation/ddi0602/2022-06/Shared-Pseudocode/Shared-Functions?lang=en
-
-Note:
-    s0 = x;
-    s1 = l;
-    s2 = r;
-fcmp    s0, s2
-    Compares s0 with s2 and sets PSTATE.{N,Z,C,V} as follows:
-
-        if isnan(s0) or isnan(s2)
-            //                  0b0011
-            PSTATE = {.N=0, .Z=0, .C=1, .V=1} 
-        elif s0 == s2:
-            //                  0b0110
-            PSTATE = {.N=0, .Z=1, .C=1, .V=0}
-        elif s0 < s2:
-            //                  0b1000
-            PSTATE = {.N=1, .Z=0, .C=0, .V=0}
-        else: // s0 > s2
-            //                  0b0010
-            PSTATE = {.N=0, .Z=0, .C=1, .V=0}
-
-    if   s0 == s2: N=0
-    elif s0 <  s2: N=1
-    else         : N=0
-    
-movi    d2, #0000000000000000
-    set d2 to 0 
-
-fccmp   s0, s1, #8, pl
-    pl means execute fcmp(s0,s1) only if PSTATE.N == 0
-    otherwise, set nzcv=0b1000 (N=1). N=1 if s0 < s2
-
-fmov    s0, #1.00000000
-    set s0=1.0f
-
-fcsel   s0, s2, s0, pl
-    pl means set s0=s2 if N=0 otherwise set s0=s0
-
-ret
-
-fcmp    s0, s2
-movi    d2, #0000000000000000
-fccmp   s0, s1, #8, pl
-fmov    s0, #1.00000000
-fcsel   s0, s2, s0, pl
-
-
-fcmp    x, r
-    if   x == r: N=0 // nzcv=eq
-    elif x <  r: N=1 // nzcv=lt
-    else:        N=0 // nzcv=gt
-    
-movi    d2, #0000000000000000
-    r = 0
-
-fccmp   s0, s1, #8, pl
-    if  PSTATE.N == 0: // fcmp(x, r) => eq|gt
-        PSTATE.N = 1
-    else:
-        if   x == l: PSTATE = {.N=0, .Z=1, .C=1, .V=0}
-        elif x <  l: PSTATE = {.N=1, .Z=0, .C=0, .N=0}
-        else:        PSTATE = {.N=0, .Z=0, .C=1, .V=0}
-
-fmov    s0, #1.00000000
-    x = 1.0f
-    
-fcsel   s0, s2, s0, pl
-    if PSTATE.N == 0: 
-        x = r // aka 0
-    else:
-        x = x // aka 1.0f
-*/
-
-    
-}
-
 /*°′″  «»  ≤≥  ≠≈  —¦  ÷×  !¡  ©®  £€  $¢  №⋕  λμ  πφ  ∑∏  ¶§  †‡  ±∞  √∆  ∫∳ 
 
 This file defines the armv8 ops. It applies to all systems 
@@ -169,6 +81,26 @@ ARM CONDITION CODES:
     d   1101
     e   1110
     f   1111
+ 
+ 
+    eq  0000 
+    ne  0001
+    cs  0010
+    hs  0010
+    cc  0011
+    lo  0011
+    mi  0100
+    pl  0101
+    vs  0110
+    vc  0111
+    hi  1000
+    ls  1001
+    ge  1010
+    lt  1011
+    gt  1100
+    le  1101
+    al  1110
+    nv  1111
     
 HISTORY:
 
@@ -180,7 +112,7 @@ HISTORY:
 
 2024-04-23
 * added packed bool load ops
-* fixed maxlyu
+* fixed cltryu
 * implemented add2
 
 2024-04-28
@@ -216,7 +148,200 @@ HISTORY:
 
 */
 
+/*  
+
+https://developer.arm.com/documentation/ddi0602/2022-06/Shared-Pseudocode/Shared-Functions?lang=en
+
+Note:
+    s0 = x;
+    s1 = l;
+    s2 = r;
+fcmp    s0, s2
+    Compares s0 with s2 and sets PSTATE.{N,Z,C,V} as follows:
+
+        if isnan(s0) or isnan(s2)
+            //                  0b0011
+            PSTATE = {.N=0, .Z=0, .C=1, .V=1} 
+        elif s0 == s2:
+            //                  0b0110
+            PSTATE = {.N=0, .Z=1, .C=1, .V=0}
+        elif s0 < s2:
+            //                  0b1000
+            PSTATE = {.N=1, .Z=0, .C=0, .V=0}
+        else: // s0 > s2
+            //                  0b0010
+            PSTATE = {.N=0, .Z=0, .C=1, .V=0}
+
+    if   s0 == s2: N=0
+    elif s0 <  s2: N=1
+    else         : N=0
+    
+movi    d2, #0000000000000000
+    set d2 to 0 
+
+fccmp   s0, s1, #8, pl
+    pl means execute fcmp(s0,s1) only if PSTATE.N == 0
+    otherwise, set nzcv=0b1000 (N=1). N=1 if s0 < s2
+
+fmov    s0, #1.00000000
+    set s0=1.0f
+
+fcsel   s0, s2, s0, pl
+    pl means set s0=s2 if N=0 otherwise set s0=s0
+
+ret
+
+fcmp    s0, s2
+movi    d2, #0000000000000000
+fccmp   s0, s1, #8, pl
+fmov    s0, #1.00000000
+fcsel   s0, s2, s0, pl
+
+
+fcmp    x, r
+    if   x == r: N=0 // nzcv=eq
+    elif x <  r: N=1 // nzcv=lt
+    else:        N=0 // nzcv=gt
+    
+movi    d2, #0000000000000000
+    r = 0
+
+fccmp   s0, s1, #8, pl
+    if  PSTATE.N == 0: // fcmp(x, r) => eq|gt
+        PSTATE.N = 1
+    else:
+        if   x == l: PSTATE = {.N=0, .Z=1, .C=1, .V=0}
+        elif x <  l: PSTATE = {.N=1, .Z=0, .C=0, .N=0}
+        else:        PSTATE = {.N=0, .Z=0, .C=1, .V=0}
+
+fmov    s0, #1.00000000
+    x = 1.0f
+    
+fcsel   s0, s2, s0, pl
+    if PSTATE.N == 0: 
+        x = r // aka 0
+    else:
+        x = x // aka 1.0f
+float 
+cnbywf(float x, float l, float r)
+{
+    if (vclts_f32(x, l)) // x < l
+        return 1.0f;
+    if (vclts_f32(r, x)) // r < x
+        return 1.0f;
+    return 0.0f;
+
+    
+}
+*/
+
+
 #include "allop.h"
+
+union MY_A64_VQ {
+    Vqyu Yu;
+    Vqbu Bu; Vqbi Bi; Vqbc Bc;
+    Vqhu Hu; Vqhi Hi; Vqhf Hf;
+    Vqwu Wu; Vqwi Wi; Vqwf Wf;
+    Vqdu Du; Vqdi Di; Vqdf Df;
+    Vqqu Qu; Vqqi Qi; Vqqf Qf;
+    QUAD_TYPE V;
+};
+
+#undef Vw
+#undef Vd
+#undef Vq
+
+typedef union WORD_VTYPE
+{
+    float V0;
+    uint32_t U;
+    int32_t  I;
+    float   F;
+    struct {WORD_TYPE MY_NV1(W, );};
+    struct {HALF_TYPE MY_NV2(H, );};
+    struct {BYTE_TYPE MY_NV4(B, );};
+    union {
+        union {Vwyu U;}                 Y;
+        union {Vwbu U; Vwbi I; Vwbc C;} B;
+        union {Vwhu U; Vwhi I; Vwhf F;} H;
+        union {Vwwu U; Vwwi I; Vwwf F;} W;
+    };
+} WORD_VTYPE;
+
+#define Vw union WORD_VTYPE
+
+typedef union DWRD_VTYPE
+{
+    double V0;
+    double F;
+    uint64_t U;
+    int64_t I;
+    struct {DWRD_TYPE MY_NV1(D,);};
+    struct {WORD_TYPE MY_NV2(W,);};
+    struct {HALF_TYPE MY_NV4(H,);};
+    struct {BYTE_TYPE MY_NV8(B,);};
+    struct {
+        union {
+            struct {WORD_TYPE MY_NV1(W,);};
+            struct {HALF_TYPE MY_NV2(H,);};
+            struct {BYTE_TYPE MY_NV4(B,);};
+            union {Vwyu U;}                 Y;
+            union {Vwbu U; Vwbi I; Vwbc C;} B;
+            union {Vwhu U; Vwhi I; Vwhf F;} H;
+            union {Vwwu U; Vwwi I; Vwwf F;} W;
+            Vw V;
+        } MY_NAT_PAIR(L, R, );
+    };
+    union {
+        union {Vdyu U;}                 Y;
+        union {Vdbu U; Vdbi I; Vdbc C;} B;
+        union {Vdhu U; Vdhi I; Vdhf F;} H;
+        union {Vdwu U; Vdwi I; Vdwf F;} W;
+        union {Vddu U; Vddi I; Vddf F;} D;
+    };
+} DWRD_VTYPE;
+_Static_assert( (8==sizeof(DWRD_VTYPE)), "aint 8");
+
+#define Vd union DWRD_VTYPE
+
+typedef union QUAD_VTYPE
+{
+    QUAD_FTYPE F;
+    QUAD_UTYPE U;
+    QUAD_ITYPE I;
+    struct {QUAD_TYPE MY_NV1(Q, );};
+    struct {DWRD_TYPE MY_NV2(D, );};
+    struct {WORD_TYPE MY_NV4(W, );};
+    struct {HALF_TYPE MY_NV8(H, );};
+    struct {BYTE_TYPE MY_NV16(B, );};
+    struct {
+        union {
+            struct {DWRD_TYPE MY_NV1(D, );};
+            struct {WORD_TYPE MY_NV2(W, );};
+            struct {HALF_TYPE MY_NV4(H, );};
+            struct {BYTE_TYPE MY_NV8(B, );};
+            union {Vdyu U;}                 Y;
+            union {Vdbu U; Vdbi I; Vdbc C;} B;
+            union {Vdhu U; Vdhi I; Vdhf F;} H;
+            union {Vdwu U; Vdwi I; Vdwf F;} W;
+            union {Vddu U; Vddi I; Vddf F;} D;
+            Vd                              V;
+        } MY_NAT_PAIR(L, R, );
+    };
+    union {
+        union {Vqyu U;}                 Y;
+        union {Vqbu U; Vqbi I; Vqbc C;} B;
+        union {Vqhu U; Vqhi I; Vqhf F;} H;
+        union {Vqwu U; Vqwi I; Vqwf F;} W;
+        union {Vqdu U; Vqdi I; Vqdf F;} D;
+        union {Vqqu U; Vqqi I; Vqqf F;} Q;
+    };
+} QUAD_VTYPE;
+
+#define Vq union QUAD_VTYPE
+_Static_assert((4==sizeof(Vw)), "Vw not 4 bytes");
+_Static_assert((8==sizeof(Vd)), "Vd not 8 bytes");
 
 #if 0 // _ENTER_ARM__
 {
@@ -295,94 +420,130 @@ V##_K4), V##_K5), V##_K6), V##_K7)
 #endif
 
 #define     FLT16_VOID  ((flt16_t) 0)
+#define     FLT16_VOIDA ((flt16_t *) 0)
+#define     FLT16_VOIDAC ((flt16_t const *) 0)
 
-#define     WYU_VOID    (0.0f)
-#define     WBU_VOID    (0.0f)
-#define     WBI_VOID    (0.0f)
-#define     WBC_VOID    (0.0f)
-#define     WHU_VOID    (0.0f)
-#define     WHI_VOID    (0.0f)
-#define     WHF_VOID    (0.0f)
-#define     WWU_VOID    (0.0f)
-#define     WWI_VOID    (0.0f)
-#define     WWF_VOID    (0.0f)
+#define        FLT_VOID          (0.0F)
+#define        FLT_VOIDA  ((float *) 0)
+#define        FLT_VOIDAC  ((float const *) 0)
 
-#define     DYU_VOID    ((uint64x1_t){0})
-#define     DBU_VOID    ((uint8x8_t){0})
-#define     DBI_VOID     ((int8x8_t){0})
+#define        DBL_VOID          (0.0)
+#define        DBL_VOIDA ((double *) 0)
+#define        DBL_VOIDAC ((double const *) 0)
+
+
+#define     WYU_VOID    (0.0F)
+
+#define     WBU_VOID    (0.0F)
+#define     WBI_VOID    (0.0F)
+#define     WBC_VOID    (0.0F)
+
+#define     WHU_VOID    (0.0F)
+#define     WHI_VOID    (0.0F)
+#define     WHF_VOID    (0.0F)
+
+#define     WWU_VOID    (0.0F)
+#define     WWI_VOID    (0.0F)
+#define     WWF_VOID    (0.0F)
+
+
+#define     DYU_VOID vcreate_u64(0)
+#define     DBU_VOID vcreate_u8(0)
+#define     DBI_VOID vcreate_s8(0)
 #if CHAR_MIN
-#   define  DBC_VOID     ((int8x8_t){0})
+#   define  DBC_VOID DBI_VOID
 #else
-#   define  DBC_VOID    ((uint8x8_t){0})
+#   define  DBC_VOID DBU_VOID
 #endif
 
-#define     DHU_VOID     ((uint16x4_t){0})
-#define     DHI_VOID      ((int16x4_t){0})
-#define     DHF_VOID    ((float16x4_t){0})
-#define     DWU_VOID     ((uint32x2_t){0})
-#define     DWI_VOID      ((int32x2_t){0})
-#define     DWF_VOID    ((float32x2_t){0})
-#define     DDU_VOID     ((uint64x1_t){0})
-#define     DDI_VOID      ((int64x1_t){0})
-#define     DDF_VOID    ((float64x1_t){0})
+#define     DHU_VOID vcreate_u16(0)
+#define     DHI_VOID vcreate_s16(0)
+#define     DHF_VOID vcreate_f16(0)
 
-#define     QYU_VOID    ((uint64x2_t){0})
-#define     QBU_VOID    ((uint8x16_t){0})
-#define     QBI_VOID     ((int8x16_t){0})
+#define     DWU_VOID vcreate_u32(0)
+#define     DWI_VOID vcreate_s32(0)
+#define     DWF_VOID vcreate_f32(0)
+
+#define     DDU_VOID vcreate_u64(0)
+#define     DDI_VOID vcreate_s64(0)
+#define     DDF_VOID vcreate_f64(0)
+
+
+#define     QYU_VOID vdupq_n_u64(0)
+#define     QBU_VOID vdupq_n_u8(0)
+#define     QBI_VOID vdupq_n_s8(0)
+
 #if CHAR_MIN
-#   define  QBC_VOID     ((int8x16_t){0})
+#   define  QBC_VOID QBI_VOID
 #else
-#   define  QBC_VOID    ((uint8x16_t){0})
+#   define  QBC_VOID QBU_VOID
 #endif
 
-#define     QHU_VOID     ((uint16x8_t){0})
-#define     QHI_VOID      ((int16x8_t){0})
-#define     QHF_VOID    ((float16x8_t){0})
-#define     QWU_VOID     ((uint32x4_t){0})
-#define     QWI_VOID      ((int32x4_t){0})
-#define     QWF_VOID    ((float32x4_t){0})
-#define     QDU_VOID     ((uint64x2_t){0})
-#define     QDI_VOID      ((int64x2_t){0})
-#define     QDF_VOID    ((float64x2_t){0})
+#define     QHU_VOID vdupq_n_u16(0)
+#define     QHI_VOID vdupq_n_s16(0)
+#define     QHF_VOID vreinterpretq_f16_u8(QBU_VOID)
 
-#define     VWYU_VOID   ((VWYU_TYPE){WYU_VOID})
-#define     VWBU_VOID   ((VWBU_TYPE){WBU_VOID})
-#define     VWBI_VOID   ((VWBI_TYPE){WBI_VOID})
-#define     VWBC_VOID   ((VWBC_TYPE){WBC_VOID})
-#define     VWHU_VOID   ((VWHU_TYPE){WHU_VOID})
-#define     VWHI_VOID   ((VWHI_TYPE){WHI_VOID})
-#define     VWHF_VOID   ((VWHF_TYPE){WHF_VOID})
-#define     VWWU_VOID   ((VWWU_TYPE){WWU_VOID})
-#define     VWWI_VOID   ((VWWI_TYPE){WWI_VOID})
-#define     VWWF_VOID   ((VWWF_TYPE){WWF_VOID})
+#define     QWU_VOID vdupq_n_u32(0)
+#define     QWI_VOID vdupq_n_s32(0)
+#define     QWF_VOID vreinterpretq_f32_u8(QBU_VOID)
 
-#define     VDYU_VOID   DYU_ASTV(DYU_VOID)
-#define     VDBU_VOID   DBU_VOID
-#define     VDBI_VOID   DBI_VOID
-#define     VDBC_VOID   DBC_ASTV(DBC_VOID)
-#define     VDHU_VOID   DHU_VOID
-#define     VDHI_VOID   DHI_VOID
-#define     VDHF_VOID   DHF_VOID
-#define     VDWU_VOID   DWU_VOID
-#define     VDWI_VOID   DWI_VOID
-#define     VDWF_VOID   DWF_VOID
-#define     VDDU_VOID   DDU_VOID
-#define     VDDI_VOID   DDI_VOID
-#define     VDDF_VOID   DDF_VOID
+#define     QDU_VOID vdupq_n_u64(0)
+#define     QDI_VOID vdupq_n_s64(0)
+#define     QDF_VOID vreinterpretq_f64_u8(QBU_VOID)
 
-#define     VQYU_VOID   QYU_ASTV(QYU_VOID)
-#define     VQBU_VOID   QBU_VOID
-#define     VQBI_VOID   QBI_VOID
-#define     VQBC_VOID   QBC_ASTV(QBC_VOID)
-#define     VQHU_VOID   QHU_VOID
-#define     VQHI_VOID   QHI_VOID
-#define     VQHF_VOID   QHF_VOID
-#define     VQWU_VOID   QWU_VOID
-#define     VQWI_VOID   QWI_VOID
-#define     VQWF_VOID   QWF_VOID
-#define     VQDU_VOID   QDU_VOID
-#define     VQDI_VOID   QDI_VOID
-#define     VQDF_VOID   QDF_VOID
+#define     QQU_VOID vdupq_n_u64(0)
+#define     QQI_VOID vdupq_n_s64(0)
+#define     QQF_VOID ((QUAD_TYPE){0}).F
+
+#define     VWYU_VOID   ((Vwyu){0})
+#define     VWBU_VOID   ((Vwbu){0})
+#define     VWBI_VOID   ((Vwbi){0})
+#define     VWBC_VOID   ((Vwbc){0})
+#define     VWHU_VOID   ((Vwhu){0})
+#define     VWHI_VOID   ((Vwhi){0})
+#define     VWHF_VOID   ((Vwhf){0})
+#define     VWWU_VOID   ((Vwwu){0})
+#define     VWWI_VOID   ((Vwwi){0})
+#define     VWWF_VOID   ((Vwwf){0})
+
+#define     VDYU_VOID   ((Vdyu){0})
+
+#define     VDBU_VOID   ((Vdbu){0})
+#define     VDBI_VOID   ((Vdbi){0})
+#define     VDBC_VOID   ((Vdbc){0})
+
+#define     VDHU_VOID   ((Vdhu){0})
+#define     VDHI_VOID   ((Vdhi){0})
+#define     VDHF_VOID   ((Vdhf){0})
+
+#define     VDWU_VOID   ((Vdwu){0})
+#define     VDWI_VOID   ((Vdwi){0})
+#define     VDWF_VOID   ((Vdwf){0})
+
+#define     VDDU_VOID   ((Vddu){0})
+#define     VDDI_VOID   ((Vddi){0})
+#define     VDDF_VOID   ((Vddf){0})
+
+#define     VQYU_VOID   ((Vqyu){0})
+#define     VQBU_VOID   ((Vqbu){0})
+#define     VQBI_VOID   ((Vqbi){0})
+#define     VQBC_VOID   ((Vqbc){0})
+
+#define     VQHU_VOID   ((Vqhu){0})
+#define     VQHI_VOID   ((Vqhi){0})
+#define     VQHF_VOID   ((Vqhf){0})
+
+#define     VQWU_VOID   ((Vqwu){0})
+#define     VQWI_VOID   ((Vqwi){0})
+#define     VQWF_VOID   ((Vqwf){0})
+
+#define     VQDU_VOID   ((Vqdu){0})
+#define     VQDI_VOID   ((Vqdi){0})
+#define     VQDF_VOID   ((Vqdf){0})
+
+#define     VQQU_VOID   ((Vqqu){0})
+#define     VQQI_VOID   ((Vqqi){0})
+#define     VQQF_VOID   ((Vqqf){0})
 
 #if 0 // _LEAVE_ARM_VOID
 }
@@ -533,6 +694,7 @@ INLINE(Vddi,  LONG_ASTV)   (long m)
 
 #endif
 
+#if QUAD_NLLONG == 2
 INLINE(Vddu,ULLONG_ASTV) (ullong m)
 {
 #define     ULLONG_ASTV(M)   vdup_n_u64(M)
@@ -543,6 +705,31 @@ INLINE(Vddi, LLONG_ASTV)  (llong m)
 {
 #define     LLONG_ASTV(M)    vdup_n_s64(M)
     return  LLONG_ASTV(m);
+}
+
+INLINE(Vqqu,astvqu) (QUAD_UTYPE m)
+{
+    QUAD_TYPE   c = {.U=m};
+    uint64x1_t  l = vdup_n_u64(c.Lo.U);
+    uint64x1_t  r = vdup_n_u64(c.Hi.U);
+    Vqqu        v = {vcombine_u64(l, r)};
+    return      v;
+}
+
+INLINE(Vqqi,astvqi) (QUAD_ITYPE m)
+{
+    QUAD_TYPE   c = {.I=m};
+    int64x1_t   l = vdup_n_s64(c.Lo.U);
+    int64x1_t   r = vdup_n_s64(c.Hi.U);
+    Vqqi        v = {vcombine_s64(l, r)};
+    return      v;
+}
+
+#endif
+
+INLINE(Vqqf,astvqf) (QUAD_FTYPE m)
+{
+    return ((Vqqf){m});
 }
 
 
@@ -567,21 +754,36 @@ INLINE(   float,VWWF_ASTV) (Vwwf v)
 
 INLINE(uint64_t,VDDU_ASTV) (Vddu v)
 {
-#   define  VDDU_ASTV(V)    vget_lane_u64(V,0)
+#define     VDDU_ASTV(V)    vget_lane_u64(V,0)
     return  VDDU_ASTV(v);
 }
 
 INLINE( int64_t,VDDI_ASTV) (Vddi v)
 {
-#   define  VDDI_ASTV(V)    vget_lane_s64(V,0)
+#define     VDDI_ASTV(V)    vget_lane_s64(V,0)
     return  VDDI_ASTV(v);
 }
 
 INLINE(  double,VDDF_ASTV) (Vddf v)
 {
-#   define  VDDF_ASTV(V)    vget_lane_f64(V,0)
+#define     VDDF_ASTV(V)    vget_lane_f64(V,0)
     return  VDDF_ASTV(v);
 }
+
+INLINE(QUAD_UTYPE,VQQU_ASTV) (Vqqu x) 
+{
+#define     VQQU_ASTV(X) (((union MY_A64_VQ){.Qu=X}).V.U)
+    return  VQQU_ASTV(x);
+}
+
+INLINE(QUAD_ITYPE,VQQI_ASTV) (Vqqi x) 
+{
+#define     VQQI_ASTV(X) (((union MY_A64_VQ){.Qi=X}).V.I)
+    return  VQQI_ASTV(x);
+}
+
+INLINE(QUAD_FTYPE,VQQF_ASTV) (Vqqf v) {return v.V0;}
+
 
 #if 0 // _LEAVE_ARM_ASTV
 }
@@ -786,6 +988,21 @@ INLINE(Vqyu,VQDF_ASYU) (Vqdf v)
     return  VQDF_ASYU(v);
 }
 
+INLINE(Vqyu,VQQU_ASYU) (Vqqu v) 
+{
+    return  ((Vqyu){v.V0});
+}
+
+INLINE(Vqyu,VQQI_ASYU) (Vqqi v) 
+{
+    return  ((Vqyu){vreinterpretq_u64_s64(v.V0)});
+}
+
+INLINE(Vqyu,VQQF_ASYU) (Vqqf v) 
+{
+    return  ((union MY_A64_VQ){.Qf=v}).Yu;
+}
+
 #if 0 // _LEAVE_ARM_ASYU
 }
 #endif
@@ -930,6 +1147,9 @@ INLINE(Vqbu,VQWF_ASBU) (Vqwf v) {return vreinterpretq_u8_f32(v);}
 INLINE(Vqbu,VQDU_ASBU) (Vqdu v) {return vreinterpretq_u8_u64(v);}
 INLINE(Vqbu,VQDI_ASBU) (Vqdi v) {return vreinterpretq_u8_s64(v);}
 INLINE(Vqbu,VQDF_ASBU) (Vqdf v) {return vreinterpretq_u8_f64(v);}
+INLINE(Vqbu,VQQU_ASBU) (Vqqu v) {return vreinterpretq_u8_u64(v.V0);}
+INLINE(Vqbu,VQQI_ASBU) (Vqqi v) {return vreinterpretq_u8_s64(v.V0);}
+INLINE(Vqbu,VQQF_ASBU) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Bu;}
 
 #if 0 // _LEAVE_ARM_ASBU
 }
@@ -1068,6 +1288,9 @@ INLINE(Vqbi,VQWF_ASBI) (Vqwf v) {return vreinterpretq_s8_f32(v);}
 INLINE(Vqbi,VQDU_ASBI) (Vqdu v) {return vreinterpretq_s8_u64(v);}
 INLINE(Vqbi,VQDI_ASBI) (Vqdi v) {return vreinterpretq_s8_s64(v);}
 INLINE(Vqbi,VQDF_ASBI) (Vqdf v) {return vreinterpretq_s8_f64(v);}
+INLINE(Vqbi,VQQU_ASBI) (Vqqu v) {return vreinterpretq_s8_u64(v.V0);}
+INLINE(Vqbi,VQQI_ASBI) (Vqqi v) {return vreinterpretq_s8_s64(v.V0);}
+INLINE(Vqbi,VQQF_ASBI) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Bi;}
 
 #if 0 // _LEAVE_ARM_ASBI
 }
@@ -1347,6 +1570,10 @@ INLINE(Vqbc,VQDF_ASBC) (Vqdf v)
     return  VQDF_ASBC(v);
 }
 
+INLINE(Vqbc,VQQU_ASBC) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Bc;}
+INLINE(Vqbc,VQQI_ASBC) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Bc;}
+INLINE(Vqbc,VQQF_ASBC) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Bc;}
+
 #if 0 // _LEAVE_ARM_ASBC
 }
 #endif
@@ -1488,6 +1715,9 @@ INLINE(Vqhu,VQWF_ASHU) (Vqwf v) {return vreinterpretq_u16_f32(v);}
 INLINE(Vqhu,VQDU_ASHU) (Vqdu v) {return vreinterpretq_u16_u64(v);}
 INLINE(Vqhu,VQDI_ASHU) (Vqdi v) {return vreinterpretq_u16_s64(v);}
 INLINE(Vqhu,VQDF_ASHU) (Vqdf v) {return vreinterpretq_u16_f64(v);}
+INLINE(Vqhu,VQQU_ASHU) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Hu;}
+INLINE(Vqhu,VQQI_ASHU) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Hu;}
+INLINE(Vqhu,VQQF_ASHU) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Hu;}
 
 #if 0 // _LEAVE_ARM_ASHU
 }
@@ -1627,6 +1857,9 @@ INLINE(Vqhi,VQWF_ASHI) (Vqwf v) {return vreinterpretq_s16_f32(v);}
 INLINE(Vqhi,VQDU_ASHI) (Vqdu v) {return vreinterpretq_s16_u64(v);}
 INLINE(Vqhi,VQDI_ASHI) (Vqdi v) {return vreinterpretq_s16_s64(v);}
 INLINE(Vqhi,VQDF_ASHI) (Vqdf v) {return vreinterpretq_s16_f64(v);}
+INLINE(Vqhi,VQQU_ASHI) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Hi;}
+INLINE(Vqhi,VQQI_ASHI) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Hi;}
+INLINE(Vqhi,VQQF_ASHI) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Hi;}
 
 #if 0 // _LEAVE_ARM_ASHI
 }
@@ -1767,6 +2000,10 @@ INLINE(Vqhf,VQWF_ASHF) (Vqwf v) {return vreinterpretq_f16_f32(v);}
 INLINE(Vqhf,VQDU_ASHF) (Vqdu v) {return vreinterpretq_f16_u64(v);}
 INLINE(Vqhf,VQDI_ASHF) (Vqdi v) {return vreinterpretq_f16_s64(v);}
 INLINE(Vqhf,VQDF_ASHF) (Vqdf v) {return vreinterpretq_f16_f64(v);}
+INLINE(Vqhf,VQQU_ASHF) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Hf;}
+INLINE(Vqhf,VQQI_ASHF) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Hf;}
+INLINE(Vqhf,VQQF_ASHF) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Hf;}
+
 #if 0 // _LEAVE_ARM_ASHF
 }
 #endif
@@ -1908,6 +2145,9 @@ INLINE(Vqwu,VQWF_ASWU) (Vqwf v) {return vreinterpretq_u32_f32(v);}
 INLINE(Vqwu,VQDU_ASWU) (Vqdu v) {return vreinterpretq_u32_u64(v);}
 INLINE(Vqwu,VQDI_ASWU) (Vqdi v) {return vreinterpretq_u32_s64(v);}
 INLINE(Vqwu,VQDF_ASWU) (Vqdf v) {return vreinterpretq_u32_f64(v);}
+INLINE(Vqwu,VQQU_ASWU) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Wu;}
+INLINE(Vqwu,VQQI_ASWU) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Wu;}
+INLINE(Vqwu,VQQF_ASWU) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Wu;}
 
 #if 0 // _LEAVE_ARM_ASWU
 }
@@ -2049,6 +2289,9 @@ INLINE(Vqwi,VQWF_ASWI) (Vqwf v) {return vreinterpretq_s32_f32(v);}
 INLINE(Vqwi,VQDU_ASWI) (Vqdu v) {return vreinterpretq_s32_u64(v);}
 INLINE(Vqwi,VQDI_ASWI) (Vqdi v) {return vreinterpretq_s32_s64(v);}
 INLINE(Vqwi,VQDF_ASWI) (Vqdf v) {return vreinterpretq_s32_f64(v);}
+INLINE(Vqwi,VQQU_ASWI) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Wi;}
+INLINE(Vqwi,VQQI_ASWI) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Wi;}
+INLINE(Vqwi,VQQF_ASWI) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Wi;}
 
 #if 0 // _LEAVE_ARM_ASWI
 }
@@ -2190,6 +2433,9 @@ INLINE(Vqwf,VQWI_ASWF) (Vqwi v) {return vreinterpretq_f32_s32(v);}
 INLINE(Vqwf,VQDU_ASWF) (Vqdu v) {return vreinterpretq_f32_u64(v);}
 INLINE(Vqwf,VQDI_ASWF) (Vqdi v) {return vreinterpretq_f32_s64(v);}
 INLINE(Vqwf,VQDF_ASWF) (Vqdf v) {return vreinterpretq_f32_f64(v);}
+INLINE(Vqwf,VQQU_ASWF) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Wf;}
+INLINE(Vqwf,VQQI_ASWF) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Wf;}
+INLINE(Vqwf,VQQF_ASWF) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Wf;}
 
 #if 0 // _LEAVE_ARM_ASWF
 }
@@ -2270,6 +2516,9 @@ INLINE(Vqdu,VQWI_ASDU) (Vqwi v) {return vreinterpretq_u64_s32(v);}
 INLINE(Vqdu,VQWF_ASDU) (Vqwf v) {return vreinterpretq_u64_f32(v);}
 INLINE(Vqdu,VQDI_ASDU) (Vqdi v) {return vreinterpretq_u64_s64(v);}
 INLINE(Vqdu,VQDF_ASDU) (Vqdf v) {return vreinterpretq_u64_f64(v);}
+INLINE(Vqdu,VQQU_ASDU) (Vqqu v) {return v.V0;}
+INLINE(Vqdu,VQQI_ASDU) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Du;}
+INLINE(Vqdu,VQQF_ASDU) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Du;}
 
 #if 0 // _LEAVE_ARM_ASDU
 }
@@ -2350,6 +2599,9 @@ INLINE(Vqdi,VQWI_ASDI) (Vqwi v) {return vreinterpretq_s64_s32(v);}
 INLINE(Vqdi,VQWF_ASDI) (Vqwf v) {return vreinterpretq_s64_f32(v);}
 INLINE(Vqdi,VQDU_ASDI) (Vqdi v) {return vreinterpretq_s64_u64(v);}
 INLINE(Vqdi,VQDF_ASDI) (Vqdf v) {return vreinterpretq_s64_f64(v);}
+INLINE(Vqdi,VQQU_ASDI) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Di;}
+INLINE(Vqdi,VQQI_ASDI) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Di;}
+INLINE(Vqdi,VQQF_ASDI) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Di;}
 
 #if 0 // _LEAVE_ARM_ASDI
 }
@@ -2430,31 +2682,1131 @@ INLINE(Vqdf,VQWI_ASDF) (Vqwi v) {return vreinterpretq_f64_s32(v);}
 INLINE(Vqdf,VQWF_ASDF) (Vqwf v) {return vreinterpretq_f64_f32(v);}
 INLINE(Vqdf,VQDU_ASDF) (Vqdu v) {return vreinterpretq_f64_u64(v);}
 INLINE(Vqdf,VQDI_ASDF) (Vqdf v) {return vreinterpretq_f64_s64(v);}
+INLINE(Vqdf,VQQU_ASDF) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Df;}
+INLINE(Vqdf,VQQI_ASDF) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Df;}
+INLINE(Vqdf,VQQF_ASDF) (Vqqf v) {return ((union MY_A64_VQ){.Qf=v}).Df;}
 
 #if 0 // _LEAVE_ARM_ASDF
+}
+#endif
+
+#if 0 // _ENTER_ARM_ASQU
+{
+#endif
+
+INLINE(Vqqu,VQYU_ASQU) (Vqyu v) {return ((Vqqu){v.V0});}
+
+INLINE(Vqqu,VQBU_ASQU) (Vqbu v) {return ((Vqqu){vreinterpretq_u64_u8(v)});}
+INLINE(Vqqu,VQBI_ASQU) (Vqbi v) {return ((Vqqu){vreinterpretq_u64_s8(v)});}
+INLINE(Vqqu,VQBC_ASQU) (Vqbc v) {return ((Vqqu){VQBC_ASDU(v)});}
+
+INLINE(Vqqu,VQHU_ASQU) (Vqhu v) {return ((Vqqu){vreinterpretq_u64_u16(v)});}
+INLINE(Vqqu,VQHI_ASQU) (Vqhi v) {return ((Vqqu){vreinterpretq_u64_s16(v)});}
+INLINE(Vqqu,VQHF_ASQU) (Vqhf v) {return ((Vqqu){vreinterpretq_u64_f16(v)});}
+
+INLINE(Vqqu,VQWU_ASQU) (Vqwu v) {return ((Vqqu){vreinterpretq_u64_u32(v)});}
+INLINE(Vqqu,VQWI_ASQU) (Vqwi v) {return ((Vqqu){vreinterpretq_u64_s32(v)});}
+INLINE(Vqqu,VQWF_ASQU) (Vqwf v) {return ((Vqqu){vreinterpretq_u64_f32(v)});}
+
+INLINE(Vqqu,VQDU_ASQU) (Vqdu v) {return ((Vqqu){v});}
+INLINE(Vqqu,VQDI_ASQU) (Vqdi v) {return ((Vqqu){vreinterpretq_u64_s64(v)});}
+INLINE(Vqqu,VQDF_ASQU) (Vqdf v) {return ((Vqqu){vreinterpretq_u64_f64(v)});}
+
+INLINE(Vqqu,VQQI_ASQU) (Vqqi v) {return ((Vqqu){vreinterpretq_u64_s64(v.V0)});}
+INLINE(Vqqu,VQQF_ASQU) (Vqqf v) 
+{
+    QUAD_TYPE   r = {.F=v.V0};
+    return ((Vqqu){vcombine_u64(vdup_n_u64(r.Lo.U), vdup_n_u64(r.Hi.U))});
+}
+
+#if 0 // _LEAVE_ARM_ASQU
+}
+#endif
+
+#if 0 // _ENTER_ARM_ASQI
+{
+#endif
+
+INLINE(Vqqi,VQYU_ASQI) (Vqyu v) {return ((Vqqi){vreinterpretq_s64_u64(v.V0)});}
+
+INLINE(Vqqi,VQBU_ASQI) (Vqbu v) {return ((Vqqi){vreinterpretq_s64_u8(v)});}
+INLINE(Vqqi,VQBI_ASQI) (Vqbi v) {return ((Vqqi){vreinterpretq_s64_s8(v)});}
+INLINE(Vqqi,VQBC_ASQI) (Vqbc v) {return ((Vqqi){VQBC_ASDI(v)});}
+
+INLINE(Vqqi,VQHU_ASQI) (Vqhu v) {return ((Vqqi){vreinterpretq_s64_u16(v)});}
+INLINE(Vqqi,VQHI_ASQI) (Vqhi v) {return ((Vqqi){vreinterpretq_s64_s16(v)});}
+INLINE(Vqqi,VQHF_ASQI) (Vqhf v) {return ((Vqqi){vreinterpretq_s64_f16(v)});}
+
+INLINE(Vqqi,VQWU_ASQI) (Vqwu v) {return ((Vqqi){vreinterpretq_s64_u32(v)});}
+INLINE(Vqqi,VQWI_ASQI) (Vqwi v) {return ((Vqqi){vreinterpretq_s64_s32(v)});}
+INLINE(Vqqi,VQWF_ASQI) (Vqwf v) {return ((Vqqi){vreinterpretq_s64_f32(v)});}
+
+INLINE(Vqqi,VQDU_ASQI) (Vqdu v) {return ((Vqqi){vreinterpretq_s64_u64(v)});}
+INLINE(Vqqi,VQDI_ASQI) (Vqdi v) {return ((Vqqi){v});}
+INLINE(Vqqi,VQDF_ASQI) (Vqdf v) {return ((Vqqi){vreinterpretq_s64_f64(v)});}
+
+INLINE(Vqqi,VQQU_ASQI) (Vqqu v) {return ((Vqqi){vreinterpretq_s64_u64(v.V0)});}
+
+INLINE(Vqqi,VQQF_ASQI) (Vqqf v) 
+{
+    QUAD_TYPE   r = {.F=v.V0};
+    return  ((Vqqi){vcombine_s64(vdup_n_s64(r.Lo.I), vdup_n_s64(r.Hi.I))});
+}
+
+#if 0 // _LEAVE_ARM_ASQI
+}
+#endif
+
+#if 0 // _ENTER_ARM_ASQF
+{
+#endif
+
+INLINE(Vqqf,VQYU_ASQF) (Vqyu v) {return ((union MY_A64_VQ){.Yu=v}).Qf;}
+INLINE(Vqqf,VQBU_ASQF) (Vqbu v) {return ((union MY_A64_VQ){.Bu=v}).Qf;}
+INLINE(Vqqf,VQBI_ASQF) (Vqbi v) {return ((union MY_A64_VQ){.Bi=v}).Qf;}
+INLINE(Vqqf,VQBC_ASQF) (Vqbc v) {return ((union MY_A64_VQ){.Bc=v}).Qf;}
+INLINE(Vqqf,VQHU_ASQF) (Vqhu v) {return ((union MY_A64_VQ){.Hu=v}).Qf;}
+INLINE(Vqqf,VQHI_ASQF) (Vqhi v) {return ((union MY_A64_VQ){.Hi=v}).Qf;}
+INLINE(Vqqf,VQHF_ASQF) (Vqhf v) {return ((union MY_A64_VQ){.Hf=v}).Qf;}
+INLINE(Vqqf,VQWU_ASQF) (Vqwu v) {return ((union MY_A64_VQ){.Wu=v}).Qf;}
+INLINE(Vqqf,VQWI_ASQF) (Vqwi v) {return ((union MY_A64_VQ){.Wi=v}).Qf;}
+INLINE(Vqqf,VQWF_ASQF) (Vqwf v) {return ((union MY_A64_VQ){.Wf=v}).Qf;}
+INLINE(Vqqf,VQDU_ASQF) (Vqdu v) {return ((union MY_A64_VQ){.Du=v}).Qf;}
+INLINE(Vqqf,VQDI_ASQF) (Vqdi v) {return ((union MY_A64_VQ){.Di=v}).Qf;}
+INLINE(Vqqf,VQDF_ASQF) (Vqdf v) {return ((union MY_A64_VQ){.Df=v}).Qf;}
+INLINE(Vqqf,VQQU_ASQF) (Vqqu v) {return ((union MY_A64_VQ){.Qu=v}).Qf;}
+INLINE(Vqqf,VQQI_ASQF) (Vqqi v) {return ((union MY_A64_VQ){.Qi=v}).Qf;}
+
+#if 0 // _LEAVE_ARM_ASQF
+}
+#endif
+
+
+#if 0 // _ENTER_ARM_REVS
+{
+#endif
+
+INLINE(float,WYU_REVS) (float x)
+{
+    DWRD_VTYPE v = {.W.F={x}};
+    v.B.U = vrbit_u8(v.B.U);
+    v.B.U = vrev32_u8(v.B.U);
+    return  vget_lane_f32(v.W.F, 0);
+}
+
+INLINE(float,WBR_REVS) (float x)
+{
+    DWRD_VTYPE v = {.W.F={x}};
+    v.B.U = vrev32_u8(v.B.U);
+    return  vget_lane_f32(v.W.F, 0);
+}
+
+INLINE(float,WHR_REVS) (float x)
+{
+    DWRD_VTYPE v = {.W.F={x}};
+    v.H.U = vrev32_u16(v.H.U);
+    return  vget_lane_f32(v.W.F, 0);
+}
+
+INLINE(Vwhu,VWHU_REVS) (Vwhu x) {return ((Vwhu){WHR_REVS(x.V0)});}
+INLINE(Vwhi,VWHI_REVS) (Vwhi x) {return ((Vwhi){WHR_REVS(x.V0)});}
+INLINE(Vwhf,VWHF_REVS) (Vwhf x) {return ((Vwhf){WHR_REVS(x.V0)});}
+INLINE(Vwbu,VWBU_REVS) (Vwbu x) {return ((Vwbu){WBR_REVS(x.V0)});}
+INLINE(Vwbi,VWBI_REVS) (Vwbi x) {return ((Vwbi){WBR_REVS(x.V0)});}
+INLINE(Vwbc,VWBC_REVS) (Vwbc x) {return ((Vwbc){WBR_REVS(x.V0)});}
+INLINE(Vwyu,VWYU_REVS) (Vwyu x) {return ((Vwyu){WYU_REVS(x.V0)});}
+
+INLINE(Vdwu,VDWU_REVS) (Vdwu x) {return vrev64_u32(x);}
+INLINE(Vdwi,VDWI_REVS) (Vdwi x) {return vrev64_s32(x);}
+INLINE(Vdwf,VDWF_REVS) (Vdwf x) {return vrev64_f32(x);}
+INLINE(Vdhu,VDHU_REVS) (Vdhu x) {return vrev64_u16(x);}
+INLINE(Vdhi,VDHI_REVS) (Vdhi x) {return vrev64_s16(x);}
+INLINE(Vdhf,VDHF_REVS) (Vdhf x) 
+{
+    DWRD_VTYPE d = {.H.F=x};
+    d.H.U = VDHU_REVS(d.H.U);
+    return  d.H.F;
+}
+INLINE(Vdbu,VDBU_REVS) (Vdbu x) {return vrev64_u8(x);}
+INLINE(Vdbi,VDBI_REVS) (Vdbi x) {return vrev64_s8(x);}
+INLINE(Vdbc,VDBC_REVS) (Vdbc x) 
+{
+    DWRD_VTYPE d = {.B.C=x};
+    d.B.U = VDBU_REVS(d.B.U);
+    return  d.B.C;
+}
+
+INLINE(uint64x1_t,DYU_REVS) (uint64x1_t x)
+{
+    uint8x8_t b = vreinterpret_u8_u64(x);
+    b = vrbit_u8(b);
+    b = vrev64_u8(b);
+    return  vreinterpret_u64_u8(b);
+}
+
+INLINE(Vdyu,VDYU_REVS) (Vdyu x) 
+{
+    x.V0 = DYU_REVS(x.V0);
+    return  x;
+}
+
+INLINE(Vqdu,VQDU_REVS) (Vqdu x)
+{
+    uint64x1_t l = vget_high_u64(x);
+    uint64x1_t r = vget_low_u64(x);
+    return  vcombine_u64(l, r);
+}
+
+INLINE(Vqdi,VQDI_REVS) (Vqdi x)
+{
+    QUAD_VTYPE q = {.D.I=x};
+    q.D.U = VQDU_REVS(q.D.U);
+    return  q.D.I;
+}
+
+INLINE(Vqdf,VQDF_REVS) (Vqdf x)
+{
+    QUAD_VTYPE q = {.D.F=x};
+    q.D.U = VQDU_REVS(q.D.U);
+    return  q.D.F;
+}
+
+INLINE(Vqwu,VQWU_REVS) (Vqwu x)
+{
+    QUAD_VTYPE q = {.W.U=x};
+    q.W.U = vrev64q_u32(q.W.U);
+    q.D.U = VQDU_REVS(q.D.U);
+    return  q.W.U;
+}
+
+INLINE(Vqwi,VQWI_REVS) (Vqwi x)
+{
+    QUAD_VTYPE q = {.W.I=x};
+    q.W.U = VQWU_REVS(q.W.U);
+    return  q.W.I;
+}
+
+INLINE(Vqwf,VQWF_REVS) (Vqwf x)
+{
+    QUAD_VTYPE q = {.W.F=x};
+    q.W.U = VQWU_REVS(q.W.U);
+    return  q.W.F;
+}
+
+INLINE(Vqhu,VQHU_REVS) (Vqhu x)
+{
+    QUAD_VTYPE q = {.H.U=x};
+    q.H.U = vrev64q_u16(q.H.U);
+    q.D.U = VQDU_REVS(q.D.U);
+    return  q.H.U;
+}
+
+INLINE(Vqhi,VQHI_REVS) (Vqhi x)
+{
+    QUAD_VTYPE q = {.H.I=x};
+    q.H.U = VQHU_REVS(q.H.U);
+    return  q.H.I;
+}
+
+INLINE(Vqhf,VQHF_REVS) (Vqhf x)
+{
+    QUAD_VTYPE q = {.H.F=x};
+    q.H.U = VQHU_REVS(q.H.U);
+    return  q.H.F;
+}
+
+INLINE(Vqbu,VQBU_REVS) (Vqbu x)
+{
+    QUAD_VTYPE q = {.B.U=x};
+    q.B.U = vrev64q_u8(q.D.U);
+    q.D.U = VQDU_REVS(q.D.U);
+    return  q.B.U;
+}
+
+INLINE(Vqbi,VQBI_REVS) (Vqbi x)
+{
+    QUAD_VTYPE q = {.B.I=x};
+    q.B.U = VQBU_REVS(q.B.U);
+    return  q.B.I;
+}
+
+INLINE(Vqbc,VQBC_REVS) (Vqbc x)
+{
+    QUAD_VTYPE q = {.B.C=x};
+    q.B.U = VQBU_REVS(q.B.U);
+    return  q.B.C;
+}
+
+INLINE(uint64x2_t,QYU_REVS) (uint64x2_t x)
+{
+    QUAD_VTYPE s = {.D.U=x};
+    s.B.U = vrbitq_u8(s.B.U);
+    s.B.U = vrev64q_u8(s.B.U);
+    uint64x1_t l = vget_high_u64(s.D.U);
+    uint64x1_t r = vget_low_u64(s.D.U);
+    return  vcombine_u64(l, r);
+}
+
+INLINE(Vqyu,VQYU_REVS) (Vqyu x)
+{
+    x.V0 = QYU_REVS(x.V0);
+    return x;
+}
+
+#if 0 // _LEAVE_ARM_REVS
+}
+#endif
+
+#if 0 // _ENTER_ARM_REVW
+{
+#endif
+
+#if DWRD_NLONG == 1
+INLINE(  ulong, ULONG_REVW)   (ulong x) 
+{
+    DWRD_VTYPE d = {.D0.U=x};
+    d.W.U = vrev64_u32(d.W.U);
+    return  vget_lane_u64(d.D.U, 0);
+}
+
+INLINE(   long,  LONG_REVW)    (long x) {return ULONG_REVW(x);}
+#endif
+
+#if QUAD_NLLONG == 2
+
+INLINE(ullong,ULLONG_REVW)  (ullong x) 
+{
+    DWRD_VTYPE d = {.U=x};
+    d.W.U = vrev64_u32(d.W.U);
+    return  vget_lane_u64(d.D.U, 0);
+}
+
+INLINE(QUAD_UTYPE,revwqu)  (QUAD_UTYPE x) 
+{
+    QUAD_VTYPE q = {.U=x};
+    q.W.U = VQWU_REVS(q.W.U);
+    return  q.U;
+}
+
+INLINE(QUAD_ITYPE,revwqi)  (QUAD_ITYPE x) 
+{
+    QUAD_TYPE q = {.I=x};
+    q.U = revwqu(q.U);
+    return  q.I;
+}
+
+#else
+
+INLINE(ullong,ULLONG_REVW)  (ullong x) 
+{
+    QUAD_VTYPE q = {.Q0.U=x};
+    q.W.U = VQWU_REVS(q.W.U);
+    return  q.U;
+}
+
+#endif
+
+INLINE( llong, LLONG_REVW)   (llong x) {return ULLONG_REVW(x);}
+
+INLINE( double,   DBL_REVW)  (double x)
+{
+    DWRD_VTYPE d = {x};
+    d.W.U = VDWU_REVS(d.W.U);
+    return  d.F;
+}
+
+INLINE(Vddu,VDDU_REVW) (Vddu x)
+{
+    DWRD_VTYPE d = {.D.U=x};
+    d.W.U = vrev64_u32(d.W.U);
+    return  d.D.U;
+}
+
+INLINE(Vddi,VDDI_REVW) (Vddi x)
+{
+    DWRD_VTYPE d = {.D.I=x};
+    d.D.U = VDDU_REVW(d.D.U);
+    return  d.D.I;
+}
+
+INLINE(Vddf,VDDF_REVW) (Vddf x)
+{
+    DWRD_VTYPE d = {.D.F=x};
+    d.D.U = VDDU_REVW(d.D.U);
+    return  d.D.F;
+}
+
+
+INLINE(Vqdu,VQDU_REVW) (Vqdu x)
+{
+    QUAD_VTYPE q = {.D.U=x};
+    q.W.U = vrev64q_u32(q.W.U);
+    return  q.D.U;
+}
+
+INLINE(Vqdi,VQDI_REVW) (Vqdi x)
+{
+    QUAD_VTYPE q = {.D.I=x};
+    q.D.U = VQDU_REVW(q.D.U);
+    return  q.D.I;
+}
+
+INLINE(Vqdf,VQDF_REVW) (Vqdf x)
+{
+    QUAD_VTYPE q = {.D.F=x};
+    q.D.U = VQDU_REVW(q.D.U);
+    return  q.D.F;
+}
+
+INLINE(Vqqu,VQQU_REVW) (Vqqu x)
+{
+    QUAD_VTYPE q = {.Q.U=x};
+    q.W.U = VQWU_REVS(q.W.U);
+    return  q.Q.U;
+}
+
+INLINE(Vqqi,VQQI_REVW) (Vqqi x)
+{
+    QUAD_VTYPE q = {.Q.I=x};
+    q.Q.U = VQQU_REVW(q.Q.U);
+    return  q.Q.I;
+}
+
+INLINE(Vqqf,VQQF_REVW) (Vqqf x)
+{
+    QUAD_VTYPE q = {.Q.F=x};
+    q.Q.U = VQQU_REVW(q.Q.U);
+    return  q.Q.F;
+}
+
+#if 0 // _LEAVE_ARM_REVW
+}
+#endif
+
+#if 0 // _ENTER_ARM_REVH
+{
+#endif
+
+INLINE(   uint,  UINT_REVH)    (uint x) {return (x>>16)|(x<<16);}
+
+INLINE(    int,   INT_REVH)     (int x) {return  UINT_REVH(x);}
+
+INLINE(  ulong, ULONG_REVH)   (ulong x) 
+{
+#if DWRD_NLONG == 2
+    return  (x>>16)|(x<<16);
+#else
+    DWRD_VTYPE s = {.D.U=vdup_n_u64(x)};
+    s.H.U = vrev64_u16(s.H.U);
+    return vget_lane_u64(s.D.U, 0);
+#endif
+}
+
+INLINE(   long,  LONG_REVH)    (long x) 
+{
+    return  ULONG_REVH(x);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(ullong,ULLONG_REVH)  (ullong x) 
+{
+    DWRD_VTYPE s = {.D.U=vdup_n_u64(x)};
+    s.H.U = vrev64_u16(s.H.U);
+    return vget_lane_u64(s.D.U, 0);
+}
+
+INLINE( llong, LLONG_REVH)   (llong x) {return ULLONG_REVH(x);}
+
+INLINE(QUAD_UTYPE,revhqu)  (QUAD_UTYPE x) 
+{
+    QUAD_VTYPE q = {.U=x};
+    q.H.U = vrev64q_u16(q.H.U);
+    uint64x1_t l = vget_high_u64(q.D.U);
+    uint64x1_t r = vget_low_u64(q.D.U);
+    q.D.U = vcombine_u64(l, r);
+    return  q.U;
+}
+
+INLINE(QUAD_ITYPE,revhqi)  (QUAD_ITYPE x) 
+{
+    QUAD_TYPE q = {.I=x};
+    q.U = revhqu(q.U);
+    return  q.I;
+}
+
+#else
+
+INLINE(ullong,ULLONG_REVH)  (ullong x) 
+{
+    QUAD_VTYPE q = {.U=x};
+    q.H.U = VQHU_REVS(q.H.U);
+    return  q.U;
+}
+
+INLINE( llong,LLONG_REVH) (llong x) {return ULLONG_REVH(x);}
+
+#endif
+
+INLINE(  float,   FLT_REVH)   (float x)
+{
+    return  WHR_REVS(x);
+}
+
+INLINE( double,   DBL_REVH)  (double x)
+{
+    DWRD_VTYPE d = {.F=x};
+    d.H.U = vrev64_u16(d.H.U);
+    return  d.F;
+}
+
+
+INLINE(Vwwu,VWWU_REVH) (Vwwu x) {return ((Vwwu){WHR_REVS(x.V0)});}
+INLINE(Vwwi,VWWI_REVH) (Vwwi x) {return ((Vwwi){WHR_REVS(x.V0)});}
+INLINE(Vwwf,VWWF_REVH) (Vwwf x) {return ((Vwwf){WHR_REVS(x.V0)});}
+
+
+INLINE(Vdwu,VDWU_REVH) (Vdwu x)
+{
+    DWRD_VTYPE d = {.W.U=x};
+    d.H.U = vrev32_u16(d.H.U);
+    return  d.W.U;
+}
+
+INLINE(Vdwi,VDWI_REVH) (Vdwi x)
+{
+    DWRD_VTYPE d = {.W.I=x};
+    d.W.U = VDWU_REVH(d.W.U);
+    return  d.W.U;
+}
+
+INLINE(Vdwf,VDWF_REVH) (Vdwf x)
+{
+    DWRD_VTYPE d = {.W.F=x};
+    d.W.U = VDWU_REVH(d.W.U);
+    return  d.W.F;
+}
+
+
+INLINE(Vddu,VDDU_REVH) (Vddu x)
+{
+    DWRD_VTYPE d = {.D.U=x};
+    d.H.U = vrev64_u16(d.H.U);
+    return  d.D.U;
+}
+
+INLINE(Vddi,VDDI_REVH) (Vddi x)
+{
+    DWRD_VTYPE d = {.D.I=x};
+    d.D.U = VDDU_REVH(d.D.U);
+    return  d.D.I;
+}
+
+INLINE(Vddf,VDDF_REVH) (Vddf x)
+{
+    DWRD_VTYPE d = {.D.F=x};
+    d.D.U = VDDU_REVH(d.D.U);
+    return  d.D.F;
+}
+
+
+INLINE(Vqwu,VQWU_REVH) (Vqwu x)
+{
+    QUAD_VTYPE q = {.W.U=x};
+    q.H.U = vrev32q_u16(q.H.U);
+    return q.W.U;
+}
+
+INLINE(Vqwi,VQWI_REVH) (Vqwi x)
+{
+    QUAD_VTYPE q = {.W.I=x};
+    q.W.U = VQWU_REVH(q.W.U);
+    return q.W.I;
+}
+
+INLINE(Vqwf,VQWF_REVH) (Vqwf x)
+{
+    QUAD_VTYPE q = {.W.F=x};
+    q.W.U = VQWU_REVH(q.W.U);
+    return q.W.I;
+}
+
+
+INLINE(Vqdu,VQDU_REVH) (Vqdu x)
+{
+    QUAD_VTYPE q = {.D.U=x};
+    q.H.U = vrev64q_u16(q.H.U);
+    return  q.D.U;
+}
+
+INLINE(Vqdi,VQDI_REVH) (Vqdi x)
+{
+    QUAD_VTYPE q = {.D.I=x};
+    q.D.U = VQDU_REVH(q.D.U);
+    return  q.D.I;
+}
+
+INLINE(Vqdf,VQDF_REVH) (Vqdf x)
+{
+    QUAD_VTYPE q = {.D.F=x};
+    q.D.U = VQDU_REVH(q.D.U);
+    return  q.D.F;
+}
+
+INLINE(Vqqu,VQQU_REVH) (Vqqu x)
+{
+    QUAD_VTYPE q = {.Q.U=x};
+    q.H.U = VQHU_REVS(q.H.U);
+    return  q.Q.U;
+}
+
+INLINE(Vqqi,VQQI_REVH) (Vqqi x)
+{
+    QUAD_VTYPE q = {.Q.I=x};
+    q.Q.U = VQQU_REVH(q.Q.U);
+    return  q.Q.I;
+}
+
+INLINE(Vqqf,VQQF_REVH) (Vqqf x)
+{
+    QUAD_VTYPE q = {.Q.F=x};
+    q.Q.U = VQQU_REVH(q.Q.U);
+    return  q.Q.F;
+}
+
+#if 0 // _LEAVE_ARM_REVH
+}
+#endif
+
+#if 0 // _ENTER_ARM_REVB
+{
+#endif
+
+INLINE( ushort, USHRT_REVB) (unsigned x) {return __revsh(x);}
+INLINE(  short,  SHRT_REVB)   (signed x) {return __revsh(x);}
+INLINE(   uint,  UINT_REVB)     (uint x) {return __rev(x);}
+INLINE(    int,   INT_REVB)      (int x) {return __rev(x);}
+INLINE(  ulong, ULONG_REVB)    (ulong x) {return __revl(x);}
+INLINE(   long,  LONG_REVB)     (long x) {return __revl(x);}
+INLINE( ullong,ULLONG_REVB)   (ullong x) {return __revll(x);}
+INLINE(  llong, LLONG_REVB)    (llong x) {return __revll(x);}
+INLINE(flt16_t, FLT16_REVB)  (flt16_t x)
+{
+    HALF_TYPE r = {.F=x};
+    HALF_TYPE l = {.Lo.U=r.Hi.U, .Hi.U=r.Lo.U};
+    return l.F;
+}
+
+INLINE(  float,   FLT_REVB)   (float x)
+{
+    WORD_TYPE r = {.F=x};
+    WORD_TYPE l = {
+        .B0.U=r.B3.U, 
+        .B1.U=r.B2.U, 
+        .B2.U=r.B1.U,
+        .B3.U=r.B0.U,
+    };
+    return l.F;
+}
+
+INLINE( double,   DBL_REVB)  (double x)
+{
+    float64x1_t m = vdup_n_f64(x);
+    uint8x8_t   v = vreinterpret_u8_f64(m);
+    v = vrev64_u8(v);
+    return  vget_lane_f64(v, 0);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,revbqu) (QUAD_UTYPE x)
+{
+    QUAD_TYPE l = {.U=x};
+    QUAD_TYPE r = {
+        .Lo.U = __revll(l.Hi.U),
+        .Hi.U = __revll(l.Lo.U),
+    };
+    return  r.U;
+}
+
+INLINE(QUAD_ITYPE,revbqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE l = {.I=x};
+    QUAD_TYPE r = {
+        .Lo.U = __revll(l.Hi.U),
+        .Hi.U = __revll(l.Lo.U),
+    };
+    return  r.I;
+}
+
+INLINE(QUAD_FTYPE,revbqf) (QUAD_FTYPE x)
+{
+    QUAD_TYPE l = {.F=x};
+    QUAD_TYPE r = {
+        .Lo.U = __revll(l.Hi.U),
+        .Hi.U = __revll(l.Lo.U),
+    };
+    return  r.F;
+}
+
+#endif
+
+INLINE(float,WHU_REVB) (float v)
+{
+    float32x2_t m = vdup_n_f32(v);
+    uint8x8_t   r = vreinterpret_u8_f32(m);
+    r = vrev16_u8(r);
+    m = vreinterpret_f32_u8(r);
+    return  vget_lane_f32(m, 0);
+}
+
+INLINE(float,WWU_REVB) (float v)
+{
+    float32x2_t m = vdup_n_f32(v);
+    uint8x8_t   r = vreinterpret_u8_f32(m);
+    r = vrev32_u8(r);
+    m = vreinterpret_f32_u8(r);
+    return  vget_lane_f32(m, 0);
+}
+
+INLINE(Vwhu,VWHU_REVB) (Vwhu v)
+{
+    return  WHU_ASTV(WHU_REVB(VWHU_ASTM(v)));
+}
+
+INLINE(Vwhi,VWHI_REVB) (Vwhi v)
+{
+    return  WHI_ASTV(WHU_REVB(VWHI_ASTM(v)));
+}
+
+INLINE(Vwhf,VWHF_REVB) (Vwhf v)
+{
+    return  WHF_ASTV(WHU_REVB(VWHF_ASTM(v)));
+}
+
+
+INLINE(Vwwu,VWWU_REVB) (Vwwu v)
+{
+    return  WWU_ASTV(WWU_REVB(VWWU_ASTM(v)));
+}
+
+INLINE(Vwwi,VWWI_REVB) (Vwwi v)
+{
+    return  WWI_ASTV(WWU_REVB(VWWI_ASTM(v)));
+}
+
+INLINE(Vwwf,VWWF_REVB) (Vwwf v)
+{
+    return  WWF_ASTV(WWU_REVB(VWWF_ASTM(v)));
+}
+
+
+INLINE(Vdhu,VDHU_REVB) (Vdhu v)
+{
+    return  vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(v)));
+}
+
+INLINE(Vdhi,VDHI_REVB) (Vdhi v)
+{
+    return  vreinterpret_s16_u8(vrev16_u8(vreinterpret_u8_s16(v)));
+}
+
+INLINE(Vdhf,VDHF_REVB) (Vdhf v)
+{
+    return  vreinterpret_f16_u8(vrev16_u8(vreinterpret_u8_f16(v)));
+}
+
+
+INLINE(Vdwu,VDWU_REVB) (Vdwu v)
+{
+    return  vreinterpret_u32_u8(vrev32_u8(vreinterpret_u8_u32(v)));
+}
+
+INLINE(Vdwi,VDWI_REVB) (Vdwi v)
+{
+    return  vreinterpret_s32_u8(vrev32_u8(vreinterpret_u8_s32(v)));
+}
+
+INLINE(Vdwf,VDWF_REVB) (Vdwf v)
+{
+    return  vreinterpret_f32_u8(vrev32_u8(vreinterpret_u8_f32(v)));
+}
+
+
+INLINE(Vddu,VDDU_REVB) (Vddu v)
+{
+    return  vreinterpret_u64_u8(vrev64_u8(vreinterpret_u8_u64(v)));
+}
+
+INLINE(Vddi,VDDI_REVB) (Vddi v)
+{
+    return  vreinterpret_s64_u8(vrev64_u8(vreinterpret_u8_s64(v)));
+}
+
+INLINE(Vddf,VDDF_REVB) (Vddf v)
+{
+    return  vreinterpret_f64_u8(vrev64_u8(vreinterpret_u8_f64(v)));
+}
+
+
+INLINE(Vqhu,VQHU_REVB) (Vqhu v)
+{
+    return  vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(v)));
+}
+
+INLINE(Vqhi,VQHI_REVB) (Vqhi v)
+{
+    return  vreinterpretq_s16_u8(vrev16q_u8(vreinterpretq_u8_s16(v)));
+}
+
+INLINE(Vqhf,VQHF_REVB) (Vqhf v)
+{
+    return  vreinterpretq_f16_u8(vrev16q_u8(vreinterpretq_u8_f16(v)));
+}
+
+
+INLINE(Vqwu,VQWU_REVB) (Vqwu v)
+{
+    return  vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(v)));
+}
+
+INLINE(Vqwi,VQWI_REVB) (Vqwi v)
+{
+    return  vreinterpretq_s32_u8(vrev32q_u8(vreinterpretq_u8_s32(v)));
+}
+
+INLINE(Vqwf,VQWF_REVB) (Vqwf v)
+{
+    return  vreinterpretq_f32_u8(vrev32q_u8(vreinterpretq_u8_f32(v)));
+}
+
+
+INLINE(Vqdu,VQDU_REVB) (Vqdu v)
+{
+    return  vreinterpretq_u64_u8(vrev64q_u8(vreinterpretq_u8_u64(v)));
+}
+
+INLINE(Vqdi,VQDI_REVB) (Vqdi v)
+{
+    return  vreinterpretq_s64_u8(vrev64q_u8(vreinterpretq_u8_s64(v)));
+}
+
+INLINE(Vqdf,VQDF_REVB) (Vqdf v)
+{
+    return  vreinterpretq_f64_u8(vrev64q_u8(vreinterpretq_u8_f64(v)));
+}
+
+INLINE(uint8x16_t,QQR_REVB) (uint8x16_t b)
+{
+    b = vrev64q_u8(b);
+    return  vcombine_u8(
+        vget_high_u8(b), 
+        vget_low_u8(b)
+    );
+}
+
+INLINE(Vqqu,VQQU_REVB) (Vqqu v)
+{
+    uint8x16_t b = vreinterpretq_u8_u64(v.V0);
+    b = QQR_REVB(b);
+    v.V0 = vreinterpretq_u64_u8(b);
+    return v;
+}
+
+INLINE(Vqqi,VQQI_REVB) (Vqqi v)
+{
+    uint8x16_t b = vreinterpretq_u8_u64(v.V0);
+    b = QQR_REVB(b);
+    v.V0 = vreinterpretq_u64_u8(b);
+    return v;
+}
+
+INLINE(Vqqf,VQQF_REVB) (Vqqf v)
+{
+    uint8x16_t u = VQQF_ASBU(v);
+    u = QQR_REVB(u);
+    return VQBU_ASQF(u);
+}
+
+#if 0 // _LEAVE_ARM_REVB
+}
+#endif
+
+#if 0 // _ENTER_ARM_REVY
+{
+#endif
+
+INLINE( uchar, UCHAR_REVY) (unsigned x) 
+{
+    return  __rbit(x)>>(UINT_WIDTH-UCHAR_WIDTH);
+}
+
+INLINE( schar, SCHAR_REVY)   (signed x) {return UCHAR_REVY(x);}
+
+INLINE(  char,  CHAR_REVY)      (int x) {return UCHAR_REVY(x);}
+
+INLINE(ushort, USHRT_REVY) (unsigned x) 
+{
+    return  __rbit(x)>>(UINT_WIDTH-USHRT_WIDTH);
+}
+
+INLINE( short,  SHRT_REVY)   (signed x) {return USHRT_REVY(x);}
+INLINE(  uint,  UINT_REVY)     (uint x) {return __rbit(x);}
+INLINE(   int,   INT_REVY)      (int x) {return __rbit(x);}
+INLINE( ulong, ULONG_REVY)    (ulong x) {return __rbitl(x);}
+INLINE(  long,  LONG_REVY)     (long x) {return __rbitl(x);}
+INLINE(ullong,ULLONG_REVY)   (ullong x) {return __rbitll(x);}
+INLINE( llong, LLONG_REVY)    (llong x) {return __rbitll(x);}
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE, revyqu) (QUAD_UTYPE x)
+{
+    QUAD_TYPE s={.U=x}, d;
+    d.Lo.U = UINT64_REVY(s.Hi.U);
+    d.Hi.U = UINT64_REVY(s.Lo.U);
+    return  d.U;
+}
+INLINE(QUAD_ITYPE, revyqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE s={.I=x}, d;
+    d.Lo.U = UINT64_REVY(s.Hi.U);
+    d.Hi.U = UINT64_REVY(s.Lo.U);
+    return  d.U;
+}
+#endif
+
+INLINE(flt16_t, FLT16_REVY) (flt16_t x)
+{
+    float16x4_t m = vdup_n_f16(x);
+    uint8x8_t   b = vreinterpret_u8_f16(m);
+    b = vrev16_u8(b);
+    b = vrbit_u8(b);
+    m = vreinterpret_f16_u8(b);
+    return vget_lane_f16(m, 0);
+}
+
+INLINE(float, FLT_REVY) (float x)
+{
+    float32x2_t m = vdup_n_f32(x);
+    uint8x8_t   b = vreinterpret_u8_f32(m);
+    b = vrev32_u8(b);
+    b = vrbit_u8(b);
+    m = vreinterpret_f32_u8(b);
+    return vget_lane_f32(m, 0);
+}
+
+INLINE(double, DBL_REVY) (double x)
+{
+    float64x1_t m = vdup_n_f64(x);
+    uint8x8_t   b = vreinterpret_u8_f64(m);
+    b = vrev64_u8(b);
+    b = vrbit_u8(b);
+    m = vreinterpret_f64_u8(b);
+    return vget_lane_f64(m, 0);
+}
+
+INLINE(float,WBU_REVY) (float v)
+{
+    float32x2_t m = vdup_n_f32(v);
+    uint8x8_t   r = vreinterpret_u8_f32(m);
+    r = vrbit_u8(r);
+    m = vreinterpret_f32_u8(r);
+    return vget_lane_f32(m, 0);
+}
+
+INLINE(float,WHU_REVY) (float v)
+{
+    float32x2_t m = vdup_n_f32(v);
+    uint8x8_t   r = vreinterpret_u8_f32(m);
+    r = vrbit_u8(r);
+    r = vrev16_u8(r);
+    m = vreinterpret_f32_u8(r);
+    return vget_lane_f32(m, 0);
+}
+
+INLINE(float,WWU_REVY) (float v)
+{
+    float32x2_t m = vdup_n_f32(v);
+    uint8x8_t   r = vreinterpret_u8_f32(m);
+    r = vrbit_u8(r);
+    r = vrev32_u8(r);
+    m = vreinterpret_f32_u8(r);
+    return vget_lane_f32(m, 0);
+}
+
+INLINE(Vwbu,VWBU_REVY) (Vwbu v)
+{
+#define     VWBU_REVY(V) WBU_ASTV(WBU_REVY(VWBU_ASTM(v)))
+    return  VWBU_REVY(v);
+}
+
+INLINE(Vwbi,VWBI_REVY) (Vwbi v)
+{
+#define     VWBI_REVY(V) WBI_ASTV(WBU_REVY(VWBI_ASTM(v)))
+    return  VWBI_REVY(v);
+}
+
+INLINE(Vwbc,VWBC_REVY) (Vwbc v)
+{
+#define     VWBC_REVY(V) WBC_ASTV(WBU_REVY(VWBC_ASTM(v)))
+    return  VWBC_REVY(v);
+}
+
+
+INLINE(Vwhu,VWHU_REVY) (Vwhu v)
+{
+#define     VWHU_REVY(V) WHU_ASTV(WHU_REVY(VWHU_ASTM(v)))
+    return  VWHU_REVY(v);
+}
+
+INLINE(Vwhi,VWHI_REVY) (Vwhi v)
+{
+#define     VWHI_REVY(V) WHI_ASTV(WHU_REVY(VWHI_ASTM(v)))
+    return  VWHI_REVY(v);
+}
+
+
+INLINE(Vwwu,VWWU_REVY) (Vwwu v)
+{
+#define     VWWU_REVY(V) WWU_ASTV(WWU_REVY(VWWU_ASTM(v)))
+    return  VWWU_REVY(v);
+}
+
+INLINE(Vwwi,VWWI_REVY) (Vwwi v)
+{
+#define     VWWI_REVY(V) WWI_ASTV(WWU_REVY(VWWI_ASTM(v)))
+    return  VWWI_REVY(v);
+}
+
+
+INLINE(Vdbu,VDBU_REVY) (Vdbu v) {return vrbit_u8(v);}
+INLINE(Vdbi,VDBI_REVY) (Vdbi v) {return vrbit_u8(v);}
+INLINE(Vdbc,VDBC_REVY) (Vdbc v)
+{
+    return  VDBU_ASBC(VDBU_REVY(VDBC_ASBU(v)));
+}
+
+
+INLINE(Vdhu,VDHU_REVY) (Vdhu x)
+{
+#define     VDHU_REVY(X) \
+vreinterpret_u16_u8(vrev16_u8(vrbit_u8(vreinterpret_u8_u16(X))))
+
+    return  VDHU_REVY(x);
+}
+
+INLINE(Vdhi,VDHI_REVY) (Vdhi x)
+{
+#define     VDHI_REVY(X) \
+vreinterpret_s16_u8(vrev16_u8(vrbit_u8(vreinterpret_u8_s16(X))))
+
+    return  VDHI_REVY(x);
+}
+
+
+INLINE(Vdwu,VDWU_REVY) (Vdwu v)
+{
+    return  vreinterpret_u32_u8(
+        vrev32_u8(
+            vrbit_u8(
+                vreinterpret_u8_u32(v)
+            )
+        )
+    );
+}
+
+INLINE(Vdwi,VDWI_REVY) (Vdwi v)
+{
+    return  VDWU_ASWI(VDWU_REVY(VDWI_ASWU(v)));
+}
+
+INLINE(Vddu,VDDU_REVY) (Vddu v)
+{
+    return  vreinterpret_u64_u8(
+        vrev64_u8(
+            vrbit_u8(
+                vreinterpret_u8_u64(v)
+            )
+        )
+    );
+}
+
+
+INLINE(Vddi,VDDI_REVY) (Vddi v)
+{
+    return  vreinterpret_s64_u8(
+        vrev64_u8(
+            vrbit_u8(
+                vreinterpret_u8_s64(v)
+            )
+        )
+    );
+}
+
+
+INLINE(Vqbu,VQBU_REVY) (Vqbu v) {return  vrbitq_u8(v);}
+INLINE(Vqbi,VQBI_REVY) (Vqbi v) {return  vrbitq_s8(v);}
+INLINE(Vqbc,VQBC_REVY) (Vqbc v) {return  VQBU_ASBC(vrbitq_u8(VQBC_ASBU(v)));}
+
+
+INLINE(Vqhu,VQHU_REVY) (Vqhu v)
+{
+    return  VQBU_ASHU(vrev16q_u8(vrbitq_u8(VQHU_ASBU(v))));
+}
+
+INLINE(Vqhi,VQHI_REVY) (Vqhi v)
+{
+    return  VQBU_ASHI(vrev16q_u8(vrbitq_u8(VQHI_ASBU(v))));
+}
+
+
+INLINE(Vqwu,VQWU_REVY) (Vqwu v)
+{
+    return  VQBU_ASWU(vrev32q_u8(vrbitq_u8(VQWU_ASBU(v))));
+}
+
+INLINE(Vqwi,VQWI_REVY) (Vqwi v)
+{
+    return  VQBU_ASWU(vrev32q_u8(vrbitq_u8(VQWI_ASBU(v))));
+}
+
+INLINE(Vqdu,VQDU_REVY) (Vqdu v)
+{
+    return  VQBU_ASDU(vrev64q_u8(vrbitq_u8(VQDU_ASBU(v))));
+}
+
+INLINE(Vqdi,VQDI_REVY) (Vqdi v)
+{
+    return  VQBU_ASDI(vrev64q_u8(vrbitq_u8(VQDI_ASBU(v))));
+}
+
+INLINE(Vqqu,VQQU_REVY) (Vqqu v)
+{
+    uint8x16_t  b = vreinterpretq_u8_u64(v.V0);
+    b = vrbitq_u8(b);
+    b = vrev64q_u8(b);
+    uint64x2_t  m = vreinterpretq_u64_u8(b);
+    v.V0 = vcombine_u64(vget_high_u64(m), vget_low_u64(m));
+    return v;
+}
+
+INLINE(Vqqi,VQQI_REVY) (Vqqi v)
+{
+    uint8x16_t  b = vreinterpretq_u8_s64(v.V0);
+    b = vrbitq_u8(b);
+    b = vrev64q_u8(b);
+    int64x2_t  m = vreinterpretq_s64_u8(b);
+    v.V0 = vcombine_s64(vget_high_s64(m), vget_low_s64(m));
+    return v;
+}
+
+#if 0 // _LEAVE_ARM_REVY
 }
 #endif
 
 
 #if 0 // _ENTER_ARM_UNOL
 {
-#endif
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,unolqu) (Rc(0, 128) n) 
-{
-#   define  unolqu(N) ((~((QUAD_UTYPE) 0))>>N)
-
-    return (~((QUAD_UTYPE){0}))>>(128-n);
-}
-
-INLINE(QUAD_ITYPE,unolqi) (Rc(0, 128) n)
-{
-#   define  unolqi(N) ((QUAD_ITYPE)((~((QUAD_UTYPE) 0))>>N))
-    return (unolqi)(n);
-}
-
 #endif
 
 INLINE(Vwyu,VWYU_UNOL) (Rc(0, 1) n)
@@ -2740,6 +4092,32 @@ INLINE(Vqdi,VQDI_UNOL) (Rc(0, 64) n)
     return  VQDU_UNOL(n);
 }
 
+#define     QQZ_UNOL(N) \
+vcombine_u64(\
+    (\
+        (N>64)\
+        ?   vdup_n_u64(-1)\
+        :   vdup_n_u64((UINT64_MAX>>(64-N)))\
+    ),\
+    (\
+        (N>64)\
+        ?   vdup_n_u64((UINT64_MAX>>(128-N)))\
+        :   vdup_n_u64(0)\
+    )\
+)
+
+INLINE(Vqqu,VQQU_UNOL) (Rc(0, 128) n)
+{
+#define     VQQU_UNOL(N) ((Vqqu){QQZ_UNOL(N)})
+    return  VQQU_UNOL(n);
+}
+
+INLINE(Vqqi,VQQI_UNOL) (Rc(0, 128) n)
+{
+#define     VQQI_UNOL(N) ((Vqqi){vreinterpretq_s64_u64(QQZ_UNOL(N))})
+    return  VQQI_UNOL(n);
+}
+
 #if 0 // _LEAVE_ARM_UNOL
 }
 #endif
@@ -2748,30 +4126,6 @@ INLINE(Vqdi,VQDI_UNOL) (Rc(0, 64) n)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-
-#define MY_QUAD_UNOR(N) \
-(\
-    (QUAD_TYPE)\
-    {\
-        .D0.U=((N>64) ? UINT64_UNOR((N-64)) : 0),\
-        .D1.U=((N<65) ? UINT64_UNOR((N  ))  :-1),\
-    }\
-)
-
-INLINE(QUAD_UTYPE,unorqu) (Rc(0, 128) n) 
-{
-#define     unorqu(N) (MY_QUAD_UNOR(N).U)
-    return  unorqu(n);
-}
-
-INLINE(QUAD_ITYPE,unorqi) (Rc(0, 128) n)
-{
-#define     unorqi(N) (MY_QUAD_UNOR(N).I)
-    return  unorqi(n);
-}
-
-#endif
 
 INLINE(Vwyu,VWYU_UNOR) (Rc(0, 1) n)
 {
@@ -3097,6 +4451,32 @@ INLINE(Vqdi,VQDI_UNOR) (Rc(0, 64) n)
     return  VQDU_ASTI(((VQDU_UNOR)(n)));
 }
 
+
+#define     QQZ_UNOR(N) \
+vcombine_u64(\
+    (\
+        (N>64)\
+        ?   vdup_n_u64((UINT64_MAX<<(128-N)))\
+        :   vdup_n_u64(0)\
+    ),\
+    (\
+        (N>64)\
+        ?   vdup_n_u64(-1)\
+        :   vdup_n_u64((UINT64_MAX<<(64-N)))\
+    )\
+)
+
+INLINE(Vqqu,VQQU_UNOR) (Rc(0, 128) n)
+{
+#define     VQQU_UNOR(N) ((Vqqu){QQZ_UNOR(N)})
+    return  VQQU_UNOR(n);
+}
+
+INLINE(Vqqi,VQQI_UNOR) (Rc(0, 128) n)
+{
+#define     VQQI_UNOR(N) ((Vqqi){vreinterpretq_s64_u64(QQZ_UNOR(N))})
+    return  VQQI_UNOR(n);
+}
 
 #if 0 // _LEAVE_ARM_UNOR
 }
@@ -5609,10 +6989,24 @@ vandq_u64(                          \
 #if 0 // _ENTER_ARM_CVYU
 {
 #endif
-/* 
-zeqy is semantically equivalent to a hypothetical scalar
-form of cvyu
-*/
+
+INLINE(_Bool, FLT16_CVYU) (flt16_t x) 
+{
+#define     FLT16_CVYU(X) ((_Bool) ((flt16_t) X))
+    return  x;
+}
+
+INLINE(_Bool, FLT_CVYU) (float x) 
+{
+#define     FLT_CVYU(X) ((_Bool) ((float) X))
+    return  x;
+}
+
+INLINE(_Bool, DBL_CVYU) (double x) 
+{
+#define     DBL_CVYU(X) ((_Bool) ((double) X))
+    return  x;
+}
 
 INLINE(Vwyu,VWBU_CVYU) (Vwbu x)
 {
@@ -6008,6 +7402,34 @@ INLINE(Vqyu,VQDF_CVYU) (Vqdf x)
     return  ((Vqyu){c});
 }
 
+INLINE(uint64x2_t,QQU_CVYU) (uint64x2_t x)
+{
+    uint64x1_t l = vget_low_u64(x);
+    uint64x1_t r = vget_high_u64(x);
+    l = vorr_u64(l, r);
+    r = vdup_n_u64(0);
+    l = vcgt_u64(l, r);
+    l = vand_u64(l, vdup_n_u64(1));
+    return vcombine_u64(l, r);
+}
+
+INLINE(Vqyu,VQQU_CVYU) (Vqqu x)
+{
+    return ((Vqyu){QQU_CVYU(x.V0)});
+}
+
+INLINE(Vqyu,VQQI_CVYU) (Vqqi x)
+{
+    return ((Vqyu){QQU_CVYU(vreinterpretq_u64_s64(x.V0))});
+}
+
+INLINE(Vqyu,VQQF_CVYU) (Vqqf x)
+{
+    uint64x1_t l = vdup_n_u64(((_Bool) x.V0));
+    uint64x2_t c = vcombine_u64(l, vdup_n_u64(0));
+    return ((Vqyu){c});
+}
+
 
 #if 0 // _LEAVE_ARM_CVYU
 }
@@ -6018,21 +7440,14 @@ INLINE(Vqyu,VQDF_CVYU) (Vqdf x)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(uint8_t,cvbuqu) (QUAD_UTYPE x) {return x;}
-INLINE(uint8_t,cvbuqi) (QUAD_ITYPE x) {return x;}
-INLINE(uint8_t,cvbuqf) (QUAD_FTYPE x) {return x;}
-#endif
-
 INLINE(uint8_t,FLT16_CVBU) (flt16_t x) {return x;}
 INLINE(uint8_t,  FLT_CVBU)   (float x) {return x;}
 INLINE(uint8_t,  DBL_CVBU)  (double x) {return x;}
+INLINE(uint8_t, cvbuqf) (QUAD_FTYPE x) {return x;}
 
-INLINE(Vwbu,VWBU_CVBU) (Vwbu x) {return x;}
 INLINE(Vwbu,VWBI_CVBU) (Vwbi x) {return VWBI_ASBU(x);}
 INLINE(Vwbu,VWBC_CVBU) (Vwbc x) {return VWBC_ASBU(x);}
 
-INLINE(Vdbu,VDBU_CVBU) (Vdbu x) {return x;}
 INLINE(Vdbu,VDBI_CVBU) (Vdbi x) {return VDBI_ASBU(x);}
 INLINE(Vdbu,VDBC_CVBU) (Vdbc x) {return VDBC_ASBU(x);}
 
@@ -6092,7 +7507,6 @@ TODO: remember wtf this is
 }
 
 
-INLINE(Vqbu,VQBU_CVBU) (Vqbu x) {return x;}
 INLINE(Vqbu,VQBI_CVBU) (Vqbi x) {return VQBI_ASBU(x);}
 INLINE(Vqbu,VQBC_CVBU) (Vqbc x) {return VQBC_ASBU(x);}
 
@@ -6164,22 +7578,16 @@ INLINE(Vwbu,VQWF_CVBU) (Vqwf x)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(int8_t,cvbiqu) (QUAD_UTYPE x) {return x;}
-INLINE(int8_t,cvbiqi) (QUAD_ITYPE x) {return x;}
-INLINE(int8_t,cvbiqf) (QUAD_FTYPE x) {return x;}
-#endif
-
 INLINE(int8_t,FLT16_CVBI) (flt16_t x) {return x;}
 INLINE(int8_t,  FLT_CVBI)   (float x) {return x;}
 INLINE(int8_t,  DBL_CVBI)  (double x) {return x;}
+INLINE(int8_t,cvbiqf) (QUAD_FTYPE x) {return x;}
 
 INLINE(Vwbi,VWBU_CVBI) (Vwbu x) {return VWBU_ASBI(x);}
-INLINE(Vwbi,VWBI_CVBI) (Vwbi x) {return x;}
+
 INLINE(Vwbi,VWBC_CVBI) (Vwbc x) {return VWBC_ASBI(x);}
 
 INLINE(Vdbi,VDBU_CVBI) (Vdbu x) {return VDBU_ASBI(x);}
-INLINE(Vdbi,VDBI_CVBI) (Vdbi x) {return x;}
 INLINE(Vdbi,VDBC_CVBI) (Vdbc x) {return VDBC_ASBI(x);}
 
 INLINE(Vwbi,VDHU_CVBI) (Vdhu x) {return VWBU_ASBI(VDHU_CVBU(x));}
@@ -6198,7 +7606,7 @@ INLINE(Vwbi,VDHF_CVBI) (Vdhf x)
 }
 
 INLINE(Vqbi,VQBU_CVBI) (Vqbu x) {return VQBU_ASBI(x);}
-INLINE(Vqbi,VQBI_CVBI) (Vqbi x) {return x;}
+
 INLINE(Vqbi,VQBC_CVBI) (Vqbc x) {return VQBC_ASBI(x);}
 
 INLINE(Vdbi,VQHU_CVBI) (Vqhu x) {return vmovn_s16(VQHU_ASHI(x));}
@@ -6229,19 +7637,11 @@ INLINE(Vwbi,VQWF_CVBI) (Vqwf x)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(char,cvbcqu) (QUAD_UTYPE x) {return x;}
-INLINE(char,cvbcqi) (QUAD_ITYPE x) {return x;}
-INLINE(char,cvbcqf) (QUAD_FTYPE x) {return x;}
-#endif
-
 INLINE(Vwbc,VWBU_CVBC) (Vwbu x) {return VWBU_ASBC(x);}
 INLINE(Vwbc,VWBI_CVBC) (Vwbi x) {return VWBI_ASBC(x);}
-INLINE(Vwbc,VWBC_CVBC) (Vwbc x) {return x;}
 
 INLINE(Vdbc,VDBU_CVBC) (Vdbu x) {return VDBU_ASBC(x);}
 INLINE(Vdbc,VDBI_CVBC) (Vdbi x) {return VDBI_ASBC(x);}
-INLINE(Vdbc,VDBC_CVBC) (Vdbc x) {return x;}
 
 INLINE(Vwbc,VDHU_CVBC) (Vdhu x)
 {
@@ -6271,7 +7671,7 @@ INLINE(Vwbc,VDHF_CVBC) (Vdhf x)
 
 INLINE(Vqbc,VQBU_CVBC) (Vqbu x) {return VQBU_ASBC(x);}
 INLINE(Vqbc,VQBI_CVBC) (Vqbi x) {return VQBI_ASBC(x);}
-INLINE(Vqbc,VQBC_CVBC) (Vqbc x) {return x;}
+
 
 INLINE(Vdbc,VQHU_CVBC) (Vqhu x)
 {
@@ -6622,7 +8022,7 @@ INLINE(int8_t,  LONG_CVBS)    (long x)
 
 INLINE(int8_t,ULLONG_CVBS)  (ullong x)
 {
-#if QUAD_NLONG == 2
+#if QUAD_NLLONG == 2
     return (
             (vtstd_u64(x, (ULLONG_MAX-INT8_MAX))>>57)
         |   (INT8_MAX&x)
@@ -6634,7 +8034,7 @@ INLINE(int8_t,ULLONG_CVBS)  (ullong x)
 
 INLINE(int8_t, LLONG_CVBS)   (llong x)
 {
-#if QUAD_NLONG == 2
+#if QUAD_NLLONG == 2
     return  vqmovnh_s16(vqmovns_s32(vqmovnd_s64(x)));
 #else
     if (x < INT8_MIN) return INT8_MIN;
@@ -6857,11 +8257,10 @@ INLINE(Vwbi,VQWF_CVBS) (Vqwf x) {return WBI_ASTV(QWF_CVBS(x));}
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(uint16_t,cvhuqu) (QUAD_UTYPE x) {return x;}
-INLINE(uint16_t,cvhuqi) (QUAD_ITYPE x) {return x;}
-INLINE(uint16_t,cvhuqf) (QUAD_FTYPE x) {return x;}
-#endif
+INLINE(uint16_t,FLT16_CVHU) (flt16_t x) {return x;}
+INLINE(uint16_t,  FLT_CVHU)   (float x) {return x;}
+INLINE(uint16_t,  DBL_CVHU)  (double x) {return x;}
+INLINE(uint16_t, cvhuqf) (QUAD_FTYPE x) {return x;}
 
 #define     WBU_CVHU(X)         \
 vreinterpret_u16_u8(            \
@@ -6986,7 +8385,7 @@ INLINE(Vdhu,VWBU_CVHU) (Vwbu x) {return  WBU_CVHU(VWBU_ASTM(x));}
 INLINE(Vdhu,VWBI_CVHU) (Vwbi x) {return  WBI_CVHU(VWBI_ASTM(x));}
 INLINE(Vdhu,VWBC_CVHU) (Vwbc x) {return  WBC_CVHU(VWBC_ASTM(x));}
 
-INLINE(Vwhu,VWHU_CVHU) (Vwhu x) {return  VWHU_ASHU(x);}
+
 INLINE(Vwhu,VWHI_CVHU) (Vwhi x) {return  VWHI_ASHU(x);}
 INLINE(Vwhu,VWHF_CVHU) (Vwhf x) {return  VWHU_VOID;}
 
@@ -6994,7 +8393,6 @@ INLINE(Vqhu,VDBU_CVHU) (Vdbu x) {return  DBU_CVHU(x);}
 INLINE(Vqhu,VDBI_CVHU) (Vdbi x) {return  DBI_CVHU(x);}
 INLINE(Vqhu,VDBC_CVHU) (Vdbc x) {return  DBC_CVHU(VDBC_ASTM(x));}
 
-INLINE(Vdhu,VDHU_CVHU) (Vdhu x) {return  DHU_CVHU(x);}
 INLINE(Vdhu,VDHI_CVHU) (Vdhi x) {return  DHI_CVHU(x);}
 INLINE(Vdhu,VDHF_CVHU) (Vdhf x) {return  DHF_CVHU(x);}
 
@@ -7002,7 +8400,6 @@ INLINE(Vwhu,VDWU_CVHU) (Vdwu x) {return  WHU_ASTV(DWU_CVHU(x));}
 INLINE(Vwhu,VDWI_CVHU) (Vdwi x) {return  WHU_ASTV(DWI_CVHU(x));}
 INLINE(Vwhu,VDWF_CVHU) (Vdwf x) {return  WHU_ASTV(DWF_CVHU(x));}
 
-INLINE(Vqhu,VQHU_CVHU) (Vqhu x) {return  QHU_CVHU(x);}
 INLINE(Vqhu,VQHI_CVHU) (Vqhi x) {return  QHI_CVHU(x);}
 INLINE(Vqhu,VQHF_CVHU) (Vqhf x) {return  QHF_CVHU(x);}
 
@@ -7025,12 +8422,7 @@ INLINE(Vwhu,VQDF_CVHU) (Vqdf x) {return  WHU_ASTV(QDF_CVHU(x));}
 INLINE(int16_t,FLT16_CVHI) (flt16_t x) {return x;}
 INLINE(int16_t,  FLT_CVHI)   (float x) {return x;}
 INLINE(int16_t,  DBL_CVHI)  (double x) {return x;}
-
-#if QUAD_NLLONG == 2
-INLINE(int16_t, cvhiqu) (QUAD_UTYPE x) {return x;}
-INLINE(int16_t, cvhiqi) (QUAD_ITYPE x) {return x;}
 INLINE(int16_t, cvhiqf) (QUAD_FTYPE x) {return x;}
-#endif
 
 #define     WBU_CVHI(X)         \
 vreinterpret_s16_u8(            \
@@ -7075,7 +8467,7 @@ INLINE(Vdhi,VWBC_CVHI) (Vwbc x)
 }
 
 INLINE(Vwhi,VWHU_CVHI) (Vwhu x) {return VWHU_ASHI(x);}
-INLINE(Vwhi,VWHI_CVHI) (Vwhi x) {return x;}
+
 INLINE(Vwhi,VWHF_CVHI) (Vwhf x)
 {
     float32x2_t v = vdup_n_f32(VWHF_ASTM(x));
@@ -7102,7 +8494,7 @@ INLINE(Vqhi,VDBC_CVHI) (Vdbc x)
 }
 
 INLINE(Vdhi,VDHU_CVHI) (Vdhu x) {return VDHU_ASHI(x);}
-INLINE(Vdhi,VDHI_CVHI) (Vdhi x) {return x;}
+
 INLINE(Vdhi,VDHF_CVHI) (Vdhf x)
 {
     return VDHI_VOID;
@@ -7133,7 +8525,7 @@ INLINE(Vwhi,VDWF_CVHI) (Vdwf x)
 }
 
 INLINE(Vqhi,VQHU_CVHI) (Vqhu x) {return vreinterpretq_s16_u16(x);}
-INLINE(Vqhi,VQHI_CVHI) (Vqhi x) {return x;}
+
 INLINE(Vqhi,VQHF_CVHI) (Vqhf x)
 {
 #if defined(SPC_ARM_FP16_SIMD)
@@ -7474,7 +8866,7 @@ INLINE(int16_t,ULLONG_CVHS) (ullong x)
 
 INLINE(int16_t, LLONG_CVHS)  (llong x)
 {
-#if QUAD_NLONG == 2
+#if QUAD_NLLONG == 2
     return  vqmovnh_s16(vqmovns_s32(vqmovnd_s64(x)));
 #else
 #   error "is there a 'vqmovnq_s128' yet?"
@@ -8096,6 +9488,11 @@ INLINE(Vwhf,VQDF_CVHF) (Vqdf x)
 {
 #endif
 
+INLINE(uint32_t,FLT16_CVWU) (flt16_t x) {return x;}
+INLINE(uint32_t,  FLT_CVWU)   (float x) {return x;}
+INLINE(uint32_t,  DBL_CVWU)  (double x) {return x;}
+INLINE(uint32_t, cvwuqf) (QUAD_FTYPE x) {return x;}
+
 #define     WHU_CVWU(X)         \
 vreinterpret_u32_u16(           \
     vzip1_u16(                  \
@@ -8181,7 +9578,7 @@ INLINE(Vdwu,VWHF_CVWU) (Vwhf x)
 }
 
 
-INLINE(Vwwu,VWWU_CVWU) (Vwwu x) {return x;}
+
 INLINE(Vwwu,VWWI_CVWU) (Vwwi x) {return VWWI_ASTU(x);}
 INLINE(Vwwu,VWWF_CVWU) (Vwwf x)
 {
@@ -8200,7 +9597,6 @@ INLINE(Vqwu,VDHF_CVWU) (Vdhf x)
 #endif
 }
 
-INLINE(Vdwu,VDWU_CVWU) (Vdwu x) {return x;}
 INLINE(Vdwu,VDWI_CVWU) (Vdwi x) {return vreinterpret_u32_s32(x);}
 INLINE(Vdwu,VDWF_CVWU) (Vdwf x)
 {
@@ -8222,7 +9618,7 @@ INLINE(Vwwu,VDDF_CVWU) (Vddf x)
     return  UINT_ASTV(vget_lane_f64(x, 0));
 }
 
-INLINE(Vqwu,VQWU_CVWU) (Vqwu x) {return x;}
+
 INLINE(Vqwu,VQWI_CVWU) (Vqwi x) {return vreinterpretq_u32_s32(x);}
 INLINE(Vqwu,VQWF_CVWU) (Vqwf x) {return vcvtq_u32_f32(x);}
 
@@ -8230,6 +9626,24 @@ INLINE(Vdwu,VQDU_CVWU) (Vqdu x) {return vmovn_u64(x);}
 INLINE(Vdwu,VQDI_CVWU) (Vqdi x) {return vreinterpret_u32_s32(vmovn_s64(x));}
 INLINE(Vdwu,VQDF_CVWU) (Vqdu x) {return vmovn_u64(vcvtq_u64_f64(x));}
 
+INLINE(Vwwu,VQQU_CVWU) (Vqqu x)
+{
+    float32x4_t m = vreinterpretq_f32_u64(x.V0);
+    return  ((Vwwu){vgetq_lane_f32(m, 0)});
+}
+
+INLINE(Vwwu,VQQI_CVWU) (Vqqi x)
+{
+    float32x4_t m = vreinterpretq_f32_s64(x.V0);
+    return  ((Vwwu){vgetq_lane_f32(m, 0)});
+}
+
+INLINE(Vwwu,VQQF_CVWU) (Vqqf x)
+{
+    QUAD_TYPE m;
+    m.W0.U = x.V0;
+    return ((Vwwu){m.W0.F});
+}
 
 #if 0 // _LEAVE_ARM_CVWU
 }
@@ -8485,33 +9899,10 @@ INLINE(Vdwu,VQDF_CVWZ) (Vqdf x) {return vqmovn_u64(vcvtq_u64_f64(x));}
 {
 #endif
 
-#if 0
-INLINE(int32_t,   BOOL_CVWI)     (_Bool x) {return x;}
-INLINE(int32_t,  UCHAR_CVWI)     (uchar x) {return x;}
-INLINE(int32_t,  SCHAR_CVWI)     (schar x) {return x;}
-INLINE(int32_t,   CHAR_CVWI)      (char x) {return x;}
-INLINE(int32_t,  USHRT_CVWI)    (ushort x) {return x;}
-INLINE(int32_t,   SHRT_CVWI)     (short x) {return x;}
-INLINE(int32_t,    INT_CVWI)       (int x) {return x;}
-INLINE(int32_t,   UINT_CVWI)      (uint x) {return x;}
-INLINE(int32_t,  ULONG_CVWI)     (ulong x) {return x;}
-INLINE(int32_t,   LONG_CVWI)      (long x) {return x;}
-INLINE(int32_t, ULLONG_CVWI)    (ullong x) {return x;}
-INLINE(int32_t,  LLONG_CVWI)     (llong x) {return x;}
-INLINE(int32_t,  FLT16_CVWI)   (flt16_t x) {return x;}
-INLINE(int32_t,    FLT_CVWI)     (float x) {return x;}
-INLINE(int32_t,    DBL_CVWI)    (double x) {return x;}
-#if QUAD_NLLONG == 2
-INLINE(int32_t,cvwiqu) (QUAD_UTYPE x) {return x;}
-INLINE(int32_t,cvwiqi) (QUAD_ITYPE x) {return x;}
-INLINE(int32_t,cvwiqf) (QUAD_FTYPE x) {return x;}
-#endif
-
-INLINE(int32_t,cvwiac) (void volatile const *x)
-{
-    return  (intptr_t) x;
-}
-#endif
+INLINE(int32_t,FLT16_CVWI) (flt16_t x) {return x;}
+INLINE(int32_t,  FLT_CVWI)   (float x) {return x;}
+INLINE(int32_t,  DBL_CVWI)  (double x) {return x;}
+INLINE(int32_t, cvwiqf) (QUAD_FTYPE x) {return x;}
 
 
 #define     WHU_CVWI(X)         \
@@ -8604,7 +9995,7 @@ INLINE(Vdwi,VWHF_CVWI) (Vwhf x)
 
 
 INLINE(Vwwi,VWWU_CVWI) (Vwwu x) {return VWWU_ASTI(x);}
-INLINE(Vwwi,VWWI_CVWI) (Vwwi x) {return x;}
+
 INLINE(Vwwi,VWWF_CVWI) (Vwwf x)
 {
     return  INT_ASTV(vcvts_s32_f32(VWWF_ASTM(x)));
@@ -8622,7 +10013,7 @@ INLINE(Vqwi,VDHF_CVWI) (Vdhf x)
 }
 
 INLINE(Vdwi,VDWU_CVWI) (Vdwu x) {return vreinterpret_s32_u32(x);}
-INLINE(Vdwi,VDWI_CVWI) (Vdwi x) {return x;}
+
 INLINE(Vdwi,VDWF_CVWI) (Vdwf x) {return vcvt_s32_f32(x);}
 
 INLINE(Vwwi,VDDU_CVWI) (Vddu x)
@@ -8641,13 +10032,25 @@ INLINE(Vwwi,VDDF_CVWI) (Vddf x)
 }
 
 INLINE(Vqwi,VQWU_CVWI) (Vqwu x) {return vreinterpretq_s32_u32(x);}
-INLINE(Vqwi,VQWI_CVWI) (Vqwi x) {return x;}
 INLINE(Vqwi,VQWF_CVWI) (Vqwf x) {return vcvtq_u32_f32(x);}
 
 INLINE(Vdwi,VQDU_CVWI) (Vqdu x) {return vreinterpret_s32_u32(vmovn_u64(x));}
 INLINE(Vdwi,VQDI_CVWI) (Vqdi x) {return                      vmovn_s64(x);}
 INLINE(Vdwi,VQDF_CVWI) (Vqdu x) {return vmovn_s64(vcvtq_s64_f64(x));}
 
+INLINE(Vwwi,VQQU_CVWI) (Vqqu x)
+{
+    QUAD_VTYPE q = {.Q.U=x};
+    Vwwi v = {vgetq_lane_f32(q.W.F, 0)};
+    return v;
+}
+
+INLINE(Vwwi,VQQI_CVWI) (Vqqi x)
+{
+    QUAD_VTYPE q = {.Q.I=x};
+    Vwwi v = {vgetq_lane_f32(q.W.F, 0)};
+    return v;
+}
 
 #if 0 // _LEAVE_ARM_CVWI
 }
@@ -8950,34 +10353,10 @@ INLINE(Vdwf,VQDF_CVWF) (Vqdf x) {return vcvt_f32_f64(x);}
 {
 #endif
 
-#if 0
-INLINE(uint64_t,   BOOL_CVDU)     (_Bool x) {return x;}
-INLINE(uint64_t,  UCHAR_CVDU)     (uchar x) {return x;}
-INLINE(uint64_t,  SCHAR_CVDU)     (schar x) {return x;}
-INLINE(uint64_t,   CHAR_CVDU)      (char x) {return x;}
-INLINE(uint64_t,  USHRT_CVDU)    (ushort x) {return x;}
-INLINE(uint64_t,   SHRT_CVDU)     (short x) {return x;}
-INLINE(uint64_t,    INT_CVDU)       (int x) {return x;}
-INLINE(uint64_t,   UINT_CVDU)      (uint x) {return x;}
-INLINE(uint64_t,  ULONG_CVDU)     (ulong x) {return x;}
-INLINE(uint64_t,   LONG_CVDU)      (long x) {return x;}
-INLINE(uint64_t, ULLONG_CVDU)    (ullong x) {return x;}
-INLINE(uint64_t,  LLONG_CVDU)     (llong x) {return x;}
-INLINE(uint64_t,  FLT16_CVDU)   (flt16_t x) {return x;}
-INLINE(uint64_t,    FLT_CVDU)     (float x) {return x;}
-INLINE(uint64_t,    DBL_CVDU)    (double x) {return x;}
-#if QUAD_NLLONG == 2
-INLINE(uint64_t,cvduqu) (QUAD_UTYPE x) {return x;}
-INLINE(uint64_t,cvduqi) (QUAD_ITYPE x) {return x;}
-INLINE(uint64_t,cvduqf) (QUAD_FTYPE x) {return x;}
-#endif
-#endif
-
-
-INLINE(uint64_t,cvduac) (void volatile const *x)
-{
-    return  (uintptr_t) x;
-}
+INLINE(uint64_t,FLT16_CVDU) (flt16_t x) {return x;}
+INLINE(uint64_t,  FLT_CVDU)   (float x) {return x;}
+INLINE(uint64_t,  DBL_CVDU)  (double x) {return x;}
+INLINE(uint64_t, cvduqf) (QUAD_FTYPE x) {return x;}
 
 #define     WWU_CVDU(X)         \
 vreinterpret_u64_u32(           \
@@ -9044,13 +10423,23 @@ INLINE(Vqdu,VDWU_CVDU) (Vdwu x) {return vmovl_u32(x);}
 INLINE(Vqdu,VDWI_CVDU) (Vdwi x) {return VQDI_ASTU(vmovl_s32(x));}
 INLINE(Vqdu,VDWF_CVDU) (Vdwf x) {return vcvtq_u64_f64(vcvt_f64_f32(x));}
 
-INLINE(Vddu,VDDU_CVDU) (Vddu x) {return x;}
 INLINE(Vddu,VDDI_CVDU) (Vddi x) {return vreinterpret_u64_s64(x);}
 INLINE(Vddu,VDDF_CVDU) (Vddf x) {return vcvt_u64_f64(x);}
 
-INLINE(Vqdu,VQDU_CVDU) (Vqdu x) {return x;}
 INLINE(Vqdu,VQDI_CVDU) (Vqdi x) {return vreinterpretq_u64_s64(x);}
 INLINE(Vqdu,VQDF_CVDU) (Vqdf x) {return vcvtq_u64_f64(x);}
+
+INLINE(Vddu,VQQU_CVDU) (Vqqu x)
+{
+    QUAD_VTYPE q = {.Q.U=x};
+    return  vget_low_u64(q.D.U);
+}
+
+INLINE(Vddu,VQQI_CVDU) (Vqqi x)
+{
+    QUAD_VTYPE  q = {.Q.I=x};
+    return  vget_low_u64(q.D.U);
+}
 
 
 #if 0 // _LEAVE_ARM_CVDU
@@ -9060,34 +10449,11 @@ INLINE(Vqdu,VQDF_CVDU) (Vqdf x) {return vcvtq_u64_f64(x);}
 #if 0 // _ENTER_ARM_CVDI
 {
 #endif
-#if 0
-INLINE(int64_t,   BOOL_CVDI)   (_Bool x) {return x;}
-INLINE(int64_t,  UCHAR_CVDI)   (uchar x) {return x;}
-INLINE(int64_t,  SCHAR_CVDI)   (schar x) {return x;}
-INLINE(int64_t,   CHAR_CVDI)    (char x) {return x;}
-INLINE(int64_t,  USHRT_CVDI)  (ushort x) {return x;}
-INLINE(int64_t,   SHRT_CVDI)   (short x) {return x;}
-INLINE(int64_t,    INT_CVDI)     (int x) {return x;}
-INLINE(int64_t,   UINT_CVDI)    (uint x) {return x;}
-INLINE(int64_t,  ULONG_CVDI)   (ulong x) {return x;}
-INLINE(int64_t,   LONG_CVDI)    (long x) {return x;}
-INLINE(int64_t, ULLONG_CVDI)  (ullong x) {return x;}
-INLINE(int64_t,  LLONG_CVDI)   (llong x) {return x;}
-INLINE(int64_t,  FLT16_CVDI) (flt16_t x) {return x;}
-INLINE(int64_t,    FLT_CVDI)   (float x) {return x;}
-INLINE(int64_t,    DBL_CVDI)  (double x) {return x;}
 
-INLINE(int64_t,cvdiac) (void volatile const *x)
-{
-    return  (intptr_t) x;
-}
-#if QUAD_NLLONG == 2
-INLINE(int64_t,cvdiqu) (QUAD_UTYPE x) {return x;}
-INLINE(int64_t,cvdiqi) (QUAD_ITYPE x) {return x;}
-INLINE(int64_t,cvdiqf) (QUAD_FTYPE x) {return x;}
-#endif
-#endif
-
+INLINE(int64_t,FLT16_CVDI) (flt16_t x) {return x;}
+INLINE(int64_t,  FLT_CVDI)   (float x) {return x;}
+INLINE(int64_t,  DBL_CVDI)  (double x) {return x;}
+INLINE(int64_t, cvdiqf) (QUAD_FTYPE x) {return x;}
 
 
 #define     WWU_CVDI(X)         \
@@ -9170,12 +10536,22 @@ INLINE(Vqdi,VDWI_CVDI) (Vdwi x) {return vmovl_s32(x);}
 INLINE(Vqdi,VDWF_CVDI) (Vdwf x) {return vcvtq_s64_f64(vcvt_f64_f32(x));}
 
 INLINE(Vddi,VDDU_CVDI) (Vddu x) {return vreinterpret_s64_u64(x);}
-INLINE(Vddi,VDDI_CVDI) (Vddi x) {return x;}
 INLINE(Vddi,VDDF_CVDI) (Vddf x) {return vcvt_s64_f64(x);}
 
 INLINE(Vqdi,VQDU_CVDI) (Vqdu x) {return vreinterpretq_s64_u64(x);}
-INLINE(Vqdi,VQDI_CVDI) (Vqdi x) {return x;}
 INLINE(Vqdi,VQDF_CVDI) (Vqdf x) {return vcvtq_s64_f64(x);}
+
+INLINE(Vddi,VQQU_CVDI) (Vqqu x)
+{
+    QUAD_VTYPE q = {.Q.U=x};
+    return  vget_low_s64(q.D.I);
+}
+
+INLINE(Vddi,VQQI_CVDI) (Vqqi x)
+{
+    QUAD_VTYPE q = {.Q.I=x};
+    return  vget_low_s64(q.D.I);
+}
 
 #if 0 // _LEAVE_ARM_CVDI
 }
@@ -9340,6 +10716,36 @@ INLINE(Vqdu,VQDI_CVDZ) (Vqdi x)
 
 INLINE(Vqdu,VQDF_CVDZ) (Vqdf x) {return vcvtq_u64_f64(x);}
 
+INLINE(Vddu,VQQU_CVDZ) (Vqqu x)
+{
+    QUAD_VTYPE  q = {.Q.U=x};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE  r = {.D.U=vget_high_u64(q.D.U)};
+    r.D.U = vcgt_u64(r.D.U, vdup_n_u64(0));
+    return  vorr_u64(l.D.U, r.D.U);
+}
+
+INLINE(Vddu,VQQI_CVDZ) (Vqqi x)
+{
+    QUAD_VTYPE q = {.Q.I=x};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    DWRD_VTYPE m;
+
+    // if any bit in x[64:128] is set, the result is 
+    // saturated. First, set the intermediate result to
+    // x[0:64]|(UINT64_MAX if ANY(x[64:128]) else 0)
+    m.D.U = vtst_u64(r.D.U, vdup_n_u64(INT64_MAX));
+    l.D.U = vorr_u64(l.D.U, m.D.U);
+
+    // if x was neg, we shift left by -64 bits to cap 
+    // the negative value to zero
+    r.D.I = vshr_n_s64(r.D.I, 63);
+    r.D.I = vand_s64(r.D.I, vdup_n_u64(0xffffffffffffffc0ULL));
+
+    return  vshl_u64(l.D.U, r.D.I);
+}
+
 #if 0 // _LEAVE_ARM_CVDZ
 }
 #endif
@@ -9477,6 +10883,48 @@ INLINE(Vqdi,VQDU_CVDS) (Vqdu x)
 INLINE(Vqdi,VQDI_CVDS) (Vqdi x) {return x;}
 INLINE(Vqdi,VQDF_CVDS) (Vqdf x) {return vcvtq_s64_f64(x);}
 
+INLINE(Vddi,VQQU_CVDS) (Vqqu x)
+{
+    QUAD_VTYPE q = {.Q.U=x};
+    DWRD_VTYPE d = {.D.U=vdup_n_u64(UINT64_MAX)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+
+//  set l = UINT64_MAX if ANY(x[64:128]) else l
+    r.D.U = vtst_u64(r.D.U, d.D.U);
+    l.D.U = vorr_u64(l.D.U, r.D.U);
+
+//  set d = INT64_MAX
+    d.D.U = vshr_n_u64(d.D.U, 1);
+
+//  set l = UINT64_MAX if (l > d) else l
+    r.D.U = vcgt_u64(l.D.U, d.D.U);
+    l.D.U = vorr_u64(l.D.U, r.D.U);
+
+//  ret INT64_MAX&l
+    return  vand_s64(d.D.I, l.D.I);
+}
+
+INLINE(Vddi,VQQI_CVDS) (Vqqi x)
+{
+    QUAD_VTYPE  q = {.Q.I=x};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE  r = {.D.U=vget_high_u64(q.D.U)};
+    DWRD_VTYPE  s = {.I=vget_lane_s64(r.D.U, 0)};
+    if (s.I < 0)
+    {
+        return (s.I == -1) ? l.D.I : vdup_n_s64(INT64_MIN);
+    }
+    DWRD_VTYPE  m = {.I=INT64_MAX};
+    if (s.I > 0)
+    {
+        return  m.D.I;
+    }
+    m.D.U = vcgt_u64(l.D.U, m.D.U);
+    m.D.U = vshr_n_u64(m.D.U, 1);
+    return  vorr_s64(m.D.I, l.D.I);
+}
+
 #if 0 // _LEAVE_ARM_CVDS
 }
 #endif
@@ -9560,28 +11008,89 @@ INLINE(Vqdf,VQDF_CVDF) (Vqdf x) {return x;}
 {
 #endif
 
-INLINE(QUAD_UTYPE,  BOOL_CVQU)      (_Bool x) {return x;}
-INLINE(QUAD_UTYPE, UCHAR_CVQU)      (uchar x) {return x;}
-INLINE(QUAD_UTYPE, SCHAR_CVQU)      (schar x) {return x;}
-INLINE(QUAD_UTYPE,  CHAR_CVQU)       (char x) {return x;}
-INLINE(QUAD_UTYPE, USHRT_CVQU)     (ushort x) {return x;}
-INLINE(QUAD_UTYPE,  SHRT_CVQU)      (short x) {return x;}
-INLINE(QUAD_UTYPE,   INT_CVQU)        (int x) {return x;}
-INLINE(QUAD_UTYPE,  UINT_CVQU)       (uint x) {return x;}
-INLINE(QUAD_UTYPE, ULONG_CVQU)      (ulong x) {return x;}
-INLINE(QUAD_UTYPE,  LONG_CVQU)       (long x) {return x;}
-INLINE(QUAD_UTYPE,ULLONG_CVQU)     (ullong x) {return x;}
-INLINE(QUAD_UTYPE, LLONG_CVQU)      (llong x) {return x;}
-INLINE(QUAD_UTYPE, FLT16_CVQU)    (flt16_t x) {return x;}
-INLINE(QUAD_UTYPE,   FLT_CVQU)      (float x) {return x;}
-INLINE(QUAD_UTYPE,   DBL_CVQU)     (double x) {return x;}
-INLINE(QUAD_UTYPE,cvququ) (QUAD_UTYPE x) {return x;}
-INLINE(QUAD_UTYPE,cvquqi) (QUAD_ITYPE x) {return x;}
-INLINE(QUAD_UTYPE,cvquqf) (QUAD_FTYPE x) {return x;}
-INLINE(QUAD_ITYPE,cvquac) (void volatile const *x)
+INLINE(QUAD_UTYPE,FLT16_CVQU) (flt16_t x) 
 {
-    return  (uintptr_t) x;
+    return x;
 }
+
+INLINE(QUAD_UTYPE,FLT_CVQU) (float x) 
+{
+    return x;
+}
+
+INLINE(QUAD_UTYPE,DBL_CVQU) (double x) 
+{
+    return x;
+}
+
+INLINE(QUAD_UTYPE,cvquqf) (QUAD_FTYPE x) 
+{
+    return x;
+}
+
+INLINE(Vqqu,VWWU_CVQU) (Vwwu x)
+{
+    QUAD_TYPE   v = {.W0.F=x.V0};
+    uint64x1_t  l = vdup_n_u64(v.Lo.U);
+    uint64x1_t  r = vdup_n_u64(v.Hi.U);
+    uint64x2_t  c = vcombine_u64(l, r);
+    return  ((Vqqu){c});
+}
+
+INLINE(Vqqu,VWWI_CVQU) (Vwwi x)
+{
+    QUAD_TYPE   v = {.W0.F=x.V0};
+    v.I = INT32_CVQU(v.W0.I);
+    uint64x1_t  l = vdup_n_u64(v.Lo.U);
+    uint64x1_t  r = vdup_n_u64(v.Hi.U);
+    uint64x2_t  c = vcombine_u64(l, r);
+    return  ((Vqqu){c});
+}
+
+INLINE(Vqqu,VWWF_CVQU) (Vwwf x)
+{
+    QUAD_TYPE   v = {.W0.F=x.V0};
+    v.I = FLT_CVQU(v.W0.I);
+    uint64x1_t  l = vdup_n_u64(v.Lo.U);
+    uint64x1_t  r = vdup_n_u64(v.Hi.U);
+    uint64x2_t  c = vcombine_u64(l, r);
+    return  ((Vqqu){c});
+}
+
+
+INLINE(Vqqu,VDDU_CVQU) (Vddu l)
+{
+    uint64x1_t  r = vdup_n_u64(0);
+    uint64x2_t  c = vcombine_u64(l, r);
+    return  ((Vqqu){c});
+}
+
+INLINE(Vqqu,VDDI_CVQU) (Vddi l)
+{
+    int64x1_t   r = vshr_n_s64(l, 64);
+    int64x2_t   c = vcombine_u64(l, r);
+    uint64x2_t  m = vreinterpretq_u64_s64(c);
+    return ((Vqqu){m});
+}
+
+INLINE(Vqqu,VDDF_CVQU) (Vddf l)
+{
+    QUAD_TYPE v = {.U=vget_lane_f64(l, 0)};
+    return  astvqu(v.U);
+}
+
+INLINE(Vqqu,VQQI_CVQU) (Vqqi v)
+{
+    return ((Vqqu){vreinterpretq_u64_s64(v.V0)});
+}
+
+INLINE(Vqqu,VQQF_CVQU) (Vqqf v)
+{
+    QUAD_TYPE q = {.F=v.V0};
+    q.U = q.F;
+    return  astvqu(q.U);
+}
+
 
 #if 0 // _LEAVE_ARM_CVQU
 }
@@ -9590,29 +11099,88 @@ INLINE(QUAD_ITYPE,cvquac) (void volatile const *x)
 #if 0 // _ENTER_ARM_CVQI
 {
 #endif
-
-INLINE(QUAD_ITYPE,  BOOL_CVQI)      (_Bool x) {return x;}
-INLINE(QUAD_ITYPE, UCHAR_CVQI)      (uchar x) {return x;}
-INLINE(QUAD_ITYPE, SCHAR_CVQI)      (schar x) {return x;}
-INLINE(QUAD_ITYPE,  CHAR_CVQI)       (char x) {return x;}
-INLINE(QUAD_ITYPE, USHRT_CVQI)     (ushort x) {return x;}
-INLINE(QUAD_ITYPE,  SHRT_CVQI)      (short x) {return x;}
-INLINE(QUAD_ITYPE,   INT_CVQI)        (int x) {return x;}
-INLINE(QUAD_ITYPE,  UINT_CVQI)       (uint x) {return x;}
-INLINE(QUAD_ITYPE, ULONG_CVQI)      (ulong x) {return x;}
-INLINE(QUAD_ITYPE,  LONG_CVQI)       (long x) {return x;}
-INLINE(QUAD_ITYPE,ULLONG_CVQI)     (ullong x) {return x;}
-INLINE(QUAD_ITYPE, LLONG_CVQI)      (llong x) {return x;}
-INLINE(QUAD_ITYPE, FLT16_CVQI)    (flt16_t x) {return x;}
-INLINE(QUAD_ITYPE,   FLT_CVQI)      (float x) {return x;}
-INLINE(QUAD_ITYPE,   DBL_CVQI)     (double x) {return x;}
-INLINE(QUAD_ITYPE,cvqiqu) (QUAD_UTYPE x) {return x;}
-INLINE(QUAD_ITYPE,cvqiqi) (QUAD_ITYPE x) {return x;}
-INLINE(QUAD_ITYPE,cvqiqf) (QUAD_FTYPE x) {return x;}
-INLINE(QUAD_ITYPE,cvqiac) (void volatile const *x)
+INLINE(QUAD_ITYPE,FLT16_CVQI) (flt16_t x) 
 {
-    return (intptr_t) x;
+    return x;
 }
+
+INLINE(QUAD_ITYPE,FLT_CVQI) (float x) 
+{
+    return x;
+}
+
+INLINE(QUAD_ITYPE,DBL_CVQI) (double x) 
+{
+    return x;
+}
+
+INLINE(QUAD_ITYPE,cvqiqf) (QUAD_FTYPE x) 
+{
+    return x;
+}
+
+INLINE(Vqqi,VWWU_CVQI) (Vwwu x)
+{
+    QUAD_TYPE   v = {.W0.F=x.V0};
+    int64x1_t   l = vdup_n_s64(v.Lo.I);
+    int64x1_t   r = vdup_n_s64(v.Hi.I);
+    int64x2_t   c = vcombine_s64(l, r);
+    return  ((Vqqi){c});
+}
+
+INLINE(Vqqi,VWWI_CVQI) (Vwwi x)
+{
+    QUAD_TYPE   v = {.W0.F=x.V0};
+    v.I = INT32_CVQI(v.W0.I);
+    int64x1_t   l = vdup_n_s64(v.Lo.I);
+    int64x1_t   r = vdup_n_s64(v.Hi.I);
+    int64x2_t   c = vcombine_s64(l, r);
+    return  ((Vqqi){c});
+}
+
+INLINE(Vqqi,VWWF_CVQI) (Vwwf x)
+{
+    QUAD_TYPE   v = {.W0.F=x.V0};
+    v.I = FLT_CVQI(v.W0.I);
+    int64x1_t   l = vdup_n_s64(v.Lo.I);
+    int64x1_t   r = vdup_n_s64(v.Hi.I);
+    int64x2_t   c = vcombine_s64(l, r);
+    return  ((Vqqi){c});
+}
+
+
+INLINE(Vqqi,VDDU_CVQI) (Vddu l)
+{
+    uint64x1_t  r = vdup_n_u64(0);
+    uint64x2_t  c = vcombine_u64(l, r);
+    return  ((Vqqi){vreinterpretq_s64_u64(c)});
+}
+
+INLINE(Vqqi,VDDI_CVQI) (Vddi l)
+{
+    int64x1_t   r = vshr_n_s64(l, 64);
+    int64x2_t   c = vcombine_s64(l, r);
+    return  ((Vqqi){c});
+}
+
+INLINE(Vqqi,VDDF_CVQI) (Vddf l)
+{
+    QUAD_TYPE v = {.I=vget_lane_f64(l, 0)};
+    return  astvqi(v.I);
+}
+
+INLINE(Vqqi,VQQU_CVQI) (Vqqu v)
+{
+    return  ((Vqqi){vreinterpretq_s64_u64(v.V0)});
+}
+
+INLINE(Vqqi,VQQF_CVQI) (Vqqf v)
+{
+    QUAD_TYPE q = {.F=v.V0};
+    q.I = q.F;
+    return  astvqi(q.I);
+}
+
 
 #if 0 // _LEAVE_ARM_CVQI
 }
@@ -9621,25 +11189,6 @@ INLINE(QUAD_ITYPE,cvqiac) (void volatile const *x)
 #if 0 // _ENTER_ARM_CVQF
 {
 #endif
-
-INLINE(QUAD_FTYPE,  BOOL_CVQF)      (_Bool x) {return x;}
-INLINE(QUAD_FTYPE, UCHAR_CVQF)      (uchar x) {return x;}
-INLINE(QUAD_FTYPE, SCHAR_CVQF)      (schar x) {return x;}
-INLINE(QUAD_FTYPE,  CHAR_CVQF)       (char x) {return x;}
-INLINE(QUAD_FTYPE, USHRT_CVQF)     (ushort x) {return x;}
-INLINE(QUAD_FTYPE,  SHRT_CVQF)      (short x) {return x;}
-INLINE(QUAD_FTYPE,   INT_CVQF)        (int x) {return x;}
-INLINE(QUAD_FTYPE,  UINT_CVQF)       (uint x) {return x;}
-INLINE(QUAD_FTYPE, ULONG_CVQF)      (ulong x) {return x;}
-INLINE(QUAD_FTYPE,  LONG_CVQF)       (long x) {return x;}
-INLINE(QUAD_FTYPE,ULLONG_CVQF)     (ullong x) {return x;}
-INLINE(QUAD_FTYPE, LLONG_CVQF)      (llong x) {return x;}
-INLINE(QUAD_FTYPE, FLT16_CVQF)    (flt16_t x) {return x;}
-INLINE(QUAD_FTYPE,   FLT_CVQF)      (float x) {return x;}
-INLINE(QUAD_FTYPE,   DBL_CVQF)     (double x) {return x;}
-INLINE(QUAD_FTYPE,cvqfqu) (QUAD_UTYPE x) {return x;}
-INLINE(QUAD_FTYPE,cvqfqi) (QUAD_ITYPE x) {return x;}
-INLINE(QUAD_FTYPE,cvqfqf) (QUAD_FTYPE x) {return x;}
 
 #if 0 // _LEAVE_ARM_CVQF
 }
@@ -9650,785 +11199,607 @@ INLINE(QUAD_FTYPE,cvqfqf) (QUAD_FTYPE x) {return x;}
 {
 #endif
 
-INLINE(Vwyu,BOOL_DUPW) (_Bool x)
+INLINE(float,MY_DUPWBZ) (signed a, Rc(-4, +3) b)
 {
-#define     BOOL_DUPW(X)        \
-WYU_ASTV(                       \
-    vget_lane_f32(              \
-        vreinterpret_f32_u32(   \
-            vdup_n_u32(X?-1:0)  \
-        ),                      \
-        0                       \
-    )                           \
+    DWRD_TYPE d = {.B0.U=a, .B1.U=a, .B2.U=a, .B3.U=a};
+    if (b < 0)
+    {
+        d.U <<= 8*(4-(3&-b));
+        return  d.Lo.F;
+    }
+    if (b)
+    {
+        d.U >>= 8*(4-b);
+    }
+    return  d.Lo.F;
+}
+            
+INLINE(float,MY_DUPWHZ) (signed a, Rc(-2, +1) b)
+{
+    WORD_TYPE w={.H0.U=a, .H1.U=a};
+    if (b < 0)
+    {
+        w.U <<= 16*(2-(1&-b));
+        return  w.F;
+    }
+    w.U >>= 16*b;
+    return  w.F;
+}
+            
+INLINE(float,MY_DUPWHF) (flt16_t a, Rc(-2, +1) b)
+{
+    WORD_TYPE w={.H0.F=a, .H1.F=a};
+    if (b < 0)
+    {
+        w.U <<= 16*(2-(1&-b));
+        return  w.F;
+    }
+    w.U >>= 16*b;
+    return  w.F;
+}
+
+
+INLINE(Vwyu, BOOL_DUPW)    (_Bool a, Rc(-32, +31) b)
+{
+#define     MY_DUPWYU(A, B)         \
+(                                   \
+    ((63&-B) > 31)                  \
+    ?   vget_lane_f32(              \
+            vreinterpret_f32_u32(   \
+                vshr_n_u32(         \
+                    vcreate_u32((A?UINT32_MAX:0)),\
+                    (32-(31&B))     \
+                )                   \
+            ),                      \
+            0                       \
+        )                           \
+    :   vget_lane_f32(              \
+            vreinterpret_f32_u32(   \
+                vshl_n_u32(         \
+                    vcreate_u32((A?UINT32_MAX:0)),\
+                    (31&B)          \
+                )                   \
+            ),                      \
+            0                       \
+        )                           \
 )
-    return  BOOL_DUPW(x);
+#define  MY_BOOL_DUPW(A, B, ...) ((Vwyu){MY_DUPWYU(A,B)})
+#define     BOOL_DUPW(...) MY_BOOL_DUPW(__VA_ARGS__,0)
+    uint64x1_t  w = vcreate_u64((a ? UINT32_MAX : 0));
+    int64x1_t   n;
+    if ((63&-b) > 31)   n = vdup_n_s64(-(32-(31&b)));
+    else                n = vdup_n_s64((31&b));
+    w = vshl_u64(w, n);
+    float32x2_t m = vreinterpret_f32_u64(w);
+    Vwyu        v = {vget_lane_f32(m, 0)};
+    return  v;
 }
 
-INLINE(Vwyu,BOOL_DUPWAC) (void const *a)
+INLINE(Vwbu,UCHAR_DUPW) (unsigned a, Rc(-4, +3) b)
 {
-#define     BOOL_DUPWAC(A)   BOOL_DUPW((*(_Bool const *) A))
-    return  BOOL_DUPWAC(a);
+#define  MY_UCHAR_DUPW(A, B, ...) ((Vwbu){MY_DUPWBZ(A,B)})
+#define     UCHAR_DUPW(...) MY_UCHAR_DUPW(__VA_ARGS__,0)    
+    return  UCHAR_DUPW(a, b);
 }
 
-INLINE(Vwyu,VWYU_DUPW) (Vwyu v, Rc(0, 31) k)
+INLINE(Vwbi,SCHAR_DUPW)   (signed a, Rc(-4, +3) b)
 {
-#define     WYU_DUPW(M, K)              \
-vget_lane_f32(                          \
-    vreinterpret_f32_u32(               \
-        vtst_u32(                       \
-            vreinterpret_u32_f32(       \
-                vdup_n_f32(M)           \
-            ),                          \
-            vreinterpret_u32_u64(       \
-                vdup_n_u64(1<<(31&(K))) \
-            )                           \
-        )                               \
-    ),                                  \
-    0                               \
+#define  MY_SCHAR_DUPW(A, B, ...) ((Vwbi){MY_DUPWBZ(A,B)})
+#define     SCHAR_DUPW(...) MY_SCHAR_DUPW(__VA_ARGS__,0)    
+    return  SCHAR_DUPW(a, b);
+}
+
+INLINE(Vwbc, CHAR_DUPW)      (int a, Rc(-4, +3) b)
+{
+#define  MY_CHAR_DUPW(A, B, ...) ((Vwbc){MY_DUPWBZ(A,B)})
+#define     CHAR_DUPW(...) MY_CHAR_DUPW(__VA_ARGS__,0)    
+    return  CHAR_DUPW(a, b);
+}
+
+INLINE(Vwhu,USHRT_DUPW) (unsigned a, Rc(-2, +1) b)
+{
+#define  MY_USHRT_DUPW(A, B, ...) ((Vwhu){MY_DUPWHZ(A,B)})
+#define     USHRT_DUPW(...) MY_USHRT_DUPW(__VA_ARGS__,0)    
+    return  USHRT_DUPW(a, b);
+}
+
+INLINE(Vwhi, SHRT_DUPW)   (signed a, Rc(-2, +1) b)
+{
+#define  MY_SHRT_DUPW(A, B, ...) ((Vwhi){MY_DUPWHZ(A,B)})
+#define     SHRT_DUPW(...) MY_SHRT_DUPW(__VA_ARGS__,0)    
+    return  SHRT_DUPW(a, b);
+}
+
+INLINE(Vwwu, UINT_DUPW)     (uint a, Rc(-1, 0) b)
+{
+#define  MY_UINT_DUPW(A, B, ...) ((Vwwu){((WORD_TYPE){.U=(1&B)?0:A}).F})
+#define     UINT_DUPW(...) MY_UINT_DUPW(__VA_ARGS__,0)    
+    return  UINT_DUPW(a, b);
+}
+
+INLINE(Vwwi,  INT_DUPW)      (int a, Rc(-1, 0) b)
+{
+#define  MY_INT_DUPW(A, B, ...) ((Vwwi){((WORD_TYPE){.I=(1&B)?0:A}).F})
+#define     INT_DUPW(...) MY_INT_DUPW(__VA_ARGS__,0)    
+    return  INT_DUPW(a, b);
+}
+
+#if DWRD_NLONG == 2
+
+INLINE(Vwwu,ULONG_DUPW)    (ulong a, Rc(-1, 0) b)
+{
+#define  MY_ULONG_DUPW(A, B, ...) ((Vwwu){((WORD_TYPE){.U=(1&B)?0:A}).F})
+#define     ULONG_DUPW(...) MY_ULONG_DUPW(__VA_ARGS__,0)    
+    return  ULONG_DUPW(a, b);
+}
+
+INLINE(Vwwi, LONG_DUPW)     (long a, Rc(-1, 0) b)
+{
+#define  MY_LONG_DUPW(A, B, ...) ((Vwwi){((WORD_TYPE){.I=(1&B)?0:A}).F})
+#define     LONG_DUPW(...) MY_LONG_DUPW(__VA_ARGS__,0)    
+    return  LONG_DUPW(a, b);
+}
+
+#endif
+
+INLINE(Vwhf,FLT16_DUPW) (flt16_t a, Rc(-2, +1) b)
+{
+#define  MY_FLT16_DUPW(A, B, ...) ((Vwhf){MY_DUPWHF(A,B)})
+#define     FLT16_DUPW(...) MY_FLT16_DUPW(__VA_ARGS__,0)    
+    return  FLT16_DUPW(a, b);
+}
+
+INLINE(Vwwf,  FLT_DUPW)   (float a, Rc(-1, 0) b)
+{
+#define  MY_FLT_DUPW(A, B, ...) ((Vwwf){(1&B)?0.0F:A})
+#define     FLT_DUPW(...) MY_FLT_DUPW(__VA_ARGS__,0)    
+    return  FLT_DUPW(a, b);
+}
+
+
+INLINE(float,WYU_DUPW) (float a, Rc(-32, +31) b)
+{
+#define     WYU_DUPW(A, B) \
+(((WORD_TYPE){.U=((((WORD_TYPE){.F=A}).U&(1U<<(31&B)))?-1:0),}).F)
+    
+    return  WYU_DUPW(a, b);
+}
+
+INLINE(float,WBR_DUPW) (float a, Rc(-4, +3) b)
+{
+#define  WBR_DUPW(A, B)    \
+vget_lane_f32(          \
+    vreinterpret_f32_u8(\
+        vdup_lane_u8(   \
+            vreinterpret_u8_f32(((float32x2_t){A})),\
+            (3&B)       \
+        )               \
+    ),                  \
+    0                   \
 )
-#define     VWYU_DUPW(V, K) WYU_ASTV(WYU_DUPW(VWYU_ASTM(V), K))
-    return  VWYU_DUPW(v, k);
+
+    float32x2_t m = {a};
+    uint8x8_t   v = vreinterpret_u8_f32(m);
+    uint8x8_t   t = vdup_n_u8((b&3));
+    v = vtbl1_u8(v, t);
+    m = vreinterpret_f32_u8(v);
+    return vget_lane_f32(m, 0);
 }
 
-INLINE(Vwyu,VDYU_DUPW) (Vdyu v, Rc(0, 63) k)
+INLINE(float,WHR_DUPW) (float a, Rc(-2, +1) b)
 {
-#define     DYU_DUPW(M, K)          \
+#define  WHR_DUPW(A, B)    \
+vget_lane_f32(\
+    vreinterpret_f32_u16(\
+        vdup_lane_u16(\
+            vreinterpret_u16_f32(((float32x2_t){A})),\
+            (1&B)\
+        )\
+    ),\
+    0\
+)
+
+    float32x2_t m = {a};
+    uint8x8_t   v = vreinterpret_u8_f32(m);
+    uint8x8_t   t = vdup_n_u8((2*(b&1)));
+    t = vadd_u8(t, vcreate_u8(0x01000100ULL));
+    v = vtbl1_u8(v, t);
+    m = vreinterpret_f32_u8(v);
+    return  vget_lane_f32(m, 0);
+}
+
+
+INLINE(Vwyu,VWYU_DUPW) (Vwyu a, Rc(-32, +31) b)
+{
+#define  MY_VWYU_DUPW(A, B, ...) ((Vwyu){WYU_DUPW(A.V0,B)})
+#define     VWYU_DUPW(...) MY_VWYU_DUPW(__VA_ARGS__,0)
+    return  VWYU_DUPW(a, b);
+}
+
+INLINE(Vwbu,VWBU_DUPW) (Vwbu a, Rc(-4, +3) b)
+{
+#define  MY_VWBU_DUPW(A,B,...) ((Vwbu){WBR_DUPW(A.V0,B)})
+#define     VWBU_DUPW(...) MY_VWBU_DUPW(__VA_ARGS__,0)
+    a.V0 = (WBR_DUPW)(a.V0, b);
+    return  a;
+}
+
+INLINE(Vwbi,VWBI_DUPW) (Vwbi a, Rc(-4, +3) b)
+{
+#define  MY_VWBI_DUPW(A,B,...) ((Vwbi){WBR_DUPW(A.V0,B)})
+#define     VWBI_DUPW(...) MY_VWBI_DUPW(__VA_ARGS__,0)
+    a.V0 = (WBR_DUPW)(a.V0, b);
+    return  a;
+}
+
+INLINE(Vwbc,VWBC_DUPW) (Vwbc a, Rc(-4, +3) b)
+{
+#define  MY_VWBC_DUPW(A,B,...) ((Vwbc){WBR_DUPW(A.V0,B)})
+#define     VWBC_DUPW(...) MY_VWBC_DUPW(__VA_ARGS__,0)
+    a.V0 = (WBR_DUPW)(a.V0, b);
+    return  a;
+}
+
+INLINE(Vwhu,VWHU_DUPW) (Vwhu a, Rc(-2, +1) b)
+{
+#define  MY_VWHU_DUPW(A,B,...) ((Vwhu){WHR_DUPW(A.V0,B)})
+#define     VWHU_DUPW(...) MY_VWHU_DUPW(__VA_ARGS__,0)
+    a.V0 = (WHR_DUPW)(a.V0, b);
+    return  a;
+}
+
+INLINE(Vwhi,VWHI_DUPW) (Vwhi a, Rc(-2, +1) b)
+{
+#define  MY_VWHI_DUPW(A,B,...) ((Vwhi){WHR_DUPW(A.V0,B)})
+#define     VWHI_DUPW(...) MY_VWHI_DUPW(__VA_ARGS__,0)
+    a.V0 = (WHR_DUPW)(a.V0, b);
+    return  a;
+}
+
+INLINE(Vwhf,VWHF_DUPW) (Vwhf a, Rc(-2, +1) b)
+{
+#define  MY_VWHF_DUPW(A,B,...) ((Vwhf){WHR_DUPW(A.V0,B)})
+#define     VWHF_DUPW(...) MY_VWHF_DUPW(__VA_ARGS__,0)
+    a.V0 = (WHR_DUPW)(a.V0, b);
+    return  a;
+}
+
+INLINE(Vwwu,VWWU_DUPW) (Vwwu a, Rc(-1, +0) b)
+{
+#define     VWWU_DUPW(A, ...) ((Vwwu){A.V0})
+    return  a;
+}
+
+INLINE(Vwwi,VWWI_DUPW) (Vwwi a, Rc(-1, +0) b)
+{
+#define     VWWI_DUPW(A, ...) ((Vwwi){A.V0})
+    return  a;
+}
+
+INLINE(Vwwf,VWWF_DUPW) (Vwwf a, Rc(-1, +0) b)
+{
+#define     VWWF_DUPW(A, ...) ((Vwwf){A.V0})
+    return  a;
+}
+
+
+INLINE(float,DYU_DUPW) (uint64x1_t a, Rc(-64, +64) b)
+{
+#define  DYU_DUPW(A, B)             \
 vget_lane_f32(                      \
     vreinterpret_f32_u64(           \
         vtst_u64(                   \
-            M,                      \
-            vdup_n_u64(1<<(63&(K))) \
-        )                           \
-    ),                              \
-    0                           \
-)
-#define     VDYU_DUPW(V, K) WYU_ASTV(DYU_DUPW(VDYU_ASTM(V),K))
-    return  VDYU_DUPW(v, k);
-}
-
-INLINE(Vwyu,VQYU_DUPW) (Vqyu v, Rc(0,127) k)
-{
-#define     QYU_DUPW(M, K)                          \
-vget_lane_f32(                                      \
-    vreinterpret_f32_u64(                           \
-        vdup_lane_u64(                              \
-            (                                       \
-                (K > 63)                            \
-                ?   vtst_u64(                       \
-                        vget_high_u64(M),           \
-                        vdup_n_u64((1<<(63&K)))     \
-                    )                               \
-                :   vtst_u64(                       \
-                        vget_low_u64(M),            \
-                        vdup_n_u64((1<<(63&K)))     \
-                    )                               \
-            ),                                      \
-            0                                       \
-        )                                           \
-    ),                                              \
-    0                                               \
-)
-#define     VQYU_DUPW(V, K) WYU_ASTV(QYU_DUPW(VQYU_ASTM(V),K))
-    return  VQYU_DUPW(v, k);
-}
-
-
-INLINE(Vwbu,UCHAR_DUPW) (uchar x)
-{
-#define     UCHAR_DUPW(X)   \
-WBU_ASTV(                   \
-    vget_lane_f32(          \
-        vreinterpret_f32_u8(\
-            vdup_n_u8(X)    \
-        ),                  \
-        0               \
-    )                       \
-)
-    return  UCHAR_DUPW(x);
-}
-
-INLINE(Vwbu,UCHAR_DUPWAC) (void const *a)
-{
-    uint8x8_t   r = vld1_dup_u8(a);
-    float32x2_t v = vreinterpret_f32_u8(r);
-    float       m = vget_lane_f32(v, 0);
-    return  WBU_ASTV(m);
-}
-
-INLINE(Vwbu,VWBU_DUPW) (Vwbu v, Rc(0, 3) k)
-{
-#define     WBU_DUPW(M, K)  \
-vget_lane_f32(              \
-    vdup_lane_u8(           \
-        vreinterpret_u8_f32(\
-            vdup_n_f32(M)   \
-        ),                  \
-        (3&K)               \
-    ),                      \
-    0                       \
-)
-#define     VWBU_DUPW(V, K) WBU_ASTV(WBU_DUPW(VWBU_ASTM(V),K))
-    return  WBU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(
-                vtbl1_u8(
-                    vreinterpret_u8_f32(
-                        vdup_n_f32(VWBU_ASTM(v))
-                    ),
-                    vdup_n_u8((3&k))
-                )
-            ),
-            0
-        )
-    );
-}
-
-INLINE(Vwbu,VDBU_DUPW) (Vdbu v, Rc(0, 7) k)
-{
-#define     DBU_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_u8(        \
-        vdup_lane_u8(M,(7&K))   \
-    ),                          \
-    0                           \
-)
-
-#define     VDBU_DUPW(V, K) WBU_ASTV(DBU_DUPW(V,K))
-    return  WBU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(
-                vtbl1_u8(v, vdup_n_u8(k))
-            ),
-            0
-        )
-    );
-}
-
-INLINE(Vwbu,VQBU_DUPW) (Vqbu v, Rc(0, 15) k)
-{
-#define     QBU_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_u8(        \
-        vdup_laneq_u8(M,(15&K)) \
-    ),                          \
-    0                           \
-)
-
-#define     VQBU_DUPW(V, K) WBU_ASTV(QBU_DUPW(V, K))
-    return WBU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(
-                vqtbl1_u8(v,vdup_n_u8((15&k)))
-            ),
-            0
-        )
-    );
-}
-
-
-INLINE(Vwbi,SCHAR_DUPW) (schar x)
-{
-#define     SCHAR_DUPW(X)   \
-WBI_ASTV(                   \
-    vget_lane_f32(          \
-        vreinterpret_f32_s8(\
-            vdup_n_s8(X)    \
-        ),                  \
-        0                   \
-    )                       \
-)
-    return  SCHAR_DUPW(x);
-}
-
-INLINE(Vwbi,SCHAR_DUPWAC) (void const *a)
-{
-    int8x8_t    r = vld1_dup_s8(a);
-    float32x2_t v = vreinterpret_f32_s8(r);
-    float       m = vget_lane_f32(v, 0);
-    return  WBI_ASTV(m);
-}
-
-INLINE(Vwbi,VWBI_DUPW) (Vwbi v, Rc(0, 3) k)
-{
-#define     WBI_DUPW(M, K)  \
-vget_lane_f32(              \
-    vdup_lane_s8(           \
-        vreinterpret_s8_f32(\
-            vdup_n_f32(M)   \
-        ),                  \
-        (3&K)               \
-    ),                      \
-    0                       \
-)
-
-#define     VWBI_DUPW(V, K) WBI_ASTV(WBI_DUPW(VWBI_ASTM(V), K))
-    return WBI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_s8(
-                vtbl1_s8(
-                    vreinterpret_s8_f32(
-                        vdup_n_f32(VWBI_ASTM(v))
-                    ),
-                    vdup_n_u8((3&k))
-                )
-            ),
-            0
-        )
-    );
-}
-
-INLINE(Vwbi,VDBI_DUPW) (Vdbi v, Rc(0, 7) k)
-{
-#define     DBI_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_s8(        \
-        vdup_lane_s8(M,(7&K))   \
-    ),                          \
-    0                           \
-)
-
-#define     VDBI_DUPW(V, K) WBI_ASTV(DBI_DUPW(V,K))
-    return  WBI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_s8(
-                vtbl1_s8(v,vdup_n_s8(k))
-            ),
-            0
-        )
-    );
-}
-
-INLINE(Vwbi,VQBI_DUPW) (Vqbi v, Rc(0, 15) k)
-{
-#define     QBI_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_s8(        \
-        vdup_laneq_s8(M,(15&K)) \
-    ),                          \
-    0                           \
-)
-
-#define     VQBI_DUPW(V, K) WBI_ASTV(QBI_DUPW(V,K))
-    return WBI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_s8(
-                vqtbl1_s8(v, vdup_n_u8((15&k)))
-            ),
-            0
-        )
-    );
-}
-
-
-INLINE(Vwbc,CHAR_DUPW) (char x)
-{
-    return  WBC_ASTV(
-        vget_lane_f32(
-#if CHAR_MIN
-            vreinterpret_f32_s8(vdup_n_s8(x)),
-#else
-            vreinterpret_f32_s8(vdup_n_u8(x)),
-#endif
-            0
-        )
-    );
-}
-
-INLINE(Vwbc,CHAR_DUPWAC) (void const *a)
-{
-#if CHAR_MIN
-    return  VWBI_ASBC(SCHAR_DUPWAC(a));
-#else
-    return  VWBU_ASBC(UCHAR_DUPWAC(a));
-#endif
-}
-
-INLINE(Vwbc,VWBC_DUPW) (Vwbc v, Rc(0, 3) k)
-{
-#define     VWBC_DUPW(V, K)     WBC_ASTV(WBU_DUPW(VWBC_ASTM(V), K))
-    return  WBC_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(
-                vtbl1_u8(
-                    vreinterpret_u8_f32(
-                        vdup_n_f32(VWBC_ASTM(v))
-                    ),
-                    vdup_n_u8((3&k))
-                )
-            ),
-            0
-        )
-    );
-}
-
-INLINE(Vwbc,VDBC_DUPW) (Vdbc v, Rc(0,  7) k)
-{
-#define     VDBC_DUPW(V, K) WBC_ASTV(DBC_DUPW(VDBC_ASTM(V), K))
-    Dbc m = VDBC_ASTM(v);
-    return   WBC_ASTV(
-        vget_lane_f32(
-#if CHAR_MIN
-#   define  DBC_DUPW(M, K)  DBI_DUPW(M, K)
-            vreinterpret_f32_s8(
-                vtbl1_s8(m, vdup_n_u8(k))
-            ),
-#else
-#   define  DBC_DUPW(M, K)  DBU_DUPW(M, K)
-            vreinterpret_f32_u8(
-                vtbl1_u8(m, vdup_n_u8(k))
-            ),
-#endif
-            0
-        )
-    );
-}
-
-INLINE(Vwbc,VQBC_DUPW) (Vqbc v, Rc(0, 15) k)
-{
-    Qbc m = VQBC_ASTM(v);
-    return   WBC_ASTV(
-        vget_lane_f32(
-#if CHAR_MIN
-#   define  QBC_DUPW(M, K)  QBI_DUPW(M,K)
-            vreinterpret_f32_s8(
-                vqtbl1_s8(m, vdup_n_u8((15&k)))
-            ),
-#else
-#   define  QBC_DUPW(M, K)  QBU_DUPW(M,K)
-            vreinterpret_f32_s8(
-                vqtbl1_u8(m, vdup_n_u8((15&k)))
-            ),
-#endif
-            0
-        )
-    );
-#define     VQBC_DUPW(V, K) WBC_ASTV(QBC_DUPW(VQBC_ASTM(V),K))
-}
-
-
-INLINE(Vwhu,USHRT_DUPW) (ushort x)
-{
-#define     USHRT_DUPW(X)       \
-WHU_ASTV(                       \
-    vget_lane_f32(              \
-        vreinterpret_f32_u16(   \
-            vdup_n_u16(X)       \
-        ),                      \
-        0                       \
-    )                           \
-)
-    return  USHRT_DUPW(x);
-}
-
-INLINE(Vwhu,USHRT_DUPWAC) (void const *a)
-{
-#define     USHRT_DUPWAC(A)     \
-WHU_ASTV(                       \
-    vget_lane_f32(              \
-        vreinterpret_f32_u16(   \
-            vld1_dup_u16(a)     \
-       ),                       \
-       0                        \
-    )                           \
-)
-
-    return  USHRT_DUPWAC(a);
-}
-
-INLINE(Vwhu,VWHU_DUPW) (Vwhu a, Rc(0, 1) b)
-{
-#define     WHU_DUPW(M, K)          \
-vget_lane_f32(                      \
-    vreinterpret_f32_u16(           \
-        vdup_lane_u16(              \
-            vreinterpret_u16_f32(   \
-                vdup_n_f32(M)       \
-            ),                      \
-            (3&K)                   \
+            A,                      \
+            vshl_n_u64(             \
+                vdup_n_u64(1),      \
+                (63&B)              \
+            )                       \
         )                           \
     ),                              \
     0                               \
 )
 
-#define     VWHU_DUPW(V, K)     WHU_ASTV(WHU_DUPW(VWHU_ASTM(V),K))
-    float       m = VWHU_ASTM(a);
-    float32x2_t v = vdup_n_f32(m);
-    uint32x2_t  t = vreinterpret_u32_f32(v);
-    int32x2_t   n = vdup_n_s32((1&b));
-    n = vshl_n_s32(n, 4);
-    n = vneg_s32(n);
-    t = vshl_u32(t, n);
-    uint16x4_t  d = vdup_lane_u16(
-        vreinterpret_u16_u32(t), 
-        0
+    uint64x1_t  k = vshl_u64(
+        vcreate_u64(1),
+        vdup_n_s64((63&b)) 
     );
-    v = vreinterpret_f32_u16(d);
-    m = vget_lane_f32(v, 0);
-    return  WHU_ASTV(m);
+    a = vtst_u64(a, k);
+    float32x2_t m = vreinterpret_f32_u64(a);
+    return  vget_lane_f32(m, 0);
 }
 
-INLINE(Vwhu,VDHU_DUPW) (Vdhu v, Rc(0, 3) k)
+INLINE(float,DBU_DUPW) (uint8x8_t a, Rc(-8, +7) b)
 {
-#define     DHU_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_u16(       \
-        vdup_lane_u16(M,(3&K))  \
-    ),                          \
-    0                           \
+#define     DBU_DUPW(A, B)    \
+vget_lane_f32(vreinterpret_f32_u8(vdup_lane_u8(A,(7&B))),0)
+
+    a = vtbl1_u8(a, vdup_n_u8((7&b)));
+    float32x2_t m = vreinterpret_f32_u8(a);
+    return  vget_lane_f32(m, 0);
+}
+
+INLINE(float,DHU_DUPW) (uint16x4_t a, Rc(-4, +3) b)
+{
+#define     DHU_DUPW(A, B)    \
+vget_lane_f32(vreinterpret_f32_u16(vdup_lane_u16(A,(3&B))),0)
+
+    uint8x8_t   v = vreinterpret_u8_u16(a);
+    uint8x8_t   t = vdup_n_u8((2*(3&b)));
+    t = vadd_u8(t, vcreate_u8(0x01000100));
+    v = vtbl1_u8(v, t);
+    float32x2_t m = vreinterpret_f32_u8(v);
+    return  vget_lane_f32(m, 0);
+}
+
+INLINE(float,DWU_DUPW) (uint32x2_t a, Rc(-2, +1) b)
+{
+#define     DWU_DUPW(A, B)    \
+vget_lane_f32(vreinterpret_f32_u32(vdup_lane_u32(A,(1&B))),0)
+
+    uint8x8_t   v = vreinterpret_u8_u32(a);
+    uint8x8_t   t = vdup_n_u8((4*(1&b)));
+    t = vadd_u8(t, vcreate_u8(0x03020100));
+    v = vtbl1_u8(v, t);
+    float32x2_t m = vreinterpret_f32_u8(v);
+    return  vget_lane_f32(m, 0);
+}
+
+
+INLINE(Vwyu,VDYU_DUPW) (Vdyu a, Rc(-64, +63) b)
+{
+
+#define  MY_VDYU_DUPW(A, B, ...) ((Vwyu){DYU_DUPW(A.V0,B)})
+#define     VDYU_DUPW(...) MY_VDYU_DUPW(__VA_ARGS__,0)
+
+    Vwyu    v = {(DYU_DUPW)(a.V0, b)};
+    return  v;
+}
+
+
+INLINE(Vwbu,VDBU_DUPW) (Vdbu a, Rc(-8, +7) b)
+{
+#define  MY_VDBU_DUPW(A, B, ...) ((Vwbu){DBU_DUPW(A,B)})
+#define     VDBU_DUPW(...) MY_VDBU_DUPW(__VA_ARGS__,0)
+    Vwbu v = {(DBU_DUPW)(a, b)};
+    return v;
+}
+
+INLINE(Vwbi,VDBI_DUPW) (Vdbi a, Rc(-8, +7) b)
+{
+#define  MY_VDBI_DUPW(A, B, ...) ((Vwbi){DBU_DUPW(VDBI_ASTU(A),B)})
+#define     VDBI_DUPW(...) MY_VDBI_DUPW(__VA_ARGS__,0)
+    uint8x8_t m = vreinterpret_u8_s8(a);
+    Vwbi v = {(DBU_DUPW)(m, b)};
+    return v;
+}
+
+INLINE(Vwbc,VDBC_DUPW) (Vdbc a, Rc(-8, +7) b)
+{
+#define  MY_VDBC_DUPW(A, B, ...) ((Vwbc){DBU_DUPW(VDBC_ASTU(A),B)})
+#define     VDBC_DUPW(...) MY_VDBC_DUPW(__VA_ARGS__,0)
+    uint8x8_t m = VDBC_ASBU(a);
+    Vwbc v = {(DBU_DUPW)(m, b)};
+    return v;
+}
+
+
+INLINE(Vwhu,VDHU_DUPW) (Vdhu a, Rc(-4, +3) b)
+{
+#define  MY_VDHU_DUPW(A, B, ...) ((Vwhu){DHU_DUPW(A,B)})
+#define     VDHU_DUPW(...) MY_VDHU_DUPW(__VA_ARGS__,0)
+    Vwhu v = {(DHU_DUPW)(a, b)};
+    return v;
+}
+
+INLINE(Vwhi,VDHI_DUPW) (Vdhi a, Rc(-4, +3) b)
+{
+#define  MY_VDHI_DUPW(A, B, ...) ((Vwhi){DHU_DUPW(VDHI_ASTU(A),B)})
+#define     VDHI_DUPW(...) MY_VDHI_DUPW(__VA_ARGS__,0)
+    uint16x4_t m = VDHI_ASTU(a);
+    Vwhi v = {(DHU_DUPW)(m, b)};
+    return v;
+}
+
+INLINE(Vwhf,VDHF_DUPW) (Vdhf a, Rc(-4, +3) b)
+{
+#define  MY_VDHF_DUPW(A, B, ...) ((Vwhf){DHU_DUPW(VDHF_ASTU(A),B)})
+#define     VDHF_DUPW(...) MY_VDHF_DUPW(__VA_ARGS__,0)
+    uint16x4_t m = VDHF_ASTU(a);
+    Vwhf v = {(DHU_DUPW)(m, b)};
+    return v;
+}
+
+
+INLINE(Vwwu,VDWU_DUPW) (Vdwu a, Rc(-2, +1) b)
+{
+#define  MY_VDWU_DUPW(A, B, ...) ((Vwwu){DWU_DUPW(A,B)})
+#define     VDWU_DUPW(...) MY_VDWU_DUPW(__VA_ARGS__,0)
+    Vwwu v = {(DWU_DUPW)(a, b)};
+    return v;
+}
+
+INLINE(Vwwi,VDWI_DUPW) (Vdwi a, Rc(-4, +3) b)
+{
+#define  MY_VDWI_DUPW(A, B, ...) ((Vwwi){DWU_DUPW(VDWI_ASTU(A),B)})
+#define     VDWI_DUPW(...) MY_VDWI_DUPW(__VA_ARGS__,0)
+    uint32x2_t m = vreinterpret_u32_s32(a);
+    Vwwi v = {(DWU_DUPW)(m, b)};
+    return v;
+}
+
+INLINE(Vwwf,VDWF_DUPW) (Vdwf a, Rc(-4, +3) b)
+{
+#define  MY_VDWF_DUPW(A, B, ...) ((Vwwf){DWU_DUPW(VDWF_ASHU(A),B)})
+#define     VDWF_DUPW(...) MY_VDWF_DUPW(__VA_ARGS__,0)
+    uint32x2_t m = VDWF_ASTU(a);
+    Vwwf v = {(DWU_DUPW)(m, b)};
+    return v;
+}
+
+
+INLINE(float,QYU_DUPW) (uint64x2_t a, Rc(-128, +127) b)
+{
+#define     QYU_DUPW(A, B)                      \
+vget_lane_f32(                                  \
+    vreinterpret_f32_u64(                       \
+        vtst_u64(                               \
+            (                                   \
+                ((127&B) < 64)                  \
+                ?   vget_low_u64(A)             \
+                :   vget_high_u64(A)            \
+            ),                                  \
+            vdup_n_u64((UINT64_C(1)<<(63&B)))   \
+        ),                                      \
+    ),                                          \
+    0                                           \
 )
-#define     VDHU_DUPW(V, K) WHU_ASTV(DHU_DUPW(V,K))
-    uint8x8_t   m = vreinterpret_u8_u16(v);
-    uint8x8_t   t = vzip1_u8(
-        vdup_n_u8((2*k)), 
-        vdup_n_u8((2*k+1))
-    );
-    t = vtbl1_u8(m, t);
-    return  WHU_ASTV(
-        vget_lane_f32(vreinterpret_f32_u8(t), 0)
-    );
+    
+    if ((127&b) < 64) 
+        return ((DYU_DUPW)( vget_low_u64(a),      b));
+    else                
+        return ((DYU_DUPW)(vget_high_u64(a), (63&b)));
 }
 
-INLINE(Vwhu,VQHU_DUPW) (Vqhu v, Rc(0, 7) k)
+INLINE(float,QBU_DUPW) (uint8x16_t a, Rc(-16, +15) b)
 {
-#define     QHU_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_u16(       \
-        vdup_laneq_u16(M, 7&(K))\
-    ),                          \
-    0                       \
-)
-/*
-    l = {4,4,4,4, 4,4,4,4}
-    r = {5,5,5,5, 5,5,5,5}
-    t = {4,5,4,5, 4,5,4,5}
-    t = {m[4], m[5], m[4], m[5], ...}
-*/
-#define     VQHU_DUPW(V, K) WHU_ASTV(QHU_DUPW(V,K))
-    uint8x8_t   l = vdup_n_u8((2*k));
-    uint8x8_t   r = vdup_n_u8((2*k+1));
-    uint8x8_t   t = vzip1_u8(l, r);
-    t = vqtbl1_u8(vreinterpretq_u8_u16(v), t);
-    return  WHU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(t),
-            0
-        )
-    );
-}
-
-
-INLINE(Vwhi,SHRT_DUPW) (short x)
-{
-#define     SHRT_DUPW(X)        \
-WHI_ASTV(                       \
-    vget_lane_f32(              \
-        vreinterpret_f32_s16(   \
-            vdup_n_s16(X)       \
-        ),                      \
-        0                       \
-    )                           \
-)
-    return  SHRT_DUPW(x);
-}
-
-INLINE(Vwhi,SHRT_DUPWAC) (void const *a)
-{
-#define     SHRT_DUPWAC(A)      \
-WHI_ASTV(                       \
-    vget_lane_f32(              \
-        vreinterpret_f32_s16(   \
-            vld1_dup_s16(a)     \
-       ),                       \
-       0                        \
-    )                           \
-)
-
-    return  SHRT_DUPWAC(a);
-}
-
-INLINE(Vwhi,VWHI_DUPW) (Vwhi v, Rc(0, 1) k)
-{
-#define     WHI_DUPW(M, K)          \
-vget_lane_f32(                      \
-    vreinterpret_f32_s16(           \
-        vdup_lane_s16(              \
-            vreinterpret_s16_f32(   \
-                vdup_n_f32(M)       \
-            ),                      \
-            (3&K)                   \
-        )                           \
-    ),                              \
-    0                               \
-)
-
-#define     VWHI_DUPW(V, K)     WHI_ASTV(WHI_DUPW(VWHI_ASTM(V),K))
-    float32x2_t m = vset_lane_f32(VWHI_ASTM(v), m, 0);
-    uint8x8_t   t = vzip1_u8(
-        vdup_n_u8((2*k)),
-        vdup_n_u8((2*k+1))
-    );
-    t = vtbl1_u8(vreinterpret_u8_f32(m), t);
-    m = vreinterpret_f32_u8(t);
-    return  WHI_ASTV(vget_lane_f32(m, 0));
-}
-
-INLINE(Vwhi,VDHI_DUPW) (Vdhi v, Rc(0, 3) k)
-{
-#define     DHI_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_s16(       \
-        vdup_lane_s16(M, 3&(K)) \
-    ),                          \
-    0                       \
-)
-#define     VDHI_DUPW(V, K) WHI_ASTV(DHI_DUPW(V,K))
-    uint8x8_t   m = vreinterpret_u8_s16(v);
-    uint8x8_t   t = vzip1_u8(
-        vdup_n_u8((2*k)),
-        vdup_n_u8((2*k+1))
-    );
-    t = vtbl1_u8(m, t);
-    return  WHI_ASTV(
-        vget_lane_f32(vreinterpret_f32_u8(t), 0)
-    );
-}
-
-INLINE(Vwhi,VQHI_DUPW) (Vqhi v, Rc(0, 7) k)
-{
-#define     QHI_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_s16(       \
-        vdup_laneq_s16(M,(7&K)) \
-    ),                          \
-    0                           \
-)
-#define     VQHI_DUPW(V, K) WHI_ASTV(QHI_DUPW(V,K))
-    uint8x8_t   l = vdup_n_u8((2*k));
-    uint8x8_t   r = vdup_n_u8((2*k+1));
-    uint8x8_t   t = vzip1_u8(l, r);
-    t = vqtbl1_u8(vreinterpretq_u8_s16(v), t);
-    return WHI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(t),
-            0
-        )
-    );
-}
-
-
-INLINE(Vwhf,FLT16_DUPW) (flt16_t x)
-{
-#define     FLT16_DUPW(X)       \
-WHF_ASTV(                       \
-    vget_lane_f32(              \
-        vreinterpret_f32_f16(   \
-            vdup_n_f16(X)       \
-        ),                      \
-        0                       \
-    )                           \
-)
-    return  FLT16_DUPW(x);
-}
-
-INLINE(Vwhf,FLT16_DUPWAC) (void const *a)
-{
-#define     FLT16_DUPWAC(A)     \
-WHF_ASTV(                       \
-    vget_lane_f32(              \
-        vreinterpret_f32_u16(   \
-            vld1_dup_u16(a)     \
-       ),                       \
-       0                        \
-    )                           \
+#define     QBU_DUPW(A, B)    \
+vget_lane_f32(\
+    vreinterpret_f32_u8(\
+        vdup_laneq_u8(\
+            A,  \
+            (15&B)\
+        ),\
+    ),\
+    0\
 )
 
-    return  FLT16_DUPWAC(a);
+    uint8x8_t   v = vqtbl1_u8(a, vdup_n_u8((15&b)));
+    float32x2_t m = vreinterpret_f32_u8(v);
+    return  vget_lane_f32(m, 0);
 }
 
-INLINE(Vwhf,VWHF_DUPW) (Vwhf v, Rc(0, 1) k)
+INLINE(float,QHU_DUPW) (uint8x16_t a, Rc(-8, +7) b)
 {
-#define     WHF_DUPW(M, K)          \
-vget_lane_f32(                      \
-    vreinterpret_f32_f16(           \
-        vdup_lane_f16(              \
-            vreinterpret_f16_f32(   \
-                vdup_n_f32(M)       \
-            ),                      \
-            (3&K)                   \
-        )                           \
-    ),                              \
-    0                               \
+#define     QHU_DUPW(A, B)    \
+vget_lane_f32(\
+    vreinterpret_f32_u16(\
+        vdup_laneq_u16(\
+            A,  \
+            (7&B)\
+        ),\
+    ),\
+    0\
 )
 
-#define     VWHF_DUPW(V, K)     WHF_ASTV(WHF_DUPW(VWHF_ASTM(V),K))
-    float32x2_t m = vset_lane_f32(VWHF_ASTM(v), m, 0);
-    uint8x8_t   t = vzip1_u8(
-        vdup_n_u8((2*k)),
-        vdup_n_u8((2*k+1))
-    );
-    t = vtbl1_u8(vreinterpret_u8_f32(m), t);
-    return  WHF_ASTV(
-        vget_lane_f32(vreinterpret_f32_u8(t), 0)
-    );
+    uint8x8_t   t = vdup_n_u8((2*(7&b)));
+    t = vadd_u8(t, vcreate_u8(0x01000100));
+    uint8x8_t   v = vqtbl1_u8(a, t);
+    float32x2_t m = vreinterpret_f32_u8(v);
+    return  vget_lane_f32(m, 0);
 }
 
-INLINE(Vwhf,VDHF_DUPW) (Vdhf v, Rc(0, 3) k)
+INLINE(float,QWU_DUPW) (uint8x16_t a, Rc(-4, +3) b)
 {
-#define     DHF_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_f16(       \
-        vdup_lane_f16(M,(3&(K)))\
-    ),                          \
-    0                           \
+#define     QWU_DUPW(A, B)    \
+vget_lane_f32(\
+    vreinterpret_f32_u32(\
+        vdup_laneq_u32(\
+            A,  \
+            (3&B)\
+        ),\
+    ),\
+    0\
 )
-#define     VDHF_DUPW(V, K) WHF_ASTV(DHF_DUPW(V,K))
-    uint8x8_t   m = vreinterpret_u8_f16(v);
-    uint8x8_t   t = vzip1_u8(
-        vdup_n_u8((2*k)),
-        vdup_n_u8((2*k+1))
-    );
-    t = vtbl1_u8(m, t);
-    return  WHF_ASTV(
-        vget_lane_f32(vreinterpret_f32_u8(t), 0)
-    );
+    uint8x8_t   t = vdup_n_u8((4*(3&b)));
+    t = vadd_u8(t, vcreate_u8(0x03020100));
+    uint8x8_t   v = vqtbl1_u8(a, t);
+    float32x2_t m = vreinterpret_f32_u8(v);
+    return  vget_lane_f32(m, 0);
 }
 
-INLINE(Vwhf,VQHF_DUPW) (Vqhf v, Rc(0, 7) k)
+
+INLINE(Vwyu,VQYU_DUPW) (Vqyu a, Rc(-128, +127) b)
 {
-#define     QHF_DUPW(M, K)      \
-vget_lane_f32(                  \
-    vreinterpret_f32_f16(       \
-        vdup_laneq_f16(M,(7&K)) \
-    ),                          \
-    0                           \
-)
-#define     VQHF_DUPW(V, K) WHF_ASTV(QHF_DUPW(V,K))
-    uint8x8_t   l = vdup_n_u8((2*k));
-    uint8x8_t   r = vdup_n_u8((2*k+1));
-    uint8x8_t   t = vzip1_u8(l, r);
-    t = vqtbl1_u8(vreinterpretq_u8_f16(v), t);
-    return WHF_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(t),
-            0
-        )
-    );
+#define  MY_VQYU_DUPW(A, B, ...) ((Vwyu){QYU_DUPW(A.V0,B)})
+#define     VQYU_DUPW(...) MY_VQYU_DUPW(__VA_ARGS__,0)
+    return  ((Vwyu){ ((QYU_DUPW)(a.V0, b)) });
 }
 
 
-INLINE(Vwwu,UINT_DUPW) (uint x)
+INLINE(Vwbu,VQBU_DUPW) (Vqbu a, Rc(-16, +15) b)
 {
-    return  UINT_ASTV(x);
+#define  MY_VQBU_DUPW(A, B, ...) ((Vwbu){QBU_DUPW(VQBU_ASBU(A),B)})
+#define     VQBU_DUPW(...) MY_VQBU_DUPW(__VA_ARGS__,0)
+    Vwbu v = {((QBU_DUPW)(VQBU_ASBU(a), b))};
+    return v;
 }
 
-INLINE(Vwwu,UINT_DUPWAC) (void const *a)
+INLINE(Vwbi,VQBI_DUPW) (Vqbi a, Rc(-16, +15) b)
 {
-    return  WWU_ASTV(((WORD_TYPE const *) a)->M.F);
+#define  MY_VQBI_DUPW(A, B, ...) ((Vwbi){QBU_DUPW(VQBI_ASBU(A),B)})
+#define     VQBI_DUPW(...) MY_VQBI_DUPW(__VA_ARGS__,0)
+    Vwbi v = {((QBU_DUPW)(VQBI_ASBU(a), b))};
+    return v;
 }
 
-INLINE(Vwwu,VWWU_DUPW) (Vwwu a, int const b) {return a;}
-
-INLINE(Vwwu,VDWU_DUPW) (Vdwu a, Rc(0, 1) b)
+INLINE(Vwbc,VQBC_DUPW) (Vqbc a, Rc(-16, +15) b)
 {
-#define     VDWU_DUPW(A, B) \
-WWU_ASTV(vget_lane_f32(vreinterpet_f32_u32(vdup_lane_u32(A,(1&B))),0))
-
-    uint64x1_t  v = vreinterpret_u64_u32(a);
-    int64x1_t   n = vdup_n_s64((32*b));
-    n = vneg_s64(n);
-    v = vshl_u64(v, n);
-    float32x2_t m = vreinterpret_f32_u64(v);
-    return  WWU_ASTV(vget_lane_f32(m, 0));
+#define  MY_VQBC_DUPW(A, B, ...) ((Vwbc){QBU_DUPW(VQBC_ASBU(A),B)})
+#define     VQBC_DUPW(...) MY_VQBC_DUPW(__VA_ARGS__,0)
+    Vwbc v = {((QBU_DUPW)(VQBC_ASBU(a), b))};
+    return v;
 }
 
-INLINE(Vwwu,VQWU_DUPW) (Vqwu a, Rc(0, 3) b)
+
+INLINE(Vwhu,VQHU_DUPW) (Vqhu a, Rc(-8, +7) b)
 {
-#define     VQWU_DUPW(A, B) \
-WWU_ASTV(vget_lane_f32(vreinterpet_f32_u32(vdup_laneq_u32(A,(3&B))),0))
-
-    uint8x16_t  t = vreinterpretq_u8_u32(a);
-    uint8x8_t   i = vdup_n_u8((4*b));
-    i = vadd_u8(i, vcreate_u8(0x03020100ull));
-    i = vqtbl1_u8(t, i);
-    float32x2_t m = vreinterpret_f32_u8(i);
-    return  WWU_ASTV(vget_lane_f32(m, 0));
+#define  MY_VQHU_DUPW(A, B, ...) ((Vwhu){QHU_DUPW(VQHU_ASBU(A),B)})
+#define     VQHU_DUPW(...) MY_VQHU_DUPW(__VA_ARGS__,0)
+    Vwhu v = {((QHU_DUPW)(VQHU_ASBU(a), b))};
+    return v;
 }
 
-
-INLINE(Vwwi, INT_DUPW) (int x)
+INLINE(Vwhi,VQHI_DUPW) (Vqhi a, Rc(-8, +7) b)
 {
-    return  INT_ASTV(x);
+#define  MY_VQHI_DUPW(A, B, ...) ((Vwhi){QHU_DUPW(VQHI_ASBU(A),B)})
+#define     VQHI_DUPW(...) MY_VQHI_DUPW(__VA_ARGS__,0)
+    Vwhi v = {((QHU_DUPW)(VQHI_ASBU(a), b))};
+    return v;
 }
 
-INLINE(Vwwi, INT_DUPWAC) (void const *a)
+INLINE(Vwhf,VQHF_DUPW) (Vqhf a, Rc(-8, +7) b)
 {
-    return  WWI_ASTV(((WORD_TYPE const *) a)->M.F);
+#define  MY_VQHF_DUPW(A, B, ...) ((Vwhf){QHU_DUPW(VQHF_ASBU(A),B)})
+#define     VQHF_DUPW(...) MY_VQHF_DUPW(__VA_ARGS__,0)
+    Vwhf v = {((QHU_DUPW)(VQHF_ASBU(a), b))};
+    return v;
 }
 
-INLINE(Vwwi,VWWI_DUPW) (Vwwi v, int const k) {return v;}
 
-INLINE(Vwwi,VDWI_DUPW) (Vdwi a, Rc(0, 1) b)
+INLINE(Vwwu,VQWU_DUPW) (Vqwu a, Rc(-4, +3) b)
 {
-#define     VDWI_DUPW(A, B) \
-WWI_ASTV(vget_lane_f32(vreinterpet_f32_s32(vdup_lane_s32(A,(1&B))),0))
-    uint64x1_t  v = vreinterpret_u64_s32(a);
-    int64x1_t   n = vdup_n_s64((32*b));
-    n = vneg_s64(n);
-    v = vshl_u64(v, n);
-    float32x2_t m = vreinterpret_f32_u64(v);
-    return  WWI_ASTV(vget_lane_f32(m, 0));
+#define  MY_VQWU_DUPW(A, B, ...) ((Vwwu){QWU_DUPW(VQWU_ASBU(A),B)})
+#define     VQWU_DUPW(...) MY_VQWU_DUPW(__VA_ARGS__,0)
+    Vwwu v = {((QWU_DUPW)(VQWU_ASBU(a), b))};
+    return v;
 }
 
-INLINE(Vwwi,VQWI_DUPW) (Vqwi a, Rc(0, 3) b)
+INLINE(Vwwi,VQWI_DUPW) (Vqwi a, Rc(-4, +3) b)
 {
-#define     VQWI_DUPW(A, B) \
-WWI_ASTV(vget_lane_f32(vreinterpet_f32_s32(vdup_laneq_s32(A,(3&B))),0))
-
-    uint8x16_t  t = vreinterpretq_u8_s32(a);
-    uint8x8_t   i = vdup_n_u8((4*b));
-    i = vadd_u8(i, vcreate_u8(0x03020100ull));
-    i = vqtbl1_u8(t, i);
-    float32x2_t m = vreinterpret_f32_u8(i);
-    return  WWI_ASTV(vget_lane_f32(m, 0));
+#define  MY_VQWI_DUPW(A, B, ...) ((Vwwi){QWU_DUPW(VQWI_ASBU(A),B)})
+#define     VQWI_DUPW(...) MY_VQWI_DUPW(__VA_ARGS__,0)
+    Vwwi v = {((QWU_DUPW)(VQWI_ASBU(a), b))};
+    return v;
 }
 
-
-INLINE(Vwwf, FLT_DUPW) (float x)
+INLINE(Vwwf,VQWF_DUPW) (Vqwf a, Rc(-4, +3) b)
 {
-    return  FLT_ASTV(x);
+#define  MY_VQWF_DUPW(A, B, ...) ((Vwwf){QWU_DUPW(VQWF_ASBU(A),B)})
+#define     VQWF_DUPW(...) MY_VQWF_DUPW(__VA_ARGS__,0)
+    Vwwf v = {((QWU_DUPW)(VQWF_ASBU(a), b))};
+    return v;
 }
 
-INLINE(Vwwf, FLT_DUPWAC) (void const *a)
-{
-    return  WWF_ASTV(((WORD_TYPE const *) a)->M.F);
-}
-
-INLINE(Vwwf,VWWF_DUPW) (Vwwf v, int const k) {return v;}
-
-INLINE(Vwwf,VDWF_DUPW) (Vdwf a, Rc(0, 1) b)
-{
-#define     VDWF_DUPW(A, B) \
-WWF_ASTV(vget_lane_f32(vreinterpet_f32_s32(vdup_lane_f32(A,(1&B))),0))
-    uint64x1_t  v = vreinterpret_u64_f32(a);
-    int64x1_t   n = vdup_n_s64((32*b));
-    n = vneg_s64(n);
-    v = vshl_u64(v, n);
-    float32x2_t m = vreinterpret_f32_u64(v);
-    return  WWF_ASTV(vget_lane_f32(m, 0));
-}
-
-INLINE(Vwwf,VQWF_DUPW) (Vqwf a, Rc(0, 3) b)
-{
-#define     VQWF_DUPW(A, B) \
-WWF_ASTV(vget_lane_f32(vreinterpet_f32_s32(vdup_laneq_f32(A,(3&B))),0))
-
-    uint8x16_t  t = vreinterpretq_u8_f32(a);
-    uint8x8_t   i = vdup_n_u8((4*b));
-    i = vadd_u8(i, vcreate_u8(0x03020100ull));
-    i = vqtbl1_u8(t, i);
-    float32x2_t m = vreinterpret_f32_u8(i);
-    return  WWF_ASTV(vget_lane_f32(m, 0));
-}
 
 #if 0 // _LEAVE_ARM_DUPW
 }
@@ -10438,472 +11809,793 @@ WWF_ASTV(vget_lane_f32(vreinterpet_f32_s32(vdup_laneq_f32(A,(3&B))),0))
 {
 #endif
 
-INLINE(Vdyu,  BOOL_DUPD)   (_Bool x)
+INLINE(Vdyu,BOOL_DUPD)    (_Bool a, Rc(-64, +63) b)
 {
-#define     BOOL_DUPD(X)    VDDU_ASYU(vdup_n_u64((X?1ull:0)))
-    return  BOOL_DUPD(x);
+#if 1
+#   define  MY_BOOL_DUPD(A, B, ...) \
+(\
+    (Vdyu)\
+    {\
+        (!A)      ? vdup_n_u64(0) :\
+        (0 ==  B) ? vdup_n_u64(-1) :\
+        (B <= -1) ? vdup_n_u64((UINT64_MAX<<(64+B))) \
+                  : vdup_n_u64((UINT64_MAX>>(64-B))) \
+    }\
+)
+#endif
+
+#define     BOOL_DUPD(...)    MY_BOOL_DUPD(__VA_ARGS__,0)
+    Vdyu    v = {vdup_n_u64((0ULL-a))};
+    v.V0 = vshl_u64(
+        v.V0,
+        vdup_n_s64(
+            ((-64+(127&b))+(!(63&(b<0?-b:b))))
+        )
+    );
+    return v;
 }
 
-INLINE(Vdbu, UCHAR_DUPD)   (uchar x) {return vdup_n_u8(x);}
-INLINE(Vdbi, SCHAR_DUPD)   (schar x) {return vdup_n_s8(x);}
-INLINE(Vdbc,  CHAR_DUPD)    (char x)
+INLINE(Vdbu,UCHAR_DUPD) (unsigned a, Rc(-8,+7) b) 
 {
-#if CHAR_MIN
-#   define  CHAR_DUPD(X)    VDBI_ASBC(vdup_n_s8(X))
-#else
-#   define  CHAR_DUPD(X)    VDBU_ASBC(vdup_n_u8(X))
-#endif
-    return  CHAR_DUPD(x);
-}
 
-INLINE(Vdhu, USHRT_DUPD)  (ushort x) {return vdup_n_u16(x);}
-INLINE(Vdhi,  SHRT_DUPD)   (short x) {return vdup_n_s16(x);}
-INLINE(Vdwu,  UINT_DUPD)    (uint x) {return vdup_n_u32(x);}
-INLINE(Vdwi,   INT_DUPD)     (int x) {return vdup_n_s32(x);}
-#if DWRD_NLONG == 2
-INLINE(Vdwu, ULONG_DUPD)   (ulong x) {return vdup_n_u32(x);}
-INLINE(Vdwi,  LONG_DUPD)    (long x) {return vdup_n_s32(x);}
-#else
-INLINE(Vddu, ULONG_DUPD)   (ulong x) {return vdup_n_u64(x);}
-INLINE(Vddi,  LONG_DUPD)    (long x) {return vdup_n_s64(x);}
-#endif
-
-#if QUAD_NLLONG == 2
-INLINE(Vddu,ULLONG_DUPD)   (ulong x) {return vdup_n_u64(x);}
-INLINE(Vddi, LLONG_DUPD)    (long x) {return vdup_n_s64(x);}
-#endif
-
-INLINE(Vdhf, FLT16_DUPD) (flt16_t x) {return vdup_n_f16(x);}
-INLINE(Vdwf,   FLT_DUPD)   (float x) {return vdup_n_f32(x);}
-INLINE(Vddf,   DBL_DUPD)  (double x) {return vdup_n_f64(x);}
-
-INLINE(Vdyu,  VWYU_DUPD) (Vwyu v, Rc(0, 31) k)
-{
-#define     WYU_DUPD(M, K)          \
-vdup_n_u64(                         \
-    vtstd_u64(                      \
-        (UINT64_C(1)<<(K)),         \
-        vget_lane_u32(              \
-            vreinterpret_u32_f32(   \
-                vdup_n_f32(M)       \
-            ),                      \
-            0                   \
-        )                           \
+#define  MY_UCHAR_DUPD(A, B, ...)   \
+(                                   \
+    (B == -8) ? vdup_n_u8(0) :      \
+    (B <= -1) ? vext_u8(            \
+        vdup_n_u8(0),               \
+        vdup_n_u8(A),               \
+        (7&-B)                      \
+    )  :                            \
+    vext_u8(                        \
+        vdup_n_u8(A),               \
+        vdup_n_u8(0),               \
+        (7&(1+(7-B)))               \
     )                               \
 )
 
-#define     VWYU_DUPD(V, K) DYU_ASTV(WYU_DUPD(VWYU_ASTM(V), K))
-    return  VWYU_DUPD(v, k);
-}
-
-INLINE(Vdbu,  VWBU_DUPD) (Vwbu v, Rc(0,  3) k)
-{
-#define     WBU_DUPD(M, K)  \
-vdup_lane_u8(               \
-    vreinterpret_u8_f32(    \
-        vdup_n_f32(M)       \
-    ),                      \
-    (7&(K))                 \
-)
-#define     VWBU_DUPD(V, K) WBU_DUPD(VWBU_ASTM(V), K)
-    return  vtbl1_u8(
-        vreinterpret_u8_f32(
-            vdup_n_f32(VWBU_ASTM(v))
-        ),
-        vdup_n_u8(k)
+#define     UCHAR_DUPD(...) MY_UCHAR_DUPD(__VA_ARGS__,0)
+    uint8x8_t   v = vdup_n_u8(a);
+    uint64x1_t  m = vreinterpret_u64_u8(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (8*((-8+(15&b))+((!(7&(b<0?-b:b)))<<3)))
+        )
     );
+    return  vreinterpret_u8_u64(m);
 }
 
-INLINE(Vdbi,  VWBI_DUPD) (Vwbi v, Rc(0,  3) k)
+INLINE(Vdbi,SCHAR_DUPD)   (signed a, Rc(-8,+7) b) 
 {
-#define     WBI_DUPD(M, K) \
-vdup_lane_s8(vreinterpret_s8_f32(vdup_n_f32(M)), K)
-
-#define     VWBI_DUPD(V, K) WBI_DUPD(VWBI_ASTM(V), K)
-    return  vtbl1_s8(
-        vreinterpret_s8_f32(vdup_n_f32(VWBI_ASTM(v))),
-        vdup_n_u8(k)
-    );
-}
-
-INLINE(Vdbc,VWBC_DUPD) (Vwbc v, Rc(0,  3) k)
-{
-#define     VWBC_DUPD(V, K) DBC_ASTV(WBU_DUPD(VWBC_ASTM(V), K))
-    return  VDBU_ASBC((VWBU_DUPD)(VWBC_ASBU(v), k));
-}
-
-INLINE(Vdhu,VWHU_DUPD) (Vwhu x, Rc(0, 1) k)
-{
-#define     WHU_DUPD(M, K)  \
-vdup_lane_u16(              \
-    vreinterpret_u16_f32(   \
-        vdup_n_f32(M)       \
-    ),                      \
-    1&(K)                   \
+#define  MY_SCHAR_DUPD(A, B, ...)   \
+(                                   \
+    (B == -8) ? vdup_n_s8(0) :      \
+    (B <= -1) ? vext_s8(            \
+        vdup_n_s8(0),               \
+        vdup_n_s8(A),               \
+        (7&-B)                      \
+    )  :                            \
+    vext_s8(                        \
+        vdup_n_s8(A),               \
+        vdup_n_s8(0),               \
+        (7&(1+(7-B)))               \
+    )                               \
 )
 
-#define     VWHU_DUPD(V, K) WHU_DUPD(VWHU_ASTM(V), K)
-    return vreinterpret_u16_u8(
-        vtbl1_u8(
-            vreinterpret_u8_f32(vdup_n_f32(VWHU_ASTM(x))),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
+#define     SCHAR_DUPD(...) MY_SCHAR_DUPD(__VA_ARGS__,0)
+    int8x8_t    v = vdup_n_s8(a);
+    uint64x1_t  m = vreinterpret_u64_s8(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (8*((-8+(15&b))+((!(7&(b<0?-b:b)))<<3)))
         )
     );
+    return  vreinterpret_s8_u64(m);
 }
 
-INLINE(Vdhi,VWHI_DUPD) (Vwhi x, Rc(0, 1) k)
+INLINE(Vdbc,CHAR_DUPD)      (int a, Rc(-8,+7) b)
 {
-#define     WHI_DUPD(M, K)  \
-vdup_lane_s16(vreinterpret_s16_f32(vdup_n_f32(M)),1&(K))
-
-#define     VWHI_DUPD(V, K) WHI_DUPD(VWHI_ASTM(V), K)
-    return vreinterpret_s16_u8(
-        vtbl1_u8(
-            vreinterpret_u8_f32(vdup_n_f32(VWHI_ASTM(x))),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
-        )
-    );
+    Vdbc        v;
+#if CHAR_MIN
+#   define  CHAR_DUPD(...) ((Vdbc){MY_SCHAR_DUPD(__VA_ARGS__,0)})
+    v.V0 = (SCHAR_DUPD)(a, b);
+#else
+#   define  CHAR_DUPD(...) ((Vdbc){MY_UCHAR_DUPD(__VA_ARGS__,0)})
+    v.V0 = (UCHAR_DUPD)(a, b);
+#endif
+    return  v;
 }
 
-INLINE(Vdhf,VWHF_DUPD) (Vwhf x, Rc(0, 1) k)
+INLINE(Vdhu,USHRT_DUPD) (unsigned a, Rc(-4, +3) b) 
 {
-#define     WHF_DUPD(M, K)  \
-vdup_lane_f16(vreinterpret_f16_f32(vdup_n_f32(M)),1&(K))
-
-#define     VWHF_DUPD(V, K) WHF_DUPD(VWHF_ASTM(V), K)
-    return vreinterpret_f16_u8(
-        vtbl1_u8(
-            vreinterpret_u8_f32(vdup_n_f32(VWHF_ASTM(x))),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
-        )
-    );
-}
-
-INLINE(Vdwu,VWWU_DUPD) (Vwwu v, int const k)
-{
-#define     WWU_DUPD(M, K)  vreinterpret_u32_f32(vdup_n_f32(M))
-#define     VWWU_DUPD(V, K) WWU_DUPD(VWWU_ASTM(V), K)
-    return  VWWU_DUPD(v, k);
-}
-
-INLINE(Vdwi,VWWI_DUPD) (Vwwi v, int const k)
-{
-#define     WWI_DUPD(M, K)  vreinterpret_s32_f32(vdup_n_f32(M))
-#define     VWWI_DUPD(V, K) WWI_DUPD(VWWI_ASTM(V), K)
-    return  VWWI_DUPD(v, k);
-}
-
-INLINE(Vdwf,VWWF_DUPD) (Vwwf v, int const k)
-{
-#define     WWF_DUPD        vdup_n_f32
-#define     VWWF_DUPD(V, K) WWF_DUPD(VWWF_ASTM(V))
-    return  VWWF_DUPD(v, k);
-}
-
-
-INLINE(Vdyu,VDYU_DUPD) (Vdyu v, Rc(0, 63) k)
-{
-#define     DYU_DUPD(M, K)  \
-vdup_n_u64(                 \
-    vtstd_u64(              \
-        UINT64_C(1)<<(K),   \
-        vget_lane_u64(      \
-            M,              \
-            0           \
-        )                   \
-    )                       \
+#define  MY_USHRT_DUPD(A, B, ...)   \
+(                                   \
+    (B == -4) ? vdup_n_u16(0) :     \
+    (B <= -1) ? vext_u16(           \
+        vdup_n_u16(0),              \
+        vdup_n_u16(A),              \
+        (3&-B)                      \
+    )  :                            \
+    vext_u16(                       \
+        vdup_n_u16(A),              \
+        vdup_n_u16(0),              \
+        (3&(1+(3-B)))               \
+    )                               \
 )
 
-#define     VDYU_DUPD(V, K) DYU_ASTV(DYU_DUPD(VDYU_ASTM(V), K))
-    return  VDYU_DUPD(v, k);
-}
-
-INLINE(Vdbu,VDBU_DUPD) (Vdbu v, Rc(0, 7) k)
-{
-#define     DBU_DUPD(M, K)  vdup_lane_u8(M, (7&(K)))
-#define     VDBU_DUPD(V, K) DBU_DUPD(V, K)
-    return  vtbl1_u8(v, vdup_n_u8(k));
-}
-
-INLINE(Vdbi,VDBI_DUPD) (Vdbi v, Rc(0, 7) k)
-{
-#define     DBI_DUPD(M, K)  vdup_lane_s8(M, (7&K))
-#define     VDBI_DUPD(V, K) DBI_DUPD(V, K)
-    return  vtbl1_s8(v, vdup_n_s8(k));
-}
-
-INLINE(Vdbc,VDBC_DUPD) (Vdbc v, Rc(0, 7) k)
-{
-#define     VDBC_DUPD(V, K) VDBU_ASBC(DBU_DUPD(VDBC_ASBU(V), K))
-    return VDBU_ASBC((VDBU_DUPD)(VDBC_ASBU(v), k));
-}
-
-INLINE(Vdhu,VDHU_DUPD) (Vdhu x, Rc(0, 3) k)
-{
-#define     DHU_DUPD        vdup_lane_u16
-#define     VDHU_DUPD(V, K) DHU_DUPD(V, K)
-    return vreinterpret_u16_u8(
-        vtbl1_u8(
-            vreinterpret_u8_u16(x),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
+#define     USHRT_DUPD(...) MY_USHRT_DUPD(__VA_ARGS__,0)
+    uint16x4_t v = vdup_n_u16(a);
+    uint64x1_t m = vreinterpret_u64_u16(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (16*((-4+(7&b))+((!(3&(b<0?-b:b)))<<2)))
         )
     );
+    return  vreinterpret_u16_u64(m);
 }
 
-INLINE(Vdhi,VDHI_DUPD) (Vdhi x, Rc(0, 3) k)
+INLINE(Vdhi,SHRT_DUPD)   (signed a, Rc(-4,+3) b) 
 {
-#define     DHI_DUPD(M, K)  vdup_lane_s16(M, (3&(K)))
-#define     VDHI_DUPD(V, K) DHI_DUPD(V, K)
-    return vreinterpret_s16_u8(
-        vtbl1_u8(
-            vreinterpret_u8_s16(x),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
+#define  MY_SHRT_DUPD(A, B, ...)    \
+(                                   \
+    (B == -4) ? vdup_n_s16(0) :     \
+    (B <= -1) ? vext_s16(           \
+        vdup_n_s16(0),              \
+        vdup_n_s16(A),              \
+        (3&-B)                      \
+    )  :                            \
+    vext_s16(                       \
+        vdup_n_s16(A),              \
+        vdup_n_s16(0),              \
+        (3&(1+(3-B)))               \
+    )                               \
+)
+#define     SHRT_DUPD(...) MY_SHRT_DUPD(__VA_ARGS__,0)
+    int16x4_t   v = vdup_n_s16(a);
+    uint64x1_t  m = vreinterpret_u64_s16(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (16*((-4+(7&b))+((!(3&(b<0?-b:b)))<<2)))
         )
     );
+    return  vreinterpret_s16_u64(m);
 }
 
-INLINE(Vdhf,VDHF_DUPD) (Vdhf x, Rc(0, 3) k)
+
+INLINE(Vdwu,UINT_DUPD)    (uint a, Rc(-2, +1) b) 
 {
-#define     DHF_DUPD(M, K)  vdup_lane_f16(M, (3&(K)))
-#define     VDHF_DUPD(V, K) DHF_DUPD(V, K)
-    return vreinterpret_f16_u8(
-        vtbl1_u8(
-            vreinterpret_u8_f16(x),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
+#define  MY_UINT_DUPD(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdup_n_u32(0) :     \
+    (B <= -1) ? vext_u32(           \
+        vdup_n_u32(0),              \
+        vdup_n_u32(A),              \
+        (1&-B)                      \
+    )  :                            \
+    vext_u32(                       \
+        vdup_n_u32(A),              \
+        vdup_n_u32(0),              \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     UINT_DUPD(...) MY_UINT_DUPD(__VA_ARGS__,0)
+    uint32x2_t  v = vdup_n_u32(a);
+    uint64x1_t  m = vreinterpret_u64_u32(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (32*((-2+(3&b))+((!(1&(b<0?-b:b)))<<1)))
         )
     );
+    return  vreinterpret_u32_u64(m);
 }
 
-INLINE(Vdwu,VDWU_DUPD) (Vdwu v, Rc(0, 1) k)
+INLINE(Vdwi,INT_DUPD)     (int a, Rc(-2,+1) b) 
 {
-#define     DWU_DUPD(M, K)  vdup_lane_u32(M, (1&(K)))
-#define     VDWU_DUPD(V, K) DWU_DUPD(V, K)
-    uint64x1_t m = vreinterpret_u64_u32(v);
-    m = vshl_u64(m, vdup_n_s64(k*INT64_C(-32)));
-    return  vdup_lane_u32(
-        vreinterpret_u32_u64(m),
-        0
+#define  MY_INT_DUPD(A, B, ...)     \
+(                                   \
+    (B == -2) ? vdup_n_s32(0) :     \
+    (B <= -1) ? vext_s32(           \
+        vdup_n_s32(0),              \
+        vdup_n_s32(A),              \
+        (1&-B)                      \
+    )  :                            \
+    vext_s32(                       \
+        vdup_n_s32(A),              \
+        vdup_n_s32(0),              \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     INT_DUPD(...) MY_INT_DUPD(__VA_ARGS__,0)
+    int32x2_t   v = vdup_n_s32(a);
+    uint64x1_t  m = vreinterpret_u64_s32(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (32*((-2+(3&b))+((!(1&(b<0?-b:b)))<<1)))
+        )
     );
+    return  vreinterpret_s32_u64(m);
 }
 
-INLINE(Vdwi,VDWI_DUPD) (Vdwi v, Rc(0, 1) k)
+#if DWRD_NLONG == 2
+INLINE(Vdwu,ULONG_DUPD)   (ulong a, Rc(-2, +1) b)
 {
-#define     DWI_DUPD(M, K)  vdup_lane_s32(M, (1&K))
-#define     VDWI_DUPD(V, K) DWI_DUPD(V, K)
-    uint64x1_t m = vreinterpret_u64_s32(v);
-    m = vshl_u64(m, vdup_n_s64(0-32*k));
-    return  vdup_lane_s32(
-        vreinterpret_s32_u64(m),
-        0
+#define     ULONG_DUPD(...) MY_UINT_DUPD(__VA_ARGS__,0)
+    return  ((UINT_DUPD)(a, b));
+}
+
+INLINE(Vdwi,LONG_DUPD)    (long a, Rc(-2, +1) b)
+{
+#define     LONG_DUPD(...) MY_INT_DUPD(__VA_ARGS__,0)
+    return  ((INT_DUPD)(a, b));
+}
+
+#else
+
+INLINE(Vddu,ULONG_DUPD)  (ulong a, Rc(-1, 0) b)
+{
+#define  MY_ULONG_DUPD(A, B, ...) vdup_n_u64( ((0==B)?A:0) )
+#define     ULONG_DUPD(...) MY_ULONG_DUPD(__VA_ARGS__,0)
+    return  ULONG_DUPD(a, b);
+}
+
+INLINE(Vddi,LONG_DUPD)    (long a, Rc(-1, 0) b)
+{
+#define  MY_LONG_DUPD(A, B, ...) vdup_n_s64( ((0==B)?A:0) )
+#define     LONG_DUPD(...) MY_LONG_DUPD(__VA_ARGS__,0)
+    return  LONG_DUPD(a, b);
+}
+
+#endif
+
+
+#if QUAD_NLLONG == 2
+
+INLINE(Vddu,ULLONG_DUPD)  (ullong a, Rc(-1, +0) b)
+{
+#define  MY_ULLONG_DUPD(A, B, ...) vdup_n_u64( ((0==B)?A:0) )
+#define     ULLONG_DUPD(...) MY_ULLONG_DUPD(__VA_ARGS__,0)
+    return  ULLONG_DUPD(a, b);
+}
+
+INLINE(Vddi,LLONG_DUPD)    (llong a, Rc(-1, +0) b)
+{
+#define  MY_LLONG_DUPD(A, B, ...) vdup_n_s64( ((0==B)?A:0) )
+#define     LLONG_DUPD(...) MY_LLONG_DUPD(__VA_ARGS__,0)
+    return  LLONG_DUPD(a, b);
+}
+
+#endif
+
+INLINE(Vdhf,FLT16_DUPD) (flt16_t a, Rc(-4, +3) b) 
+{
+#define  MY_FLT16_DUPD(A, B, ...)       \
+(                                       \
+    (B == -4) ? vdup_n_f16(0.0F16) :    \
+    (B <= -1) ? vreinterpret_f16_u16(   \
+        vext_u16(                       \
+            vdup_n_u16(0),              \
+            vreinterpret_u16_f16(       \
+                vdup_n_f16(A)           \
+            ),                          \
+            (3&-B)                      \
+        )                               \
+    )  :                                \
+    vreinterpret_f16_u16(               \
+        vext_u16(                       \
+            vreinterpret_u16_f16(       \
+                vdup_n_f16(A)           \
+            ),                          \
+            vdup_n_u16(0),              \
+            (3&(1+(3-B)))               \
+        )                               \
+    )                                   \
+)
+
+#define     FLT16_DUPD(...) MY_FLT16_DUPD(__VA_ARGS__,0)
+    float16x4_t v = vdup_n_f16(a);
+    uint64x1_t  m = vreinterpret_u64_f16(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (16*((-4+(7&b))+((!(3&(b<0?-b:b)))<<2)))
+        )
     );
+    return  vreinterpret_f16_u64(m);
 }
 
-INLINE(Vdwf,VDWF_DUPD) (Vdwf v, Rc(0, 1) k)
+INLINE(Vdwf,FLT_DUPD)  (float a, Rc(-2, +1) b) 
 {
-#define     DWF_DUPD(M, K)  vdup_lane_f32(M, (1&K))
-#define     VDWF_DUPD(V, K) DWF_DUPD(V, K)
-    uint64x1_t m = vreinterpret_u64_f32(v);
-    m = vshl_u64(m, vdup_n_s64(0-32*k));
-    return  vdup_lane_f32(
-        vreinterpret_f32_u64(m),
-        0
+#define  MY_FLT_DUPD(A, B, ...)     \
+(                                   \
+    (B == -2) ? vdup_n_f32(0.0F) :  \
+    (B <= -1)                       \
+    ?   vext_f32(vdup_n_f32(0.0F),vdup_n_f32(   A),(1&-B))\
+    :   vext_f32(vdup_n_f32(   A),vdup_n_f32(0.0F),(1&(1+(1-B))))\
+)
+
+#define     FLT_DUPD(...) MY_FLT_DUPD(__VA_ARGS__,0)
+    float32x2_t v = vdup_n_f32(a);
+    uint64x1_t  m = vreinterpret_u64_f32(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (32*((-2+(3&b))+((!(1&(b<0?-b:b)))<<1)))
+        )
     );
+    return  vreinterpret_f32_u64(m);
 }
 
-INLINE(Vddu,VDDU_DUPD) (Vddu v, int const k)
+INLINE(Vddf,DBL_DUPD) (double a, Rc(-1, 0) b)
 {
-#   define  VDDU_DUPD(V, K) vdup_lane_u64(V, 0)
-    return  vdup_lane_u64(v, 0);
+#define  MY_DBL_DUPD(A, B, ...) ((float64x1_t){(0==B)?A:0.0})
+#define     DBL_DUPD(...) MY_DBL_DUPD(__VA_ARGS__,0)
+    return  DBL_DUPD(a, b);
 }
 
-INLINE(Vddi,VDDI_DUPD) (Vddi v, int const k)
+INLINE(Vdyu,VWYU_DUPD) (Vwyu a, Rc(0, +31) b)
 {
-#   define  VDDI_DUPD(V, K) vdup_lane_s64(V, 0)
-    return  vdup_lane_s64(v, 0);
+#define  MY_VWYU_DUPD(A, B, ...)          \
+(\
+    (Vdyu)\
+    {\
+        vtst_u64(\
+            vreinterpret_u64_f32(((Vdwf){A.V0})),\
+            vdup_n_u64((1ULL<<B))\
+        )\
+    }\
+)
+#define     VWYU_DUPD(...) MY_VWYU_DUPD(__VA_ARGS__,0)
+    return  VWYU_DUPD(a, b);
 }
 
-INLINE(Vddf,VDDF_DUPD) (Vddf v, int const k)
+INLINE(Vdbu,VWBU_DUPD) (Vwbu a, Rc(0,  +3) b)
 {
-#   define  VDDF_DUPD(V, K) vdup_lane_f64(V, 0)
-    return  vdup_lane_f64(v, 0);
+#define  MY_WBU_DUPD(A, B, ...)    \
+vdup_lane_u8(vreinterpret_u8_f32(((Vdwf){A})),(3&B))
+
+#define  MY_VWBU_DUPD(A, B, ...)  MY_WBU_DUPD(A.V0,B)
+#define     VWBU_DUPD(...) MY_VWBU_DUPD(__VA_ARGS__,0)
+
+    return  vtbl1_u8(VDWF_ASBU((Vdwf){a.V0}),vdup_n_u8(b));
+}
+
+INLINE(Vdbi,VWBI_DUPD) (Vwbi a, Rc(0,  +3) b)
+{
+#define  MY_WBI_DUPD(A, B, ...)    \
+vdup_lane_s8(vreinterpret_s8_f32(((Vdwf){A})),(3&B))
+
+#define  MY_VWBI_DUPD(A, B, ...)  MY_WBI_DUPD(A.V0,B)
+#define     VWBI_DUPD(...) MY_VWBI_DUPD(__VA_ARGS__,0)
+
+    return  vtbl1_s8(VDWF_ASBI((Vdwf){a.V0}),vdup_n_u8(b));
+}
+
+INLINE(Vdbc,VWBC_DUPD) (Vwbc a, Rc(0, +3) b)
+{
+    Vdbc v;
+#if CHAR_MIN
+#   define VWBC_DUPD(...) ((Vdbc){MY_VWBI_DUPD(__VA_ARGS__,0)})
+    Vwbi m = {a.V0};
+    v.V0 = ((VWBI_DUPD)(m, b));
+#else
+#   define VWBC_DUPD(...) ((Vdbc){MY_VWBU_DUPD(__VA_ARGS__,0)})
+    Vwbu m = {a.V0};
+    v.V0 = ((VWBU_DUPD)(m, b));
+#endif
+    return  v;
+}
+
+INLINE(Vdhu,WHU_DUPD) (float a, Rc(0, +1) b)
+{
+#define  MY_WHU_DUPD(A, B)    \
+vdup_lane_u16(vreinterpret_u16_f32(((Vdwf){A})),(1&B))
+
+    float32x2_t f = {a};    
+    uint64x1_t  m = vreinterpret_u64_f32(f);
+    m = vshl_u64(m, vdup_n_s64(-(b<<4)));
+    uint16x4_t  v = vreinterpret_u16_u64(m);
+    return  vdup_lane_u16(v, 0);
+}
+
+INLINE(Vdhu,VWHU_DUPD) (Vwhu a, Rc(0, +1) b)
+{
+#define  MY_VWHU_DUPD(A, B, ...)  MY_WHU_DUPD(A.V0,B)
+#define     VWHU_DUPD(...) MY_VWHU_DUPD(__VA_ARGS__,0)
+    return (WHU_DUPD)(a.V0, b);
+}
+
+INLINE(Vdhi,VWHI_DUPD) (Vwhi a, Rc(0, +1) b)
+{
+#define  MY_WHI_DUPD(A, B)    \
+vdup_lane_s16(vreinterpret_s16_f32(((Vdwf){A})),(1&B))
+
+#define  MY_VWHI_DUPD(A, B, ...)  MY_WHI_DUPD(A.V0,B)
+#define     VWHI_DUPD(...) MY_VWHI_DUPD(__VA_ARGS__,0)
+    Vdhu v = (WHU_DUPD)(a.V0, b);
+    return  VDHU_ASTI(v);
+}
+
+INLINE(Vdhf,VWHF_DUPD) (Vwhf a, Rc(0, +1) b)
+{
+#define  MY_WHF_DUPD(A, B)    \
+vdup_lane_f16(vreinterpret_f16_f32(((Vdwf){A})),(1&B))
+
+#define  MY_VWHF_DUPD(A, B, ...)  MY_WHF_DUPD(A.V0,B)
+#define     VWHF_DUPD(...) MY_VWHF_DUPD(__VA_ARGS__,0)
+    Vdhu v = (WHU_DUPD)(a.V0, b);
+    return  VDHU_ASTF(v);
+}
+
+INLINE(Vdwu,VWWU_DUPD) (Vwwu a, Rc(-2, +1) b)
+{
+#define  MY_VWWU_DUPD(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdup_n_u32(0) :     \
+    (B <= -1) ? vext_u32(           \
+        vdup_n_u32(0),              \
+        vreinterpret_u32_f32(       \
+            vdup_n_f32(A.V0)        \
+        ),                          \
+        (1&-B)                      \
+    )  :                            \
+    vext_u32(                       \
+        vreinterpret_u32_f32(       \
+            vdup_n_f32(A.V0)        \
+        ),                          \
+        vdup_n_u32(0),              \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     VWWU_DUPD(...) MY_VWWU_DUPD(__VA_ARGS__,0)
+    float32x2_t v = vdup_n_f32(a.V0);
+    uint64x1_t  m = vreinterpret_u64_f32(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (32*((-2+(3&b))+((!(1&(b<0?-b:b)))<<1)))
+        )
+    );
+    return  vreinterpret_u32_u64(m);
+}
+
+INLINE(Vdwi,VWWI_DUPD) (Vwwi a, Rc(-2, +1) b)
+{
+#define  MY_VWWI_DUPD(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdup_n_s32(0) :     \
+    (B <= -1) ? vext_s32(           \
+        vdup_n_s32(0),              \
+        vreinterpret_s32_f32(       \
+            vdup_n_f32(A.V0)        \
+        ),                          \
+        (1&-B)                      \
+    )  :                            \
+    vext_s32(                       \
+        vreinterpret_s32_f32(       \
+            vdup_n_f32(A.V0)        \
+        ),                          \
+        vdup_n_s32(0),              \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     VWWI_DUPD(...) MY_VWWI_DUPD(__VA_ARGS__,0)
+    float32x2_t v = vdup_n_f32(a.V0);
+    uint64x1_t  m = vreinterpret_u64_f32(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (32*((-2+(3&b))+((!(1&(b<0?-b:b)))<<1)))
+        )
+    );
+    return  vreinterpret_s32_u64(m);
+}
+
+INLINE(Vdwf,VWWF_DUPD) (Vwwf a, Rc(-2, +1) b)
+{
+#define  MY_VWWF_DUPD(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdup_n_f32(0.0F) :  \
+    (B <= -1) ? vext_f32(           \
+        vdup_n_f32(0.0F),           \
+        vdup_n_f32(A.V0),           \
+        (1&-B)                      \
+    )  :                            \
+    vext_f32(                       \
+        vdup_n_f32(A.V0),           \
+        vdup_n_s32(0.0F),           \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     VWWF_DUPD(...) MY_VWWI_DUPD(__VA_ARGS__,0)
+    float32x2_t v = vdup_n_f32(a.V0);
+    uint64x1_t  m = vreinterpret_u64_f32(v);
+    m = vshl_u64(
+        m,
+        vdup_n_s64(
+            (32*((-2+(3&b))+((!(1&(b<0?-b:b)))<<1)))
+        )
+    );
+    return  vreinterpret_f32_u64(m);
+}
+
+INLINE(Vdyu,VDYU_DUPD) (Vdyu a, Rc(0, +63) b)
+{
+#define  MY_VDYU_DUPD(A, B, ...)  \
+((Vdyu){vtst_u64(A.V0,vshl_n_u64(vdup_n_u64(1),(63&B)))})
+
+#define     VDYU_DUPD(...) MY_VDYU_DUPD(__VA_ARGS__,0)
+    a.V0 = vtst_u64(a.V0, vdup_n_u64((1ULL<<b)));
+    return a;
+}
+
+INLINE(Vdbu,VDBU_DUPD) (Vdbu a, Rc(0, +7) b)
+{
+#define  MY_DBU_DUPD(A, B, ...)  vdup_lane_u8(A,(7&B))
+#define     VDBU_DUPD(...) MY_DBU_DUPD(__VA_ARGS__,0)
+    return  vtbl1_u8(a, vdup_n_u8(b));
+}
+
+INLINE(Vdbi,VDBI_DUPD) (Vdbi a, Rc(0, +7) b)
+{
+#define  MY_DBI_DUPD(A, B, ...)  vdup_lane_s8(A,(7&B))
+#define     VDBI_DUPD(...) MY_DBI_DUPD(__VA_ARGS__,0)
+    return  vtbl1_s8(a, vdup_n_u8(b));
+}
+
+INLINE(Vdbc,VDBC_DUPD) (Vdbc a, Rc(0, +7) b)
+{
+#if CHAR_MIN
+#   define  VDBC_DUPD(...) ((Vdbc){MY_DBI_DUPD(__VA_ARGS__,0)})
+    a.V0 = (VDBI_DUPD)(a.V0, b);
+#else
+#   define  VDBC_DUPD(...) ((Vdbc){MY_DBU_DUPD(__VA_ARGS__,0)})
+    a.V0 = (VDBI_DUPD)(a.V0, b);
+#endif
+    return  a;
+}
+
+INLINE(Vdhu,VDHU_DUPD) (Vdhu a, Rc(0, +3) b)
+{
+#define  MY_DHU_DUPD(A, B, ...)  vdup_lane_u16(A,(3&B))
+#define     VDHU_DUPD(...) MY_DHU_DUPD(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_u16(a);
+    v = vshl_u64(v, vdup_n_s64((-16*b)));
+    a = vreinterpret_u16_u64(v);
+    return  vdup_lane_u16(a, 0);
+}
+
+INLINE(Vdhi,VDHI_DUPD) (Vdhi a, Rc(0, +3) b)
+{
+#define  MY_DHI_DUPD(A, B, ...)  vdup_lane_s16(A,(3&B))
+#define     VDHI_DUPD(...) MY_DHI_DUPD(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_s16(a);
+    v = vshl_u64(v, vdup_n_s64((-16*b)));
+    a = vreinterpret_u16_u64(v);
+    return  vdup_lane_s16(a, 0);
+}
+
+INLINE(Vdhf,VDHF_DUPD) (Vdhf a, Rc(0, +3) b)
+{
+#define  MY_DHF_DUPD(A, B, ...)  vdup_lane_f16(A,(3&B))
+#define     VDHF_DUPD(...) MY_DHF_DUPD(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_f16(a);
+    v = vshl_u64(v, vdup_n_s64((-16*b)));
+    a = vreinterpret_u16_u64(v);
+    return  vdup_lane_f16(a, 0);
+}
+
+INLINE(Vdwu,VDWU_DUPD) (Vdwu a, Rc(0, +1) b)
+{
+#define  MY_DWU_DUPD(A, B, ...)  vdup_lane_u32(A,(1&B))
+#define     VDWU_DUPD(...) MY_DWU_DUPD(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_u32(a);
+    v = vshl_u64(v, vdup_n_s64((-32*b)));
+    a = vreinterpret_u32_u64(v);
+    return  vdup_lane_u32(a, 0);
+}
+
+INLINE(Vdwi,VDWI_DUPD) (Vdwi a, Rc(0, +1) b)
+{
+#define  MY_DWI_DUPD(A, B, ...)  vdup_lane_s32(A,(1&B))
+#define     VDWI_DUPD(...) MY_DWI_DUPD(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_s32(a);
+    v = vshl_u64(v, vdup_n_s64((-32*b)));
+    a = vreinterpret_s32_u64(v);
+    return  vdup_lane_s32(a, 0);
+}
+
+INLINE(Vdwf,VDWF_DUPD) (Vdwf a, Rc(0, +1) b)
+{
+#define  MY_DWF_DUPD(A, B, ...)  vdup_lane_f32(A,(1&B))
+#define     VDWF_DUPD(...) MY_DWF_DUPD(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_f32(a);
+    v = vshl_u64(v, vdup_n_s64((-32*b)));
+    a = vreinterpret_f32_u64(v);
+    return  vdup_lane_f32(a, 0);
+}
+
+INLINE(Vddu,VDDU_DUPD) (Vddu a, Rc(-1, +0) b)
+{
+#define  MY_VDDU_DUPD(A, B, ...) ((0==B)?vdup_lane_u64(A,0):vdup_n_u64(0))
+#define     VDDU_DUPD(...) MY_VDDU_DUPD(__VA_ARGS__,0)
+    return  VDDU_DUPD(a, b);
+}
+
+INLINE(Vddi,VDDI_DUPD) (Vddi a, Rc(-1, +0) b)
+{
+#define  MY_VDDI_DUPD(A, B, ...) ((0==B)?vdup_lane_s64(A,0):vdup_n_s64(0))
+#define     VDDI_DUPD(...) MY_VDDI_DUPD(__VA_ARGS__,0)
+    return  VDDI_DUPD(a, b);
+}
+
+INLINE(Vddf,VDDF_DUPD) (Vddf a, Rc(-1, +0) b)
+{
+#define  MY_VDDF_DUPD(A, B, ...) ((0==B)?vdup_lane_f64(A,0):vdup_n_f64(0.0))
+#define     VDDF_DUPD(...) MY_VDDF_DUPD(__VA_ARGS__,0)
+    return  VDDF_DUPD(a, b);
 }
 
 
-INLINE(Vdyu,VQYU_DUPD) (Vqyu v, Rc(0,127) k)
+INLINE(Vdyu,VQYU_DUPD) (Vqyu a, Rc(0,+127) b)
 {
-#define     VQYU_DUPD   VQYU_DUPD
-    uint64x2_t  q = VQYU_ASTM(v);
-    uint64_t    d;
-    if (k > 63) {
-        d = vget_lane_u64(vget_high_u64(q), 0);
-        d = vtstd_u64(d, UINT64_C(1)<<(k-64));
+#define  MY_VQYU_DUPD(A, B, ...) \
+(\
+    (Vdyu)\
+    {\
+        (B > 63)\
+        ?   vtst_u64(\
+                vget_high_u64(A.V0),\
+                vdup_n_u64((1ULL<<(63&(B-64))))\
+            )\
+        :   vtst_u64(\
+                vget_low_u64(A.V0),\
+                vdup_n_u64((1ULL<<(63&B)))\
+            )\
+    }\
+)
+
+#define     VQYU_DUPD(...) MY_VQYU_DUPD(__VA_ARGS__,0)
+    Vdyu        v;
+    uint64x1_t  m;
+    if (b > 63)
+    {
+        v.V0 = vget_high_u64(a.V0);
+        m = vdup_n_u64((1ULL<<(b-64)));
     }
-    else {
-        d = vget_lane_u64(vget_low_u64(q), 0);
-        d = vtstd_u64(d, UINT64_C(1)<<k);
+    else
+    {
+        v.V0 = vget_low_u64(a.V0);
+        m = vdup_n_u64((1ULL<<b));
     }
-    return DYU_ASTV(vdup_n_u64(d));
+    v.V0 = vtst_u64(v.V0, m);
+    return  v;
 }
 
-INLINE(Vdbu,VQBU_DUPD) (Vqbu v, Rc(0, 15) k)
+INLINE(Vdbu,VQBU_DUPD) (Vqbu a, Rc(0, +15) b)
 {
-#define     QBU_DUPD(M, K)  vdup_laneq_u8(M, (15&(K)))
-#define     VQBU_DUPD(V, K) QBU_DUPD(V, K)
-    return  vqtbl1_u8(v, vdup_n_u8(k));
+#define  MY_QBU_DUPD(A, B, ...)  vdup_laneq_u8(A,(15&B))
+#define     VQBU_DUPD(...) MY_QBU_DUPD(__VA_ARGS__,0)
+    return  vqtbl1_u8(a, vdup_n_u8(b));
 }
 
-INLINE(Vdbi,VQBI_DUPD) (Vqbi v, Rc(0, 15) k)
+INLINE(Vdbi,VQBI_DUPD) (Vqbi a, Rc(0, +15) b)
 {
-#define     QBI_DUPD(M, K)  vdup_laneq_u8(M, (15&K))
-#define     VQBI_DUPD(V, K) QBI_DUPD(V, K)
-    return  vqtbl1_u8(v, vdup_n_u8(k));
+#define     QBI_DUPD(A, B, ...)  vdup_laneq_s8(A,(15&B))
+#define     VQBI_DUPD(...) QBI_DUPD(__VA_ARGS__,0)
+    return  vqtbl1_s8(a, vdup_n_u8(b));
 }
 
-INLINE(Vdbc,VQBC_DUPD) (Vqbc v, Rc(0, 15) k)
+INLINE(Vdbc,VQBC_DUPD) (Vqbc a, Rc(0, +15) b)
 {
-#define     VQBC_DUPD(V, K) VDBU_ASBC(QBU_DUPD(VQBC_ASBU(V), K))
-    return  VDBU_ASBC((VQBU_DUPD)(VQBC_ASBU(v), k));
+    Vdbc v;
+#if CHAR_MIN
+#   define  VQBC_DUPD(...) ((Vdbc){MY_QBI_DUPD(__VA_ARGS__,0)})
+    v.V0 = (VQBI_DUPD)(a.V0, b);
+#else
+#   define  VDBC_DUPD(...) ((Vdbc){MY_QBU_DUPD(__VA_ARGS__,0)})
+    v.V0 = (VQBU_DUPD)(a.V0, b);
+#endif
+    return  v;
 }
 
-INLINE(Vdhu,VQHU_DUPD) (Vqhu x, Rc(0, 7) k)
+INLINE(Vdhu,VQHU_DUPD) (Vqhu a, Rc(0, +7) b)
 {
-#define     QHU_DUPD        vdup_laneq_u16
-#define     VQHU_DUPD(V, K) QHU_DUPD(V, K)
-    return vreinterpret_u16_u8(
-        vqtbl1_u8(
-            vreinterpretq_u8_u16(x),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
-        )
-    );
+#define  MY_QHU_DUPD(A, B, ...) vdup_laneq_u16(A,(7&B))
+#define     VQHU_DUPD(...) MY_QHU_DUPD(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_u16(a);
+    uint8x8_t   k = vdup_n_u8((2*b));
+    k = vadd_u8(k, vcreate_u8(0x0100010001000100ULL));
+    uint8x8_t   v = vqtbl1_u8(t, k);
+    return  vreinterpret_u16_u8(v);
 }
 
-INLINE(Vdhi,VQHI_DUPD) (Vqhi x, Rc(0, 7) k)
+INLINE(Vdhi,VQHI_DUPD) (Vqhi a, Rc(0, +7) b)
 {
-#define     QHI_DUPD(M, K)  vdup_laneq_s16(M, (7&(K)))
-#define     VQHI_DUPD(V, K) QHI_DUPD(V, K)
-    return  vreinterpret_s16_u8(
-        vqtbl1_u8(
-            vreinterpretq_u8_s16(x),
-            vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
-            )
-        )
-    );
+#define  MY_QHI_DUPD(A, B, ...) vdup_laneq_s16(A,(7&B))
+#define     VQHI_DUPD(...) MY_QHI_DUPD(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_s16(a);
+    uint8x8_t   k = vdup_n_u8((2*b));
+    k = vadd_u8(k, vcreate_u8(0x0100010001000100ULL));
+    uint8x8_t   v = vqtbl1_u8(t, k);
+    return  vreinterpret_s16_u8(v);
 }
 
-INLINE(Vdhf,VQHF_DUPD) (Vqhf x, Rc(0, 7) k)
+INLINE(Vdhf,VQHF_DUPD) (Vqhf a, Rc(0, +7) b)
 {
-#define     QHF_DUPD(M, K)  vdup_laneq_f16(M, (7&(K)))
-#define     VQHF_DUPD(V, K) QHF_DUPD(V, K)
+#define  MY_QHF_DUPD(A, B)  vdup_laneq_f16(A,(7&B))
+#define     VQHF_DUPD(...) MY_QHF_DUPD(__VA_ARGS__,0)
     return  vreinterpret_f16_u8(
         vqtbl1_u8(
-            vreinterpretq_u8_f16(x),
+            vreinterpretq_u8_f16(a),
             vzip1_u8(
-                vdup_n_u8(2*k),
-                vdup_n_u8(2*k+1)
+                vdup_n_u8((2*b)),
+                vdup_n_u8((2*b+1))
             )
         )
     );
 }
 
-INLINE(Vdwu,VQWU_DUPD) (Vqwu v, Rc(0, 3) k)
+INLINE(Vdwu,VQWU_DUPD) (Vqwu a, Rc(0, +3) b)
 {
-#define     QWU_DUPD(M, K)  vdup_laneq_u32(M, (3&K))
-#define     VQWU_DUPD(V, K) QWU_DUPD(V, K)
-    uint64x1_t  m;
-    if (k > 1) {
-        m = vshl_u64(
-            vget_high_u64(vreinterpretq_u64_u32(v)),
-            vdup_n_s64(0-(k-2)*32)
-        );
-    }
-    else {
-        m = vshl_u64(
-            vget_low_u64(vreinterpretq_u64_u32(v)),
-            vdup_n_s64(0-k*32)
-        );
-    }
-    return  vdup_lane_u32(
-        vreinterpret_u32_u64(m),
-        0
-    );
+#define  MY_QWU_DUPD(A, B, ...) vdup_laneq_u32(A,(3&B))
+#define     VQWU_DUPD(...) MY_QWU_DUPD(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_u32(a);
+    uint8x8_t   k = vdup_n_u8((4*b));
+    k = vadd_u8(k, vcreate_u8(0x0302010003020100ULL));
+    uint8x8_t   v = vqtbl1_u8(t, k);
+    return  vreinterpret_u32_u8(v);
 }
 
-INLINE(Vdwi,VQWI_DUPD) (Vqwi v, Rc(0, 3) k)
+
+INLINE(Vdwi,VQWI_DUPD) (Vqwi a, Rc(0, +3) b)
 {
-#define     QWI_DUPD(M, K)  vdup_laneq_s32(V, (3&K))
-#define     VQWI_DUPD(V, K) QWI_DUPD(V, K)
-    uint64x1_t  m;
-    if (k > 1) {
-        m = vshl_u64(
-            vget_high_u64(vreinterpretq_u64_s32(v)),
-            vdup_n_s64(0-(k-2)*32)
-        );
-    }
-    else {
-        m = vshl_u64(
-            vget_low_u64(vreinterpretq_u64_s32(v)),
-            vdup_n_s64(0-k*32)
-        );
-    }
-    return  vdup_lane_s32(
-        vreinterpret_s32_u64(m),
-        0
-    );
+#define  MY_QWI_DUPD(A, B, ...) vdup_laneq_s32(A,(3&B))
+#define     VQWI_DUPD(...) MY_QWI_DUPD(__VA_ARGS__,0)
+    Vqwu q = VQWI_ASTU(a);
+    Vdwu d = (VQWU_DUPD)(q,b);
+    return  VDWU_ASTI(d);
 }
 
-INLINE(Vdwf,VQWF_DUPD) (Vqwf v, Rc(0, 3) k)
+
+INLINE(Vdwf,VQWF_DUPD) (Vqwf a, Rc(0, +3) b)
 {
-#define     QWF_DUPD(M, K)  vdup_laneq_f32(M, (3&K))
-#define     VQWF_DUPD(V, K) QWF_DUPD(V, K)
-    uint64x1_t  m;
-    uint64x2_t  q = vreinterpretq_u64_f32(v);
-    if (k > 1)  m = vshl_u64(vget_high_u64(q), vdup_n_s64((k-2)*INT64_C(-32)));
-    else        m = vshl_u64(vget_low_u64( q), vdup_n_s64(k*INT64_C(-32)));
-    return  vdup_lane_f32(vreinterpret_f32_u64(m), 0);
+#define  MY_QWF_DUPD(A, B, ...) vdup_laneq_f32(A,(3&B))
+#define     VQWF_DUPD(...) MY_QWF_DUPD(__VA_ARGS__,0)
+    Vqwu q = VQWF_ASTU(a);
+    Vdwu d = (VQWU_DUPD)(q,b);
+    return  VDWU_ASTF(d);
 }
 
-INLINE(Vddu,VQDU_DUPD) (Vqdu v, Rc(0, 1) k)
+
+INLINE(Vddu,VQDU_DUPD) (Vqdu a, Rc(0, +1) b)
 {
-#define     QDU_DUPD(M, K)      vdup_laneq_u64(M, (1&K))
-#define     VQDU_DUPD(V, K)     QDU_DUPD(V, K)
-    return  k ? vget_high_u64(v) : vget_low_u64(v);
+#define  MY_QDU_DUPD(A,B,...)  vdup_laneq_u64(A,(1&B))
+#define     VQDU_DUPD(...)     MY_QDU_DUPD(__VA_ARGS__,0)
+    return  b?vget_high_u64(a):vget_low_u64(a);
 }
 
-INLINE(Vddi,VQDI_DUPD) (Vqdi v, Rc(0, 1) k)
+INLINE(Vddi,VQDI_DUPD) (Vqdi a, Rc(0, +1) b)
 {
-#define     QDI_DUPD(M, K)      vdup_laneq_s64(V, (1&K))
-#define     VQDI_DUPD(V, K)     QDI_DUPD(V, K)
-    return  k ? vget_high_s64(v) : vget_low_s64(v);
+#define  MY_QDI_DUPD(A,B,...)  vdup_laneq_s64(A,(1&B))
+#define     VQDI_DUPD(...)     MY_QDI_DUPD(__VA_ARGS__,0)
+    return  b?vget_high_s64(a):vget_low_s64(a);
 }
 
-INLINE(Vddf,VQDF_DUPD) (Vqdf v, Rc(0, 1) k)
+INLINE(Vddf,VQDF_DUPD) (Vqdf a, Rc(0, +1) b)
 {
-#define     QDF_DUPD(M, K)      vdup_laneq_f64(M, (1&K))
-#define     VQDF_DUPD(V, K)     QDF_DUPD(V, K)
-    return  k ? vget_high_f64(v) : vget_low_f64(v);
+#define  MY_QDF_DUPD(A,B,...)  vdup_laneq_f64(A,(1&B))
+#define     VQDF_DUPD(...)     MY_QDF_DUPD(__VA_ARGS__,0)
+    return  b?vget_high_f64(a):vget_low_f64(a);
 
 }
 
@@ -10970,95 +12662,750 @@ INLINE(Vddf,   DBL_DUPDAC)  (double const a[1]) {return vld1_dup_f64(a);}
 {
 #endif
 
-INLINE(Vqyu,  BOOL_DUPQ)   (_Bool x)
+INLINE(Vqyu,BOOL_DUPQ)     (_Bool a, Rc(-128,+127) b)
 {
-#define     BOOL_DUPQ(X)   QYU_ASTV(vdupq_n_u64( (0ull-(X?1:0)) ))
-    return  BOOL_DUPQ(x);
+#define  MY_BOOL_DUPQ(A, B, ...)                    \
+(                                                   \
+    !A ? ((Vqyu){0}) :                              \
+    (                                               \
+        (Vqyu)                                      \
+        {                                           \
+            (B <=-128) ? vdupq_n_u64(0) :           \
+            (B <= -64) ? vcombine_u64(              \
+                vdup_n_u64((UINT64_MAX<<(128+B))),  \
+                vdup_n_u64(-1)                      \
+            ) :                                     \
+            (B <= -1) ? vcombine_u64(               \
+                vdup_n_u64(0),                      \
+                vdup_n_u64((UINT64_MAX<<(64+B)))    \
+            ) :                                     \
+            (B == 0) ? vdupq_n_u64(-1) :            \
+            (B <= 64) ? vcombine_u64(               \
+                vdup_n_u64((UINT64_MAX>>(64-B))),   \
+                vdup_n_u64(0)                       \
+            ) :                                     \
+            (B <= 127) ? vcombine_u64(              \
+                vdup_n_u64(-1),                     \
+                vdup_n_u64((UINT64_MAX>>(128-B))),  \
+            ) :                                     \
+            vdupq_n_u64(0)                          \
+        }                                           \
+    )                                               \
+)
+
+#define     BOOL_DUPQ(...) MY_BOOL_DUPQ(__VA_ARGS__,0)
+    if (!a) 
+        return ((Vqyu){0});
+    Vqyu v;
+    if (b < -64)
+    {
+        v.V0 = vcombine_u64(
+            vshl_u64(
+                vdup_n_u64(-1),
+                vdup_n_s64((128+b))
+            ),
+            vdup_n_u64(-1)
+        );
+        return  v;
+    }
+
+    if (b < 0)
+    {
+        v.V0 = vcombine_u64(
+            vdup_n_u64(0),
+            vshl_u64(
+                vdup_n_u64(-1),
+                vdup_n_s64((64+b))
+            )
+        );
+        return  v;
+    }
+
+    if (b == 0)
+    {
+        v.V0 = vdupq_n_u64(-1);
+        return  v;
+    }
+
+    if (b <= 64)
+    {
+        v.V0 = vcombine_u64(
+            vdup_n_u64((UINT64_MAX>>(64-b))),
+            vdup_n_u64(0)
+        );
+        return  v;
+    }
+    
+    v.V0 = vcombine_u64(
+        vdup_n_u64(-1),
+        vdup_n_u64((UINT64_MAX>>(64-b)))
+    );
+    return v;
+    
+}
+ 
+INLINE(Vqbu,UCHAR_DUPQ) (unsigned a, Rc(-16, +15) b) 
+{
+#define  MY_UCHAR_DUPQ(A, B, ...)   \
+(                                   \
+    (B ==-16) ? vdupq_n_u8(0) :     \
+    (B <= -1) ? vextq_u8(           \
+        vdupq_n_u8(0),              \
+        vdupq_n_u8(A),              \
+        (15&-B)                     \
+    )  :                            \
+    vextq_u8(                       \
+        vdupq_n_u8(A),              \
+        vdupq_n_u8(0),              \
+        (15&(1+(15-B)))             \
+    )                               \
+)
+
+#define     UCHAR_DUPQ(...) MY_UCHAR_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    if (!b) 
+        return vdupq_n_u8(a);
+    if (b < 0) 
+    {
+        r = vcreate_u8(0x1011121314151617ULL);
+        l = vcreate_u8(0x18191a1b1c1d1e1fULL);
+        t = vcombine_u8(l, r);
+        if (b&15)
+            t = vaddq_u8(t, vdupq_n_u8(b));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8(b));
+    }
+    return  vqtbl1q_u8(vdupq_n_u8(a), t);
 }
 
-INLINE(Vqbu, UCHAR_DUPQ)   (uchar x) {return vdupq_n_u8(x);}
-INLINE(Vqbi, SCHAR_DUPQ)   (schar x) {return vdupq_n_s8(x);}
-INLINE(Vqbc,  CHAR_DUPQ)    (char x)
+INLINE(Vqbi,SCHAR_DUPQ)   (signed a, Rc(-16, +15) b) 
 {
+#define  MY_SCHAR_DUPQ(A, B, ...)   \
+(                                   \
+    (B ==-16) ? vdupq_n_s8(0) :     \
+    (B <= -1) ? vextq_s8(           \
+        vdupq_n_s8(0),              \
+        vdupq_n_s8(A),              \
+        (15&-B)                     \
+    )  :                            \
+    vextq_s8(                       \
+        vdupq_n_s8(A),              \
+        vdupq_n_s8(0),              \
+        (15&(1+(15-B)))             \
+    )                               \
+)
+
+#define     SCHAR_DUPQ(...) MY_SCHAR_DUPQ(__VA_ARGS__,0)
+    Vqbu u = (UCHAR_DUPQ)(a, b);
+    return  VQBU_ASBI(u);
+}
+
+INLINE(Vqbc,CHAR_DUPQ)       (int a, Rc(-16, +15) b)
+{
+    Vqbc v;
 #if CHAR_MIN
-#   define  CHAR_DUPQ(X)    VQBI_ASBC(vdupq_n_s8(X))
+#   define  CHAR_DUPQ(...) ((Vqbc){MY_SCHAR_DUPQ(__VA_ARGS__,0)})
+    v.V0 = VQBU_ASBI(((UCHAR_DUPQ)(a, b)));
 #else
-#   define  CHAR_DUPQ(X)    VQBU_ASBC(vdupq_n_u8(X))
+#   define  CHAR_DUPQ(...) ((Vqbc){MY_UCHAR_DUPQ(__VA_ARGS__,0)})
+    v.V0 = (UCHAR_DUPQ)(a, b);
 #endif
-    return  CHAR_DUPQ(x);
+    return  v;
 }
 
-INLINE(Vqhu, USHRT_DUPQ)  (ushort x) {return vdupq_n_u16(x);}
-INLINE(Vqhi,  SHRT_DUPQ)   (short x) {return vdupq_n_s16(x);}
-INLINE(Vqwu,  UINT_DUPQ)    (uint x) {return vdupq_n_u32(x);}
-INLINE(Vqwi,   INT_DUPQ)     (int x) {return vdupq_n_s32(x);}
-#if QUAD_NLONG == 2
-INLINE(Vqwu, ULONG_DUPQ)   (ulong x) {return vdupq_n_u32(x);}
-INLINE(Vqwi,  LONG_DUPQ)    (long x) {return vdupq_n_s32(x);}
-#else
-INLINE(Vqdu, ULONG_DUPQ)   (ulong x) {return vdupq_n_u64(x);}
-INLINE(Vqdi,  LONG_DUPQ)    (long x) {return vdupq_n_s64(x);}
-#endif
-
-#if QUAD_NLLONG == 2
-INLINE(Vqdu,ULLONG_DUPQ)   (ulong x) {return vdupq_n_u64(x);}
-INLINE(Vqdi, LLONG_DUPQ)    (long x) {return vdupq_n_s64(x);}
-#endif
-
-INLINE(Vqhf, FLT16_DUPQ) (flt16_t x) {return vdupq_n_f16(x);}
-INLINE(Vqwf,   FLT_DUPQ)   (float x) {return vdupq_n_f32(x);}
-INLINE(Vqdf,   DBL_DUPQ)  (double x) {return vdupq_n_f64(x);}
-
-
-INLINE(Vqyu,  BOOL_DUPQAC)   (_Bool const a[1]) {return BOOL_DUPQ( (*a));}
-INLINE(Vqbu, UCHAR_DUPQAC)   (uchar const a[1]) {return vld1q_dup_u8(a);}
-INLINE(Vqbi, SCHAR_DUPQAC)   (schar const a[1]) {return vld1q_dup_s8(a);}
-INLINE(Vqbc,  CHAR_DUPQAC)    (char const a[1])
+INLINE(Vqhu,USHRT_DUPQ) (unsigned a, Rc(-8, +7) b) 
 {
-    return  VQBU_ASBC(vld1q_dup_u8( ((void const *) a) ) );
+#define  MY_USHRT_DUPQ(A, B, ...)   \
+(                                   \
+    (B == -8) ? vdupq_n_u16(0) :    \
+    (B <= -1) ? vextq_u16(          \
+        vdupq_n_u16(0),             \
+        vdupq_n_u16(A),             \
+        (7&-B)                      \
+    )  :                            \
+    vextq_u16(                      \
+        vdupq_n_u16(A),             \
+        vdupq_n_u16(0),             \
+        (7&(1+(7-B)))               \
+    )                               \
+)
+
+#define     USHRT_DUPQ(...) MY_USHRT_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    uint8x16_t  v;
+    uint16x8_t  src = vdupq_n_u16(a);
+    if (!b) 
+        return  src;
+    v = vreinterpretq_u8_u16(src);
+    if (b < 0) 
+    {
+        r = vcreate_u8(0x1110131215141716ULL);
+        l = vcreate_u8(0x19181b1a1d1c1f1eULL);
+        t = vcombine_u8(l, r);
+        if (b&7)
+            t = vaddq_u8(t, vdupq_n_u8((2*b)));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((2*b)));
+    }
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_u16_u8(v);
 }
 
-INLINE(Vqhu, USHRT_DUPQAC)  (ushort const a[1]) {return vld1q_dup_u16(a);}
-INLINE(Vqhi,  SHRT_DUPQAC)   (short const a[1]) {return vld1q_dup_s16(a);}
-INLINE(Vqwu,  UINT_DUPQAC)    (uint const a[1]) {return vld1q_dup_u32(a);}
-INLINE(Vqwi,   INT_DUPQAC)     (int const a[1]) {return vld1q_dup_s32(a);}
+INLINE(Vqhi,SHRT_DUPQ)    (signed a, Rc(-8,+7) b) 
+{
+#define  MY_SHRT_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -8) ? vdupq_n_s16(0) :    \
+    (B <= -1) ? vextq_s16(          \
+        vdupq_n_s16(0),             \
+        vdupq_n_s16(A),             \
+        (7&-B)                      \
+    )  :                            \
+    vextq_s16(                      \
+        vdupq_n_s16(A),             \
+        vdupq_n_s16(0),             \
+        (7&(1+(7-B)))               \
+    )                               \
+)
+
+#define     SHRT_DUPQ(...) MY_SHRT_DUPQ(__VA_ARGS__,0)
+    uint16x8_t v = (USHRT_DUPQ)(a, b);
+    return  vreinterpretq_s16_u16(v);
+}
+
+INLINE(Vqwu,UINT_DUPQ)      (uint a, Rc(-4, +3) b) 
+{
+#define  MY_UINT_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -4) ? vdupq_n_u32(0) :    \
+    (B <= -1) ? vextq_u32(          \
+        vdupq_n_u32(0),             \
+        vdupq_n_u32(A),             \
+        (3&-B)                      \
+    )  :                            \
+    vextq_u32(                      \
+        vdupq_n_u32(A),             \
+        vdupq_n_u32(0),             \
+        (3&(1+(3-B)))               \
+    )                               \
+)
+
+#define     UINT_DUPQ(...) MY_UINT_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    uint8x16_t  v;
+    uint32x4_t  src = vdupq_n_u32(a);
+    if (!b) 
+        return  src;
+    v = vreinterpretq_u8_u32(src);
+    if (b < 0) 
+    {
+        r = vcreate_u8(0x1312111017161514ULL);
+        l = vcreate_u8(0x1b1a19a81f1e1d1cULL);
+        t = vcombine_u8(l, r);
+        if (b&3)
+            t = vaddq_u8(t, vdupq_n_u8((4*b)));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((4*b)));
+    }
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_u32_u8(t);
+}
+
+INLINE(Vqwi,INT_DUPQ)        (int a, Rc(-4, +3) b)
+{
+#define  MY_INT_DUPQ(A, B, ...)     \
+(                                   \
+    (B == -4) ? vdupq_n_s32(0) :    \
+    (B <= -1) ? vextq_s32(          \
+        vdupq_n_s32(0),             \
+        vdupq_n_s32(A),             \
+        (3&-B)                      \
+    )  :                            \
+    vextq_s32(                      \
+        vdupq_n_s32(A),             \
+        vdupq_n_s32(0),             \
+        (3&(1+(3-B)))               \
+    )                               \
+)
+
+#define     INT_DUPQ(...) MY_INT_DUPQ(__VA_ARGS__,0)
+    uint32x4_t v = (UINT_DUPQ)(a, b);
+    return  vreinterpretq_s32_u32(v);
+}
 
 #if DWRD_NLONG == 2
 
-INLINE(Vqwu, ULONG_DUPQAC)   (ulong const a[1])
+INLINE(Vqwu,ULONG_DUPQ)    (ulong a, Rc(-4, +3) b) 
 {
-    return  vld1q_dup_u32( ((uint32_t const *) a) );
+#define     ULONG_DUPQ(...) MY_UINT_DUPQ(__VA_ARGS__,0) 
+    return  (UINT_DUPQ)(a, b);
 }
 
-INLINE(Vqwi,  LONG_DUPQAC)    (long const a[1])
+INLINE(Vqwi,LONG_DUPQ)      (long a, Rc(-4, +3) b) 
 {
-    return  vld1q_dup_s32( ((int32_t const *) a) );
+#define     LONG_DUPQ(...) MY_INT_DUPQ(__VA_ARGS__,0) 
+    return  (INT_DUPQ)(a, b);
 }
 
 #else
 
-INLINE(Vqdu, ULONG_DUPQAC)   (ulong const a[1]) {return vld1q_dup_u64(a);}
-INLINE(Vqdi,  LONG_DUPQAC)    (long const a[1]) {return vld1q_dup_s64(a);}
+INLINE(Vqdu,ULONG_DUPQ)    (ulong a, Rc(-2, +1) b) 
+{
+#define  MY_ULONG_DUPQ(A, B, ...)   \
+(                                   \
+    (B == -2) ? vdupq_n_u64(0) :    \
+    (B <= -1) ? vextq_u64(          \
+        vdupq_n_u64(0),             \
+        vdupq_n_u64(A),             \
+        (1&-B)                      \
+    )  :                            \
+    vextq_u64(                      \
+        vdupq_n_u64(A),             \
+        vdupq_n_u64(0),             \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     ULONG_DUPQ(...) MY_ULONG_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    uint64x2_t  src = vdupq_n_u64(a);
+    if (!b) 
+        return  src;
+    uint8x16_t  v = vreinterpretq_u8_u64(src);
+    if (b < 0) 
+    {
+        r = vcreate_u8(0x1716151413121110ULL);
+        l = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        if (b&3)
+            t = vaddq_u8(t, vdupq_n_u8((8*b)));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((8*b)));
+    }
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_u64_u8(t);
+}
+
+INLINE(Vqdi,LONG_DUPQ)      (long a, Rc(-2, +1) b) 
+{
+#define  MY_LONG_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdupq_n_s64(0) :    \
+    (B <= -1) ? vextq_s64(          \
+        vdupq_n_s64(0),             \
+        vdupq_n_s64(A),             \
+        (1&-B)                      \
+    )  :                            \
+    vextq_s64(                      \
+        vdupq_n_s64(A),             \
+        vdupq_n_s64(0),             \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     LONG_DUPQ(...) MY_LONG_DUPQ(__VA_ARGS__,0)
+    uint64x2_t v = (ULONG_DUPQ)(a, b);
+    return  vreinterpretq_s64_u64(v);
+}
 
 #endif
 
 #if QUAD_NLLONG == 2
 
-INLINE(Vqdu,ULLONG_DUPQAC)  (ullong const a[1])
+INLINE(Vqdu,ULLONG_DUPQ)    (ullong a, Rc(-2, +1) b) 
 {
-    return  vld1q_dup_u64( ((uint64_t const *) a) );
+#define  MY_ULLONG_DUPQ(A, B, ...)  \
+(                                   \
+    (B == -2) ? vdupq_n_u64(0) :    \
+    (B <= -1) ? vextq_u64(          \
+        vdupq_n_u64(0),             \
+        vdupq_n_u64(A),             \
+        (1&-B)                      \
+    )  :                            \
+    vextq_u64(                      \
+        vdupq_n_u64(A),             \
+        vdupq_n_u64(0),             \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     ULLONG_DUPQ(...) MY_ULLONG_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    uint64x2_t  src = vdupq_n_u64(a);
+    if (!b) 
+        return  src;
+    uint8x16_t  v = vreinterpretq_u8_u64(src);
+    if (b < 0) 
+    {
+        r = vcreate_u8(0x1716151413121110ULL);
+        l = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        if (b&3)
+            t = vaddq_u8(t, vdupq_n_u8((8*b)));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((8*b)));
+    }
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_u64_u8(t);
 }
 
-INLINE(Vqdi, LLONG_DUPQAC)   (llong const a[1])
+INLINE(Vqdi,LLONG_DUPQ)       (llong a, Rc(-2, +1) b) 
 {
-    return  vld1q_dup_s64( ((int64_t const *) a) );
+#define  MY_LLONG_DUPQ(A, B, ...)   \
+(                                   \
+    (B == -2) ? vdupq_n_s64(0) :    \
+    (B <= -1) ? vextq_s64(          \
+        vdupq_n_s64(0),             \
+        vdupq_n_s64(A),             \
+        (1&-B)                      \
+    )  :                            \
+    vextq_s64(                      \
+        vdupq_n_s64(A),             \
+        vdupq_n_s64(0),             \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+
+#define     LLONG_DUPQ(...) MY_LLONG_DUPQ(__VA_ARGS__,0)
+    uint64x2_t v = (ULLONG_DUPQ)(a, b);
+    return  vreinterpretq_s64_u64(v);
+}
+
+INLINE(Vqqu,dupqqu) (QUAD_UTYPE a, Rc(-1, +0) b) 
+{
+#define     MY_DUPQQU(A, B, ...) ((-1==B)?((Vqqu){0}):astvqu(A))
+#   define  dupqqu(...) MY_DUPQQU(__VA_ARGS__,0)
+    return  dupqqu(a, b);
+}
+
+INLINE(Vqqi,dupqqi) (QUAD_ITYPE a, Rc(-1, +0) b) 
+{
+#define     MY_DUPQQI(A, B, ...) ((-1==B)?((Vqqi){0}):astvqi(A))
+#   define  dupqqi(...) MY_DUPQQI(__VA_ARGS__,0)
+    return  dupqqi(a, b);
 }
 
 #endif
 
-INLINE(Vqhf, FLT16_DUPQAC) (flt16_t const a[1]) {return vld1q_dup_f16(a);}
-INLINE(Vqwf,   FLT_DUPQAC)   (float const a[1]) {return vld1q_dup_f32(a);}
-INLINE(Vqdf,   DBL_DUPQAC)  (double const a[1]) {return vld1q_dup_f64(a);}
+INLINE(Vqhf,FLT16_DUPQ) (flt16_t a, Rc(-8, +7) b) 
+{
+#define  MY_FLT16_DUPQ(A, B, ...)       \
+(                                       \
+    (B == -8) ? vdupq_n_f16(0) :        \
+    (B <= -1) ? vreinterpretq_f16_u16(  \
+        vextq_u16(                      \
+            vdupq_n_u16(0),             \
+            vreinterpretq_u16_f16(      \
+                vdupq_n_f16(A)          \
+            ),                          \
+            (7&-B)                      \
+        )                               \
+    )  :                                \
+    vreinterpretq_f16_u16(              \
+        vextq_u16(                      \
+            vreinterpretq_u16_f16(      \
+                vdupq_n_f16(A)          \
+            ),                          \
+            vdupq_n_u16(0),             \
+            (7&(1+(7-B)))               \
+        )                               \
+    )                                   \
+)
+
+#define     FLT16_DUPQ(...) MY_FLT16_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    uint8x16_t  v;
+    float16x8_t src = vdupq_n_f16(a);
+    if (!b) 
+        return  src;
+    v = vreinterpretq_u8_f16(src);
+    if (b < 0) 
+    {
+        r = vcreate_u8(0x1110131215141716ULL);
+        l = vcreate_u8(0x19181b1a1d1c1f1eULL);
+        t = vcombine_u8(l, r);
+        if (b&7)
+            t = vaddq_u8(t, vdupq_n_u8((2*b)));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((2*b)));
+    }
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_f16_u8(v);
+}
+
+INLINE(Vqwf,FLT_DUPQ)   (float a, Rc(-4, 3) b) 
+{
+#define  MY_FLT_DUPQ(A, B, ...)     \
+(                                   \
+    (B == -4) ? vdupq_n_f32(0.0f) : \
+    (B <= -1) ? vextq_f32(          \
+        vdupq_n_f32(0.0f),          \
+        vdupq_n_f32(A),             \
+        (3&-B)                      \
+    )  :                            \
+    vextq_f16(                      \
+        vdupq_n_f32(A),             \
+        vdupq_n_f32(0.0f),          \
+        (3&(1+(3-B)))               \
+    )                               \
+)
+
+#define     FLT_DUPQ(...) MY_FLT_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    uint8x16_t  v;
+    float32x4_t src = vdupq_n_f32(a);
+    if (!b) 
+        return  src;
+    v = vreinterpretq_u8_f32(src);
+    if (b < 0) 
+    {
+        l = vcreate_u8(0x1b1a19a81f1e1d1cULL);
+        r = vcreate_u8(0x1312111017161514ULL);
+        t = vcombine_u8(l, r);
+        if (b&3)
+            t = vaddq_u8(t, vdupq_n_u8((4*b)));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((4*b)));
+    }
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_f32_u8(v);
+}
+
+INLINE(Vqdf,DBL_DUPQ)  (double a, Rc(-2, +1) b) 
+{
+#define  MY_DBL_DUPQ(A, B, ...)     \
+(                                   \
+    (B == -2) ? vdupq_n_f64(0.0) :  \
+    (B <= -1) ? vextq_f64(          \
+        vdupq_n_f64(0.0),           \
+        vdupq_n_f64(A),             \
+        (1&-B)                      \
+    )  :                            \
+    vextq_f64(                      \
+        vdupq_n_f64(A),             \
+        vdupq_n_f64(0.0),           \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     DBL_DUPQ(...) MY_DBL_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    float64x2_t src = vdupq_n_f64(a);
+    if (!b) 
+        return  src;
+    uint8x16_t  v = vreinterpretq_u8_f64(src);
+    if (b < 0) 
+    {
+        r = vcreate_u8(0x1716151413121110ULL);
+        l = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        if (b&3)
+            t = vaddq_u8(t, vdupq_n_u8((8*b)));
+    }
+    else
+    {
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((8*b)));
+    }
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_f64_u8(t);
+}
+
+
+INLINE(Vqyu,BOOL_DUPQAC) (void const *a, ptrdiff_t b) 
+{
+#define  MY_BOOL_DUPQAC(A, B, ...) ((BOOL_DUPQAC)(A,B))
+#define     BOOL_DUPQAC(...) MY_BOOL_DUPQAC(__VA_ARGS__,0)
+    uint8x16_t  m = vld1q_dup_u8((a+b/8));
+    m = vtstq_u8(m, vdupq_n_u8((1<<(b&7))));
+    Vqyu    v = {vreinterpretq_u64_u8(m)};
+    return  v;
+}
+
+INLINE(Vqbu,UCHAR_DUPQAC) (uchar const a[1], ptrdiff_t b)
+{
+#define  MY_UCHAR_DUPQAC(A, B, ...) vld1q_dup_u8( ((uint8_t const *) A+B) )
+#define     UCHAR_DUPQAC(...) MY_UCHAR_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_u8((a+b));
+}
+
+INLINE(Vqbi, SCHAR_DUPQAC) (schar const a[1], ptrdiff_t b) 
+{
+#define  MY_SCHAR_DUPQAC(A, B, ...) vld1q_dup_s8( ((int8_t const *) A+B) )
+#define     SCHAR_DUPQAC(...) MY_SCHAR_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_s8((a+b));
+}
+
+INLINE(Vqbc,  CHAR_DUPQAC)  (char const a[1], ptrdiff_t b)
+{
+#if CHAR_MIN
+#   define  CHAR_DUPQAC(...) ((Vqbc){SCHAR_DUPQAC(__VA_ARGS__)})
+#else
+#   define  CHAR_DUPQAC(...) ((Vqbc){UCHAR_DUPQAC(__VA_ARGS__)})
+#endif
+    return  CHAR_DUPQAC(a, b);
+}
+
+INLINE(Vqhu, USHRT_DUPQAC) (ushort const a[1], ptrdiff_t b) 
+{
+#define  MY_USHRT_DUPQAC(A, B, ...) vld1q_dup_u16( ((uint16_t const *) A+B) )
+#define     USHRT_DUPQAC(...) MY_USHRT_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_u16((a+b));
+}
+
+INLINE(Vqhi,  SHRT_DUPQAC)  (short const a[1], ptrdiff_t b) 
+{
+#define  MY_SHRT_DUPQAC(A, B, ...) vld1q_dup_s16( ((int16_t const *) A+B) )
+#define     SHRT_DUPQAC(...) MY_SHRT_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_s16((a+b));
+}
+
+INLINE(Vqwu,  UINT_DUPQAC)   (uint const a[1], ptrdiff_t b) 
+{
+#define  MY_UINT_DUPQAC(A, B, ...) vld1q_dup_u32( ((uint32_t const *) A+B) )
+#define     UINT_DUPQAC(...) MY_UINT_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_u32((a+b));
+}
+
+INLINE(Vqwi,   INT_DUPQAC)    (int const a[1], ptrdiff_t b)
+{
+#define  MY_INT_DUPQAC(A, B, ...) vld1q_dup_s32( ((int32_t const *) A+B) )
+#define     INT_DUPQAC(...) MY_INT_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_s32((a+b));
+}
+
+#if DWRD_NLONG == 2
+
+INLINE(Vqwu,  ULONG_DUPQAC)   (ulong const a[1], ptrdiff_t b) 
+{
+#define  MY_ULONG_DUPQAC(A, B, ...) vld1q_dup_u32( ((uint32_t const *) A+B) )
+#define     ULONG_DUPQAC(...) MY_ULONG_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_u32((a+b));
+}
+
+INLINE(Vqwi,   LONG_DUPQAC)    (long const a[1], ptrdiff_t b)
+{
+#define  MY_LONG_DUPQAC(A, B, ...) vld1q_dup_s32( ((int32_t const *) A+B) )
+#define     LONG_DUPQAC(...) MY_LONG_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_s32((a+b));
+}
+
+#else
+
+INLINE(Vqdu,  ULONG_DUPQAC)   (ulong const a[1], ptrdiff_t b) 
+{
+#define  MY_ULONG_DUPQAC(A, B, ...) vld1q_dup_u64( ((uint64_t const *) A+B) )
+#define     ULONG_DUPQAC(...) MY_ULONG_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_u64((a+b));
+}
+
+INLINE(Vqdi,   LONG_DUPQAC)    (long const a[1], ptrdiff_t b)
+{
+#define  MY_LONG_DUPQAC(A, B, ...) vld1q_dup_s64( ((int64_t const *) A+B) )
+#define     LONG_DUPQAC(...) MY_LONG_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_s64((a+b));
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+
+INLINE(Vqdu,ULLONG_DUPQAC) (ullong const a[1], ptrdiff_t b) 
+{
+#define  MY_ULLONG_DUPQAC(A, B, ...) vld1q_dup_u64( ((uint64_t const *) A+B) )
+#define     ULLONG_DUPQAC(...) MY_ULLONG_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_u64(((uint64_t const *) a+b));
+}
+
+INLINE(Vqdi, LLONG_DUPQAC)  (llong const a[1], ptrdiff_t b)
+{
+#define  MY_LLONG_DUPQAC(A, B, ...) vld1q_dup_s64( ((int64_t const *) A+B) )
+#define     LLONG_DUPQAC(...) MY_LLONG_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_s64(((int64_t const *) a+b));
+}
+
+INLINE(Vqqu,dupqacqu) (QUAD_UTYPE const a[1], ptrdiff_t b) 
+{
+#define  MY_DUPQACQU(A, B, ...) ((Vqqu){vld1q_u64(((uint64_t const *) A+B))})
+#define     dupqacqu(...) MY_DUPQACQU(__VA_ARGS__,0)
+    return  dupqacqu(a, b);
+}
+
+INLINE(Vqqi,dupqacqi) (QUAD_ITYPE const a[1], ptrdiff_t b) 
+{
+#define  MY_DUPQACQI(A, B, ...) ((Vqqi){vld1q_s64(((int64_t const *) A+B))})
+#define     dupqacqi(...) MY_DUPQACQI(__VA_ARGS__,0)
+    return  dupqacqi(a, b);
+}
+
+#endif
+
+INLINE(Vqhf, FLT16_DUPQAC) (flt16_t const a[1], ptrdiff_t b)
+{
+#define  MY_FLT16_DUPQAC(A, B, ...) vld1q_dup_f16( ((flt16_t const *) A+B) )
+#define     FLT16_DUPQAC(...) MY_FLT16_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_f16((a+b));
+}
+
+INLINE(Vqwf,   FLT_DUPQAC)   (float const a[1], ptrdiff_t b)
+{
+#define  MY_FLT_DUPQAC(A, B, ...) vld1q_dup_f32( ((float const *) A+B) )
+#define     FLT_DUPQAC(...) MY_FLT_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_f32((a+b));
+}
+
+INLINE(Vqdf,   DBL_DUPQAC)   (double const a[1], ptrdiff_t b)
+{
+#define  MY_DBL_DUPQAC(A, B, ...) vld1q_dup_f64( ((double const *) A+B) )
+#define     DBL_DUPQAC(...) MY_DBL_DUPQAC(__VA_ARGS__,0)
+    return  vld1q_dup_f64((a+b));
+}
 
 
 INLINE(Vqyu,VWYU_DUPQ) (Vwyu v, Rc(0, 31) k)
@@ -11071,7 +13418,7 @@ vdupq_n_u64(                        \
             vreinterpret_u32_f32(   \
                 vdup_n_f32(M)       \
             ),                      \
-            0                   \
+            0                       \
         )                           \
     )                               \
 )
@@ -11081,477 +13428,534 @@ vdupq_n_u64(                        \
 }
 
 
-INLINE(Vqbu,VWBU_DUPQ) (Vwbu v, Rc(0,  3) k)
+INLINE(Vqbu,VWBU_DUPQ) (Vwbu a, Rc(0,  3) b)
 {
-#define     WBU_DUPQ(M, K)  \
-vdupq_lane_u8(              \
-    vreinterpret_u8_f32(    \
-        vdup_n_f32(M)       \
-    ),                      \
-    (3&(K))                 \
-)
+#define  MY_VWBU_DUPQ(A, B, ...) \
+vdupq_lane_u8(vreinterpret_u8_f32(((float32x2_t){A.V0})),B)
 
-#define     VWBU_DUPQ(V, K) WBU_DUPQ(VWBU_ASTM(V), K)
-    float32x2_t m = vdup_n_f32(VWBU_ASTM(v));
+#define     VWBU_DUPQ(...) MY_VWBU_DUPQ(__VA_ARGS__,0)
+    float32x2_t m = {a.V0};
     uint8x8_t   t = vreinterpret_u8_f32(m);
-    t = vtbl1_u8(t, vdup_n_u8(k));
+    t = vtbl1_u8(t, vdup_n_u8(b));
     return  vcombine_u8(t, t);
 }
 
-INLINE(Vqbi,VWBI_DUPQ) (Vwbi v, Rc(0,  3) k)
+INLINE(Vqbi,VWBI_DUPQ) (Vwbi a, Rc(0,  3) b)
 {
-#define     WBI_DUPQ(M, K)  \
-vdupq_lane_s8(              \
-    vreinterpret_s8_f32(    \
-        vdup_n_f32(M)       \
-    ),                      \
-    (3&(K))                 \
-)
-#define     VWBI_DUPQ(V, K) WBI_DUPQ(VWBI_ASTM(V)
-    float32x2_t m = vdup_n_f32(VWBI_ASTM(v));
+#define  MY_VWBI_DUPQ(A, B, ...) \
+vdupq_lane_s8(vreinterpret_s8_f32(((float32x2_t){A.V0})),B)
+
+#define     VWBI_DUPQ(...) MY_VWBI_DUPQ(__VA_ARGS__,0)
+    float32x2_t m = {a.V0};
     int8x8_t    t = vreinterpret_s8_f32(m);
-    t = vtbl1_s8(t, vdup_n_u8(k));
+    t = vtbl1_s8(t, vdup_n_u8(b));
     return  vcombine_s8(t, t);
 }
 
-INLINE(Vqbc,VWBC_DUPQ) (Vwbc v, Rc(0,  3) k)
+INLINE(Vqbc,VWBC_DUPQ) (Vwbc a, Rc(0,  3) b)
 {
-#define     VWBC_DUPQ(V, K) VQBU_ASBC(WBU_DUPQ(VWBC_ASTM(V), K))
-    float32x2_t m = vdup_n_f32(VWBC_ASTM(v));
-    uint8x8_t   t = vdup_n_u8(k);
+    float32x2_t m = {a.V0};
+    uint8x8_t   t = vreinterpret_u8_f32(m);
+    t = vtbl1_u8(t, vdup_n_u8(b));
+    uint8x16_t  q = vcombine_u8(t, t);
 #if CHAR_MIN
-    int8x8_t    d = vtbl1_s8(vreinterpret_s8_f32(m), t);
-    int8x16_t   q = vcombine_s8(d, d);
+#   define  VWBC_DUPQ(...) ((Vqbc){MY_VWBI_DUPQ(__VA_ARGS__,0)})
+    return  ((Vqbc){vreinterpretq_s8_u8(q)});
 #else
-    uint8x8_t   d = vtbl1_u8(vreinterpret_u8_f32(m), t);
-    uint8x16_t  q = vcombine_u8(d, d);
+#   define  VWBC_DUPQ(...) ((Vqbc){MY_VWBU_DUPQ(__VA_ARGS__,0)})
+    return  ((Vqbc){q});
 #endif
-    return  QBC_ASTV(q);
 }
 
 
-INLINE(Vqhu,VWHU_DUPQ) (Vwhu v, Rc(0, 1) k)
+INLINE(Vqhu,VWHU_DUPQ) (Vwhu a, Rc(0, 1) b)
 {
-#define     WHU_DUPQ(M, K)  \
-vdupq_lane_u16(             \
-    vreinterpret_u16_f32(   \
-        vdup_n_f32(M)       \
-    ),                      \
-    1&(K)                   \
-)
+#define  MY_VWHU_DUPQ(A, B, ...) \
+vdupq_lane_u16(vreinterpret_u16_f32(((float32x2_t){A.V0})),B)
 
-#define     VWHU_DUPQ(V, K) WHU_DUPQ(VWHU_ASTM(V), K)
-    return  vreinterpretq_u16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_f32(
-                vdupq_n_f32(VWHU_ASTM(v))
-            ),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
-        )
-    );
+#define     VWHU_DUPQ(...) MY_VWHU_DUPQ(__VA_ARGS__,0)
+
+    float32x4_t m = {a.V0};
+    uint8x8_t   l = vdup_n_u8((2*b));
+    uint8x8_t   r = vadd_u8(l, vcreate_u8(0x0100010001000100ULL));
+    uint8x16_t  t = vcombine_u8(l, r);
+    t =  vqtbl1q_u8(vreinterpretq_u8_f32(m), t);
+    return  vreinterpretq_u16_u8(t);
 }
 
-INLINE(Vqhi,VWHI_DUPQ) (Vwhi v, Rc(0, 1) k)
+INLINE(Vqhi,VWHI_DUPQ) (Vwhi a, Rc(0, 1) b)
 {
-#define     WHI_DUPQ(M, K)  \
-vdupq_lane_s16(             \
-    vreinterpret_s16_f32(   \
-        vdup_n_f32(M)       \
-    ),                      \
-    1&(K)                   \
-)
+#define  MY_VWHI_DUPQ(A, B, ...) \
+vdupq_lane_s16(vreinterpret_s16_f32(((float32x2_t){A.V0})),B)
 
-#define     VWHI_DUPQ(V, K) WHI_DUPQ(VWHI_ASTM(V), K)
-    return  vreinterpretq_s16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_f32(
-                vdupq_n_f32(VWHI_ASTM(v))
-            ),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
-        )
-    );
+#define     VWHI_DUPQ(...) MY_VWHI_DUPQ(__VA_ARGS__,0)
+
+    float32x4_t m = {a.V0};
+    uint8x8_t   l = vdup_n_u8((2*b));
+    uint8x8_t   r = vadd_u8(l, vcreate_u8(0x0100010001000100ULL));
+    uint8x16_t  t = vcombine_u8(l, r);
+    t =  vqtbl1q_u8(vreinterpretq_u8_f32(m), t);
+    return  vreinterpretq_s16_u8(t);
 }
 
-INLINE(Vqhf,VWHF_DUPQ) (Vwhf v, Rc(0, 1) k)
+INLINE(Vqhf,VWHF_DUPQ) (Vwhf a, Rc(0, 1) b)
 {
-#define     WHF_DUPQ(M, K)      \
-vreinterpret_f16_u16(           \
-    vdupq_lane_u16(             \
-        vreinterpret_u16_f32(   \
-            vdup_n_f32(M)       \
-        ),                      \
-        1&(K)                   \
-    )                           \
-)
+#define  MY_VWHF_DUPQ(A, B, ...) \
+vdupq_lane_f16(vreinterpret_f16_f32(((float32x2_t){A.V0})),B)
 
-#define     VWHF_DUPQ(V, K) WHF_DUPQ(VWHF_ASTM(V), K)
-    return  vreinterpretq_f16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_f32(
-                vdupq_n_f32(VWHF_ASTM(v))
-            ),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
-        )
-    );
+#define     VWHF_DUPQ(...) MY_VWHF_DUPQ(__VA_ARGS__,0)
+
+    float32x4_t m = {a.V0};
+    uint8x8_t   l = vdup_n_u8((2*b));
+    uint8x8_t   r = vadd_u8(l, vcreate_u8(0x0100010001000100ULL));
+    uint8x16_t  t = vcombine_u8(l, r);
+    t =  vqtbl1q_u8(vreinterpretq_u8_f32(m), t);
+    return  vreinterpretq_f16_u8(t);
 }
 
 
-INLINE(Vqwu,VWWU_DUPQ) (Vwwu v, int const k)
+INLINE(Vqwu,VWWU_DUPQ) (Vwwu a, Rc(-4, +3) b) 
 {
-#define     WWU_DUPQ(M, K)  vreinterpretq_u32_f32(vdupq_n_f32(M))
-#define     VWWU_DUPQ(V, K) WWU_DUPQ(VWWU_ASTM(V), K)
-    return  VWWU_DUPQ(v, k);
-}
-
-INLINE(Vqwi,VWWI_DUPQ) (Vwwi v, int const k)
-{
-#define     WWI_DUPQ(M, K)  vreinterpretq_s32_f32(vdupq_n_f32(M))
-#define     VWWI_DUPQ(V, K) WWI_DUPQ(VWWI_ASTM(V), K)
-    return  VWWI_DUPQ(v, k);
-}
-
-INLINE(Vqwf,VWWF_DUPQ) (Vwwf v, int const k)
-{
-#define     WWF_DUPQ(M, K)  vdupq_n_f32(M)
-#define     VWWF_DUPQ(V, K) WWF_DUPQ(VWWF_ASTM(V), K)
-    return  VWWF_DUPQ(v, k);
-}
-
-
-
-INLINE(Vqyu,VDYU_DUPQ) (Vdyu v, Rc(0, 63) k)
-{
-#define     DYU_DUPQ(M, K)  \
-vdupq_n_u64(                \
-    vtstd_u64(              \
-        (UINT64_C(1)<<(K)), \
-        vget_lane_u64(      \
-            M,              \
-            0           \
-        )                   \
-    )                       \
-)
-
-#define     VDYU_DUPQ(V, K) QYU_ASTV(DYU_DUPQ(VDYU_ASTM(V), K))
-    return  VDYU_DUPQ(v, k);
-}
-
-INLINE(Vqbu,VDBU_DUPQ) (Vdbu v, Rc(0,  7) k)
-{
-#define     DBU_DUPQ(M, K)  vdupq_lane_u8(M, 7&(K))
-/*  TODO: compare the outputs of VDBU_DUPQ && VDBI_DUPQ */
-#define     VDBU_DUPQ(V,K)  DBU_DUPQ(V,K)
-    return vqtbl1q_u8(
-        vcombine_u8(v, v),
-        vdupq_n_u8(k)
-    );
-}
-
-INLINE(Vqbi,VDBI_DUPQ) (Vdbi v, Rc(0,  7) k)
-{
-#define     DBI_DUPQ(M, K)  vdupq_lane_s8(M, 7&(K))
-#define     VDBI_DUPQ(V,K)  vdupq_lane_s8(V, 7&(K))
-    v = vtbl1_s8(v, vdup_n_u8(k));
-    return  vcombine_s8(v, v);
-}
-
-INLINE(Vqbc,VDBC_DUPQ) (Vdbc v, Rc(0,  7) k)
-{
-#define     VDBC_DUPQ(V, K) VQBU_ASBC(DBU_DUPQ(VDBC_ASBU(V), K))
-    return  VQBU_ASBC(
-        (VDBU_DUPQ)(VDBC_ASBU(v), k)
-    );
-}
-
-
-INLINE(Vqhu,VDHU_DUPQ) (Vdhu v, Rc(0, 3) k)
-{
-#define     DHU_DUPQ(M, K)  vdupq_lane_u16(M, (3&(K)))
-#define     VDHU_DUPQ(V, K) DHU_DUPQ(V, K)
-    return  vreinterpretq_u16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_u16(
-                vcombine_u16(v, v)
-            ),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
-        )
-    );
-}
-
-INLINE(Vqhi,VDHI_DUPQ) (Vdhi v, Rc(0, 3) k)
-{
-#define     DHI_DUPQ(M, K)  vdupq_lane_s16(M, (3&(K)))
-#define     VDHI_DUPQ(V, K) DHI_DUPQ(V, K)
-    return  vreinterpretq_s16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_s16(
-                vcombine_s16(v, v)
-            ),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
-        )
-    );
-}
-
-INLINE(Vqhf,VDHF_DUPQ) (Vdhf v, Rc(0, 3) k)
-{
-#define     DHF_DUPQ(M, K)          \
-vreinterpretq_f16_u16(              \
-    vdupq_lane_u16(                 \
-        vreinterpretq_u16_f16(M),   \
-        (3&(K))                     \
+#define  MY_VWWU_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -4) ? vdupq_n_u32(0) :    \
+    (B <= -1) ? vextq_u32(          \
+        vdupq_n_u32(0),             \
+        vreinterpretq_u32_f32(      \
+            vdupq_n_f32(A.V0)       \
+        ),                          \
+        (3&-B)                      \
+    )  :                            \
+    vextq_u32(                      \
+        vreinterpretq_u32_f32(      \
+            vdupq_n_f32(A.V0)       \
+        ),                          \
+        vdupq_n_u32(0),             \
+        (3&(1+(3-B)))               \
     )                               \
 )
-#define     VDHF_DUPQ(V, K) DHF_DUPQ(V, K)
-    return  vreinterpretq_f16_u16(
-        (VDHU_DUPQ)(vreinterpret_u16_f16(v), k)
-    );
+
+#define     VWWU_DUPQ(...) MY_VWWU_DUPQ(__VA_ARGS__,0)
+    float32x4_t q = (FLT_DUPQ)(a.V0, b);
+    return  vreinterpretq_u32_f32(q);
+}
+
+INLINE(Vqwi,VWWI_DUPQ) (Vwwi a, Rc(-4, +3) b)
+{
+#define  MY_VWWI_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -4) ? vdupq_n_s32(0) :    \
+    (B <= -1) ? vextq_s32(          \
+        vdupq_n_s32(0),             \
+        vreinterpretq_s32_f32(      \
+            vdupq_n_f32(A.V0)       \
+        ),                          \
+        (3&-B)                      \
+    )  :                            \
+    vextq_u32(                      \
+        vreinterpretq_u32_f32(      \
+            vdupq_n_f32(A.V0)       \
+        ),                          \
+        vdupq_n_s32(0),             \
+        (3&(1+(3-B)))               \
+    )                               \
+)
+
+#define     VWWI_DUPQ(...) MY_VWWI_DUPQ(__VA_ARGS__,0)
+    float32x4_t q = (FLT_DUPQ)(a.V0, b);
+    return  vreinterpretq_u32_f32(q);
+}
+
+INLINE(Vqwf,VWWF_DUPQ) (Vwwf a, Rc(-4, +3) b)
+{
+#define  MY_VWWF_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdupq_n_f32(0.0F) : \
+    (B <= -1) ? vextq_f32(          \
+        vdupq_n_f32(0.0F),          \
+        vdupq_n_f32(A.V0),          \
+        (1&-B)                      \
+    )  :                            \
+    vextq_f32(                      \
+        vdupq_n_f32(A.V0),          \
+        vdupq_n_s32(0.0F),          \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     VWWF_DUPQ(...)  MY_VWWF_DUPQ(__VA_ARGS__,0)
+    return  (FLT_DUPQ)(a.V0, b);
 }
 
 
-INLINE(Vqwu,VDWU_DUPQ) (Vdwu v, Rc(0, 1) k)
+
+INLINE(Vqyu,VDYU_DUPQ) (Vdyu a, Rc(0, +63) b)
 {
-#define     DWU_DUPQ(M, K)  vdupq_lane_u32(M, (1&(K)))
-#define     VDWU_DUPQ(V, K) DWU_DUPQ(V, K)
-    uint64x1_t  m = vreinterpret_u64_u32(v);
-    m = vshl_u64(m, vdup_n_s64(-32*k));
-    return  vdupq_lane_u32(
-        vreinterpret_u32_u64(m),
-        0
-    );
+#define  MY_VDYU_DUPQ(A, B, ...) \
+((Vqyu){vdupq_lane_u64(vtst_u64(a.V0,vdup_n_u64((1ULL<<B))),0)})
+
+#define     VDYU_DUPQ(...) MY_VDYU_DUPQ(__VA_ARGS__,0)
+    uint64x1_t m = vdup_n_u64((1<<b));
+    a.V0 = vtst_u64(a.V0, m);
+    return ((Vqyu){vdupq_lane_u64(a.V0, 0)});
 }
 
-INLINE(Vqwi,VDWI_DUPQ) (Vdwi v, Rc(0, 1) k)
+INLINE(Vqbu,VDBU_DUPQ) (Vdbu a, Rc(0,  +7) b)
 {
-#define     DWI_DUPQ(M, K)  vdupq_lane_s32(M, (1&(K)))
-#define     VDWI_DUPQ(V, K) DWI_DUPQ(V, K)
-    uint64x1_t  m = vreinterpret_u64_s32(v);
-    m = vshl_u64(m, vdup_n_s64(-32*k));
-    return  vdupq_lane_s32(
-        vreinterpret_s32_u64(m),
-        0
-    );
+#define  MY_VDBU_DUPQ(A, B, ...)  vdupq_lane_u8(A,B)
+#define     VDBU_DUPQ(...)  MY_VDBU_DUPQ(__VA_ARGS__,0)
+    return  vqtbl1q_u8(vcombine_u8(a,a), vdupq_n_u8(b));
 }
 
-INLINE(Vqwf,VDWF_DUPQ) (Vdwf v, Rc(0, 1) k)
+INLINE(Vqbi,VDBI_DUPQ) (Vdbi a, Rc(0, +7) b)
 {
-#define     DWF_DUPQ(M, K)  vdupq_lane_f32(M, (1&(K)))
-#define     VDWF_DUPQ(V, K) DWF_DUPQ(V, K)
-    uint64x1_t  m = vreinterpret_u64_f32(v);
-    m = vshl_u64(m, vdup_n_s64(-32*k));
-    return  vdupq_lane_f32(
-        vreinterpret_f32_u64(m),
-        0
-    );
+#define  MY_VDBI_DUPQ(A, B, ...)  vdupq_lane_s8(A,B)
+#define     VDBI_DUPQ(...)  MY_VDBI_DUPQ(__VA_ARGS__,0)
+    a = vtbl1_s8(a, vdup_n_u8(b));
+    return  vcombine_s8(a, a);
 }
 
-
-INLINE(Vqdu,VDDU_DUPQ) (Vddu v, int const k)
+INLINE(Vqbc,VDBC_DUPQ) (Vdbc a, Rc(0, +7) b)
 {
-#   define  VDDU_DUPQ(V, K) vdupq_lane_u64(V, 0)
-    return  vdupq_lane_u64(v, 0);
-}
-
-INLINE(Vqdi,VDDI_DUPQ) (Vddi v, int const k)
-{
-#   define  VDDI_DUPQ(V, K) vdupq_lane_s64(V, 0)
-    return  vdupq_lane_s64(v, 0);
-}
-
-INLINE(Vqdf,VDDF_DUPQ) (Vddf v, int const k)
-{
-#   define  VDDF_DUPQ(V, K) vdupq_lane_f64(V, 0)
-    return  vdupq_lane_f64(v, 0);
+    Vqbc c;
+#if CHAR_MIN
+#   define  VDBC_DUPQ(...)  ((Vdbc){MY_VDBI_DUPQ(__VA_ARGS__,0)})
+    c.V0 = (VDBI_DUPQ)(a.V0, b);
+#else
+#   define  VDBC_DUPQ(...)  ((Vdbc){MY_VDBU_DUPQ(__VA_ARGS__,0)})
+    c.V0 = (VDBU_DUPQ)(a.V0, b);
+#endif
+    return  c;
 }
 
 
-INLINE(Vqyu,VQYU_DUPQ) (Vqyu v, Rc(0,127) k)
+INLINE(Vqhu,VDHU_DUPQ) (Vdhu a, Rc(0, +3) b)
 {
-    uint64x2_t  q = VQYU_ASTM(v);
-    uint64_t    d;
-    if (k > 63)
+#define  MY_VDHU_DUPQ(A, B, ...)  vdupq_lane_u16(A,B)
+#define     VDHU_DUPQ(...)  MY_VDHU_DUPQ(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_u16(a);
+    v = vshl_u64(v, vdup_n_s64((-2*b)));
+    a = vreinterpret_u16_u64(v);
+    return  vdupq_lane_u16(a, 0);
+}
+
+INLINE(Vqhi,VDHI_DUPQ) (Vdhi a, Rc(0, +3) b)
+{
+#define  MY_VDHI_DUPQ(A, B, ...)  vdupq_lane_16(A,B)
+#define     VDHI_DUPQ(...)  MY_VDHI_DUPQ(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_s16(a);
+    v = vshl_u64(v, vdup_n_s64((-2*b)));
+    a = vreinterpret_s16_u64(v);
+    return  vdupq_lane_s16(a, 0);
+}
+
+INLINE(Vqhf,VDHF_DUPQ) (Vdhf a, Rc(0, +3) b)
+{
+#define  MY_VDHF_DUPQ(A, B, ...)  vdupq_lane_f16(A,B)
+#define     VDHF_DUPQ(...)  MY_VDHF_DUPQ(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_f16(a);
+    v = vshl_u64(v, vdup_n_s64((-2*b)));
+    a = vreinterpret_f16_u64(v);
+    return  vdupq_lane_f16(a, 0);
+}
+
+
+INLINE(Vqwu,VDWU_DUPQ) (Vdwu a, Rc(0, +1) b)
+{
+#define  MY_VDWU_DUPQ(A, B, ...)  vdupq_lane_u32(A,B)
+#define     VDWU_DUPQ(...)  MY_VDWU_DUPQ(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_u32(a);
+    v = vshl_u64(v, vdup_n_s64((-4*b)));
+    a = vreinterpret_u32_u64(v);
+    return  vdupq_lane_u32(a, 0);
+}
+
+INLINE(Vqwi,VDWI_DUPQ) (Vdwi a, Rc(0, +1) b)
+{
+#define  MY_VDWI_DUPQ(A, B, ...)  vdupq_lane_s32(A,B)
+#define     VDWI_DUPQ(...)  MY_VDWI_DUPQ(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_s32(a);
+    v = vshl_u64(v, vdup_n_s64((-4*b)));
+    a = vreinterpret_s32_u64(v);
+    return  vdupq_lane_s32(a, 0);
+}
+
+INLINE(Vqwf,VDWF_DUPQ) (Vdwf a, Rc(0, +1) b)
+{
+#define  MY_VDWF_DUPQ(A, B, ...)  vdupq_lane_f32(A,B)
+#define     VDWF_DUPQ(...)  MY_VDWF_DUPQ(__VA_ARGS__,0)
+    uint64x1_t  v = vreinterpret_u64_f32(a);
+    v = vshl_u64(v, vdup_n_s64((-4*b)));
+    a = vreinterpret_f32_u64(v);
+    return  vdupq_lane_f32(a, 0);
+}
+
+
+INLINE(Vqdu,VDDU_DUPQ) (Vddu a, Rc(-2, +1) b)
+{
+#define  MY_VDDU_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdupq_n_u64(0) :    \
+    (B <= -1) ? vextq_u64(          \
+        vdupq_n_u64(0),             \
+        vdupq_lane_u64(A,0),        \
+        (1&-B)                      \
+    )  :                            \
+    vextq_u64(                      \
+        vdupq_lane_u64(A,0),        \
+        vdupq_n_u64(0),             \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     VDDU_DUPQ(...) MY_VDDU_DUPQ(__VA_ARGS__,0)
+    uint8x8_t   l, r;
+    uint8x16_t  t;
+    uint64x2_t  src = vdupq_lane_u64(a,0);
+    if (!b) 
+        return  src;
+    uint8x16_t  v = vreinterpretq_u8_u64(src);
+    if (b < 0) 
     {
-        d = vget_lane_u64(vget_high_u64(q), 0);
-        d = vtstd_u64(d, UINT64_C(1)<<(k-64));
+        r = vcreate_u8(0x1716151413121110ULL);
+        l = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        if (b&3)
+            t = vaddq_u8(t, vdupq_n_u8((8*b)));
     }
     else
     {
-        d = vget_lane_u64(vget_low_u64(q), 0);
-        d = vtstd_u64(d, UINT64_C(1)<<k);
+        l = vcreate_u8(0x1716151413121110ULL);
+        r = vcreate_u8(0x1f1e1d1c1b1a1918ULL);
+        t = vcombine_u8(l, r);
+        t = vsubq_u8(t, vdupq_n_u8((8*b)));
     }
-    return  QYU_ASTV(vdupq_n_u64(d));
+    v = vqtbl1q_u8(v, t);
+    return  vreinterpretq_u64_u8(t);
+
+}
+
+INLINE(Vqdi,VDDI_DUPQ) (Vddi a, Rc(-2, +1) b)
+{
+#define  MY_VDDI_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdupq_n_s64(0) :    \
+    (B <= -1) ? vextq_s64(          \
+        vdupq_n_s64(0),             \
+        vdupq_lane_s64(A,0),        \
+        (1&-B)                      \
+    )  :                            \
+    vextq_s64(                      \
+        vdupq_lane_s64(A,0),        \
+        vdupq_n_s64(0),             \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     VDDI_DUPQ(...) MY_VDDI_DUPQ(__VA_ARGS__,0)
+    uint64x1_t d = vreinterpret_u64_s64(a);
+    uint64x2_t q = (VDDU_DUPQ)(d, 0);
+    return  vreinterpretq_s64_u64(q);
+}
+
+INLINE(Vqdf,VDDF_DUPQ) (Vddf a, Rc(-2, +1) b)
+{
+#define  MY_VDDF_DUPQ(A, B, ...)    \
+(                                   \
+    (B == -2) ? vdupq_n_f64(0.0) :  \
+    (B <= -1) ? vextq_f64(          \
+        vdupq_n_f64(0.0),           \
+        vdupq_lane_f64(A,0),        \
+        (1&-B)                      \
+    )  :                            \
+    vextq_f64(                      \
+        vdupq_lane_f64(A,0),        \
+        vdupq_n_f64(0.0),           \
+        (1&(1+(1-B)))               \
+    )                               \
+)
+
+#define     VDDF_DUPQ(...) MY_VDDF_DUPQ(__VA_ARGS__,0)
+    uint64x1_t d = vreinterpret_u64_f64(a);
+    uint64x2_t q = (VDDU_DUPQ)(d, 0);
+    return  vreinterpretq_f64_u64(q);
 }
 
 
-INLINE(Vqbu,VQBU_DUPQ) (Vqbu v, Rc(0, 15) k)
+INLINE(Vqyu,VQYU_DUPQ) (Vqyu a, Rc(0,+127) b)
 {
-#define     QBU_DUPQ(M, K)  vdupq_laneq_u8(M, 15&(K))
-#define     VQBU_DUPQ(V, K) vdupq_laneq_u8(V, 15&(K))
-    return  vqtbl1q_u8(v, vdupq_n_u8(k));
+#define  MY_VQYU_DUPQ(A, B, ...) ((VQYU_DUPQ)(A,B))
+#define     VQYU_DUPQ(...) MY_VQYU_DUPQ(__VA_ARGS__,0)
+    uint64x1_t  v, m;
+    int64x1_t   n;
+    if (b > 63)
+    {
+        v = vget_high_u64(a.V0);
+        m = vdup_n_u64((1ULL<<(b-64)));
+    }
+    else
+    {
+        v = vget_low_u64(a.V0);
+        m = vdup_n_u64((1ULL<<b));
+    }
+    v = vtst_u64(v, m);
+    a.V0 = vdupq_lane_u64(v, 0);
+    return a;
 }
 
-INLINE(Vqbi,VQBI_DUPQ) (Vqbi v, Rc(0, 15) k)
+
+INLINE(Vqbu,VQBU_DUPQ) (Vqbu a, Rc(0, +15) b)
 {
-#define     QBI_DUPQ(M, K)  vdupq_laneq_s8(M,(15&(K)))
-#define     VQBI_DUPQ(V, K) vdupq_laneq_s8(V,(15&(K)))
-    return  vqtbl1q_s8(v, vdupq_n_u8(k));
+#define  MY_VQBU_DUPQ(A, B, ...) vdupq_laneq_u8(A,(15&B))
+#define     VQBU_DUPQ(...) MY_VQBU_DUPQ(__VA_ARGS__,0)
+    return  vqtbl1q_u8(a, vdupq_n_u8(b));
 }
 
-INLINE(Vqbc,VQBC_DUPQ) (Vqbc v, Rc(0, 15) k)
+INLINE(Vqbi,VQBI_DUPQ) (Vqbi a, Rc(0, +15) b)
 {
-#define     VQBC_DUPQ(V, K) VQBU_ASBC(VQBU_DUPQ(VQBC_ASBU(V), K))
-    return  VQBU_ASBC((VQBU_DUPQ)(VQBC_ASBU(v), k));
+#define  MY_VQBI_DUPQ(A, B, ...) vdupq_laneq_s8(A,(15&B))
+#define     VQBI_DUPQ(...) MY_VQBI_DUPQ(__VA_ARGS__,0)
+    return  vqtbl1q_s8(a, vdupq_n_u8(b));
+}
+
+INLINE(Vqbc,VQBC_DUPQ) (Vqbc a, Rc(0, +15) b)
+{
+#if CHAR_MIN
+#   define  VQBC_DUPQ(...)  ((Vqbc){MY_VQBI_DUPQ(__VA_ARGS__,0)})
+    a.V0 = (VQBI_DUPQ)(a.V0, b);
+#else
+#   define  VDBC_DUPQ(...)  ((Vqbc){MY_VQBU_DUPQ(__VA_ARGS__,0)})
+    a.V0 = (VDBU_DUPQ)(a.V0, b);
+#endif
+    return  a;
 }
 
 
-INLINE(Vqhu,VQHU_DUPQ) (Vqhu v, Rc(0, 7) k)
+INLINE(Vqhu,VQHU_DUPQ) (Vqhu a, Rc(0, +7) b)
 {
-#define     QHU_DUPQ(M, K)  vdupq_laneq_u16(M,(7&(K)))
-#define     VQHU_DUPQ(V, K) QHU_DUPQ(V, K)
-    return vreinterpretq_u16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_u16(v),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
+#define  MY_VQHU_DUPQ(A, B, ...) vdupq_laneq_u16(A,(7&B))
+#define     VQHU_DUPQ(...) MY_VQHU_DUPQ(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_u16(a);
+    t = vqtbl1q_u8(
+        t,
+        vzip1q_u8(
+            vdupq_n_u8((2*b)),
+            vdupq_n_u8((2*b+1))
         )
     );
+    return  vreinterpretq_u16_u8(t);
 }
 
-INLINE(Vqhi,VQHI_DUPQ) (Vqhi v, Rc(0, 7) k)
+INLINE(Vqhi,VQHI_DUPQ) (Vqhi a, Rc(0, +7) b)
 {
-#define     QHI_DUPQ(M, K)  vdupq_laneq_s16(M,(7&(K)))
-#define     VQHI_DUPQ(V, K) QHI_DUPQ(V, K)
-    return vreinterpretq_s16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_s16(v),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
+#define  MY_VQHI_DUPQ(A, B, ...) vdupq_laneq_s16(A,(7&B))
+#define     VQHI_DUPQ(...) MY_VQHI_DUPQ(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_s16(a);
+    t = vqtbl1q_u8(
+        t,
+        vzip1q_u8(
+            vdupq_n_u8((2*b)),
+            vdupq_n_u8((2*b+1))
         )
     );
+    return  vreinterpretq_s16_u8(t);
 }
 
-INLINE(Vqhf,VQHF_DUPQ) (Vqhf v, Rc(0, 7) k)
+INLINE(Vqhf,VQHF_DUPQ) (Vqhf a, Rc(0, +7) b)
 {
-#define     QHF_DUPQ(M, K)  vdupq_laneq_f16(M, (7&(K)))
-#define     VQHF_DUPQ(V, K) QHF_DUPQ(V, K)
-    return  vreinterpretq_f16_u8(
-        vqtbl1q_u8(
-            vreinterpretq_u8_f16(v),
-            vzip1q_u8(
-                vdupq_n_u8(2*k),
-                vdupq_n_u8(2*k+1)
-            )
+#define  MY_VQHF_DUPQ(A, B, ...) vdupq_laneq_f16(A,(7&B))
+#define     VQHF_DUPQ(...) MY_VQHF_DUPQ(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_f16(a);
+    t = vqtbl1q_u8(
+        t,
+        vzip1q_u8(
+            vdupq_n_u8((2*b)),
+            vdupq_n_u8((2*b+1))
         )
     );
+    return  vreinterpretq_f16_u8(t);
 }
 
 
-INLINE(Vqwu,VQWU_DUPQ) (Vqwu v, Rc(0, 3) k)
+INLINE(Vqwu,VQWU_DUPQ) (Vqwu a, Rc(0, +3) b)
 {
-#define     QWU_DUPQ(V, K)  vdupq_laneq_u32(V, (3&(K)))
-#define     VQWU_DUPQ(V, K) QWU_DUPQ(V, K)
-    uint64x1_t  m;
-    if (k > 1) {
-        m = vshl_u64(
-            vget_high_u64(vreinterpretq_u64_u32(v)),
-            vdup_n_s64((k-2)*INT64_C(-32))
-        );
-    }
-    else {
-        m = vshl_u64(
-            vget_low_u64(vreinterpretq_u64_u32(v)),
-            vdup_n_s64(k*INT64_C(-32))
-        );
-    }
-    return  vdupq_lane_u32(
-        vreinterpret_s32_u64(m),
-        0
-    );
+#define  MY_VQWU_DUPQ(A, B, ...) vdupq_laneq_u32(A,(3&B))
+#define     VQWU_DUPQ(...) MY_VQWU_DUPQ(__VA_ARGS__,0)
+    uint32x2_t  m = vcreate_u32(0x0302010003020100ULL);
+    uint8x8_t   k = vreinterpret_u8_u32(m);
+    k = vadd_u8(k, vdup_n_u8((4*b)));
+    uint8x16_t  t = vreinterpretq_u8_u32(a);
+    t = vqtbl1q_u8(t, vcombine_u8(k, k) );
+    return  vreinterpretq_u32_u8(t);
 }
 
-INLINE(Vqwi,VQWI_DUPQ) (Vqwi v, Rc(0, 3) k)
+INLINE(Vqwi,VQWI_DUPQ) (Vqwi a, Rc(0, +3) b)
 {
-#define     QWI_DUPQ(V, K)  vdupq_laneq_s32(V, (3&(K)))
-#define     VQWI_DUPQ(V, K) QWI_DUPQ(V, K)
-    uint64x1_t  m;
-    if (k > 1) {
-        m = vshl_u64(
-            vget_high_u64(vreinterpretq_u64_s32(v)),
-            vdup_n_s64((k-2)*INT64_C(-32))
-        );
-    }
-    else {
-        m = vshl_u64(
-            vget_low_u64(vreinterpretq_u64_s32(v)),
-            vdup_n_s64(k*INT64_C(-32))
-        );
-    }
-    return  vdupq_lane_s32(
-        vreinterpret_s32_u64(m),
-        0
-    );
+#define  MY_VQWI_DUPQ(A, B, ...) vdupq_laneq_s32(A,(3&B))
+#define     VQWI_DUPQ(...) MY_VQWI_DUPQ(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_s32(a);
+    uint32x2_t  m = vcreate_u32(0x0302010003020100ULL);
+    uint8x8_t   k = vreinterpret_u8_u32(m);
+    k = vadd_u8(k, vdup_n_u8((4*b)));
+    t = vqtbl1q_u8(t, vcombine_u8(k, k) );
+    return  vreinterpretq_s32_u8(t);
 }
 
-INLINE(Vqwf,VQWF_DUPQ) (Vqwf v, Rc(0, 3) k)
+INLINE(Vqwf,VQWF_DUPQ) (Vqwf a, Rc(0, +3) b)
 {
-#define     QWF_DUPQ(V, K)  vdupq_laneq_f32(V, (3&(K)))
-#define     VQWF_DUPQ(V, K) QWF_DUPQ(V, K)
-    uint64x1_t  m;
-    if (k > 1) {
-        m = vshl_u64(
-            vget_high_u64(vreinterpretq_u64_f32(v)),
-            vdup_n_s64((k-2)*INT64_C(-32))
-        );
-    }
-    else {
-        m = vshl_u64(
-            vget_low_u64(vreinterpretq_u64_f32(v)),
-            vdup_n_s64(k*INT64_C(-32))
-        );
-    }
-    return  vdupq_lane_f32(
-        vreinterpret_f32_u64(m),
-        0
-    );
+#define  MY_VQWF_DUPQ(A, B, ...) vdupq_laneq_f32(A,(3&B))
+#define     VQWF_DUPQ(...) MY_VQWF_DUPQ(__VA_ARGS__,0)
+    uint8x16_t  t = vreinterpretq_u8_f32(a);
+    uint32x2_t  m = vcreate_u32(0x0302010003020100ULL);
+    uint8x8_t   k = vreinterpret_u8_u32(m);
+    k = vadd_u8(k, vdup_n_u8((4*b)));
+    t = vqtbl1q_u8(t, vcombine_u8(k, k) );
+    return  vreinterpretq_f32_u8(t);
 }
 
 
-INLINE(Vqdu,VQDU_DUPQ) (Vqdu v, Rc(0, 1) k)
+INLINE(Vqdu,VQDU_DUPQ) (Vqdu a, Rc(0, +1) b)
 {
-#   define  VQDU_DUPQ(V, K) vdupq_laneq_u64(V, (1&K))
-    return  k ? VQDU_DUPQ(v, 1) : VQDU_DUPQ(v, 0);
+#define  MY_VQDU_DUPQ(A, B, ...)  vdupq_laneq_u64(A,(1&B))
+#define     VQDU_DUPQ(...) MY_VQDU_DUPQ(__VA_ARGS__,0)
+    return  (b==1)?vdupq_laneq_u64(a,1):vdupq_laneq_u64(a,0);
 }
 
-INLINE(Vqdi,VQDI_DUPQ) (Vqdi v, Rc(0, 1) k)
+INLINE(Vqdi,VQDI_DUPQ) (Vqdi a, Rc(0, +1) b)
 {
-#   define  VQDI_DUPQ(V, K) vdupq_laneq_s64(V, 0)
-    return  k ? VQDI_DUPQ(v, 1) : VQDI_DUPQ(v, 0);
+#define  MY_VQDI_DUPQ(A, B, ...)  vdupq_laneq_s64(A,(1&B))
+#define     VQDI_DUPQ(...) MY_VQDI_DUPQ(__VA_ARGS__,0)
+    return  (b==1)?vdupq_laneq_s64(a,1):vdupq_laneq_s64(a,0);
 }
 
-INLINE(Vqdf,VQDF_DUPQ) (Vqdf v, Rc(0, 1) k)
+INLINE(Vqdf,VQDF_DUPQ) (Vqdf a, Rc(0, 1) b)
 {
-#   define  VQDF_DUPQ(V, K) vdupq_laneq_f64(V, 0)
-    return  k ? VQDF_DUPQ(v, 1) : VQDF_DUPQ(v, 0);
+#define  MY_VQDF_DUPQ(A, B, ...)  vdupq_laneq_f64(A,(1&B))
+#define     VQDF_DUPQ(...) MY_VQDF_DUPQ(__VA_ARGS__,0)
+    return  (b==1)?vdupq_laneq_f64(a,1):vdupq_laneq_f64(a,0);
 }
 
+
+INLINE(Vqqu,VQQU_DUPQ) (Vqqu a, Rc(-1, +0) b)
+{
+#define  MY_VQQU_DUPQ(A, B, ...)  ((Vqqu){(0==B)?A.V0:vdupq_n_u64(0)})
+#define     VQQU_DUPQ(...) MY_VQQU_DUPQ(__VA_ARGS__,0)
+    return  VQQU_DUPQ(a, b);
+}
+
+INLINE(Vqqi,VQQI_DUPQ) (Vqqi a, Rc(-1, +0) b)
+{
+#define  MY_VQQI_DUPQ(A, B, ...)  ((Vqqi){(0==B)?A.V0:vdupq_n_s64(0)})
+#define     VQQI_DUPQ(...) MY_VQQI_DUPQ(__VA_ARGS__,0)
+    return  VQQI_DUPQ(a, b);
+}
+
+INLINE(Vqqf,VQQF_DUPQ) (Vqqf a, Rc(-1, +0) b)
+{
+#define  MY_VQQF_DUPQ(A, B, ...)  ((Vqqf){(0==B)?A.V0:0.0L})
+#define     VQQF_DUPQ(...) MY_VQQF_DUPQ(__VA_ARGS__,0)
+    return  VQQF_DUPQ(a, b);
+}
 
 #if 0 // _LEAVE_ARM_DUPQ
 }
@@ -11673,65 +14077,6 @@ INLINE(float,WHU_ZIPL) (float a, float b)
     uint16x4_t c = vzip1_u16(l, r);
     return  vget_lane_f32(vreinterpret_f32_u16(c), 0);
 }
-
-INLINE(uint16_t, UCHAR_ZIPP) (uchar a, uchar b)
-{
-    unsigned x = a;
-    x = 0x0f0f&(x|(x<<4));
-    x = 0x3333&(x|(x<<2));
-    x = 0x5555&(x|(x<<1));
-    unsigned y = b;
-    y = 0x0f0f&(y|(y<<4));
-    y = 0x3333&(y|(y<<2));
-    y = 0x5555&(y|(y<<1));
-    return x|(y<<1);
-}
-
-INLINE(uint16_t, CHAR_ZIPP) (char a, char b)
-{
-    return  UCHAR_ZIPP(a, b);
-}
-
-INLINE(uint32_t, USHRT_ZIPP) (ushort a, ushort b)
-{
-    uint32_t x = a;
-    x = UINT32_C(0x00ff00ff)&(x|(x<<8));
-    x = UINT32_C(0x0f0f0f0f)&(x|(x<<4));
-    x = UINT32_C(0x33333333)&(x|(x<<2));
-    x = UINT32_C(0x55555555)&(x|(x<<1));
-    uint32_t y = b;
-    y = UINT32_C(0x00ff00ff)&(y|(y<<8));
-    y = UINT32_C(0x0f0f0f0f)&(y|(y<<4));
-    y = UINT32_C(0x33333333)&(y|(y<<2));
-    y = UINT32_C(0x55555555)&(y|(y<<1));
-    return x|(y<<1);
-}
-
-INLINE(uint64_t, UINT_ZIPP) (uint a, uint b)
-{
-    uint64_t x = a;
-    x = UINT64_C(0x0000ffff0000ffff)&(x|(x<<16));
-    x = UINT64_C(0x00ff00ff00ff00ff)&(x|(x<<8));
-    x = UINT64_C(0x0f0f0f0f0f0f0f0f)&(x|(x<<4));
-    x = UINT64_C(0x3333333333333333)&(x|(x<<2));
-    x = UINT64_C(0x5555555555555555)&(x|(x<<1));
-    uint64_t y = b;
-    y = UINT64_C(0x0000ffff0000ffff)&(y|(y<<16));
-    y = UINT64_C(0x00ff00ff00ff00ff)&(y|(y<<8));
-    y = UINT64_C(0x0f0f0f0f0f0f0f0f)&(y|(y<<4));
-    y = UINT64_C(0x3333333333333333)&(y|(y<<2));
-    y = UINT64_C(0x5555555555555555)&(y|(y<<1));
-    return x|(y<<1);
-}
-
-#if DWRD_NLONG == 2
-
-INLINE(uint64_t, ULONG_ZIPP) (ulong a, ulong b)
-{
-    return  UINT_ZIPP(a, b);
-}
-
-#endif
 
 INLINE(uint64_t, UINT64_ZIPL) (uint64_t a, uint64_t b)
 {
@@ -12184,6 +14529,354 @@ INLINE(Vqdf,VDDF_ZIPP) (Vddf a, Vddf b) {return vcombine_f64(a, b);}
 }
 #endif
 
+#if 0 // _ENTER_ARM_XRDZ
+{
+#endif
+
+INLINE(Vdhu,VWBU_XRDZ) (Vwbu x) 
+{
+    DWRD_VTYPE l = {.W.F={x.V0}};
+    return  vzip1_u8(l.B.U, vdup_n_u8(0));
+}
+
+INLINE(Vdhi,VWBI_XRDZ) (Vwbi x) 
+{
+    DWRD_VTYPE l = {.W.F={x.V0}};
+    return  vzip1_s8(l.B.I, vdup_n_s8(0));
+}
+
+#if CHAR_MIN
+INLINE(Vdhi,VWBC_XRDZ) (Vwbc x) 
+{
+    Vwbi i = {x.V0};
+    return  VWBI_XRDZ(i);
+}
+#else
+INLINE(Vdhu,VWBC_XRDZ) (Vwbc x) 
+{
+    Vwbu i = {x.V0};
+    return  VWBU_XRDZ(i);
+}
+
+#endif
+
+INLINE(Vdwu,VWHU_XRDZ) (Vwhu x)
+{
+    DWRD_VTYPE l = {.W.F={x.V0}};
+    return  vzip1_u16(l.H.U, vdup_n_u16(0));
+}
+
+INLINE(Vdwi,VWHI_XRDZ) (Vwhi x)
+{
+    DWRD_VTYPE l = {.W.F={x.V0}};
+    return  vzip1_u16(l.H.I, vdup_n_s16(0));
+}
+
+INLINE(Vddu,VWWU_XRDZ) (Vwwu x)
+{
+    DWRD_VTYPE l = {.W.F={x.V0}};
+    return  vzip1_u32(l.W.U, vdup_n_u32(0));
+}
+
+INLINE(Vddi,VWWI_XRDZ) (Vwwi x)
+{
+    DWRD_VTYPE l = {.W.F={x.V0}};
+    return  vzip1_s32(l.W.I, vdup_n_s32(0));
+}
+
+INLINE(Vqhu,VDBU_XRDZ) (Vdbu x) {return vmovl_u8(x);}
+INLINE(Vqhi,VDBI_XRDZ) (Vdbi x) 
+{
+    uint8x8_t   d = vreinterpret_u8_s8(x);
+    uint16x8_t  q = vmovl_u8(d);
+    return  vreinterpretq_s16_u16(q);
+}
+
+#if CHAR_MIN
+INLINE(Vqhi,VDBC_XRDZ) (Vdbc x) {return VDBI_XRDZ(x.V0);}
+#else
+INLINE(Vqhu,VDBC_XRDZ) (Vdbc x) {return vmovl_u8(x.V0);}
+#endif
+
+INLINE(Vqwu,VDHU_XRDZ) (Vdhu x) {return vmovl_u16(x);}
+INLINE(Vqwi,VDHI_XRDZ) (Vdhi x) 
+{
+    uint16x4_t  d = vreinterpret_u16_s16(x);
+    uint32x4_t  q = vmovl_u16(d);
+    return  vreinterpretq_s32_u32(q);
+}
+
+INLINE(Vqdu,VDWU_XRDZ) (Vdwu x) {return vmovl_u32(x);}
+INLINE(Vqdi,VDWI_XRDZ) (Vdwi x) 
+{
+    uint32x2_t  d = vreinterpret_u32_s32(x);
+    uint64x2_t  q = vmovl_u32(d);
+    return  vreinterpretq_s64_u64(q);
+}
+
+INLINE(Vqqu,VDDU_XRDZ) (Vddu x) 
+{
+    Vqqu v = {vcombine_u64(x, vdup_n_u64(0))};
+    return v;
+}
+
+INLINE(Vqqi,VDDI_XRDZ) (Vddi x) 
+{
+    Vqqi v = {vcombine_s64(x, vdup_n_s64(0))};
+    return v;
+}
+
+#if 0 // _LEAVE_ARM_XRDZ
+}
+#endif
+
+#if 0 // _ENTER_ARM_XRDS
+{
+#endif
+
+INLINE(Vdhu,VWBU_XRDS) (Vwbu x) 
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.H.I=vmovl_s8(d.B.I)};
+    return  vget_low_u16(q.H.U);
+}
+
+INLINE(Vdhi,VWBI_XRDS) (Vwbi x) 
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.H.I=vmovl_s8(d.B.I)};
+    return  vget_low_s16(q.H.I);
+}
+
+#if CHAR_MIN
+INLINE(Vdhi,VWBC_XRDS) (Vwbc x) 
+{
+    Vwbi i = {x.V0};
+    return  VWBI_XRDS(i);
+}
+#else
+INLINE(Vdhu,VWBC_XRDS) (Vwbc x) 
+{
+    Vwbu i = {x.V0};
+    return  VWBU_XRDS(i);
+}
+
+#endif
+
+INLINE(Vdwu,VWHU_XRDS) (Vwhu x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.W.I=vmovl_s16(d.H.I)};
+    return  vget_low_u32(q.W.U);
+}
+
+INLINE(Vdwi,VWHI_XRDS) (Vwhi x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.W.I=vmovl_s16(d.H.I)};
+    return  vget_low_s32(q.W.I);
+}
+
+
+INLINE(Vddu,VWWU_XRDS) (Vwwu x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.D.I=vmovl_s32(d.W.I)};
+    return  vget_low_u64(q.D.U);
+}
+
+INLINE(Vddi,VWWI_XRDS) (Vwwi x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.D.I=vmovl_s32(d.W.I)};
+    return  vget_low_s64(q.D.I);
+}
+
+
+INLINE(Vqhu,VDBU_XRDS) (Vdbu x) 
+{
+    DWRD_VTYPE d = {.B.U=x};
+    QUAD_VTYPE q = {.H.I=vmovl_s8(d.B.I)};
+    return  q.H.U;
+}
+
+INLINE(Vqhi,VDBI_XRDS) (Vdbi x) {return vmovl_s8(x);}
+
+#if CHAR_MIN
+INLINE(Vqhi,VDBC_XRDS) (Vdbc x) {return vmovl_s8(x.V0);}
+#else
+INLINE(Vqhu,VDBC_XRDS) (Vdbc x) {return VDBU_XRDS(x.V0);}
+#endif
+
+
+INLINE(Vqwu,VDHU_XRDS) (Vdhu x) 
+{
+    DWRD_VTYPE d = {.H.U=x};
+    QUAD_VTYPE q = {.W.I=vmovl_s16(d.H.I)};
+    return  q.W.U;
+}
+
+INLINE(Vqwi,VDHI_XRDS) (Vdhi x) {return vmovl_s16(x);}
+
+
+INLINE(Vqdu,VDWU_XRDS) (Vdwu x) 
+{
+    DWRD_VTYPE d = {.W.U=x};
+    QUAD_VTYPE q = {.D.I=vmovl_s32(d.W.I)};
+    return  q.D.U;
+}
+
+INLINE(Vqdi,VDWI_XRDS) (Vdwi x) {return vmovl_s32(x);}
+
+INLINE(Vqqu,VDDU_XRDS) (Vddu x) 
+{
+    int64x1_t   l = vreinterpret_s64_u64(x);
+    int64x1_t   r = vshr_n_s64(l, 63);
+    QUAD_VTYPE  c = {.D.I=vcombine_s64(l, r)};
+    return  c.Q.U;
+}
+
+INLINE(Vqqi,VDDI_XRDS) (Vddi x) 
+{
+    int64x1_t   r = vshr_n_s64(x, 63);
+    QUAD_VTYPE  c = {.D.I=vcombine_s64(x, r)};
+    return  c.Q.I;
+}
+
+#if 0 // _LEAVE_ARM_XRDS
+}
+#endif
+
+#if 0 // _ENTER_ARM_XRQZ
+{
+#endif
+
+INLINE(Vqwu,VWBU_XRQZ) (Vwbu x) 
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.H.U=vmovl_u8(d.B.U)};
+    d.H.U = vget_low_u16(q.H.U);
+    return  vmovl_u16(d.H.U);
+}
+
+INLINE(Vqwi,VWBI_XRQZ) (Vwbi x) 
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.H.U=vmovl_u8(d.B.U)};
+    d.H.U = vget_low_u16(q.H.U);
+    q.W.U = vmovl_u16(d.H.U);
+    return  q.W.I;
+}
+
+#if CHAR_MIN
+INLINE(Vqwi,VWBC_XRQZ) (Vwbc x) {return VWBI_XRQZ(((Vwbi){x.V0}));}
+#else
+INLINE(Vqwu,VWBC_XRQZ) (Vwbc x) {return VWBU_XRQZ(((Vwbu){x.V0}));}
+#endif
+
+INLINE(Vqdu,VWHU_XRQZ) (Vwhu x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.W.U=vmovl_u16(d.H.U)};
+    d.W.U = vget_low_u32(q.W.U);
+    return  vmovl_u32(d.W.U);
+}
+
+INLINE(Vqdi,VWHI_XRQZ) (Vwhi x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.W.U=vmovl_u16(d.H.U)};
+    d.W.U = vget_low_u32(q.W.U);
+    q.D.U = vmovl_u32(d.W.U);
+    return  q.D.I;
+}
+
+INLINE(Vqqu,VWWU_XRQZ) (Vwwu x)
+{
+    QUAD_VTYPE q = {.D.U=vdupq_n_u64(0)};
+    q.W.F = vsetq_lane_f32(x.V0, q.W.F, 0);
+    return  q.Q.U;
+}
+
+INLINE(Vqqi,VWWI_XRQZ) (Vwwi x)
+{
+    QUAD_VTYPE q = {.D.U=vdupq_n_u64(0)};
+    q.W.F = vsetq_lane_f32(x.V0, q.W.F, 0);
+    return  q.Q.I;
+}
+
+#if 0 // _LEAVE_ARM_XRQZ
+}
+#endif
+
+#if 0 // _ENTER_ARM_XRQS
+{
+#endif
+
+INLINE(Vqwu,VWBU_XRQS) (Vwbu x) 
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.H.I=vmovl_s8(d.B.I)};
+    d.H.I = vget_low_s16(q.H.I);
+    q.W.I = vmovl_s16(d.H.I);
+    return  q.W.U;
+}
+
+INLINE(Vqwi,VWBI_XRQS) (Vwbi x) 
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.H.U=vmovl_s8(d.B.I)};
+    d.H.I = vget_low_s16(q.H.I);
+    return  vmovl_s16(d.H.I);
+}
+
+#if CHAR_MIN
+INLINE(Vqwi,VWBC_XRQS) (Vwbc x) {return VWBI_XRQS(((Vwbi){x.V0}));}
+#else
+INLINE(Vqwu,VWBC_XRQS) (Vwbc x) {return VWBU_XRQS(((Vwbu){x.V0}));}
+#endif
+
+INLINE(Vqdu,VWHU_XRQS) (Vwhu x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.W.I=vmovl_s16(d.H.I)};
+    d.W.I = vget_low_s32(q.W.I);
+    q.D.I = vmovl_s32(d.W.I);
+    return  q.D.U;
+}
+
+INLINE(Vqdi,VWHI_XRQS) (Vwhi x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.W.I=vmovl_s16(d.H.I)};
+    d.W.I = vget_low_s32(q.W.I);
+    return  vmovl_s32(d.W.I);
+}
+
+INLINE(Vqqu,VWWU_XRQS) (Vwwu x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.D.I=vmovl_s32(d.W.I)};
+    d.D.I = vget_low_s64(q.D.I);
+    d.D.I = vshr_n_s64(d.D.I, 63);
+    q.D.I = vcopyq_lane_s64(q.D.I, 1, d.D.I, 0);
+    return  q.Q.U;
+}
+
+INLINE(Vqqi,VWWI_XRQS) (Vwwi x)
+{
+    DWRD_VTYPE d = {.W.F={x.V0}};
+    QUAD_VTYPE q = {.D.I=vmovl_s32(d.W.I)};
+    d.D.I = vget_low_s64(q.D.I);
+    d.D.I = vshr_n_s64(d.D.I, 63);
+    q.D.I = vcopyq_lane_s64(q.D.I, 1, d.D.I, 0);
+    return  q.Q.I;
+}
+
+#if 0 // _LEAVE_ARM_XRQS
+}
+#endif
+
 #if 0 // _ENTER_ARM_UZPL
 {
 #endif
@@ -12488,7 +15181,6 @@ INLINE(Vqdf,VQDF_UZPR) (Vqdf a, Vqdf b) {return vuzp2q_f64(a, b);}
 #if 0 // _LEAVE_ARM_UZPR
 }
 #endif
-
 
 
 #if 0 // _ENTER_ARM_SETL
@@ -12935,7 +15627,7 @@ INLINE(Vqdf,VQDF_SETR) (Vqdf c, Vddf r)
 {
 #endif
 
-INLINE(Vwyu,VWYU_SET1) (Vwyu d, Rc(0,31) k, _Bool v)
+INLINE(Vwyu,VWYU_SET1) (Vwyu d, Rc(0, +31) k, _Bool v)
 {
 #define     VWYU_SET1   VWYU_SET1
     float32x2_t w = vdup_n_f32(VWYU_ASTM(d));
@@ -12946,35 +15638,21 @@ INLINE(Vwyu,VWYU_SET1) (Vwyu d, Rc(0,31) k, _Bool v)
     return  WYU_ASTV(vget_lane_f32(VDDU_ASWF(y), 0));
 }
 
-INLINE(Vwbu,VWBU_SET1) (Vwbu d, Rc(0, 3) k, uint8_t v)
+INLINE(Vwbu,VWBU_SET1) (Vwbu a, Rc(0, +3) b, unsigned c)
 {
-#define     WBU_SET1(D, K, V)   \
-vget_lane_f32(                  \
-    vreinterpret_f32_u8(        \
-        vset_lane_u8(           \
-            (V),                \
-            vreinterpret_u8_f32(\
-                vdup_n_f32(D)   \
-            ),                  \
-            (K)                 \
-        )                       \
-    ),                          \
-    0                       \
-)
+#define     WBU_SET1(A, B, C)   vset_lane_f32(C,((Vd){.W0.F=A}).W.F,B)
+#define     VWBU_SET1(A, B, C)  ((Vwbu){WBU_SET1(A.V0,B,C)})
 
-#define     VWBU_SET1(D, K, V)  WBU_ASTV(WBU_SET1(VWBU_ASTM(D), K, V))
-    float32x2_t w = vdup_n_f32(VWBU_ASTM(d));
-    int64x1_t   s = vdup_n_s64(k*8);
-    uint64x1_t  m = vdup_n_u64(0xffull);
-    m = vshl_u64(m, s);
-    m = vbic_u64(m, vreinterpret_u64_f32(w));
-    m = vorr_u64(m, vshl_u64(vdup_n_u64(v), s));
-    return  WBU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u64(m),
-            0
-        )
-    );
+    Vd  dst = {.L.B.U=a};
+    Vd  off = {.D0.I=b};
+    Vd  src = {.D0.U=c};
+    Vd  bim = {.D0.U=0xffULL};
+    src.D0.U = vand_u64(src.D.U, bim.D.U);
+    src.D0.U = vshl_u64(src.D.U, off.D.I);
+    bim.D0.U = vshl_u64(bim.D.U, off.D.I);
+    dst.D0.U = vbic_u64(dst.D.U, bim.D.U);
+    dst.D0.U = vorr_u64(dst.D.U, src.D.U);
+    return  dst.L.B.U;
 }
 
 INLINE(Vwbi,VWBI_SET1) (Vwbi d, Rc(0, 3) k, int8_t v)
@@ -13433,6 +16111,7 @@ INLINE(Vqdf,VQDF_SET1) (Vqdf d, Rc(0, 1) k, double v)
 #endif
 
 
+
 #if 0 // _ENTER_ARM_LDR1
 {
 #endif
@@ -13504,84 +16183,114 @@ WBU_ASTV(WBU_LDRK(VWBU_ASTM(V), K, A))
 {
 #endif
 
-INLINE(Vwyu,BOOL_LDRWAC) (void const *src)
+INLINE(Vwyu,BOOL_LDRW) (uint32_t s) 
 {
-#define     BOOL_LDRWAC(SRC) (*(Vwyu const *) SRC)
-    return  BOOL_LDRWAC(src);
+#define     BOOL_LDRW(S) ((WORD_VTYPE){.U=S}).Y.U
+    return  BOOL_LDRW(s);
 }
 
-INLINE(Vwbu,UCHAR_LDRWAC) (unsigned char const src[4])
+INLINE(Vwbu,UCHAR_LDRW) (uint32_t s) 
 {
-#define     UCHAR_LDRWAC(SRC) (*(Vwbu const *) SRC)
-    return  UCHAR_LDRWAC(src);
+#define     UCHAR_LDRW(S) ((WORD_VTYPE){.U=S}).B.U
+    return  UCHAR_LDRW(s);
 }
 
-INLINE(Vwbi,SCHAR_LDRWAC) (signed char const src[4])
+INLINE(Vwbi,SCHAR_LDRW) (uint32_t s) 
 {
-#define     SCHAR_LDRWAC(SRC) (*(Vwbi const *) SRC)
-    return  SCHAR_LDRWAC(src);
+#define     SCHAR_LDRW(S) ((WORD_VTYPE){.U=S}).B.I
+    return  SCHAR_LDRW(s);
 }
 
-INLINE(Vwbc,CHAR_LDRWAC) (char  const src[4])
+INLINE(Vwbc,CHAR_LDRW) (uint32_t s) 
 {
-#define     CHAR_LDRWAC(SRC) (*(Vwbc const *) SRC)
-    return  CHAR_LDRWAC(src);
-}
-
-
-INLINE(Vwhu,USHRT_LDRWAC) (unsigned short const src[2])
-{
-#define     USHRT_LDRWAC(SRC) (*(Vwhu const *) SRC)
-    return  USHRT_LDRWAC(src);
-}
-
-INLINE(Vwhi,SHRT_LDRWAC) (short const src[2])
-{
-#define     SHRT_LDRWAC(SRC) (*(Vwhi const *) SRC)
-    return  SHRT_LDRWAC(src);
+#define     CHAR_LDRW(S) ((WORD_VTYPE){.U=S}).B.C
+    return  CHAR_LDRW(s);
 }
 
 
-INLINE(Vwwu,UINT_LDRWAC) (unsigned int const src[1])
+INLINE(Vwhu,USHRT_LDRW) (uint32_t s) 
 {
-#define     UINT_LDRWAC(SRC) (*(Vwwu const *) SRC)
-    return  UINT_LDRWAC(src);
+#define     USHRT_LDRW(S) ((WORD_VTYPE){.U=S}).H.U
+    return  USHRT_LDRW(s);
 }
 
-INLINE(Vwwi,INT_LDRWAC) (int const src[1])
+INLINE(Vwhi,SHRT_LDRW) (uint32_t s) 
 {
-#define     INT_LDRWAC(SRC) (*(Vwwi const *) SRC)
-    return  INT_LDRWAC(src);
+#define     SHRT_LDRW(S) ((WORD_VTYPE){.U=S}).H.I
+    return  SHRT_LDRW(s);
 }
 
+
+INLINE(Vwwu,UINT_LDRW) (uint32_t s) 
+{
+#define     UINT_LDRW(S) ((WORD_VTYPE){.U=S}).W.U
+    return  UINT_LDRW(s);
+}
+
+INLINE(Vwwi,INT_LDRW) (uint32_t s) 
+{
+#define     INT_LDRW(S) ((WORD_VTYPE){.U=S}).W.I
+    return  INT_LDRW(s);
+}
 
 #if DWRD_NLONG == 2
 
-INLINE(Vwwu,ULONG_LDRWAC) (unsigned long const src[1])
+INLINE(Vwwu,ULONG_LDRW) (uint32_t s) 
 {
-#define     ULONG_LDRWAC(SRC) (*(Vwwu const *) SRC)
-    return  ULONG_LDRWAC(src);
+#define     ULONG_LDRW(S) ((WORD_VTYPE){.U=S}).W.U
+    return  ULONG_LDRW(s);
 }
 
-INLINE(Vwwi,LONG_LDRWAC) (long const src[1])
+INLINE(Vwwi,LONG_LDRW) (uint32_t s) 
 {
-#define     LONG_LDRWAC(SRC) (*(Vwwi const *) SRC)
-    return  LONG_LDRWAC(src);
+#define     LONG_LDRW(S) ((WORD_VTYPE){.U=S}).W.I
+    return  LONG_LDRW(s);
 }
 
 #endif
 
-INLINE(Vwhf,FLT16_LDRWAC) (flt16_t const src[2])
+INLINE(Vwhf,FLT16_LDRW) (uint32_t s) 
 {
-#define     FLT16_LDRWAC(SRC) (*(Vwhf const *) SRC)
-    return  FLT16_LDRWAC(src);
+#define     FLT16_LDRW(S) ((WORD_VTYPE){.U=S}).H.F
+    return  FLT16_LDRW(s);
 }
 
-INLINE(Vwwf,FLT_LDRWAC) (float const src[1])
+INLINE(Vwwf,FLT_LDRW) (uint32_t s) 
 {
-#define     FLT_LDRWAC(SRC) (*(Vwwf const *) SRC)
-    return  FLT_LDRWAC(src);
+#define     FLT_LDRW(S) ((WORD_VTYPE){.U=S}).W.F
+    return  FLT_LDRW(s);
 }
+
+
+#define     MY_LDRWACYU(S) ((WORD_VTYPE){.F=*(float const *) S})
+
+INLINE(Vwyu, BOOL_LDRWAC)   (void const *s)    {return MY_LDRWACYU(s).Y.U;}
+INLINE(Vwbu,UCHAR_LDRWAC)   (uchar const s[4]) {return MY_LDRWACYU(s).B.U;}
+INLINE(Vwbi,SCHAR_LDRWAC)   (schar const s[4]) {return MY_LDRWACYU(s).B.I;}
+INLINE(Vwbc, CHAR_LDRWAC)    (char const s[4]) {return MY_LDRWACYU(s).B.C;}
+INLINE(Vwhu,USHRT_LDRWAC)  (ushort const s[2]) {return MY_LDRWACYU(s).H.U;}
+INLINE(Vwhi, SHRT_LDRWAC)   (short const s[2]) {return MY_LDRWACYU(s).H.I;}
+INLINE(Vwwu, UINT_LDRWAC)    (uint const s[1]) {return *(Vwwu const *) s;}
+INLINE(Vwwi,  INT_LDRWAC)     (int const s[1]) {return *(Vwwi const *) s;}
+#if DWRD_NLONG == 2
+INLINE(Vwwu,ULONG_LDRWAC)   (ulong const s[1]) {return *(Vwwu const *) s;}
+INLINE(Vwwi, LONG_LDRWAC)    (long const s[1]) {return *(Vwwi const *) s;}
+#endif
+
+INLINE(Vwhf,FLT16_LDRWAC) (flt16_t const s[2]) {return MY_LDRWACYU(s).H.F;}
+INLINE(Vwwf,  FLT_LDRWAC)   (float const s[1]) {return *(Vwwf const *) s;}
+
+INLINE(uint32_t,WYU_LDRW) (float s) {return ((WORD_TYPE){.F=s}).U;}
+INLINE(uint32_t,VWYU_LDRW) (Vwyu s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWBU_LDRW) (Vwbu s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWBI_LDRW) (Vwbi s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWBC_LDRW) (Vwbc s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWHU_LDRW) (Vwhu s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWHI_LDRW) (Vwhi s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWHF_LDRW) (Vwhf s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWWU_LDRW) (Vwwu s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWWI_LDRW) (Vwwi s) {return WYU_LDRW(s.V0);}
+INLINE(uint32_t,VWWF_LDRW) (Vwwf s) {return WYU_LDRW(s.V0);}
 
 #if 0 // _LEAVE_ARM_LDRW
 }
@@ -13591,114 +16300,226 @@ INLINE(Vwwf,FLT_LDRWAC) (float const src[1])
 {
 #endif
 
-INLINE(Vdbu,UCHAR_LDRDAC) (unsigned char const src[8])
+// clang generates 'ldr %d, [%x]' for all or the vld1s, so
+// perhaps it *doesn't* require alignment. 
+
+INLINE(uint64x1_t,MY_LDRDACYU) (void const *s) {return vld1_u64(s);}
+
+#if CHAR_MIN
+
+INLINE(int8x8_t,MY_LDRDACBC) (char const *s)
 {
-#define     UCHAR_LDRDAC(SRC)   MY_LDRDAC(u8,SRC)
-    return  UCHAR_LDRDAC(src);
+    return vld1_s8( ((int8_t const *) s) );
 }
 
-INLINE(Vdbi,SCHAR_LDRDAC) (signed char const src[8])
+#else
+INLINE(uint8x8_t,MY_LDRDACBC) (char const *s)
 {
-#define     SCHAR_LDRDAC(SRC)   MY_LDRDAC(s8,SRC)
-    return  SCHAR_LDRDAC(src);
+    return vld1_u8( ((uint8_t const *) s) );
 }
 
-INLINE(Vdbc,CHAR_LDRDAC) (char const src[8])
-{
-#define     CHAR_LDRDAC(SRC)   VDBU_ASBC(MY_LDRDAC(u8,SRC))
-    return  CHAR_LDRDAC(src);
-}
+#endif
 
-
-INLINE(Vdhu,USHRT_LDRDAC) (unsigned short const src[4])
+INLINE(Vdyu,BOOL_LDRD) (uint64_t s) 
 {
-#define     USHRT_LDRDAC(SRC)   MY_LDRDAC(u16,SRC)
-    return  USHRT_LDRDAC(src);
-}
-
-INLINE(Vdhi,SHRT_LDRDAC) (short const src[4])
-{
-#define     SHRT_LDRDAC(SRC)   MY_LDRDAC(s16,SRC)
-    return  SHRT_LDRDAC(src);
+#define     BOOL_LDRD(S) ((Vdyu){vcreate_u64(S)})
+    return  BOOL_LDRD(s);
 }
 
 
-INLINE(Vdwu,UINT_LDRDAC) (unsigned int const src[2])
+INLINE(Vdbu,UCHAR_LDRD) (uint64_t s) 
 {
-#define     UINT_LDRDAC(SRC)   MY_LDRDAC(u32,SRC)
-    return  UINT_LDRDAC(src);
+#define     UCHAR_LDRD vcreate_u8
+    return  UCHAR_LDRD(s);
 }
 
-INLINE(Vdwi,INT_LDRDAC) (int const src[2])
+INLINE(Vdbi,SCHAR_LDRD) (uint64_t s) 
 {
-#define     INT_LDRDAC(SRC)   MY_LDRDAC(s32,SRC)
-    return  INT_LDRDAC(src);
+#define     SCHAR_LDRD vcreate_s8
+    return  SCHAR_LDRD(s);
 }
 
+INLINE(Vdbc,CHAR_LDRD) (uint64_t s) 
+{
+#if CHAR_MIN
+#   define  CHAR_LDRD(S) ((Vdbc){SCHAR_LDRD(S)})
+#else
+#   define  CHAR_LDRD(S) ((Vdbc){UCHAR_LDRD(S)})
+#endif
+    return  CHAR_LDRD(s);
+}
+
+
+INLINE(Vdhu,USHRT_LDRD) (uint64_t s) 
+{
+#define     USHRT_LDRD vcreate_u16
+    return  USHRT_LDRD(s);
+}
+
+INLINE(Vdhi,SHRT_LDRD) (uint64_t s) 
+{
+#define     SHRT_LDRD vcreate_s16
+    return  SHRT_LDRD(s);
+}
+
+
+INLINE(Vdwu,UINT_LDRD) (uint64_t s) 
+{
+#define     UINT_LDRD   vcreate_u32
+    return  UINT_LDRD(s);
+}
+
+INLINE(Vdwi,INT_LDRD) (uint64_t s) 
+{
+#define     INT_LDRD    vcreate_s32
+    return  INT_LDRD(s);
+}
 
 #if DWRD_NLONG == 2
 
-INLINE(Vdwu,ULONG_LDRDAC) (unsigned long const src[2])
+INLINE(Vdwu,ULONG_LDRD) (uint64_t s) 
 {
-#define     ULONG_LDRDAC(SRC)   MY_LDRDAC(u32,SRC)
-    return  ULONG_LDRDAC(src);
+#define     ULONG_LDRD  vcreate_u32
+    return  ULONG_LDRD(s);
 }
 
-INLINE(Vdwi, LONG_LDRDAC) (long const src[2])
+INLINE(Vdwi,LONG_LDRD) (uint64_t s) 
 {
-#define     LONG_LDRDAC(SRC)   MY_LDRDAC(s32,SRC)
-    return  LONG_LDRDAC(src);
+#define     LONG_LDRD   vcreate_s32
+    return  LONG_LDRD(s);
 }
 
 #else
 
-INLINE(Vddu,ULONG_LDRDAC) (unsigned long const src[1])
+INLINE(Vddu,ULONG_LDRD) (uint64_t s) 
 {
-#define     ULONG_LDRDAC(SRC)   vld1_u64(SRC)
-    return  vld1_u64(src);
+#define     ULONG_LDRD   vcreate_u64
+    return  ULONG_LDRD(s);
 }
 
-INLINE(Vddi, LONG_LDRDAC) (long const src[1])
+INLINE(Vddi, LONG_LDRD) (uint64_t s) 
 {
-#define     LONG_LDRDAC(SRC)   vld1_s64(SRC)
-    return  vld1_s64(src);
+#define     LONG_LDRD   vcreate_s64
+    return  LONG_LDRD(s);
 }
 
 #endif
 
 #if QUAD_NLLONG == 2
-
-INLINE(Vddu,ULLONG_LDRDAC) (unsigned long long const src[1])
+INLINE(Vddu,ULLONG_LDRD) (uint64_t s) 
 {
-#define     ULLONG_LDRDAC(SRC)   vld1_u64((uint64_t const *) SRC)
-    return  ULLONG_LDRDAC(src);
+#define     ULLONG_LDRD   vcreate_u64
+    return  ULLONG_LDRD(s);
 }
 
-INLINE(Vddi,LLONG_LDRDAC) (long long const src[1])
+INLINE(Vddi,LLONG_LDRD) (uint64_t s) 
 {
-#define     LLONG_LDRDAC(SRC)   vld1_s64((int64_t const *) SRC)
-    return  LLONG_LDRDAC(src);
+#define     LLONG_LDRD   vcreate_s64
+    return  LLONG_LDRD(s);
+}
+#endif
+
+INLINE(Vdhf,FLT16_LDRD) (uint64_t s) 
+{
+#if defined(vcreate_f16)
+#   define  FLT16_LDRD vcreate_f16
+#else
+#   define  FLT16_LDRD(S) vreinterpret_f16_u16(UINT16_LDRD(S))
+#endif
+    DWRD_VTYPE d = {.H.U=vcreate_u16(s)};
+    d.H.U = vrev64_u16(d.H.U);
+    return d.H.F;
+}
+
+INLINE(Vdwf,FLT_LDRD) (uint64_t s) 
+{
+#define     FLT_LDRD vcreate_f32
+    return  FLT_LDRD(s);
+}
+
+INLINE(Vddf,DBL_LDRD) (uint64_t s) 
+{
+#define     DBL_LDRD vcreate_f64
+    return  DBL_LDRD(s);
+}
+
+INLINE(Vdyu, BOOL_LDRDAC)  (void const *s) {return ((Vdyu){MY_LDRDACYU(s)});}
+INLINE(Vdbu,UCHAR_LDRDAC)  (uchar const s[8]) {return vld1_u8(s);}
+INLINE(Vdbi,SCHAR_LDRDAC)  (schar const s[8]) {return vld1_s8(s);}
+INLINE(Vdbc, CHAR_LDRDAC)   (char const s[8]) {return((Vdbc){MY_LDRDACBC(s)});}
+INLINE(Vdhu,USHRT_LDRDAC) (ushort const s[4]) {return vld1_u16(s);}
+INLINE(Vdhi, SHRT_LDRDAC)  (short const s[4]) {return vld1_s16(s);}
+INLINE(Vdwu, UINT_LDRDAC)   (uint const s[2]) {return vld1_u32(s);}
+INLINE(Vdwi,  INT_LDRDAC)    (int const s[2]) {return vld1_s32(s);}
+
+#if DWRD_NLONG == 2
+INLINE(Vdwu,ULONG_LDRDAC)  (ulong const s[2]) 
+{
+    return  vld1_u32( ((uint32_t const *) s) );
+}
+
+INLINE(Vdwi, LONG_LDRDAC)   (long const s[2]) 
+{
+    return  vld1_s32( ((int32_t const *) s) );
+}
+
+#else
+INLINE(Vddu,ULONG_LDRDAC)  (ulong const s[1]) {return vld1_u64(s);}
+INLINE(Vddi, LONG_LDRDAC)   (long const s[1]) {return vld1_s64(s);}
+#endif
+
+#if QUAD_NLLONG == 2
+INLINE(Vddu,ULLONG_LDRDAC) (ullong const s[1]) 
+{
+    return  vld1_u64( ((uint64_t const *) s) );
+}
+
+INLINE(Vddi, LLONG_LDRDAC)  (llong const s[1]) 
+{
+    return  vld1_s64( ((int64_t const *) s) );
 }
 
 #endif
 
-INLINE(Vdhf,FLT16_LDRDAC) (flt16_t const src[4])
+
+INLINE(Vdhf,FLT16_LDRDAC) (flt16_t const s[4])
 {
-#define     FLT16_LDRDAC(SRC)   MY_LDRDAC(f16,SRC)
-    return  FLT16_LDRDAC(src);
+    uint16x4_t u = vld1_u16( ((uint16_t const *) s) );
+    return  vreinterpret_f16_u16(u);
 }
 
-INLINE(Vdwf,FLT_LDRDAC) (float const src[2])
-{
-#define     FLT_LDRDAC(SRC)   MY_LDRDAC(f32,SRC)
-    return  FLT_LDRDAC(src);
-}
+INLINE(Vdwf,  FLT_LDRDAC)   (float const s[2]) {return vld1_f32(s);}
+INLINE(Vddf,  DBL_LDRDAC)  (double const s[1]) {return vld1_f64(s);}
 
-INLINE(Vddf,DBL_LDRDAC) (double const src[1])
+INLINE(uint64_t,WYU_LDRD) (float s) 
 {
-#define     DBL_LDRDAC(SRC)   MY_LDRDAC(f64,SRC)
-    return  DBL_LDRDAC(src);
+#define     WYU_LDRD(S) ((DWRD_TYPE){.Lo.F=S}).U
+    return  WYU_LDRD(s);
 }
+INLINE(uint64_t,VWYU_LDRD) (Vwyu s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWBU_LDRD) (Vwbu s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWBI_LDRD) (Vwbi s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWBC_LDRD) (Vwbc s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWHU_LDRD) (Vwhu s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWHI_LDRD) (Vwhi s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWHF_LDRD) (Vwhf s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWWU_LDRD) (Vwwu s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWWI_LDRD) (Vwwi s) {return WYU_LDRD(s.V0);}
+INLINE(uint64_t,VWWF_LDRD) (Vwwf s) {return WYU_LDRD(s.V0);}
+
+INLINE(uint64_t,VDYU_LDRD) (Vdyu s) {return vget_lane_u64(s.V0,0);}
+INLINE(uint64_t,VDBU_LDRD) (Vdbu s) {return ((DWRD_VTYPE){.B.U=s}).U;}
+INLINE(uint64_t,VDBI_LDRD) (Vdbi s) {return ((DWRD_VTYPE){.B.I=s}).U;}
+INLINE(uint64_t,VDBC_LDRD) (Vdbc s) {return ((DWRD_VTYPE){.B.C=s}).U;}
+INLINE(uint64_t,VDHU_LDRD) (Vdhu s) {return ((DWRD_VTYPE){.H.U=s}).U;}
+INLINE(uint64_t,VDHI_LDRD) (Vdhi s) {return ((DWRD_VTYPE){.H.I=s}).U;}
+INLINE(uint64_t,VDHF_LDRD) (Vdhf s) {return ((DWRD_VTYPE){.H.F=s}).U;}
+INLINE(uint64_t,VDWU_LDRD) (Vdwu s) {return ((DWRD_VTYPE){.W.U=s}).U;}
+INLINE(uint64_t,VDWI_LDRD) (Vdwi s) {return ((DWRD_VTYPE){.W.I=s}).U;}
+INLINE(uint64_t,VDWF_LDRD) (Vdwf s) {return ((DWRD_VTYPE){.W.F=s}).U;}
+INLINE(uint64_t,VDDU_LDRD) (Vddu s) {return ((DWRD_VTYPE){.D.U=s}).U;}
+INLINE(uint64_t,VDDI_LDRD) (Vddi s) {return ((DWRD_VTYPE){.D.I=s}).U;}
+INLINE(uint64_t,VDDF_LDRD) (Vddf s) {return ((DWRD_VTYPE){.D.F=s}).U;}
 
 #if 0 // _LEAVE_ARM_LDRD
 }
@@ -13707,137 +16528,114 @@ INLINE(Vddf,DBL_LDRDAC) (double const src[1])
 #if 0 // _ENTER_ARM_LDRQ
 {
 #endif
+INLINE(Vqyu,  BOOL_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).Y.U;}
+INLINE(Vqbu, UCHAR_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).B.U;}
+INLINE(Vqbi, SCHAR_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).B.I;}
+INLINE(Vqbc,  CHAR_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).B.C;}
+INLINE(Vqhu, USHRT_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).H.U;}
+INLINE(Vqhi,  SHRT_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).H.I;}
+INLINE(Vqwu,  UINT_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).W.U;}
+INLINE(Vqwi,   INT_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).W.I;}
 
-INLINE(Vqbu,UCHAR_LDRQAC) (unsigned char const src[16])
-{
-#define     UCHAR_LDRQAC(SRC)   MY_LDRQAC(u8,SRC)
-    return  UCHAR_LDRQAC(src);
+#if DWRD_NLONG == 2
+INLINE(Vqwu, ULONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).W.U;}
+INLINE(Vqwi,  LONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).W.U;}
+#else
+INLINE(Vqdu, ULONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).D.U;}
+INLINE(Vqdi,  LONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).D.I;}
+#endif
+
+#if QUAD_NLLONG == 2
+INLINE(Vqdu,ULLONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).D.U;}
+INLINE(Vqdi, LLONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).D.I;}
+
+INLINE(Vqqu,ldrqqu) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).Q.U;}
+INLINE(Vqqi,ldrqqi) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).Q.I;}
+#else
+INLINE(Vqqu,ULLONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).Q.U;}
+INLINE(Vqqi, LLONG_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).Q.I;}
+#endif
+
+INLINE(Vqhf,FLT16_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).H.F;}
+INLINE(Vqwf,  FLT_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).W.F;}
+INLINE(Vqdf,  DBL_LDRQ) (QUAD_UTYPE s){return ((QUAD_VTYPE){.U=s}).D.F;}
+
+
+INLINE(Vqyu, BOOL_LDRQAC) (void const *s) {
+    Vqyu d = {vld1q_u64(s)};
+    return d;
 }
 
-INLINE(Vqbi,SCHAR_LDRQAC) (signed char const src[16])
-{
-#define     SCHAR_LDRQAC(SRC)   MY_LDRQAC(s8,SRC)
-    return  SCHAR_LDRQAC(src);
-}
+INLINE(Vqbu, UCHAR_LDRQAC)   (uchar const src[16]) {return vld1q_u8(src);}
 
-INLINE(Vqbc,CHAR_LDRQAC) (char const src[16])
-{
-#define     CHAR_LDRQAC(SRC)   VQBU_ASBC(MY_LDRQAC(u8,SRC))
-    return  CHAR_LDRQAC(src);
-}
+INLINE(Vqbi, SCHAR_LDRQAC)   (schar const src[16]) {return vld1q_s8(src);}
 
-
-INLINE(Vqhu,USHRT_LDRQAC) (unsigned short const src[8])
+INLINE(Vqbc,  CHAR_LDRQAC)    (char const src[16])
 {
-#define     USHRT_LDRQAC(SRC)   MY_LDRQAC(u16,SRC)
-    return  USHRT_LDRQAC(src);
-}
-
-INLINE(Vqhi,SHRT_LDRQAC) (short const src[8])
-{
-#define     SHRT_LDRQAC(SRC)   MY_LDRQAC(s16,SRC)
-    return  SHRT_LDRQAC(src);
+#if CHAR_MIN
+    return  ((Vqbc){vld1q_s8( (( int8_t const *) src) )});
+#else
+    return  ((Vqbc){vld1q_u8( ((uint8_t const *) src) )});
+#endif
 }
 
 
-INLINE(Vqwu,UINT_LDRQAC) (unsigned int const src[4])
-{
-#define     UINT_LDRQAC(SRC)   MY_LDRQAC(u32,SRC)
-    return  UINT_LDRQAC(src);
-}
-
-INLINE(Vqwi,INT_LDRQAC) (int const src[4])
-{
-#define     INT_LDRQAC(SRC)   MY_LDRQAC(s32,SRC)
-    return  INT_LDRQAC(src);
-}
-
+INLINE(Vqhu, USHRT_LDRQAC)  (ushort const src[8]) {return vld1q_u16(src);}
+INLINE(Vqhi,  SHRT_LDRQAC)   (short const src[8]) {return vld1q_s16(src);}
+INLINE(Vqwu,  UINT_LDRQAC)    (uint const src[4]) {return vld1q_u32(src);}
+INLINE(Vqwi,   INT_LDRQAC)     (int const src[4]) {return vld1q_s32(src);}
 
 #if DWRD_NLONG == 2
 
-INLINE(Vqwu,ULONG_LDRQAC) (unsigned long const src[4])
+INLINE(Vqwu, ULONG_LDRQAC)   (ulong const src[4]) 
 {
-#define     ULONG_LDRQAC(SRC)   MY_LDRQAC(u32,SRC)
-    return  ULONG_LDRQAC(src);
+    return  vld1q_u32( ((uint32_t const *) src) );
 }
 
-INLINE(Vqwi,LONG_LDRQAC) (long const src[4])
+INLINE(Vqwi,  LONG_LDRQAC)    (long const src[4])
 {
-#define     LONG_LDRQAC(SRC)   MY_LDRQAC(s32,SRC)
-    return  LONG_LDRQAC(src);
+    return  vld1q_s32( ((int32_t const *) src) );
 }
 
 #else
 
-INLINE(Vqdu,ULONG_LDRQAC) (unsigned long const src[2])
-{
-#define     ULONG_LDRQAC(SRC)   MY_LDRQAC(u64,SRC)
-    return  ULONG_LDRQAC(src);
-}
-
-INLINE(Vqdi,LONG_LDRQAC) (long const src[2])
-{
-#define     LONG_LDRQAC(SRC)   MY_LDRQAC(s64,SRC)
-    return  LONG_LDRQAC(src);
-}
+INLINE(Vqdu, ULONG_LDRQAC)   (ulong const src[2]) {return vld1q_u64(src);}
+INLINE(Vqdi,  LONG_LDRQAC)    (long const src[2]) {return vld1q_s64(src);}
 
 #endif
 
 #if QUAD_NLLONG == 2
 
-INLINE(Vqdu,ULLONG_LDRQAC) (unsigned long long const src[2])
+INLINE(Vqdu,ULLONG_LDRQAC)  (ullong const src[2])
 {
-#define     ULLONG_LDRQAC(SRC)   MY_LDRQAC(u64,SRC)
-    return  ULLONG_LDRQAC(src);
+    return  vld1q_u64( ((uint64_t const *) src) );
 }
 
-INLINE(Vqdi,LLONG_LDRQAC) (long long const src[2])
+INLINE(Vqdi, LLONG_LDRQAC)   (llong const src[2])
 {
-#define     LLONG_LDRQAC(SRC)   MY_LDRQAC(s64,SRC)
-    return  LLONG_LDRQAC(src);
+    return  vld1q_s64( ((int64_t const *) src) );
 }
 
-#else
-
-INLINE(Vqqu,ULLONG_LDRQAC) (unsigned long long const src[1])
+INLINE(Vqqu,ldrqacqu) (QUAD_UTYPE const src[1])
 {
-#define     ULLONG_LDRQAC(SRC)   vldrq_p128(SRC)
-    return  ULLONG_LDRQAC(src);
+    return ((Vqqu){vld1q_u64( ((uint64_t const *) src) )});
 }
 
-INLINE(Vqqi,LLONG_LDRQAC) (long long const src[1])
+INLINE(Vqqi,ldrqacqi) (QUAD_ITYPE const src[1])
 {
-#define     LLONG_LDRQAC(SRC)   VQQU_ASQI(vldrq_p128((void const *) SRC))
-    return  LLONG_LDRQAC(src);
+    return ((Vqqi){vld1q_s64( ((int64_t const *) src) )});
 }
 
 #endif
 
-INLINE(Vqhf,FLT16_LDRQAC) (flt16_t const src[8])
-{
-#define     FLT16_LDRQAC(SRC)   MY_LDRQAC(f16,SRC)
-    return  FLT16_LDRQAC(src);
-}
+INLINE(Vqhf,FLT16_LDRQAC) (flt16_t const src[8]) {return vld1q_f16(src);}
+INLINE(Vqwf,  FLT_LDRQAC)   (float const src[4]) {return vld1q_f32(src);}
+INLINE(Vqdf,  DBL_LDRQAC)  (double const src[2]) {return vld1q_f64(src);}
 
-INLINE(Vqwf,FLT_LDRQAC) (float const src[4])
+INLINE(Vqqf,ldrqacqf) (QUAD_FTYPE const src[1])
 {
-#define     FLT_LDRQAC(SRC)   MY_LDRQAC(f32,SRC)
-    return  FLT_LDRQAC(src);
+    return ((Vqqf){*src});
 }
-
-INLINE(Vqdf,DBL_LDRQAC) (double const src[2])
-{
-#define     DBL_LDRQAC(SRC)   MY_LDRQAC(f64,SRC)
-    return  DBL_LDRQAC(src);
-}
-
-#if QUAD_NLLONG == 1
-INLINE(Vqqf,LDBL_LDRQAC) (long double src[1])
-{
-#define     LDBL_LDRQAC(SRC)   VQQU_ASQF(vldrq_p128((void const *) SRC))
-    return  LDBL_LDRQAC(src);
-}
-#endif
 
 #if 0 // _LEAVE_ARM_LDRQ
 }
@@ -13897,6 +16695,241 @@ INLINE(Vqqf,LDBL_LDRQAC) (long double src[1])
 #define     ADF_LDRS(p)     ((VODF_TYPE){vld1q_f64_x4((void const *)(p))})
 
 #if 0 // _LEAVE_ARM_LDRS
+}
+#endif
+
+#if 0 // _ENTER_ARM_LDPD
+{
+#endif
+
+INLINE(uint64x1_t,MY_LDPDYU) (uint32_t a, uint32_t b)
+{
+    DWRD_TYPE   c = {.Lo.U=a, .Hi.U=b};
+    return  vdup_n_u64(c.U);
+}
+
+INLINE(Vdyu,  BOOL_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((Vdyu){MY_LDPDYU(a, b)});
+}
+
+INLINE(Vdbu, UCHAR_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).B.U;
+}
+
+INLINE(Vdbi, SCHAR_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).B.I;
+}
+
+INLINE(Vdbc,  CHAR_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).B.C;
+}
+
+INLINE(Vdhu, USHRT_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).H.U;
+}
+
+INLINE(Vdhi,  SHRT_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).H.I;
+}
+
+INLINE(Vdwu,  UINT_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).W.U;
+}
+
+INLINE(Vdwi,   INT_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).W.I;
+}
+
+#if DWRD_NLONG == 2
+INLINE(Vdwu, ULONG_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).W.U;
+}
+
+INLINE(Vdwi,  LONG_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).W.I;
+}
+
+#else
+INLINE(Vddu, ULONG_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).D.U;
+}
+
+INLINE(Vddi,  LONG_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).D.I;
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+INLINE(Vddu,ULLONG_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).D.U;
+}
+
+INLINE(Vddi, LLONG_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).D.I;
+}
+
+#endif
+
+INLINE(Vdhf,FLT16_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).H.F;
+}
+
+INLINE(Vdwf,  FLT_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).W.F;
+}
+
+INLINE(Vddf,  DBL_LDPD) (uint32_t a, uint32_t b)
+{
+    return  ((DWRD_VTYPE){.D.U=MY_LDPDYU(a, b)}).D.F;
+}
+
+#if 0 // _LEAVE_ARM_LDPD
+}
+#endif
+
+#if 0 // _ENTER_ARM_LDPQ
+{
+#endif
+
+INLINE(uint64x2_t,MY_LDPQYU) (uint64_t a, uint64_t b)
+{
+    uint64x1_t l = vdup_n_u64(a);
+    uint64x1_t r = vdup_n_u64(b);
+    return  vcombine_u64(l, r);
+}
+
+INLINE(Vqyu,  BOOL_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((Vqyu){MY_LDPQYU(a, b)});
+}
+
+INLINE(Vqbu, UCHAR_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).B.U;
+}
+
+INLINE(Vqbi, SCHAR_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).B.I;
+}
+
+INLINE(Vqbc,  CHAR_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).B.C;
+}
+
+INLINE(Vqhu, USHRT_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).H.U;
+}
+
+INLINE(Vqhi,  SHRT_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).H.I;
+}
+
+INLINE(Vqwu,  UINT_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).W.U;
+}
+
+INLINE(Vqwi,   INT_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).W.I;
+}
+
+
+#if DWRD_NLONG == 2
+INLINE(Vqwu, ULONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).W.U;
+}
+
+INLINE(Vqwi,  LONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).W.I;
+}
+
+#else
+INLINE(Vqdu, ULONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).D.U;
+}
+
+INLINE(Vqdi,  LONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).D.I;
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+INLINE(Vqdu,ULLONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).D.U;
+}
+
+INLINE(Vqdi, LLONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).D.I;
+}
+
+INLINE(Vqqu,ldpqqu) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).Q.U;
+}
+
+INLINE(Vqqi,ldpqqi) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).Q.I;
+}
+
+#else
+INLINE(Vqqu,ULLONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).Q.U;
+}
+
+INLINE(Vqqi, LLONG_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).Q.I;
+}
+
+#endif
+
+INLINE(Vqhf,FLT16_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).H.F;
+}
+
+INLINE(Vqwf,  FLT_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).W.F;
+}
+
+INLINE(Vqdf,  DBL_LDPQ) (uint64_t a, uint64_t b)
+{
+    return  ((QUAD_VTYPE){.D.U=MY_LDPQYU(a, b)}).D.F;
+}
+
+#if 0 // _LEAVE_ARM_LDPQ
 }
 #endif
 
@@ -14451,11 +17484,15 @@ INLINE(Vqdi,  LONG_LUNQAC) (void const *a) {return VQBU_ASDI(vld1q_u8(a));}
 #if QUAD_NLLONG == 2
 INLINE(Vqdu,ULLONG_LUNQAC) (void const *a) {return VQBU_ASDU(vld1q_u8(a));}
 INLINE(Vqdi, LLONG_LUNQAC) (void const *a) {return VQBU_ASDI(vld1q_u8(a));}
+INLINE(Vqqu, lunqacqu) (void const *a) {return VQBU_ASQU(vld1q_u8(a));}
+INLINE(Vqqi, lunqacqi) (void const *a) {return VQBU_ASQI(vld1q_u8(a));}
+
 #endif
 
 INLINE(Vqhf, FLT16_LUNQAC) (void const *a) {return VQBU_ASHF(vld1q_u8(a));}
 INLINE(Vqwf,   FLT_LUNQAC) (void const *a) {return VQBU_ASWF(vld1q_u8(a));}
 INLINE(Vqdf,   DBL_LUNQAC) (void const *a) {return VQBU_ASDF(vld1q_u8(a));}
+INLINE(Vqqf, lunqacqf) (void const *a) {return VQBU_ASQF(vld1q_u8(a));}
 
 #if 0 // _LEAVE_ARM_LUNQ
 }
@@ -14466,103 +17503,20 @@ INLINE(Vqdf,   DBL_LUNQAC) (void const *a) {return VQBU_ASDF(vld1q_u8(a));}
 {
 #endif
 
-INLINE(  _Bool,  BOOL_SUNNA)   (void *dst,   _Bool src)
-{
-    return  (((_Bool *) dst)[0]=src);
-}
-
-
-INLINE(  uchar, UCHAR_SUNNA)   (void *dst,   uchar src)
-{
-    return  (((uchar *) dst)[0]=src);
-}
-
-INLINE(  schar, SCHAR_SUNNA)   (void *dst,   schar src)
-{
-    return  (((schar *) dst)[0]=src);
-}
-
-INLINE(   char,  CHAR_SUNNA)   (void *dst,    char src)
-{
-    return  (((char *) dst)[0]=src);
-}
-
-
-INLINE( ushort, USHRT_SUNNA)   (void *dst,  ushort src)
-{
-    return  (((HALF_TYPE *) dst)->M.U=src);
-}
-
-INLINE(  short,  SHRT_SUNNA)   (void *dst,   short src)
-{
-    return  (((HALF_TYPE *) dst)->M.I=src);
-}
-
-
-INLINE(   uint,  UINT_SUNNA)   (void *dst,    uint src)
-{
-    return  (((WORD_TYPE *) dst)->M.U=src);
-}
-
-INLINE(    int,   INT_SUNNA)   (void *dst,     int src)
-{
-    return  (((WORD_TYPE *) dst)->M.I=src);
-}
-
-
-INLINE(  ulong, ULONG_SUNNA)   (void *dst,   ulong src)
-{
-#if DWRD_NLONG == 2
-    return  (((WORD_TYPE *) dst)->M.U=src);
-#else
-    return  (((DWRD_TYPE *) dst)->M.U=src);
-#endif
-}
-
-INLINE(   long,  LONG_SUNNA)   (void *dst,    long src)
-{
-#if DWRD_NLONG == 2
-    return  (((WORD_TYPE *) dst)->M.I=src);
-#else
-    return  (((DWRD_TYPE *) dst)->M.I=src);
-#endif
-}
-
-
-INLINE( ullong,ULLONG_SUNNA)   (void *dst,  ullong src)
-{
-#if QUAD_NLLONG == 2
-    return  (((DWRD_TYPE *) dst)->M.U=src);
-#else
-    return  (((QUAD_TYPE *) dst)->M.U=src);
-#endif
-}
-
-INLINE(  llong, LLONG_SUNNA)   (void *dst,   llong src)
-{
-#if QUAD_NLLONG == 2
-    return  (((DWRD_TYPE *) dst)->M.I=src);
-#else
-    return  (((QUAD_TYPE *) dst)->M.I=src);
-#endif
-}
-
-
-INLINE(flt16_t, FLT16_SUNNA)   (void *dst, flt16_t src)
+INLINE(flt16_t, FLT16_SUNNA) (void *dst,  flt16_t src)
 {
     return  (((HALF_TYPE *) dst)->M.F=src);
 }
 
-INLINE( float,    FLT_SUNNA)   (void *dst,   float src)
+INLINE( float,    FLT_SUNNA) (void *dst,    float src)
 {
     return  (((WORD_TYPE *) dst)->M.F=src);
 }
 
-INLINE(double,    DBL_SUNNA)   (void *dst,  double src)
+INLINE(double,    DBL_SUNNA) (void *dst,   double src)
 {
     return  (((DWRD_TYPE *) dst)->M.F=src);
 }
-
 
 #if 0 // _LEAVE_ARM_SUNN
 }
@@ -14572,29 +17526,29 @@ INLINE(double,    DBL_SUNNA)   (void *dst,  double src)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_SUNLA)   (void *dst,   _Bool src)
+INLINE(  _Bool,  BOOL_SUNLA) (void *dst,    _Bool src)
 {
-    return  (((_Bool *) dst)[0]=src);
+    return  BOOL_SUNNA(dst, src);
 }
 
 
-INLINE(  uchar, UCHAR_SUNLA)   (void *dst,   uchar src)
+INLINE(  uchar, UCHAR_SUNLA) (void *dst, unsigned src)
 {
-    return  (((uchar *) dst)[0]=src);
+    return  UCHAR_SUNNA(dst, src);
 }
 
-INLINE(  schar, SCHAR_SUNLA)   (void *dst,   schar src)
+INLINE(  schar, SCHAR_SUNLA) (void *dst,   signed src)
 {
-    return  (((schar *) dst)[0]=src);
+    return  SCHAR_SUNNA(dst, src);
 }
 
-INLINE(   char,  CHAR_SUNLA)   (void *dst,    char src)
+INLINE(   char,  CHAR_SUNLA) (void *dst,      int src)
 {
-    return  (((char *) dst)[0]=src);
+    return  CHAR_SUNNA(dst, src);
 }
 
 
-INLINE( ushort, USHRT_SUNLA)   (void *dst,  ushort src)
+INLINE( ushort, USHRT_SUNLA) (void *dst, unsigned src)
 {
 #if MY_ENDIAN == ENDIAN_BIG
     src = __revsh(src);
@@ -14603,13 +17557,13 @@ INLINE( ushort, USHRT_SUNLA)   (void *dst,  ushort src)
     return  USHRT_SUNNA(dst, src);
 }
 
-INLINE(  short,  SHRT_SUNLA)   (void *dst,   short src)
+INLINE(  short,  SHRT_SUNLA) (void *dst,   signed src)
 {
     return  USHRT_SUNLA(dst, src);
 }
 
 
-INLINE(   uint,  UINT_SUNLA)   (void *dst,    uint src)
+INLINE(   uint,  UINT_SUNLA) (void *dst,     uint src)
 {
 #if MY_ENDIAN == ENDIAN_BIG
     src = __rev(src);
@@ -14618,13 +17572,13 @@ INLINE(   uint,  UINT_SUNLA)   (void *dst,    uint src)
     return  UINT_SUNNA(dst, src);
 }
 
-INLINE(    int,   INT_SUNLA)   (void *dst,     int src)
+INLINE(    int,   INT_SUNLA) (void *dst,      int src)
 {
     return UINT_SUNLA(dst, src);
 }
 
 
-INLINE(  ulong, ULONG_SUNLA)   (void *dst,   ulong src)
+INLINE(  ulong, ULONG_SUNLA) (void *dst,    ulong src)
 {
 #if MY_ENDIAN == ENDIAN_BIG
     src = __revl(src);
@@ -14633,13 +17587,13 @@ INLINE(  ulong, ULONG_SUNLA)   (void *dst,   ulong src)
     return  ULONG_SUNNA(dst, src);
 }
 
-INLINE(   long,  LONG_SUNLA)   (void *dst,    long src)
+INLINE(   long,  LONG_SUNLA) (void *dst,     long src)
 {
     return  ULONG_SUNLA(dst, src);
 }
 
 
-INLINE( ullong,ULLONG_SUNLA)   (void *dst,  ullong src)
+INLINE( ullong,ULLONG_SUNLA) (void *dst,   ullong src)
 {
 #if MY_ENDIAN == ENDIAN_BIG
     src = __revll(src);
@@ -14653,6 +17607,23 @@ INLINE(  llong, LLONG_SUNLA)   (void *dst,   llong src)
     return  ULLONG_SUNLA(dst, src);
 }
 
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,sunlaqu) (void *dst, QUAD_UTYPE src)
+{
+#if MY_ENDIAN == ENDIAN_BIG
+    src = revbqu(src);
+#endif
+    return  sunnaqu(dst, src);
+}
+
+INLINE(QUAD_ITYPE,sunlaqi) (void *dst, QUAD_ITYPE src)
+{
+#if MY_ENDIAN == ENDIAN_BIG
+    src = revbqi(src);
+#endif
+    return  sunnaqi(dst, src);
+}
+#endif
 
 INLINE(flt16_t, FLT16_SUNLA)   (void *dst, flt16_t src)
 {
@@ -14697,29 +17668,29 @@ INLINE(double,    DBL_SUNLA)   (void *dst,  double src)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_SUNRA)   (void *dst,   _Bool src)
+INLINE(  _Bool,  BOOL_SUNRA) (void *dst,    _Bool src)
 {
-    return  (((_Bool *) dst)[0]=src);
+    return  BOOL_SUNNA(dst, src);
 }
 
 
-INLINE(  uchar, UCHAR_SUNRA)   (void *dst,   uchar src)
+INLINE(  uchar, UCHAR_SUNRA) (void *dst, unsigned src)
 {
-    return  (((uchar *) dst)[0]=src);
+    return  UCHAR_SUNNA(dst, src);
 }
 
-INLINE(  schar, SCHAR_SUNRA)   (void *dst,   schar src)
+INLINE(  schar, SCHAR_SUNRA) (void *dst,   signed src)
 {
-    return  (((schar *) dst)[0]=src);
+    return  SCHAR_SUNNA(dst, src);
 }
 
-INLINE(   char,  CHAR_SUNRA)   (void *dst,    char src)
+INLINE(   char,  CHAR_SUNRA) (void *dst,      int src)
 {
-    return  (((char *) dst)[0]=src);
+    return  CHAR_SUNNA(dst, src);
 }
 
 
-INLINE( ushort, USHRT_SUNRA)   (void *dst,  ushort src)
+INLINE( ushort, USHRT_SUNRA) (void *dst, unsigned src)
 {
 #if MY_ENDIAN == ENDIAN_LIL
     src = __revsh(src);
@@ -14728,13 +17699,13 @@ INLINE( ushort, USHRT_SUNRA)   (void *dst,  ushort src)
     return  USHRT_SUNNA(dst, src);
 }
 
-INLINE(  short,  SHRT_SUNRA)   (void *dst,   short src)
+INLINE(  short,  SHRT_SUNRA) (void *dst,   signed src)
 {
     return  USHRT_SUNRA(dst, src);
 }
 
 
-INLINE(   uint,  UINT_SUNRA)   (void *dst,    uint src)
+INLINE(   uint,  UINT_SUNRA) (void *dst,     uint src)
 {
 #if MY_ENDIAN == ENDIAN_LIL
     src = __rev(src);
@@ -14743,13 +17714,13 @@ INLINE(   uint,  UINT_SUNRA)   (void *dst,    uint src)
     return  UINT_SUNNA(dst, src);
 }
 
-INLINE(    int,   INT_SUNRA)   (void *dst,     int src)
+INLINE(    int,   INT_SUNRA) (void *dst,      int src)
 {
     return UINT_SUNRA(dst, src);
 }
 
 
-INLINE(  ulong, ULONG_SUNRA)   (void *dst,   ulong src)
+INLINE(  ulong, ULONG_SUNRA) (void *dst,    ulong src)
 {
 #if MY_ENDIAN == ENDIAN_LIL
     src = __revl(src);
@@ -14758,13 +17729,13 @@ INLINE(  ulong, ULONG_SUNRA)   (void *dst,   ulong src)
     return  ULONG_SUNNA(dst, src);
 }
 
-INLINE(   long,  LONG_SUNRA)   (void *dst,    long src)
+INLINE(   long,  LONG_SUNRA) (void *dst,     long src)
 {
     return  ULONG_SUNRA(dst, src);
 }
 
 
-INLINE( ullong,ULLONG_SUNRA)   (void *dst,  ullong src)
+INLINE( ullong,ULLONG_SUNRA) (void *dst,   ullong src)
 {
 #if MY_ENDIAN == ENDIAN_LIL
     src = __revll(src);
@@ -14778,13 +17749,28 @@ INLINE(  llong, LLONG_SUNRA)   (void *dst,   llong src)
     return  ULLONG_SUNRA(dst, src);
 }
 
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,sunraqu) (void *dst, QUAD_UTYPE src)
+{
+#if MY_ENDIAN == ENDIAN_LIL
+    src = revbqu(src);
+#endif
+    return  sunnaqu(dst, src);
+}
+
+INLINE(QUAD_ITYPE,sunraqi) (void *dst, QUAD_ITYPE src)
+{
+#if MY_ENDIAN == ENDIAN_LIL
+    src = revbqi(src);
+#endif
+    return  sunnaqi(dst, src);
+}
+#endif
 
 INLINE(flt16_t, FLT16_SUNRA)   (void *dst, flt16_t src)
 {
 #if MY_ENDIAN == ENDIAN_LIL
-    HALF_TYPE x = {.F=src};
-    x.U = __revsh(x.U);
-    src = x.F;
+    src = FLT16_REVB(src);
 #endif
     return  FLT16_SUNNA(dst, src);
 }
@@ -14792,9 +17778,7 @@ INLINE(flt16_t, FLT16_SUNRA)   (void *dst, flt16_t src)
 INLINE( float,    FLT_SUNRA)   (void *dst,   float src)
 {
 #if MY_ENDIAN == ENDIAN_LIL
-    WORD_TYPE x = {.F=src};
-    x.U = __rev(x.U);
-    src = x.F;
+    src = FLT_REVB(src);
 #endif
     return  FLT_SUNNA(dst, src);
 }
@@ -14802,13 +17786,7 @@ INLINE( float,    FLT_SUNRA)   (void *dst,   float src)
 INLINE(double,    DBL_SUNRA)   (void *dst,  double src)
 {
 #if MY_ENDIAN == ENDIAN_LIL
-    DWRD_TYPE x = {.F=src};
-#   if DWRD_NLONG == 1
-    x.U = __revll(x.U);
-#   else
-    x.U = __revll(x.U);
-#   endif
-    src = x.F;
+    src = DBL_REVB(src);
 #endif
     return  DBL_SUNNA(dst, src);
 }
@@ -14821,9 +17799,6 @@ INLINE(double,    DBL_SUNRA)   (void *dst,  double src)
 #if 0 // _ENTER_ARM_SUNW
 {
 #endif
-/*
-WORD_TYPE.M is a packed float
-*/
 
 INLINE(Vwyu, BOOL_SUNWA)   (void *dst, Vwyu src)
 {
@@ -15123,6 +18098,19 @@ INLINE(Vqdi, LLONG_SUNQA) (void *dst, Vqdi src)
     return  src;
 }
 
+INLINE(Vqqu,sunqaqu) (void *dst, Vqqu src)
+{
+    vst1q_u8(dst, vreinterpretq_u8_u64(src.V0));
+    return  src;
+}
+
+INLINE(Vqqi,sunqaqi) (void *dst, Vqqi src)
+{
+    vst1q_u8(dst, vreinterpretq_u8_s64(src.V0));
+    return  src;
+}
+
+
 #endif
 
 INLINE(Vqhf, FLT16_SUNQA) (void *dst, Vqhf src)
@@ -15143,6 +18131,12 @@ INLINE(Vqdf,   DBL_SUNQA) (void *dst, Vqdf src)
     return  src;
 }
 
+INLINE(Vqqf,sunqaqf) (void *dst, Vqqf src)
+{
+    vst1q_u8(dst, VQQF_ASBU(src));
+    return  src;
+}
+
 #if 0 // _LEAVE_ARM_SUNQ
 }
 #endif
@@ -15152,83 +18146,22 @@ INLINE(Vqdf,   DBL_SUNQA) (void *dst, Vqdf src)
 {
 #endif
 
-INLINE(Vwyu,BOOL_STRWA)    (void *dst, Vwyu src)
-{
-    ((WORD_TYPE *) dst)->F = VWYU_ASTM(src);
-    return  src;
-}
-
-INLINE(Vwbu,UCHAR_STRWA)    (uchar dst[4], Vwbu src)
-{
-    ((WORD_TYPE *) dst)->F = VWBU_ASTM(src);
-    return  src;
-}
-
-INLINE(Vwbi,SCHAR_STRWA)    (schar dst[4], Vwbi src)
-{
-    ((WORD_TYPE *) dst)->F = VWBI_ASTM(src);
-    return  src;
-}
-
-INLINE(Vwbc, CHAR_STRWA)     (char dst[4], Vwbc src)
-{
-    ((WORD_TYPE *) dst)->F = VWBC_ASTM(src);
-    return  src;
-}
-
-
-INLINE(Vwhu,USHRT_STRWA)   (ushort dst[2], Vwhu src)
-{
-    ((WORD_TYPE *) dst)->F = VWHU_ASTM(src);
-    return  src;
-}
-
-INLINE(Vwhi, SHRT_STRWA)    (short dst[2], Vwhi src)
-{
-    ((WORD_TYPE *) dst)->F = VWHI_ASTM(src);
-    return  src;
-}
-
-
-INLINE(Vwwu, UINT_STRWA)     (uint dst[1], Vwwu src)
-{
-    ((WORD_TYPE *) dst)->F = VWWU_ASTM(src);
-    return  src;
-}
-
-INLINE(Vwwi,  INT_STRWA)      (int dst[1], Vwwi src)
-{
-    ((WORD_TYPE *) dst)->F = VWWI_ASTM(src);
-    return  src;
-}
+INLINE(Vwyu, BOOL_STRWA)   (void *d,    Vwyu s) {return (*(Vwyu *) d=s);}
+INLINE(Vwbu,UCHAR_STRWA)   (uchar d[4], Vwbu s) {return (*(Vwbu *) d=s);}
+INLINE(Vwbi,SCHAR_STRWA)   (schar d[4], Vwbi s) {return (*(Vwbi *) d=s);}
+INLINE(Vwbc, CHAR_STRWA)    (char d[4], Vwbc s) {return (*(Vwbc *) d=s);}
+INLINE(Vwhu,USHRT_STRWA)  (ushort d[2], Vwhu s) {return (*(Vwhu *) d=s);}
+INLINE(Vwhi, SHRT_STRWA)   (short d[2], Vwhi s) {return (*(Vwhi *) d=s);}
+INLINE(Vwwu, UINT_STRWA)    (uint d[1], Vwwu s) {return (*(Vwwu *) d=s);}
+INLINE(Vwwi,  INT_STRWA)     (int d[1], Vwwi s) {return (*(Vwwi *) d=s);}
 
 #if DWRD_NLONG == 2
-
-INLINE(Vwwu,ULONG_STRWA)    (ulong dst[1], Vwwu src)
-{
-    ((WORD_TYPE *) dst)->F = VWWU_ASTM(src);
-    return  dst;
-}
-
-INLINE(Vwwi, LONG_STRWA)     (long dst[1], Vwwi src)
-{
-    ((WORD_TYPE *) dst)->F = VWWI_ASTM(src);
-    return  dst;
-}
-
+INLINE(Vwwu,ULONG_STRWA)   (ulong d[1], Vwwu s) {return (*(Vwwu *) d=s);}
+INLINE(Vwwi, LONG_STRWA)    (long d[1], Vwwi s) {return (*(Vwwi *) d=s);}
 #endif
 
-INLINE(Vwhf, FLT16_STRWA) (flt16_t dst[2], Vwhf src)
-{
-    ((WORD_TYPE *) dst)->F = VWHF_ASTM(src);
-    return  src;
-}
-
-INLINE(Vwwf,   FLT_STRWA)   (float dst[1], Vwwf src)
-{
-    ((WORD_TYPE *) dst)->F = VWWF_ASTM(src);
-    return  src;
-}
+INLINE(Vwhf,FLT16_STRWA) (flt16_t d[2], Vwhf s) {return (*(Vwhf *) d=s);}
+INLINE(Vwwf,  FLT_STRWA)   (float d[1], Vwwf s) {return (*(Vwwf *) d=s);}
 
 #if 0 // _LEAVE_ARM_STRW
 }
@@ -15448,14 +18381,26 @@ INLINE(Vqdi,  LONG_STRQA)    (long dst[2], Vqdi src)
 
 INLINE(Vqdu,ULLONG_STRQA)  (ullong dst[2], Vqdu src)
 {
-    vst1q_u64(((uint64_t *) dst), src);
+    vst1q_u64(( (uint64_t *) dst), src);
     return  src;
 }
 
 INLINE(Vqdi, LLONG_STRQA)   (llong dst[2], Vqdi src)
 {
-    vst1q_s64(((int64_t *) dst), src);
+    vst1q_s64( ((int64_t *) dst), src);
     return  src;
+}
+
+INLINE(Vqqu,strqaqu) (QUAD_UTYPE dst[1], Vqqu src)
+{
+    vst1q_u64( ((uint64_t *) dst), src.V0);
+    return src;
+}
+
+INLINE(Vqqi,strqaqi) (QUAD_ITYPE dst[1], Vqqi src)
+{
+    vst1q_s64( ((int64_t *) dst), src.V0);
+    return src;
 }
 
 #endif
@@ -15477,13 +18422,15 @@ INLINE(Vqdf,   DBL_STRQA)  (double dst[2], Vqdf src)
     vst1q_f64(dst, src);
     return  src;
 }
+INLINE(Vqqf, strqaqf) (QUAD_FTYPE dst[1], Vqqf src)
+{
+    dst[0] = src.V0;
+    return  src;
+}
 
 #if 0 // _LEAVE_ARM_STRQ
 }
 #endif
-
-
-
 
 #if 0 // _ENTER_ARM_NEWW
 {
@@ -16394,15 +19341,14 @@ INLINE(Vwwf,VQWF_NEWW) (Vqwf v, Rc(-1, +3) k0)
 }
 #endif
 
-
 #if 0 // _ENTER_ARM_NEWD
 {
 #endif
 
 INLINE(Vdbu,UCHAR_NEWD) 
 (
-    uint  k0, uint  k1, uint k2, uint k3,
-    uint  k4, uint  k5, uint k6, uint k7
+    unsigned  k0, unsigned  k1, unsigned k2, unsigned k3,
+    unsigned  k4, unsigned  k5, unsigned k6, unsigned k7
 )
 {
 #define     UCHAR_NEWD(K0, K1, K2, K3, K4, K5, K6, K7) \
@@ -16421,8 +19367,8 @@ vcreate_u8(         \
 
 INLINE(Vdbi,SCHAR_NEWD) 
 (
-    int  k0, int  k1, int k2, int k3,
-    int  k4, int  k5, int k6, int k7
+    signed  k0, signed  k1, signed k2, signed k3,
+    signed  k4, signed  k5, signed k6, signed k7
 )
 {
 #define     SCHAR_NEWD(K0, K1, K2, K3, K4, K5, K6, K7) \
@@ -16464,7 +19410,7 @@ VDBU_ASBC(              \
 
 INLINE(Vdhu,USHRT_NEWD) 
 (
-    uint  k0, uint  k1, uint k2, uint k3
+    unsigned  k0, unsigned  k1, unsigned k2, unsigned k3
 )
 {
 #define     USHRT_NEWD(K0, K1, K2, K3) \
@@ -16482,7 +19428,7 @@ vcreate_u16(        \
 
 INLINE(Vdhi, SHRT_NEWD) 
 (
-    int  k0, int  k1, int k2, int k3
+    signed  k0, signed  k1, signed k2, signed k3
 )
 {
 #define     SHRT_NEWD(K0, K1, K2, K3) \
@@ -17327,8 +20273,8 @@ INLINE(Vqbc,CHAR_NEWQ)
 
 INLINE(Vqhu,USHRT_NEWQ)
 (
-    uint  k0, uint  k1, uint  k2, uint  k3,
-    uint  k4, uint  k5, uint  k6, uint  k7
+    unsigned  k0, unsigned  k1, unsigned  k2, unsigned  k3,
+    unsigned  k4, unsigned  k5, unsigned  k6, unsigned  k7
 )
 {
 #define     USHRT_NEWQ(K0,K1,K2,K3,K4,K5,K6,K7) \
@@ -17358,8 +20304,8 @@ vcombine_u16(            \
 
 INLINE(Vqhi,SHRT_NEWQ)
 (
-    int  k0, int  k1, int  k2, int  k3,
-    int  k4, int  k5, int  k6, int  k7
+    signed  k0, signed  k1, signed  k2, signed  k3,
+    signed  k4, signed  k5, signed  k6, signed  k7
 )
 {
 #define     SHRT_NEWQ(K0,K1,K2,K3,K4,K5,K6,K7) \
@@ -17458,6 +20404,7 @@ INLINE(Vqwi,LONG_NEWQ)
 {
     return  INT_NEWQ(k0, k1, k2, k3);
 }
+
 #else
 
 INLINE(Vqdu,ULONG_NEWQ) (ulong  k0, ulong  k1)
@@ -17487,6 +20434,10 @@ INLINE(Vqdi,LLONG_NEWQ) (llong  k0, llong  k1)
 #define     LLONG_NEWQ(K0, K1) vcombine_s64(vdup_n_s64(K0),vdup_n_s64(K1))
     return  LLONG_NEWQ(k0, k1);
 }
+
+INLINE(Vqqu,newqqu) (QUAD_UTYPE k0) {return astvqu(k0);}
+INLINE(Vqqi,newqqi) (QUAD_ITYPE k0) {return astvqi(k0);}
+INLINE(Vqqf,newqqf) (QUAD_FTYPE k0) {return astvqf(k0);}
 
 #endif
 
@@ -18471,17 +21422,13 @@ INLINE(Vqdi,  LONG_SEQQ)   (long a, int64_t b)
 
 #endif
 
-#if QUAD_NLONG == 2
+#if QUAD_NLLONG == 2
 
 INLINE(Vqdu,ULLONG_SEQQ) (ullong a, int64_t b)
 {
-    return  vaddq_u64(
-        vdupq_n_u64(a),
-        vcombine_u64(
-            vdup_n_u64(0),
-            vreinterpret_u64_s64(vdup_n_s64(b))
-        )
-    );
+    uint64x1_t l = vdup_n_u64((a));
+    uint64x1_t r = vdup_n_u64((a+b));
+    return vcombine_u64(l, r);
 }
 
 INLINE(Vqdi, LLONG_SEQQ)  (llong a, int64_t b)
@@ -18502,27 +21449,74 @@ INLINE(Vqdi, LLONG_SEQQ)  (llong a, int64_t b)
 {
 #endif
 
-INLINE( Dwf,WWF_CATL) ( Wwf l, Wwf r)
+INLINE(uint64x1_t,WYU_CATL) (float a, float b)
 {
-#define     WWF_CATL        WWF_CATL
-    Dwf m = vset_lane_f32(l, m, 0);
-    return  vset_lane_f32(r, m, 1);
+#define     WYU_CATL(A, B) ((DWRD_VTYPE){.L.W0.F=A,.R.W0.F=B}).D.U
+    return  WYU_CATL(a, b);
 }
 
-#define     WYU_CATL(L, R)  vreinterpret_u64_f32(WWF_CATL(L,R))
-#define     WBU_CATL(L, R)  vreinterpret_u8_f32( WWF_CATL(L,R))
-#define     WBI_CATL(L, R)  vreinterpret_s8_f32( WWF_CATL(L,R))
+INLINE(uint8x8_t,WBU_CATL) (float a, float b)
+{
+#define     WBU_CATL(p, q) ((DWRD_VTYPE){.L.W0.F=p, .R.W0.F=q}).B.U
+    return  WBU_CATL(a, b);
+}
+
+INLINE(int8x8_t,WBI_CATL) (float a, float b)
+{
+#define     WBI_CATL(p, q) ((DWRD_VTYPE){.L.W0.F=p,.R.W0.F=q}).B.I
+    return  WBI_CATL(a, b);
+}
+
 #if CHAR_MIN
-#   define  WBC_CATL(L, R)  WBI_CATL(L,R)
+INLINE(int8x8_t,WBC_CATL) (float a, float b)
+{
+#   define  WBC_CATL(p, q) ((DWRD_VTYPE){.L.W0.F=p,.R.W0.F=q}).B.I
+    return  WBC_CATL(a, b);
+}
 #else
-#   define  WBC_CATL(L, R)  WBU_CATL(L,R)
+INLINE(uint8x8_t,WBC_CATL) (float a, float b)
+{
+#   define  WBC_CATL(p, q) ((DWRD_VTYPE){.L.W0.F=p,.R.W0.F=q}).B.U
+    return  WBC_CATL(a, b);
+}
+
 #endif
 
-#define     WHU_CATL(L, R)  vreinterpret_u16_f32(WWF_CATL(L,R))
-#define     WHI_CATL(L, R)  vreinterpret_s16_f32(WWF_CATL(L,R))
-#define     WHF_CATL(L, R)  vreinterpret_f16_f32(WWF_CATL(L,R))
-#define     WWU_CATL(L, R)  vreinterpret_u32_f32(WWF_CATL(L,R))
-#define     WWI_CATL(L, R)  vreinterpret_s32_f32(WWF_CATL(L,R))
+INLINE(uint16x4_t,WHU_CATL) (float a, float b)
+{
+#define     WHU_CATL(A, B) ((DWRD_VTYPE){.L.W0.F=A,.R.W0.F=B}).H.U
+    return  WHU_CATL(a, b);
+}
+
+INLINE(int16x4_t,WHI_CATL) (float a, float b)
+{
+#define     WHI_CATL(A, B) ((DWRD_VTYPE){.L.W0.F=A,.R.W0.F=B}).H.I
+    return  WHI_CATL(a, b);
+}
+
+INLINE(float16x4_t,WHF_CATL) (float a, float b)
+{
+#define     WHF_CATL(A, B) ((DWRD_VTYPE){.L.W0.F=A,.R.W0.F=B}).H.F
+    return  WHF_CATL(a, b);
+}
+
+INLINE(uint32x2_t,WWU_CATL) (float a, float b)
+{
+#define     WWU_CATL(A, B) ((DWRD_VTYPE){.L.W0.F=A,.R.W0.F=B}).W.U
+    return  WWU_CATL(a, b);
+}
+
+INLINE(int32x2_t,WWI_CATL) (float a, float b)
+{
+#define     WWI_CATL(A, B) ((DWRD_VTYPE){.L.W0.F=A,.R.W0.F=B}).W.I
+    return  WWI_CATL(a, b);
+}
+
+INLINE(float32x2_t,WWF_CATL) (float a, float b)
+{
+#define     WWF_CATL(A, B) ((DWRD_VTYPE){.L.W0.F=A,.R.W0.F=B}).W.F
+    return  WWF_CATL(a, b);
+}
 
 #define     DYU_CATL    vcombine_u64
 #define     DBU_CATL    vcombine_u8
@@ -18536,85 +21530,86 @@ INLINE( Dwf,WWF_CATL) ( Wwf l, Wwf r)
 #define     DHU_CATL    vcombine_u16
 #define     DHI_CATL    vcombine_s16
 #define     DHF_CATL    vcombine_f16
+
 #define     DWU_CATL    vcombine_u32
 #define     DWI_CATL    vcombine_s32
 #define     DWF_CATL    vcombine_f32
+
 #define     DDU_CATL    vcombine_u64
 #define     DDI_CATL    vcombine_s64
 #define     DDF_CATL    vcombine_f64
 
 INLINE(Vdyu,VWYU_CATL) (Vwyu a, Vwyu b)
 {
-#   define  VWYU_CATL(L, R) DYU_ASTV(WYU_CATL(VWYU_ASTM(L),VWYU_ASTM(R)))
+#define     VWYU_CATL(A, B) ((Vdyu){WYU_CATL(A.V0,B.V0)})
     return  VWYU_CATL(a, b);
 }
 
 INLINE(Vdbu,VWBU_CATL) (Vwbu a, Vwbu b)
 {
-#   define  VWBU_CATL(L, R)          WBU_CATL(VWBU_ASTM(L),VWBU_ASTM(R))
+#define     VWBU_CATL(A, B)  WBU_CATL(A.V0,B.V0)
     return  VWBU_CATL(a, b);
 }
 
 INLINE(Vdbi,VWBI_CATL) (Vwbi a, Vwbi b)
 {
-#   define  VWBI_CATL(L, R)          WBI_CATL(VWBI_ASTM(L),VWBI_ASTM(R))
+#define     VWBI_CATL(A, B)  WBI_CATL(A.V0,B.V0)
     return  VWBI_CATL(a, b);
 }
 
 INLINE(Vdbc,VWBC_CATL) (Vwbc a, Vwbc b)
 {
-#   define  VWBC_CATL(L, R) DBC_ASTV(WBC_CATL(VWBC_ASTM(L),VWBC_ASTM(R)))
+#define     VWBC_CATL(A, B)  ((Vdbc){WBI_CATL(A.V0,B.V0)})
     return  VWBC_CATL(a, b);
 }
 
 INLINE(Vdhu,VWHU_CATL) (Vwhu a, Vwhu b)
 {
-#   define  VWHU_CATL(L, R)          WHU_CATL(VWHU_ASTM(L),VWHU_ASTM(R))
+#define     VWHU_CATL(A, B) WHU_CATL(A.V0,B.V0)
     return  VWHU_CATL(a, b);
 }
 
 INLINE(Vdhi,VWHI_CATL) (Vwhi a, Vwhi b)
 {
-#   define  VWHI_CATL(L, R)          WHI_CATL(VWHI_ASTM(L),VWHI_ASTM(R))
+#define     VWHI_CATL(A, B) WHI_CATL(A.V0,B.V0)
     return  VWHI_CATL(a, b);
 }
 
 INLINE(Vdhf,VWHF_CATL) (Vwhf a, Vwhf b)
 {
-#   define  VWHF_CATL(L, R)          WHF_CATL(VWHF_ASTM(L),VWHF_ASTM(R))
+#define     VWHF_CATL(A, B) WHF_CATL(A.V0,B.V0)
     return  VWHF_CATL(a, b);
 }
 
 INLINE(Vdwu,VWWU_CATL) (Vwwu a, Vwwu b)
 {
-#   define  VWWU_CATL(L, R)          WWU_CATL(VWWU_ASTM(L),VWWU_ASTM(R))
+#define     VWWU_CATL(A, B) WWU_CATL(A.V0,B.V0)
     return  VWWU_CATL(a, b);
 }
 
 INLINE(Vdwi,VWWI_CATL) (Vwwi a, Vwwi b)
 {
-#   define  VWWI_CATL(L, R)          WWI_CATL(VWWI_ASTM(L),VWWI_ASTM(R))
+#define     VWWI_CATL(A, B) WWI_CATL(A.V0,B.V0)
     return  VWWI_CATL(a, b);
 }
 
 INLINE(Vdwf,VWWF_CATL) (Vwwf a, Vwwf b)
 {
-#   define  VWWF_CATL(L, R)          WWF_CATL(VWWF_ASTM(L),VWWF_ASTM(R))
+#define     VWWF_CATL(A, B) WWF_CATL(A.V0,B.V0)
     return  VWWF_CATL(a, b);
 }
 
 INLINE(Vqyu,VDYU_CATL) (Vdyu a, Vdyu b)
 {
-#   define  VDYU_CATL(L, R) QYU_ASTV(DYU_CATL(VDYU_ASTM(L),VDYU_ASTM(R)))
+#define     VDYU_CATL(A, B) ((Vqyu){DYU_CATL(A.V0, B.V0)})
     return  VDYU_CATL(a, b);
 }
 
 INLINE(Vqbu,VDBU_CATL) (Vdbu a, Vdbu b) {return vcombine_u8(a, b);}
 INLINE(Vqbi,VDBI_CATL) (Vdbi a, Vdbi b) {return vcombine_s8(a, b);}
-INLINE(Vqbc,VDBC_CATL) (Vdbc a, Vdbc b)
+INLINE(Vqbc,VDBC_CATL) (Vdbc a, Vdbc b) 
 {
-#   define  VDBC_CATL(L, R) QBC_ASTV(DBC_CATL(VDBC_ASTM(L),VDBC_ASTM(R)))
-    return  VDBC_CATL(a, b);
+    return ((Vqbc){DBC_CATL(a.V0, b.V0)});
 }
 
 INLINE(Vqhu,VDHU_CATL) (Vdhu a, Vdhu b) {return vcombine_u16(a, b);}
@@ -18863,897 +21858,9 @@ INLINE(Vqdf,VDDF_CATR) (Vddf l, Vddf r)
 }
 #endif
 
-#if 0 // _ENTER_ARM_REVY
-{
-#endif
-
-INLINE( uchar, UCHAR_REVY)  (uchar x)
-{
-#define     UCHAR_REVY(X) vget_lane_u8(vrbit_u8(vdup_n_u8(X)), 0)
-    return  UCHAR_REVY(x);
-}
-
-INLINE( schar, SCHAR_REVY)  (schar x)
-{
-#define     SCHAR_REVY(X) vget_lane_s8(vrbit_s8(vdup_n_s8(X)), 0)
-    return  SCHAR_REVY(x);
-}
-
-INLINE(  char,  CHAR_REVY)   (char x) {return UCHAR_REVY(x);}
-INLINE(ushort, USHRT_REVY) (ushort x) {return __rbit(x)>>16;}
-INLINE( short,  SHRT_REVY)  (short x) {return __rbit(x)>>16;}
-INLINE(  uint,  UINT_REVY)   (uint x) {return __rbit(x);}
-INLINE(   int,   INT_REVY)    (int x) {return __rbit(x);}
-INLINE( ulong, ULONG_REVY)  (ulong x) {return __rbitl(x);}
-INLINE(  long,  LONG_REVY)   (long x) {return __rbitl(x);}
-INLINE(ullong,ULLONG_REVY) (ullong x) {return __rbitll(x);}
-INLINE( llong, LLONG_REVY)  (llong x) {return __rbitll(x);}
-
-INLINE(float,WBU_REVY) (float v)
-{
-    float32x2_t m = vdup_n_f32(v);
-    uint8x8_t   r = vreinterpret_u8_f32(m);
-    r = vrbit_u8(r);
-    m = vreinterpret_f32_u8(r);
-    return vget_lane_f32(m, 0);
-}
-
-INLINE(float,WHU_REVY) (float v)
-{
-    float32x2_t m = vdup_n_f32(v);
-    uint8x8_t   r = vreinterpret_u8_f32(m);
-    r = vrbit_u8(r);
-    r = vrev16_u8(r);
-    m = vreinterpret_f32_u8(r);
-    return vget_lane_f32(m, 0);
-}
-
-INLINE(float,WWU_REVY) (float v)
-{
-    float32x2_t m = vdup_n_f32(v);
-    uint8x8_t   r = vreinterpret_u8_f32(m);
-    r = vrbit_u8(r);
-    r = vrev32_u8(r);
-    m = vreinterpret_f32_u8(r);
-    return vget_lane_f32(m, 0);
-}
-
-INLINE(Vwbu,VWBU_REVY) (Vwbu v)
-{
-#define     VWBU_REVY(V) WBU_ASTV(WBU_REVY(VWBU_ASTM(v)))
-    return  VWBU_REVY(v);
-}
-
-INLINE(Vwbi,VWBI_REVY) (Vwbi v)
-{
-#define     VWBI_REVY(V) WBI_ASTV(WBU_REVY(VWBI_ASTM(v)))
-    return  VWBI_REVY(v);
-}
-
-INLINE(Vwbc,VWBC_REVY) (Vwbc v)
-{
-#define     VWBC_REVY(V) WBC_ASTV(WBU_REVY(VWBC_ASTM(v)))
-    return  VWBC_REVY(v);
-}
-
-
-INLINE(Vwhu,VWHU_REVY) (Vwhu v)
-{
-#define     VWHU_REVY(V) WHU_ASTV(WHU_REVY(VWHU_ASTM(v)))
-    return  VWHU_REVY(v);
-}
-
-INLINE(Vwhi,VWHI_REVY) (Vwhi v)
-{
-#define     VWHI_REVY(V) WHI_ASTV(WHU_REVY(VWHI_ASTM(v)))
-    return  VWHI_REVY(v);
-}
-
-
-INLINE(Vwwu,VWWU_REVY) (Vwwu v)
-{
-#define     VWWU_REVY(V) WWU_ASTV(WWU_REVY(VWWU_ASTM(v)))
-    return  VWWU_REVY(v);
-}
-
-INLINE(Vwwi,VWWI_REVY) (Vwwi v)
-{
-#define     VWWI_REVY(V) WWI_ASTV(WWU_REVY(VWWI_ASTM(v)))
-    return  VWWI_REVY(v);
-}
-
-
-INLINE(Vdbu,VDBU_REVY) (Vdbu v) {return vrbit_u8(v);}
-INLINE(Vdbi,VDBI_REVY) (Vdbi v) {return vrbit_u8(v);}
-INLINE(Vdbc,VDBC_REVY) (Vdbc v)
-{
-    return  VDBU_ASBC(VDBU_REVY(VDBC_ASBU(v)));
-}
-
-
-INLINE(Vdhu,VDHU_REVY) (Vdhu x)
-{
-#define     VDHU_REVY(X) \
-vreinterpret_u16_u8(vrev16_u8(vrbit_u8(vreinterpret_u8_u16(X))))
-
-    return  VDHU_REVY(x);
-}
-
-INLINE(Vdhi,VDHI_REVY) (Vdhi x)
-{
-#define     VDHI_REVY(X) \
-vreinterpret_s16_u8(vrev16_u8(vrbit_u8(vreinterpret_u8_s16(X))))
-
-    return  VDHI_REVY(x);
-}
-
-
-INLINE(Vdwu,VDWU_REVY) (Vdwu v)
-{
-    return  vreinterpret_u32_u8(
-        vrev32_u8(
-            vrbit_u8(
-                vreinterpret_u8_u32(v)
-            )
-        )
-    );
-}
-
-INLINE(Vdwi,VDWI_REVY) (Vdwi v)
-{
-    return  VDWU_ASWI(VDWU_REVY(VDWI_ASWU(v)));
-}
-
-INLINE(Vddu,VDDU_REVY) (Vddu v)
-{
-    return  vreinterpret_u64_u8(
-        vrev64_u8(
-            vrbit_u8(
-                vreinterpret_u8_u64(v)
-            )
-        )
-    );
-}
-
-
-INLINE(Vddi,VDDI_REVY) (Vddi v)
-{
-    return  vreinterpret_s64_u8(
-        vrev64_u8(
-            vrbit_u8(
-                vreinterpret_u8_s64(v)
-            )
-        )
-    );
-}
-
-
-INLINE(Vqbu,VQBU_REVY) (Vqbu v) {return  vrbitq_u8(v);}
-INLINE(Vqbi,VQBI_REVY) (Vqbi v) {return  vrbitq_s8(v);}
-INLINE(Vqbc,VQBC_REVY) (Vqbc v) {return  VQBU_ASBC(vrbitq_u8(VQBC_ASBU(v)));}
-
-
-INLINE(Vqhu,VQHU_REVY) (Vqhu v)
-{
-    return  VQBU_ASHU(vrev16q_u8(vrbitq_u8(VQHU_ASBU(v))));
-}
-
-INLINE(Vqhi,VQHI_REVY) (Vqhi v)
-{
-    return  VQBU_ASHI(vrev16q_u8(vrbitq_u8(VQHI_ASBU(v))));
-}
-
-
-INLINE(Vqwu,VQWU_REVY) (Vqwu v)
-{
-    return  VQBU_ASWU(vrev32q_u8(vrbitq_u8(VQWU_ASBU(v))));
-}
-
-INLINE(Vqwi,VQWI_REVY) (Vqwi v)
-{
-    return  VQBU_ASWU(vrev32q_u8(vrbitq_u8(VQWI_ASBU(v))));
-}
-
-INLINE(Vqdu,VQDU_REVY) (Vqdu v)
-{
-    return  VQBU_ASDU(vrev64q_u8(vrbitq_u8(VQDU_ASBU(v))));
-}
-
-INLINE(Vqdi,VQDI_REVY) (Vqdi v)
-{
-    return  VQBU_ASDI(vrev64q_u8(vrbitq_u8(VQDI_ASBU(v))));
-}
-
-#if 0 // _LEAVE_ARM_REVY
-}
-#endif
-
-#if 0 // _ENTER_ARM_REVS
-{
-#endif
-
-#define     WYU_REVS(X) \
-vget_lane_f32(VDBU_ASWF(vrev32_u8(vrbit_u8(VDWF_ASBU(vdup_n_f32(X))))),0)
-
-#define     WBU_REVS(X) \
-vget_lane_f32(VDBU_ASWF(vrev32_u8(VDWF_ASBU(vdup_n_f32(X)))),0)
-
-#define     WHU_REVS(X) \
-vget_lane_f32(VDHU_ASWF(vrev32_u16(VDWF_ASHU(vdup_n_f32(X)))),0)
-
-
-#define     DYU_REVS(X) \
-vreinterpret_u64_u8(vrev64_u8(vrbit_u8(vreinterpret_u8_u64(X))))
-
-#define     DBU_REVS        vrev64_u8
-#define     DBI_REVS        vrev64_s8
-#if CHAR_MIN
-#   define  DBC_REVS        vrev64_s8
-#else
-#   define  DBC_REVS        vrev64_u8
-#endif
-
-#define     DHU_REVS        vrev64_u16
-#define     DHI_REVS        vrev64_s16
-#define     DHF_REVS(M)     \
-vreinterpret_f16_u16(vrev64_u16(vreinterpret_u16_f16(M)))
-
-#define     DWU_REVS        vrev64_u32
-#define     DWI_REVS        vrev64_s32
-#define     DWF_REVS        vrev64_f32
-
-INLINE(uint64x2_t,QYU_REVS) (uint64x2_t x)
-{
-    uint8x16_t  m = vreinterpretq_u8_u64(x);
-    m = vrbitq_u8(m);
-    m = vrev64q_u8(m);
-    return  vcombine_u8(vget_high_u8(m), vget_low_u8(m));
-}
-
-#define     QBU_REVS(M) \
-vrev64q_u8(vcombine_u8(vget_high_u8(M),vget_low_u8(M)))
-
-#define     QBI_REVS(M) \
-vrev64q_s8(vcombine_s8(vget_high_s8(M),vget_low_s8(M)))
-
-#if CHAR_MIN
-#   define  QBC_REVS(M)  \
-vrev64q_s8(vcombine_s8(vget_high_s8(M),vget_low_s8(M)))
-
-#else
-#   define  QBC_REVS(M) \
-vrev64q_u8(vcombine_u8(vget_high_u8(M),vget_low_u8(M)))
-
-#endif
-
-#define     QHU_REVS(M) \
-vrev64q_u16(vcombine_u16(vget_high_u16(M),vget_low_u16(M)))
-
-#define     QHI_REVS(M) \
-vrev64q_s16(vcombine_s16(vget_high_s16(M),vget_low_s16(M)))
-
-// fuggit
-#define     QHF_REVS(M)             \
-vreinterpretq_f16_u16(              \
-    vrev64q_u16(                    \
-        vreinterpretq_u16_f16(      \
-            vcombine_f16(           \
-                vget_high_f16(M),   \
-                vget_low_f16( M)    \
-            )                       \
-        )                           \
-    )                               \
-)
-
-#define     QWU_REVS(M) \
-vrev64q_u32(vcombine_u32(vget_high_u32(M),vget_low_u32(M)))
-
-#define     QWI_REVS(M) \
-vrev64q_s32(vcombine_s32(vget_high_s32(M),vget_low_s32(M)))
-
-#define     QWF_REVS(M) \
-vrev64q_f32(vcombine_f32(vget_high_f32(M),vget_low_f32(M)))
-
-
-#define     QDU_REVS(M) vcombine_u64(vget_high_u64(M),vget_low_u64(M))
-#define     QDI_REVS(M) vcombine_s64(vget_high_s64(M),vget_low_s64(M))
-#define     QDF_REVS(M) vcombine_f64(vget_high_f64(M),vget_low_f64(M))
-
-INLINE(Vwyu,VWYU_REVS) (Vwyu v)
-{
-#define     VWYU_REVS(V) WYU_ASTV(WYU_REVS(VWYU_ASTM(V)))
-    return  VWYU_REVS(v);
-}
-
-INLINE(Vwbu,VWBU_REVS) (Vwbu v)
-{
-#define     VWBU_REVS(V) WBU_ASTV(WBU_REVS(VWBU_ASTM(V)))
-    return  VWBU_REVS(v);
-}
-
-INLINE(Vwbi,VWBI_REVS) (Vwbi v)
-{
-#define     VWBI_REVS(V) WBI_ASTV(WBU_REVS(VWBI_ASTM(V)))
-    return  VWBI_REVS(v);
-}
-
-INLINE(Vwbc,VWBC_REVS) (Vwbc v)
-{
-#define     VWBC_REVS(V) WBC_ASTV(WBU_REVS(VWBC_ASTM(V)))
-    return  VWBC_REVS(v);
-}
-
-INLINE(Vwhu,VWHU_REVS) (Vwhu v)
-{
-#define     VWHU_REVS(V) WHU_ASTV(WHU_REVS(VWHU_ASTM(V)))
-    return  VWHU_REVS(v);
-}
-
-INLINE(Vwhi,VWHI_REVS) (Vwhi v)
-{
-#define     VWHI_REVS(V) WHI_ASTV(WHU_REVS(VWHI_ASTM(V)))
-    return  VWHI_REVS(v);
-}
-
-INLINE(Vwhf,VWHF_REVS) (Vwhf v)
-{
-#define     VWHF_REVS(V) WHF_ASTV(WHU_REVS(VWHF_ASTM(V)))
-    return  VWHF_REVS(v);
-}
-
-
-INLINE(Vdyu,VDYU_REVS) (Vdyu v)
-{
-#define     VDYU_REVS(V)    DYU_ASTV(DYU_REVS(VDYU_ASTM(V)))
-    return  VDYU_REVS(v);
-}
-
-INLINE(Vdbu,VDBU_REVS) (Vdbu v)
-{
-#define     VDBU_REVS(V)    DBU_REVS(V)
-    return  VDBU_REVS(v);
-}
-
-INLINE(Vdbi,VDBI_REVS) (Vdbi v)
-{
-#define     VDBI_REVS(V)    DBI_REVS(V)
-    return  VDBI_REVS(v);
-}
-
-INLINE(Vdbc,VDBC_REVS) (Vdbc v)
-{
-#define     VDBC_REVS(V) DBC_ASTV(DBC_REVS(VDBC_ASTM(V)))
-    return  VDBC_REVS(v);
-}
-
-INLINE(Vdhu,VDHU_REVS) (Vdhu v)
-{
-#define     VDHU_REVS(V)    DHU_REVS(V)
-    return  VDHU_REVS(v);
-}
-
-INLINE(Vdhi,VDHI_REVS) (Vdhi v)
-{
-#define     VDHI_REVS(V)    DHI_REVS(V)
-    return  VDHI_REVS(v);
-}
-
-INLINE(Vdhf,VDHF_REVS) (Vdhf v)
-{
-#define     VDHF_REVS(V)    DHF_REVS(V)
-    return  VDHF_REVS(v);
-}
-
-INLINE(Vdwu,VDWU_REVS) (Vdwu v)
-{
-#define     VDWU_REVS(V)    DWU_REVS(V)
-    return  VDWU_REVS(v);
-}
-
-INLINE(Vdwi,VDWI_REVS) (Vdwi v)
-{
-#define     VDWI_REVS(V)    DWI_REVS(V)
-    return  VDWI_REVS(v);
-}
-
-INLINE(Vdwf,VDWF_REVS) (Vdwf v)
-{
-#define     VDWF_REVS(V)    DWF_REVS(V)
-    return  VDWF_REVS(v);
-}
-
-INLINE(Vqyu,VQYU_REVS) (Vqyu v)
-{
-#define     VQYU_REVS(V)    QYU_ASTV(QYU_REVS(VQYU_ASTM(V)))
-    return  VQYU_REVS(v);
-}
-
-INLINE(Vqbu,VQBU_REVS) (Vqbu v)
-{
-#define     VQBU_REVS(V)    QBU_REVS(V)
-    return  VQBU_REVS(v);
-}
-
-INLINE(Vqbi,VQBI_REVS) (Vqbi v)
-{
-#define     VQBI_REVS(V)    QBI_REVS(V)
-    return  VQBI_REVS(v);
-}
-
-INLINE(Vqbc,VQBC_REVS) (Vqbc v)
-{
-#define     VQBC_REVS(V)    QBC_ASTV(QBC_REVS(VQBC_ASTM(V)))
-    return  VQBC_REVS(v);
-}
-
-INLINE(Vqhu,VQHU_REVS) (Vqhu v)
-{
-#define     VQHU_REVS(V)    QHU_REVS(V)
-    return  VQHU_REVS(v);
-}
-
-INLINE(Vqhi,VQHI_REVS) (Vqhi v)
-{
-#define     VQHI_REVS(V)    QHI_REVS(V)
-    return  VQHI_REVS(v);
-}
-
-INLINE(Vqhf,VQHF_REVS) (Vqhf v)
-{
-#define     VQHF_REVS(V)    QHF_REVS(V)
-    return  VQHF_REVS(v);
-}
-
-INLINE(Vqwu,VQWU_REVS) (Vqwu v)
-{
-#define     VQWU_REVS(V)    QWU_REVS(V)
-    return  VQWU_REVS(v);
-}
-
-INLINE(Vqwi,VQWI_REVS) (Vqwi v)
-{
-#define     VQWI_REVS(V)    QWI_REVS(V)
-    return  VQWI_REVS(v);
-}
-
-INLINE(Vqwf,VQWF_REVS) (Vqwf v)
-{
-#define     VQWF_REVS(V)    QWF_REVS(V)
-    return  VQWF_REVS(v);
-}
-
-INLINE(Vqdu,VQDU_REVS) (Vqdu v)
-{
-#define     VQDU_REVS(V)    QDU_REVS(V)
-    return  VQDU_REVS(v);
-}
-
-INLINE(Vqdi,VQDI_REVS) (Vqdi v)
-{
-#define     VQDI_REVS(V)    QDI_REVS(V)
-    return  VQDI_REVS(v);
-}
-
-INLINE(Vqdf,VQDF_REVS) (Vqdf v)
-{
-#define     VQDF_REVS(V)    QDF_REVS(V)
-    return  VQDF_REVS(v);
-}
-
-#if 0 // _LEAVE_ARM_REVS
-}
-#endif
-
-#if 0 // _ENTER_ARM_REVB
-{
-#endif
-
-INLINE( ushort, USHRT_REVB)  (ushort x) {return __revsh(x);}
-INLINE(  short,  SHRT_REVB)   (short x) {return __revsh(x);}
-INLINE(   uint,  UINT_REVB)    (uint x) {return __rev(x);}
-INLINE(    int,   INT_REVB)     (int x) {return __rev(x);}
-INLINE(  ulong, ULONG_REVB)   (ulong x) {return __revl(x);}
-INLINE(   long,  LONG_REVB)    (long x) {return __revl(x);}
-INLINE( ullong,ULLONG_REVB)  (ullong x) {return __revll(x);}
-INLINE(  llong, LLONG_REVB)   (llong x) {return __revll(x);}
-INLINE(flt16_t, FLT16_REVB) (flt16_t x)
-{
-    float16x4_t m = vdup_n_f16(x);
-    uint8x8_t   v = vreinterpret_u8_f16(m);
-    v = vrev16_u8(v);
-    return  vget_lane_f16(v, 0);
-}
-
-INLINE(  float,   FLT_REVB)   (float x)
-{
-    float32x2_t v = vdup_n_f32(x);
-    v = vrev32_u8(vreinterpret_u8_f32(v));
-    return  vget_lane_f32(v, 0);
-}
-
-INLINE( double,   DBL_REVB)  (double x)
-{
-    float64x1_t m = vdup_n_f64(x);
-    uint8x8_t   v = vreinterpret_u8_f64(m);
-    v = vrev64_u8(v);
-    return  vget_lane_f64(v, 0);
-}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,revbqu) (QUAD_UTYPE x)
-{
-    QUAD_TYPE l = {.U=x};
-    QUAD_TYPE r = {
-        .Lo.U = __revll(l.Hi.U),
-        .Hi.U = __revll(l.Lo.U),
-    };
-    return  r.U;
-}
-
-INLINE(QUAD_ITYPE,revbqi) (QUAD_ITYPE x)
-{
-    QUAD_TYPE l = {.I=x};
-    QUAD_TYPE r = {
-        .Lo.U = __revll(l.Hi.U),
-        .Hi.U = __revll(l.Lo.U),
-    };
-    return  r.I;
-}
-
-INLINE(QUAD_FTYPE,revbqf) (QUAD_FTYPE x)
-{
-    QUAD_TYPE l = {.F=x};
-    QUAD_TYPE r = {
-        .Lo.U = __revll(l.Hi.U),
-        .Hi.U = __revll(l.Lo.U),
-    };
-    return  r.F;
-}
-
-#endif
-
-INLINE(float,WHU_REVB) (float v)
-{
-    float32x2_t m = vdup_n_f32(v);
-    uint8x8_t   r = vreinterpret_u8_f32(m);
-    r = vrev16_u8(r);
-    m = vreinterpret_f32_u8(r);
-    return  vget_lane_f32(m, 0);
-}
-
-INLINE(float,WWU_REVB) (float v)
-{
-    float32x2_t m = vdup_n_f32(v);
-    uint8x8_t   r = vreinterpret_u8_f32(m);
-    r = vrev32_u8(r);
-    m = vreinterpret_f32_u8(r);
-    return  vget_lane_f32(m, 0);
-}
-
-INLINE(Vwhu,VWHU_REVB) (Vwhu v)
-{
-    return  WHU_ASTV(WHU_REVB(VWHU_ASTM(v)));
-}
-
-INLINE(Vwhi,VWHI_REVB) (Vwhi v)
-{
-    return  WHI_ASTV(WHU_REVB(VWHI_ASTM(v)));
-}
-
-INLINE(Vwhf,VWHF_REVB) (Vwhf v)
-{
-    return  WHF_ASTV(WHU_REVB(VWHF_ASTM(v)));
-}
-
-
-INLINE(Vwwu,VWWU_REVB) (Vwwu v)
-{
-    return  WWU_ASTV(WWU_REVB(VWWU_ASTM(v)));
-}
-
-INLINE(Vwwi,VWWI_REVB) (Vwwi v)
-{
-    return  WWI_ASTV(WWU_REVB(VWWI_ASTM(v)));
-}
-
-INLINE(Vwwf,VWWF_REVB) (Vwwf v)
-{
-    return  WWF_ASTV(WWU_REVB(VWWF_ASTM(v)));
-}
-
-
-INLINE(Vdhu,VDHU_REVB) (Vdhu v)
-{
-    return  vreinterpret_u16_u8(vrev16_u8(vreinterpret_u8_u16(v)));
-}
-
-INLINE(Vdhi,VDHI_REVB) (Vdhi v)
-{
-    return  vreinterpret_s16_u8(vrev16_u8(vreinterpret_u8_s16(v)));
-}
-
-INLINE(Vdhf,VDHF_REVB) (Vdhf v)
-{
-    return  vreinterpret_f16_u8(vrev16_u8(vreinterpret_u8_f16(v)));
-}
-
-
-INLINE(Vdwu,VDWU_REVB) (Vdwu v)
-{
-    return  vreinterpret_u32_u8(vrev32_u8(vreinterpret_u8_u32(v)));
-}
-
-INLINE(Vdwi,VDWI_REVB) (Vdwi v)
-{
-    return  vreinterpret_s32_u8(vrev32_u8(vreinterpret_u8_s32(v)));
-}
-
-INLINE(Vdwf,VDWF_REVB) (Vdwf v)
-{
-    return  vreinterpret_f32_u8(vrev32_u8(vreinterpret_u8_f32(v)));
-}
-
-
-INLINE(Vddu,VDDU_REVB) (Vddu v)
-{
-    return  vreinterpret_u64_u8(vrev64_u8(vreinterpret_u8_u64(v)));
-}
-
-INLINE(Vddi,VDDI_REVB) (Vddi v)
-{
-    return  vreinterpret_s64_u8(vrev64_u8(vreinterpret_u8_s64(v)));
-}
-
-INLINE(Vddf,VDDF_REVB) (Vddf v)
-{
-    return  vreinterpret_f64_u8(vrev64_u8(vreinterpret_u8_f64(v)));
-}
-
-
-INLINE(Vqhu,VQHU_REVB) (Vqhu v)
-{
-    return  vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(v)));
-}
-
-INLINE(Vqhi,VQHI_REVB) (Vqhi v)
-{
-    return  vreinterpretq_s16_u8(vrev16q_u8(vreinterpretq_u8_s16(v)));
-}
-
-INLINE(Vqhf,VQHF_REVB) (Vqhf v)
-{
-    return  vreinterpretq_f16_u8(vrev16q_u8(vreinterpretq_u8_f16(v)));
-}
-
-
-INLINE(Vqwu,VQWU_REVB) (Vqwu v)
-{
-    return  vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(v)));
-}
-
-INLINE(Vqwi,VQWI_REVB) (Vqwi v)
-{
-    return  vreinterpretq_s32_u8(vrev32q_u8(vreinterpretq_u8_s32(v)));
-}
-
-INLINE(Vqwf,VQWF_REVB) (Vqwf v)
-{
-    return  vreinterpretq_f32_u8(vrev32q_u8(vreinterpretq_u8_f32(v)));
-}
-
-
-INLINE(Vqdu,VQDU_REVB) (Vqdu v)
-{
-    return  vreinterpretq_u64_u8(vrev64q_u8(vreinterpretq_u8_u64(v)));
-}
-
-INLINE(Vqdi,VQDI_REVB) (Vqdi v)
-{
-    return  vreinterpretq_s64_u8(vrev64q_u8(vreinterpretq_u8_s64(v)));
-}
-
-INLINE(Vqdf,VQDF_REVB) (Vqdf v)
-{
-    return  vreinterpretq_f64_u8(vrev64q_u8(vreinterpretq_u8_f64(v)));
-}
-
-
-#if 0 // _LEAVE_ARM_REVB
-}
-#endif
-
-#if 0 // _ENTER_ARM_REVH
-{
-#endif
-
-INLINE(   uint,  UINT_REVH)    (uint x) 
-{
-    return (x>>16)|(x<<16);
-}
-
-INLINE(    int,   INT_REVH)     (int x) 
-{
-    return  UINT_REVH(x);
-}
-
-INLINE(  ulong, ULONG_REVH)   (ulong x) 
-{
-#if DWRD_NLONG == 2
-    return  (x>>16)|(x<<16);
-#else
-    uint64x1_t  v = vdup_n_u64(x);
-    uint16x4_t  r = vreinterpret_u16_u64(v);
-    r = vrev64_u16(r);
-    v = vreinterpret_u64_u16(r);
-    return vget_lane_u64(v, 0);
-#endif
-}
-
-INLINE(   long,  LONG_REVH)    (long x) 
-{
-    return  ULONG_REVH(x);
-}
-
-#if QUAD_NLLONG == 2
-
-INLINE(ullong,ULLONG_REVH)  (ullong x) 
-{
-    uint64x1_t  v = vdup_n_u64(x);
-    uint16x4_t  r = vreinterpret_u16_u64(v);
-    r = vrev64_u16(r);
-    v = vreinterpret_u64_u16(r);
-    return vget_lane_u64(v, 0);
-}
-
-INLINE( llong, LLONG_REVH)   (llong x) {return ULLONG_REVH(x);}
-
-INLINE(QUAD_UTYPE,revhqu)  (QUAD_UTYPE x) 
-{
-    uint64x1_t l = vdup_n_u64(x);
-    uint64x1_t r = vdup_n_u64((x>>64));
-    uint16x4_t p = vreinterpret_u16_u64(l);
-    uint16x4_t q = vreinterpret_u16_u64(r);
-    p = vrev64_u16(p);
-    q = vrev64_u16(q);
-    l = vreinterpret_u64_u16(q);
-    r = vreinterpret_u64_u16(p);
-    x = vget_lane_u64(l, 0);
-    x = x<<64;
-    x = vget_lane_u64(r, 0)|x;
-    return x;
-}
-
-INLINE(QUAD_ITYPE,revhqi)  (QUAD_ITYPE x) {return revhqu(x);}
-
-#else
-
-INLINE(ullong,revhqu)  (ullong x) 
-{
-    uint64x1_t l = vdup_n_u64(x);
-    uint64x1_t r = vdup_n_u64((x>>64));
-    uint16x4_t p = vreinterpret_u16_u64(l);
-    uint16x4_t q = vreinterpret_u16_u64(r);
-    p = vrev64_u16(p);
-    q = vrev64_u16(q);
-    l = vreinterpret_u64_u16(q);
-    r = vreinterpret_u64_u16(p);
-    x = vget_lane_u64(l, 0);
-    x = x<<64;
-    x = vget_lane_u64(r, 0)|x;
-    return x;
-}
-
-INLINE( llong,revhqi) (llong x) {return revhqu(x);}
-
-#endif
-
-INLINE(  float,   FLT_REVH)   (float x)
-{
-    float32x2_t f = vdup_n_f32(x);
-    uint16x4_t  z = vreinterpret_u16_f32(f);
-    z = vrev32_u16(z);
-    f = vreinterpret_f32_u16(z);
-    return  vget_lane_f32(f, 0);
-}
-
-INLINE( double,   DBL_REVH)  (double x)
-{
-    float64x1_t m = vdup_n_f64(x);
-    uint16x4_t  v = vreinterpret_u16_f64(m);
-    v = vrev64_u16(v);
-    return  vget_lane_f64(v, 0);
-}
-
-
-INLINE(Vwwu,VWWU_REVH) (Vwwu v)
-{
-    return  WWU_ASTV(FLT_REVH(VWWU_ASTM(v)));
-}
-
-INLINE(Vwwi,VWWI_REVH) (Vwwi v)
-{
-    return  WWI_ASTV(FLT_REVH(VWWI_ASTM(v)));
-}
-
-INLINE(Vwwf,VWWF_REVH) (Vwwf v)
-{
-    return  WWF_ASTV(FLT_REVH(VWWF_ASTM(v)));
-}
-
-
-INLINE(Vdwu,VDWU_REVH) (Vdwu v)
-{
-    return  vreinterpret_u32_u16(vrev32_u16(vreinterpret_u16_u32(v)));
-}
-
-INLINE(Vdwi,VDWI_REVH) (Vdwi v)
-{
-    return  vreinterpret_s32_u16(vrev32_u16(vreinterpret_u16_s32(v)));
-}
-
-INLINE(Vdwf,VDWF_REVH) (Vdwf v)
-{
-    return  vreinterpret_f32_u16(vrev32_u16(vreinterpret_u16_f32(v)));
-}
-
-
-INLINE(Vddu,VDDU_REVH) (Vddu v)
-{
-    return  vreinterpret_u64_u16(vrev64_u16(vreinterpret_u16_u64(v)));
-}
-
-INLINE(Vddi,VDDI_REVH) (Vddi v)
-{
-    return  vreinterpret_s64_u16(vrev64_u16(vreinterpret_u16_s64(v)));
-}
-
-INLINE(Vddf,VDDF_REVH) (Vddf v)
-{
-    return  vreinterpret_f64_u16(vrev64_u16(vreinterpret_u16_f64(v)));
-}
-
-
-INLINE(Vqwu,VQWU_REVH) (Vqwu v)
-{
-    return  vreinterpretq_u32_u16(vrev32q_u16(vreinterpretq_u16_u32(v)));
-}
-
-INLINE(Vqwi,VQWI_REVH) (Vqwi v)
-{
-    return  vreinterpretq_s32_u16(vrev32q_u16(vreinterpretq_u16_s32(v)));
-}
-
-INLINE(Vqwf,VQWF_REVH) (Vqwf v)
-{
-    return  vreinterpretq_f32_u16(vrev32q_u16(vreinterpretq_u16_f32(v)));
-}
-
-
-INLINE(Vqdu,VQDU_REVH) (Vqdu v)
-{
-    return  vreinterpretq_u64_u16(vrev64q_u16(vreinterpretq_u16_u64(v)));
-}
-
-INLINE(Vqdi,VQDI_REVH) (Vqdi v)
-{
-    return  vreinterpretq_s64_u16(vrev64q_u16(vreinterpretq_u16_s64(v)));
-}
-
-INLINE(Vqdf,VQDF_REVH) (Vqdf v)
-{
-    return  vreinterpretq_f64_u16(vrev64q_u16(vreinterpretq_u16_f64(v)));
-}
-
-#if 0 // _LEAVE_ARM_REVH
-}
-#endif
-
-
 #if 0 // _ENTER_ARM_GETL
 {
 #endif
-
 
 #define     DWF_GETL(x) vget_lane_f32(x,0)
 
@@ -22907,19 +25014,117 @@ INLINE(Vqdf,VQDF_BFSL)
 }
 #endif
 
-#if 0 // _ENTER_ARM_ABSU
+#if 0 // _ENTER_ARM_NEGL
 {
 #endif
 
-#if QUAD_NLLONG == 2
+INLINE(flt16_t, FLT16_NEGL) (flt16_t x) {return -x;}
+INLINE(  float,   FLT_NEGL)   (float x) {return -x;}
+INLINE( double,   DBL_NEGL)  (double x) {return -x;}
 
-INLINE(QUAD_UTYPE, absuqi) (QUAD_ITYPE x)
+INLINE(float,WBU_NEGL) (float x)
 {
-    QUAD_UTYPE a = x;
-    QUAD_UTYPE b = a>>127;
-    return  (a+b)^b;
+/*  vneg_s(x) and vsub_u(0, x) ARE equivalent 
+*/
+    DWRD_VTYPE z={.W.F={x}};
+    z.B.I = vneg_s8(z.B.I);
+    return  vget_lane_f32(z.W.F, 0);
 }
 
+INLINE(float,WHU_NEGL) (float x)
+{
+    DWRD_VTYPE z={.W.F={x}};
+    z.H.I = vneg_s16(z.H.I);
+    return  vget_lane_f32(z.W.F, 0);
+}
+
+INLINE(float,WWU_NEGL) (float x)
+{
+    DWRD_VTYPE z={.W.F={x}};
+    z.W.I = vneg_s32(z.W.I);
+    return  vget_lane_f32(z.W.F, 0);
+}
+
+#if CHAR_MIN
+#   define  DBC_NEGL vneg_s8
+#   define  QBC_NEGL vnegq_s8
+#else
+#   define  DBC_NEGL(X) vsub_u8(vdup_n_u8(0),X)
+#   define  QBC_NEGL(X) vsubq_u8(vdupq_n_u8(0),X)
+#endif
+
+INLINE(uint64x2_t,QQU_NEGL) (uint64x2_t x)
+{
+    QUAD_VTYPE  c = {.D.U=x};
+    DWRD_VTYPE  n, r, l={.D.U=vget_low_u64(x)};
+    n.D.U = vdup_n_u64(1);
+    l.B.U = vmvn_u8(l.B.U);
+    r.D.U = vadd_u64(n.D.U, l.D.U);
+    if (r.U < l.U)
+    {
+        n.D.U = vsub_u64(vget_high_u64(c.D.U), n.D.U);
+        c.D.U = vcopyq_lane_u64(c.D.U, 1, n.D.U, 0);
+    }
+    l.B.U = vget_high_u8(c.B.U);
+    l.B.U = vmvn_u8(l.B.U);
+    return  vcombine_u64(r.D.U, l.D.U);
+/*
+    QUAD_TYPE   c = {.U=x};
+    uint64_t    r, l;
+    l = ~c.Lo.U;
+    r = 1+l;
+    if (r < l)
+        c.Hi.U--;
+    c.Hi.U = ~c.Hi.U;
+    c.Lo.U = r;
+    return c.U;
+*/
+}
+
+INLINE( int64x2_t,QQI_NEGL)  (int64x2_t x)
+{
+    QUAD_VTYPE z = {.D.I=x};
+    z.D.U = QQU_NEGL(z.D.U);
+    return  z.D.I;
+}
+
+INLINE(Vwbu,VWBU_NEGL) (Vwbu x) {x.V0=WBU_NEGL(x.V0); return x;}
+INLINE(Vwbi,VWBI_NEGL) (Vwbi x) {x.V0=WBU_NEGL(x.V0); return x;}
+INLINE(Vwbc,VWBC_NEGL) (Vwbc x) {x.V0=WBU_NEGL(x.V0); return x;}
+INLINE(Vwhu,VWHU_NEGL) (Vwhu x) {x.V0=WHU_NEGL(x.V0); return x;}
+INLINE(Vwhi,VWHI_NEGL) (Vwhi x) {x.V0=WHU_NEGL(x.V0); return x;}
+INLINE(Vwwu,VWWU_NEGL) (Vwwu x) {x.V0=WWU_NEGL(x.V0); return x;}
+INLINE(Vwwi,VWWI_NEGL) (Vwwi x) {x.V0=WWU_NEGL(x.V0); return x;}
+
+INLINE(Vdbu,VDBU_NEGL) (Vdbu x) {return vsub_u8(vdup_n_u8(0), x);}
+INLINE(Vdbi,VDBI_NEGL) (Vdbi x) {return vneg_s8(x);}
+INLINE(Vdbc,VDBC_NEGL) (Vdbc x) {x.V0=DBC_NEGL(x.V0); return x;}
+INLINE(Vdhu,VDHU_NEGL) (Vdhu x) {return vsub_u16(vdup_n_u16(0), x);}
+INLINE(Vdhi,VDHI_NEGL) (Vdhi x) {return vneg_s16(x);}
+INLINE(Vdwu,VDWU_NEGL) (Vdwu x) {return vsub_u32(vdup_n_u32(0), x);}
+INLINE(Vdwi,VDWI_NEGL) (Vdwi x) {return vneg_s32(x);}
+INLINE(Vddu,VDDU_NEGL) (Vddu x) {return vsub_u64(vdup_n_u64(0), x);}
+INLINE(Vddi,VDDI_NEGL) (Vddi x) {return vneg_s64(x);}
+
+INLINE(Vqbu,VQBU_NEGL) (Vqbu x) {return vsubq_u8(vdupq_n_u8(0), x);}
+INLINE(Vqbi,VQBI_NEGL) (Vqbi x) {return vnegq_s8(x);}
+INLINE(Vqbc,VQBC_NEGL) (Vqbc x) {x.V0=QBC_NEGL(x.V0); return x;}
+INLINE(Vqhu,VQHU_NEGL) (Vqhu x) {return vsubq_u16(vdupq_n_u16(0), x);}
+INLINE(Vqhi,VQHI_NEGL) (Vqhi x) {return vnegq_s16(x);}
+INLINE(Vqwu,VQWU_NEGL) (Vqwu x) {return vsubq_u32(vdupq_n_u32(0), x);}
+INLINE(Vqwi,VQWI_NEGL) (Vqwi x) {return vnegq_s32(x);}
+INLINE(Vqdu,VQDU_NEGL) (Vqdu x) {return vsubq_u64(vdupq_n_u64(0), x);}
+INLINE(Vqdi,VQDI_NEGL) (Vqdi x) {return vnegq_s64(x);}
+INLINE(Vqqu,VQQU_NEGL) (Vqqu x) {x.V0=QQU_NEGL(x.V0); return x;}
+INLINE(Vqqi,VQQI_NEGL) (Vqqi x) {x.V0=QQI_NEGL(x.V0); return x;}
+
+
+#if 0 // _LEAVE_ARM_NEGL
+}
+#endif
+
+#if 0 // _ENTER_ARM_ABSU
+{
 #endif
 
 INLINE(uint16_t,FLT16_ABSU) (flt16_t a)
@@ -23156,16 +25361,16 @@ INLINE(    int,  INT_ABSS)     (int x) {return vqabss_s32(x);}
 INLINE(   long, LONG_ABSS)    (long x)
 {
 #if DWRD_NLONG == 2
-    return vqabss_s32(x);
+    return  vqabss_s32(x);
 #else
-    return vqabsd_s64(x);
+    return  vqabsd_s64(x);
 #endif
 }
 
 INLINE(  llong,LLONG_ABSS)   (llong x)
 {
-#if QUAD_NLONG == 2
-    return vqabsd_s64(x);
+#if QUAD_NLLONG == 2
+    return  vqabsd_s64(x);
 #else
 
 #endif
@@ -23242,344 +25447,167 @@ INLINE(Vqdi,VQDI_ABSS) (Vqdi x) {return vqabsq_s64(x);}
 {
 #endif
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE, abslqi) (QUAD_ITYPE x)
-{
-    return x < 0 ? -((QUAD_UTYPE) x) : x;
-}
-
-#endif
-
-INLINE(Vwbi,VWBI_ABSL) (Vwbi a)
-{
-    float       m = VWBI_ASTM(a);
-    float32x2_t d = vdup_n_f32(m);
-    int8x8_t    v = vreinterpret_s8_f32(d);
-    v = vabs_s8(v);
-    d = vreinterpret_f32_s8(v);
-    m = vget_lane_f32(d, 0);
-    return  WBI_ASTV(m);
-}
-
-INLINE(Vwbi,VWBC_ABSL) (Vwbc a) 
-{
 #if CHAR_MIN
-    return  VWBI_ABSL(VWBC_ASBI(a));
+#   define  WBC_ABSL WBI_ABSL
+#   define  DBC_ABSL vabs_s8
+#   define  QBC_ABSL vabsq_s8
 #else
-    return  VWBC_ASBI(a);
+#   define  WBC_ABSL(X) X
+#   define  DBC_ABSL    vreinterpret_s8_u8
+#   define  QBC_ABSL    vreinterpretq_s8_u8
 #endif
-}
 
-INLINE(Vwhi,VWHI_ABSL) (Vwhi a)
+INLINE(float,WBI_ABSL) (float x)
 {
-    float       m = VWHI_ASTM(a);
-    float32x2_t d = vdup_n_f32(m);
-    int16x4_t   v = vreinterpret_s16_f32(d);
-    v = vabs_s16(v);
-    d = vreinterpret_f32_s16(v);
-    m = vget_lane_f32(d, 0);
-    return  WHI_ASTV(m);
+    DWRD_VTYPE a = {.W.F={x}};
+    a.B.I = vabs_s8(a.B.I);
+    return  vget_lane_f32(a.W.F, 0);
 }
 
-INLINE(Vwwi,VWWI_ABSL) (Vwwi a)
+INLINE(float,WHI_ABSL) (float x)
 {
-    float       m = VWWI_ASTM(a);
-    float32x2_t d = vdup_n_f32(m);
-    int16x4_t   v = vreinterpret_s32_f32(d);
-    v = vabs_s32(v);
-    d = vreinterpret_f32_s32(v);
-    m = vget_lane_f32(d, 0);
-    return  WWI_ASTV(m);
+    DWRD_VTYPE a = {.W.F={x}};
+    a.H.I = vabs_s16(a.H.I);
+    return  vget_lane_f32(a.W.F, 0);
 }
 
-INLINE(Vdbi,VDBI_ABSL) (Vdbi a) {return vabs_s8(a);}
-INLINE(Vdbi,VDBC_ABSL) (Vdbc a) {return vabs_s8(VDBC_ASBI(a));}
-INLINE(Vdhi,VDHI_ABSL) (Vdhi a) {return vabs_s16(a);}
-INLINE(Vdwi,VDWI_ABSL) (Vdwi a) {return vabs_s32(a);}
-INLINE(Vddi,VDDI_ABSL) (Vddi a) {return vabs_s64(a);}
+INLINE(float,WWI_ABSL) (float x)
+{
+    DWRD_VTYPE a = {.W.F={x}};
+    a.W.I = vabs_s32(a.W.I);
+    return  vget_lane_f32(a.W.F, 0);
+}
 
-INLINE(Vqbi,VQBI_ABSL) (Vqbi a) {return vabsq_s8(a);}
-INLINE(Vqbi,VQBC_ABSL) (Vqbc a) {return vabsq_s8(VQBC_ASBI(a));}
-INLINE(Vqhi,VQHI_ABSL) (Vqhi a) {return vabsq_s16(a);}
-INLINE(Vqwi,VQWI_ABSL) (Vqwi a) {return vabsq_s32(a);}
-INLINE(Vqdi,VQDI_ABSL) (Vqdi a) {return vabsq_s64(a);}
+INLINE(Vwbi,VWBI_ABSL) (Vwbi x) {x.V0 = WBI_ABSL(x.V0); return x;}
+INLINE(Vwbi,VWBC_ABSL) (Vwbc x) {return ((Vwbi){WBC_ABSL(x.V0)});}
+INLINE(Vwhi,VWHI_ABSL) (Vwhi x) {x.V0 = WHI_ABSL(x.V0); return x;}
+INLINE(Vwwi,VWWI_ABSL) (Vwwi x) {x.V0 = WWI_ABSL(x.V0); return x;}
+
+INLINE(Vdbi,VDBI_ABSL) (Vdbi x) {return vabs_s8(x);}
+INLINE(Vdbi,VDBC_ABSL) (Vdbc x) {return DBC_ABSL(x.V0);}
+INLINE(Vdhi,VDHI_ABSL) (Vdhi x) {return vabs_s16(x);}
+INLINE(Vdwi,VDWI_ABSL) (Vdwi x) {return vabs_s32(x);}
+INLINE(Vddi,VDDI_ABSL) (Vddi x) {return vabs_s64(x);}
+
+INLINE(Vqbi,VQBI_ABSL) (Vqbi x) {return vabsq_s8(x);}
+INLINE(Vqbi,VQBC_ABSL) (Vqbc x) {return QBC_ABSL(x.V0);}
+INLINE(Vqhi,VQHI_ABSL) (Vqhi x) {return vabsq_s16(x);}
+INLINE(Vqwi,VQWI_ABSL) (Vqwi x) {return vabsq_s32(x);}
+INLINE(Vqdi,VQDI_ABSL) (Vqdi x) {return vabsq_s64(x);}
+INLINE(Vqqi,VQQI_ABSL) (Vqqi x) 
+{
+    if (vgetq_lane_s64(x.V0, 1) < 0)
+        x.V0 = QQI_NEGL(x.V0);
+    return  x;
+}
 
 #if 0 // _LEAVE_ARM_ABSL
 }
 #endif
 
-#if 0 // _ENTER_ARM_ABSH
+#if 0 // _ENTER_ARM_ABSF
 {
 #endif
 
-INLINE(flt16_t,SCHAR_ABSH)  (schar a) 
+INLINE(flt16_t,FLT16_ABSF) (flt16_t x)
 {
 #if defined(SPC_ARM_FP16_SIMD)
-    return  vabsh_f16(a);
+#   define  FLT16_ABSF(X) vabsh_f16(X)
+    return  vabsh_f16(x);
 #else
-    float32x2_t f = vdup_n_f32(a);
-    f = vabs_f32(f);
-    return  vget_lane_f32(f, 0);
+    DWRD_VTYPE a={.H.F=x}, b={.H.I=0x7fff};
+    a.H.U = vand_u16(a.H.U, b.H.U);
+    return  vget_lane_f16(a.H.F, 0);
 #endif
 }
 
-INLINE(flt16_t, CHAR_ABSH)   (char a)
+INLINE( float,FLT_ABSF)  (float x) 
 {
-#if CHAR_MIN
-    return  SCHAR_ABSH(a);
-#else
-    return  a;
-#endif
-}
+/*  
+The current implementation compiles to a single instruction:
+    'BIC v0.2s, #128, lsl #24'
 
+To get a single FABS instruction, asm is required. However, 
+it would probably result in unexpected exceptions when the
+contents of v.s[1] are invalid, which is probably why clang
+insists on filing all 64 bits of the v.2s register.
 
-INLINE(flt16_t,SHRT_ABSH)  (short a)
-{
-    float32x2_t f = vdup_n_f32(a);
-    f = vabs_f32(f);
-    return  vget_lane_f32(f, 0);
-}
-
-INLINE(flt16_t, INT_ABSH)    (int a)
-{
-    float64x1_t f = vdup_n_f64(a);
-    f = vabs_f64(f);
-    return  vget_lane_f64(f, 0);
-}
-
-INLINE(flt16_t, LONG_ABSH)  (long a)
-{
-    float64x1_t f = vdup_n_f64(a);
-    f = vabs_f64(f);
-    return  vget_lane_f64(f, 0);
-}
-
-INLINE(flt16_t,LLONG_ABSH) (llong a)
-{
-    float64x1_t f = vdup_n_f64(a);
-    f = vabs_f64(f);
-    return  vget_lane_f64(f, 0);
-}
-
-#if QUAD_NLLONG == 2
-
-INLINE(flt16_t, abshqi) (QUAD_ITYPE a)
-{
-    float64x1_t f = vdup_n_f64(((int64_t) a));
-    f = vabs_f64(f);
-    return  vget_lane_f64(f, 0);
-}
-
-#endif
-
-INLINE(flt16_t,FLT16_ABSH) (flt16_t a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    return  vabsh_f16(a);
-#else
-    float32x2_t v = vdup_n_f32(a);
-    v = vabs_f32(v);
-    return vget_lane_f32(v, 0);
-#endif
-}
-
-INLINE(flt16_t,FLT_ABSH) (float a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    return  vabsh_f16(a);
-#else
-    float32x2_t v = vdup_n_f32(a);
-    v = vabs_f32(v);
-    return vget_lane_f32(v, 0);
-#endif
-}
-
-INLINE(flt16_t,DBL_ABSH) (double a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    return  vabsh_f16(a);
-#else
-    float64x1_t v = vdup_n_f64(a);
-    v = vabs_f64(v);
-    return  vget_lane_f64(v, 0);
-#endif
-}
-
-INLINE(Vdhf,VWBI_ABSH) (Vwbi a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    float16x4_t m = VWBI_CVHF(a);
-    return  vabs_f16(m);
-#else
-    float32x4_t m = VWBI_CVWF(a);
-    m = vabsq_f32(m);
-    return  vcvt_f16_f32(m);
-#endif
-}
-
-INLINE(Vdhf,VWBC_ABSH) (Vwbc a)
-{
-#if CHAR_MIN
-    return  VWBI_ABSH(VWBC_ASBI(a));
-#else
-    return  VWBC_CVHF(a);
-#endif
-}
-
-
-INLINE(Vwhf,VWHI_ABSH) (Vwhi a)
-{
-    float       m = VWHI_ASTM(a);
-    float32x2_t v = vdup_n_f32(m);
-    int16x4_t   z = vreinterpret_s16_f32(v);
-#if defined(SPC_ARM_FP16_SIMD)
-    float16x4_t c = vcvt_f16_s16(z);
-    c = vabs_f16(c);
-#else
-    int32x2_t   u = vget_low_s32(vmovl_s16(z));
-    float32x2_t f = vcvt_f32_s32(u);
-    f = vabs_f32(f);
-    float32x4_t q = vcombine_f32(f, f);
-    float16x4_t c = vcvt_f16_f32(q);
-#endif
-    v = vreinterpret_f32_f16(c);
-    m = vget_lane_f32(v, 0);
-    return  WHF_ASTV(m);
-}
-
-INLINE(Vwhf,VWHF_ABSH) (Vwhf a)
-{
-    float       m = VWHF_ASTM(a);
-    float32x2_t v = vdup_n_f32(m);
-    float16x4_t z = vreinterpret_f16_f32(v);
-#if defined(SPC_ARM_FP16_SIMD)
-    float16x4_t c = vabs_f16(c);
-#else
-    float32x4_t f = vcvt_f32_f16(z);
-    f = vabsq_f32(f);
-    float16x4_t c = vcvt_f16_f32(f);
-#endif
-
-    v = vreinterpret_f32_f16(c);
-    m = vget_lane_f32(v, 0);
-    return  WHF_ASTV(m);
-}
-
-
-INLINE(Vqhf,VDBI_ABSH) (Vdbi a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    return vabsq_f16(VDBI_CVHF(a));
-#else
-    int16x8_t   m = vmovl_s8(a);
-    float32x4_t l = vcvtq_f32_s32(vmovl_s16(vget_low_s16(m)));
-    float32x4_t r = vcvtq_f32_s32(vmovl_s16(vget_high_s16(m)));
-    return  vcombine_f16(
-        vcvt_f16_f32(vabsq_f32(l)),
-        vcvt_f16_f32(vabsq_f32(r))
+*/
+#if 0
+    __asm__ volatile(
+       "fabs %0.2s, %1.2s" 
+       : 
+       : "X"(x), "X"(x)
+       : 
     );
-#endif
-}
-
-INLINE(Vqhf,VDBC_ABSH) (Vdbc a)
-{
-#if CHAR_MIN
-    return  VDBI_ABSH(VDBC_ASBI(a));
 #else
-    return  VDBC_CVHF(a);
+    DWRD_VTYPE s = {.W.F=x};
+    s.W.U = vbic_u32(s.W.U, vcreate_u32(0x80000000U));
+    return  vget_lane_f32(s.W.F, 0);
 #endif
+    
 }
 
+INLINE(double,DBL_ABSF) (double x) 
+{
+    DWRD_VTYPE s = {.F=x};
+    s.D.F = vabs_f64(s.D.F);
+    return  s.F;
+}
 
-INLINE(Vdhf,VDHI_ABSH) (Vdhi a)
+INLINE(QUAD_FTYPE,absfqf) (QUAD_FTYPE x)
+{
+    QUAD_VTYPE a = {.F=x};
+    uint64x1_t b = vget_high_u64(a.D.U);
+    uint64x1_t c = vdup_n_u64((1ULL<<63));
+    b = vbic_u64(b, c);
+    a.D.U = vcopyq_lane_u64(a.D.U, 1, b, 0);
+    return  a.F;
+}
+
+INLINE(float16x4_t, DHF_ABSF)  (float16x4_t x) 
 {
 #if defined(SPC_ARM_FP16_SIMD)
-    return  vabs_f16(vcvt_f16_s16(a));
+    return vabs_f16(x);
 #else
-    int32x4_t   z = vmovl_s16(a);
-    float32x4_t f = vcvtq_f32_s32(z);
-    f = vabsq_f32(f);
-    return  vcvt_f16_f32(f);
+    DWRD_VTYPE a={.H.F=x}, b={.H.U=vdup_n_u16(0x8000)};
+    a.H.U = vbic_u16(a.H.U, b.H.U);
+    return  a.H.F;
 #endif
 }
 
-INLINE(Vdhf,VDHF_ABSH) (Vdhf a)
+INLINE(float16x8_t, QHF_ABSF)  (float16x8_t x) 
 {
 #if defined(SPC_ARM_FP16_SIMD)
-    return  vabs_f16(a);
+    return vabsq_f16(x);
 #else
-    float32x4_t f = vcvt_f32_f16(a);
-    f = vabsq_f32(f);
-    return  vcvt_f16_f32(f);
+    QUAD_VTYPE a={.H.F=x}, b={.H.U=vdupq_n_u16(0x8000)};
+    a.H.U = vbicq_u16(a.H.U, b.H.U);
+    return  a.H.F;
 #endif
 }
 
-INLINE(Vwhf,VDWI_ABSH) (Vdwi a)
+INLINE(Vwhf,VWHF_ABSF) (Vwhf x)
 {
-    float32x2_t     w = vcvt_f32_s32(a);
-    w = vabs_f32(w);
-    return  VDWF_CVHF(w);
+    DWRD_VTYPE a={.W.F={x.V0}};
+    a.H.F = DHF_ABSF(a.H.F);
+    x.V0 = vget_lane_f32(a.W.F, 0);
+    return x;
 }
 
-INLINE(Vwhf,VDWF_ABSH) (Vdwf a)
-{
-    a = vabs_f32(a);
-    return  VDWF_CVHF(a);
-}
-
-INLINE(Vqhf,VQHI_ABSH) (Vqhi a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    return vabsq_f16(vcvtq_f16_s16(a));
-#else
-    return vcombine_f16(
-        VDHI_ABSH(vget_low_s16(a)),
-        VDHI_ABSH(vget_high_s16(a))
-    );
-#endif
-}
-
-INLINE(Vqhf,VQHF_ABSH) (Vqhf a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    return vabsq_f16(a);
-#else
-    return vcombine_f16(
-        VDHF_ABSH(vget_low_f16(a)),
-        VDHF_ABSH(vget_high_f16(a))
-    );
-#endif
-}
+INLINE(Vwwf,VWWF_ABSF) (Vwwf x) {x.V0=FLT_ABSF(x.V0); return x;}
 
 
-INLINE(Vdhf,VQWI_ABSH) (Vqwi a)
-{
-    float32x4_t f = vcvtq_f32_s32(a);
-    f = vabsq_f32(f);
-    return vcvt_f16_f32(f);
-}
+INLINE(Vdhf,VDHF_ABSF) (Vdhf x) {return DHF_ABSF(x);}
+INLINE(Vdwf,VDWF_ABSF) (Vdwf x) {return vabs_f32(x);}
+INLINE(Vddf,VDDF_ABSF) (Vddf x) {return vabs_f64(x);}
 
-INLINE(Vdhf,VQWF_ABSH) (Vqwf a)
-{
-    a = vabsq_f32(a);
-    return vcvt_f16_f32(a);
-}
+INLINE(Vqhf,VQHF_ABSF) (Vqhf x) {return QHF_ABSF(x);}
+INLINE(Vqwf,VQWF_ABSF) (Vqwf x) {return vabsq_f32(x);}
+INLINE(Vqdf,VQDF_ABSF) (Vqdf x) {return vabsq_f64(x);}
+INLINE(Vqqf,VQQF_ABSF) (Vqqf x) {x.V0=absfqf(x.V0); return x;}
 
-INLINE(Vwhf,VQDI_ABSH) (Vqdi a)
-{
-    float64x2_t f = vcvtq_f64_s64(a);
-    f = vabsq_f64(f);
-    return VQDF_CVHF(f);
-}
-
-INLINE(Vwhf,VQDF_ABSH) (Vqdf a)
-{
-    a = vabsq_f64(a);
-    return VQDF_CVHF(a);
-}
-
-#if 0 // _LEAVE_ARM_ABSH
+#if 0 // _LEAVE_ARM_ABSF
 }
 #endif
 
@@ -23905,162 +25933,46 @@ INLINE(Vqdf,VQDF_ABSD) (Vqdf a)
 }
 #endif
 
-#if 0 // _ENTER_ARM_NEGL
-{
-#endif
-
-
-INLINE(flt16_t, FLT16_NEGL) (flt16_t x) {return -x;}
-INLINE(  float,   FLT_NEGL)   (float x) {return -x;}
-INLINE( double,   DBL_NEGL)  (double x) {return -x;}
-
-#define     WBI_NEGL(X)     \
-vget_lane_f32(vneg_s8(VDWF_ASBI(vdup_n_f32(X))),  0)
-
-
-#define     WHI_NEGL(X)     \
-vget_lane_f32(vneg_s16(VDWF_ASHI(vdup_n_f32(X))), 0)
-
-#define     WHF_NEGL(X) (0.0f)
-
-
-#define     WWI_NEGL(X)     \
-vget_lane_f32(vneg_s32(VDWF_ASWI(vdup_n_f32(X))), 0)
-
-#define     WWF_NEGL(X) (-X)
-
-
-INLINE(Vwbu,VWBU_NEGL) (Vwbu x)
-{
-    return  WBU_ASTV(WBI_NEGL(VWBU_ASTM(x)));
-}
-
-INLINE(Vwbi,VWBI_NEGL) (Vwbi x)
-{
-    return  WBI_ASTV(WBI_NEGL(VWBI_ASTM(x)));
-}
-
-INLINE(Vwbc,VWBC_NEGL) (Vwbc x)
-{
-    return  WBC_ASTV(WBI_NEGL(VWBC_ASTM(x)));
-}
-
-
-INLINE(Vwhu,VWHU_NEGL) (Vwhu x)
-{
-    return  WHU_ASTV(WHI_NEGL(VWHU_ASTM(x)));
-}
-
-INLINE(Vwhi,VWHI_NEGL) (Vwhi x)
-{
-    return  WHI_ASTV(WHI_NEGL(VWHI_ASTM(x)));
-}
-
-INLINE(Vwhf,VWHF_NEGL) (Vwhf x)
-{
-    return  WHF_ASTV(0.0f);
-}
-
-
-INLINE(Vwwu,VWWU_NEGL) (Vwwu x)
-{
-    return  WWU_ASTV(WWI_NEGL(VWWU_ASTM(x)));
-}
-
-INLINE(Vwwi,VWWI_NEGL) (Vwwi x)
-{
-    return  WWI_ASTV(WWI_NEGL(VWWI_ASTM(x)));
-}
-
-INLINE(Vwwf,VWWF_NEGL) (Vwwf x)
-{
-    return  WWF_ASTV(WWF_NEGL(VWWF_ASTM(x)));
-}
-
-
-INLINE(Vdbu,VDBU_NEGL) (Vdbu x) {return vsub_u8(vdup_n_u8(0), x);}
-INLINE(Vdbi,VDBI_NEGL) (Vdbi x) {return vneg_s8(x);}
-
-INLINE(Vdbc,VDBC_NEGL) (Vdbc x)
-{
-#if CHAR_MIN
-    return  VDBI_ASBC(VDBI_NEGL(VDBC_ASBI(x)));
-#else
-    return  VDBU_ASBC(VDBU_NEGL(VDBC_ASBU(x)));
-#endif
-}
-
-INLINE(Vdhu,VDHU_NEGL) (Vdhu x) {return vsub_u16(vdup_n_u16(0), x);}
-INLINE(Vdhi,VDHI_NEGL) (Vdhi x) {return vneg_s16(x);}
-INLINE(Vdwu,VDWU_NEGL) (Vdwu x) {return vsub_u32(vdup_n_u32(0), x);}
-INLINE(Vdwi,VDWI_NEGL) (Vdwi x) {return vneg_s32(x);}
-INLINE(Vddu,VDDU_NEGL) (Vddu x) {return vsub_u64(vdup_n_u64(0), x);}
-INLINE(Vddi,VDDI_NEGL) (Vddi x) {return vneg_s64(x);}
-
-
-INLINE(Vqbu,VQBU_NEGL) (Vqbu x) {return vsubq_u8(vdupq_n_u8(0), x);}
-INLINE(Vqbi,VQBI_NEGL) (Vqbi x) {return vnegq_s8(x);}
-
-INLINE(Vqbc,VQBC_NEGL) (Vqbc x)
-{
-#if CHAR_MIN
-    return  VQBI_ASBC(VQBI_NEGL(VQBC_ASBI(x)));
-#else
-    return  VQBU_ASBC(VQBU_NEGL(VQBC_ASBU(x)));
-#endif
-}
-
-INLINE(Vqhu,VQHU_NEGL) (Vqhu x) {return vsubq_u16(vdupq_n_u16(0), x);}
-INLINE(Vqhi,VQHI_NEGL) (Vqhi x) {return vnegq_s16(x);}
-INLINE(Vqwu,VQWU_NEGL) (Vqwu x) {return vsubq_u32(vdupq_n_u32(0), x);}
-INLINE(Vqwi,VQWI_NEGL) (Vqwi x) {return vnegq_s32(x);}
-INLINE(Vqdu,VQDU_NEGL) (Vqdu x) {return vsubq_u64(vdupq_n_u64(0), x);}
-INLINE(Vqdi,VQDI_NEGL) (Vqdi x) {return vnegq_s64(x);}
-
-#if 0 // _LEAVE_ARM_NEGL
-}
-#endif
-
 #if 0 // _ENTER_ARM_NEGS
 {
 #endif
 
-INLINE(schar, UCHAR_NEGS)  (uchar a)
+INLINE(schar, UCHAR_NEGS)  (unsigned a)
 {
-    return  a > SCHAR_MAX ? SCHAR_MIN : ((schar)(-a));
+    a = (uchar) a;
+    return  (a > SCHAR_MAX) ? SCHAR_MIN : -a;
 }
 
-INLINE(schar, SCHAR_NEGS)  (schar a) {return vqnegb_s8(a);}
-
-INLINE(schar,  CHAR_NEGS)   (char a) 
+INLINE(schar, SCHAR_NEGS)    (signed a) {return vqnegb_s8(a);}
+INLINE(schar,  CHAR_NEGS)       (int a) 
 {
 #if CHAR_MIN
-    return  vqnegb_s8(a);
+    return  SCHAR_NEGS(a);
 #else
-    return  a > SCHAR_MAX ? SCHAR_MIN : ((schar)(-a));
+    return  UCHAR_NEGS(a);
 #endif
 }
 
-INLINE(short, USHRT_NEGS) (ushort a)
+INLINE(short, USHRT_NEGS)  (unsigned a)
 {
-    return a > SHRT_MAX ? SHRT_MIN : ((short)(-a));
+    return  (a > SHRT_MAX) ? SHRT_MIN : -a;
 }
 
-INLINE(short,  SHRT_NEGS)  (short a) {return vqnegh_s16(a);}
+INLINE(short,  SHRT_NEGS)    (signed a) {return vqnegh_s16(a);}
 
-INLINE(  int,  UINT_NEGS)   (uint a)
+INLINE(  int,  UINT_NEGS)      (uint a)
 {
-    return a > INT_MAX ? INT_MIN : ((int)(-a));
+    return  (a > INT_MAX) ? INT_MIN : -a;
 }
 
-INLINE(  int,   INT_NEGS)    (int a) {return vqnegs_s32(a);}
+INLINE(  int,   INT_NEGS)       (int a) {return vqnegs_s32(a);}
 
-INLINE( long, ULONG_NEGS)  (ulong a)
+INLINE( long, ULONG_NEGS)     (ulong a)
 {
-    return a > LONG_MAX ? LONG_MIN : ((long)(-a));
+    return  (a > LONG_MAX) ? LONG_MIN : -a;
 }
 
-INLINE( long,  LONG_NEGS)   (long a) 
+INLINE( long,  LONG_NEGS)      (long a) 
 {
 #if DWRD_NLONG == 2
     return  vqnegs_s32(a);
@@ -24070,19 +25982,18 @@ INLINE( long,  LONG_NEGS)   (long a)
 }
 
 
-INLINE(llong,ULLONG_NEGS) (ullong a)
+INLINE(llong,ULLONG_NEGS)    (ullong a)
 {
-    return a > LLONG_MAX ? LLONG_MIN : ((llong)(-a));
+    return  (a > LLONG_MAX) ? LLONG_MIN : -a;
 }
 
-INLINE(llong, LLONG_NEGS)  (llong a) 
+INLINE(llong, LLONG_NEGS)     (llong a) 
 {
 #if QUAD_NLLONG == 2
     return  vqnegd_s64(a);
 #else
 
 #endif
-
 }
 
 
@@ -24090,11 +26001,16 @@ INLINE(llong, LLONG_NEGS)  (llong a)
 
 INLINE(QUAD_ITYPE,negsqu) (QUAD_UTYPE a)
 {
-    if (a>>127)
+    QUAD_TYPE x={.U=a};
+    if (x.Hi.I < 0)
     {
-        return (QUAD_ITYPE) ((QUAD_UTYPE) 1<<127);
+        x.Hi.U =  INT64_MAX;
+        x.Lo.U = UINT64_MAX;
+        return  x.U;
     }
-    return  -(QUAD_ITYPE) a;
+    x.U = ((QUAD_UTYPE){0});
+    x.U = sublqu(x.U, a);
+    return  x.I;
 }
 
 INLINE(QUAD_ITYPE,negsqi) (QUAD_ITYPE a) 
@@ -24992,126 +26908,156 @@ INLINE(Vqdf,VQDF_NEGD) (Vqdf x)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,invsqu) (QUAD_UTYPE x) {return ~x;}
-INLINE(QUAD_ITYPE,invsqi) (QUAD_ITYPE x) {return ~x;}
-#endif
 
-#define     DYU_INVS(M) DBU_ASYU(vmvn_u8(DYU_ASBU(M)))
-#define     DBU_INVS             vmvn_u8
-#define     DBI_INVS             vmvn_s8
 #if CHAR_MIN
 #   define  DBC_INVS             vmvn_s8
-#else
-#   define  DBC_INVS             vmvn_u8
-#endif
-
-#define     DHU_INVS             vmvn_u16
-#define     DHI_INVS             vmvn_s16
-#define     DWU_INVS             vmvn_u32
-#define     DWI_INVS             vmvn_s32
-#define     DDU_INVS(M) DWU_ASDU(vmvn_u32(DDU_ASWU(M)))
-#define     DDI_INVS(M) DWI_ASDI(vmvn_s32(DDI_ASWI(M)))
-
-#define     QYU_INVS(M) QBU_ASYU(vmvnq_u8(QYU_ASBU(M)))
-#define     QBU_INVS             vmvnq_u8
-#define     QBI_INVS             vmvnq_s8
-#if CHAR_MIN
 #   define  QBC_INVS             vmvnq_s8
 #else
+#   define  DBC_INVS             vmvn_u8
 #   define  QBC_INVS             vmvnq_u8
 #endif
 
-#define     QHU_INVS             vmvnq_u16
-#define     QHI_INVS             vmvnq_s16
-#define     QWU_INVS             vmvnq_u32
-#define     QWI_INVS             vmvnq_s32
-#define     QDU_INVS(M) QWU_ASDU(vmvnq_u32(QDU_ASWU(M)))
-#define     QDI_INVS(M) QWI_ASDI(vmvnq_s32(QDI_ASWI(M)))
 
-INLINE(Vwyu,VWYU_INVS) (Vwyu v)
+INLINE(float16x4_t,DHF_INVS) (float16x4_t x)
 {
-    float32x2_t f = vdup_n_f32(VWYU_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WYU_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    uint8x8_t b = vreinterpret_u8_f16(x);
+    b = vmvn_u8(b);
+    return  vreinterpret_f16_u8(b);
+}
+
+INLINE(float32x2_t,DWF_INVS) (float32x2_t x)
+{
+    uint8x8_t b = vreinterpret_u8_f32(x);
+    b = vmvn_u8(b);
+    return  vreinterpret_f32_u8(b);
+}
+
+INLINE(uint64x1_t,DDU_INVS) (uint64x1_t x)
+{
+    uint8x8_t b = vreinterpret_u8_u64(x);
+    b = vmvn_u8(b);
+    return  vreinterpret_u64_u8(b);
+}
+
+INLINE(int64x1_t,DDI_INVS) (int64x1_t x)
+{
+    uint8x8_t b = vreinterpret_u8_s64(x);
+    b = vmvn_u8(b);
+    return  vreinterpret_s64_u8(b);
+}
+
+INLINE(float64x1_t,DDF_INVS) (float64x1_t x)
+{
+    uint8x8_t b = vreinterpret_u8_f64(x);
+    b = vmvn_u8(b);
+    return  vreinterpret_f64_u8(b);
 }
 
 
-INLINE(Vwbu,VWBU_INVS) (Vwbu v)
+INLINE(float16x8_t,QHF_INVS) (float16x8_t x)
 {
-#define     VWBU_INVS   VWBU_INVS
-    float32x2_t f = vdup_n_f32(VWBU_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WBU_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    uint8x16_t b = vreinterpretq_u8_f16(x);
+    b = vmvnq_u8(b);
+    return  vreinterpretq_f16_u8(b);
 }
 
-INLINE(Vwbi,VWBI_INVS) (Vwbi v)
+INLINE(float32x4_t,QWF_INVS) (float32x4_t x)
 {
-    float32x2_t f = vdup_n_f32(VWBI_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WBI_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    uint8x16_t b = vreinterpretq_u8_f32(x);
+    b = vmvnq_u8(b);
+    return  vreinterpretq_f32_u8(b);
 }
 
-INLINE(Vwbc,VWBC_INVS) (Vwbc v)
+INLINE(uint64x2_t,QDU_INVS) (uint64x2_t x)
 {
-    float32x2_t f = vdup_n_f32(VWBC_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WBC_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    uint8x16_t b = vreinterpretq_u8_u64(x);
+    b = vmvnq_u8(b);
+    return  vreinterpretq_u64_u8(b);
 }
 
-
-INLINE(Vwhu,VWHU_INVS) (Vwhu v)
+INLINE(int64x2_t,QDI_INVS) (int64x2_t x)
 {
-    float32x2_t f = vdup_n_f32(VWHU_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WHU_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    uint8x16_t b = vreinterpretq_u8_s64(x);
+    b = vmvnq_u8(b);
+    return  vreinterpretq_s64_u8(b);
 }
 
-INLINE(Vwhi,VWHI_INVS) (Vwhi v)
+INLINE(float64x2_t,QDF_INVS) (float64x2_t x)
 {
-    float32x2_t f = vdup_n_f32(VWHI_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WHI_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    uint8x16_t b = vreinterpretq_u8_f64(x);
+    b = vmvnq_u8(b);
+    return  vreinterpretq_f64_u8(b);
 }
 
-
-INLINE(Vwwu,VWWU_INVS) (Vwwu v)
+INLINE(flt16_t, FLT16_INVS) (flt16_t x)
 {
-    float32x2_t f = vdup_n_f32(VWWU_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WWU_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    HALF_TYPE z = {.F=x};
+    z.U = ~z.U;
+    return  z.F;
 }
 
-INLINE(Vwwi,VWWI_INVS) (Vwwi v)
+INLINE(  float,   FLT_INVS)   (float x)
 {
-    float32x2_t f = vdup_n_f32(VWWI_ASTM(v));
-    uint8x8_t   u = vmvn_u8(vreinterpret_u8_f32(f));
-    return  WWI_ASTV(vget_lane_f32(vreinterpret_f32_u8(u), 0));
+    float32x2_t f = {x};
+    f = DWF_INVS(f);
+    return  vget_lane_f32(f, 0);
 }
 
+INLINE( double,   DBL_INVS)  (double x)
+{
+    float64x1_t f = {x};
+    f = DDF_INVS(f);
+    return  vget_lane_f64(f, 0);
+}
 
-INLINE(Vdyu,VDYU_INVS) (Vdyu v) {return DYU_ASTV(DYU_INVS(VDYU_ASTM(v)));}
-INLINE(Vdbu,VDBU_INVS) (Vdbu v) {return DBU_INVS(v);}
-INLINE(Vdbi,VDBI_INVS) (Vdbi v) {return DBI_INVS(v);}
-INLINE(Vdbc,VDBC_INVS) (Vdbc v) {return DBC_ASTV(DBC_INVS(VDBC_ASTM(v)));}
-INLINE(Vdhu,VDHU_INVS) (Vdhu v) {return DHU_INVS(v);}
-INLINE(Vdhi,VDHI_INVS) (Vdhi v) {return DHI_INVS(v);}
-INLINE(Vdwu,VDWU_INVS) (Vdwu v) {return DWU_INVS(v);}
-INLINE(Vdwi,VDWI_INVS) (Vdwi v) {return DWI_INVS(v);}
-INLINE(Vddu,VDDU_INVS) (Vddu v) {return DDU_INVS(v);}
-INLINE(Vddi,VDDI_INVS) (Vddi v) {return DDI_INVS(v);}
+INLINE(QUAD_FTYPE,invsqf) (QUAD_FTYPE x)
+{
+    QUAD_VTYPE q = {.F=x};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  q.F;
+}
 
-INLINE(Vqyu,VQYU_INVS) (Vqyu v) {return QYU_ASTV(QYU_INVS(VQYU_ASTM(v)));}
-INLINE(Vqbu,VQBU_INVS) (Vqbu v) {return QBU_INVS(v);}
-INLINE(Vqbi,VQBI_INVS) (Vqbi v) {return QBI_INVS(v);}
-INLINE(Vqbc,VQBC_INVS) (Vqbc v) {return QBC_ASTV(QBC_INVS(VQBC_ASTM(v)));}
-INLINE(Vqhu,VQHU_INVS) (Vqhu v) {return QHU_INVS(v);}
-INLINE(Vqhi,VQHI_INVS) (Vqhi v) {return QHI_INVS(v);}
-INLINE(Vqwu,VQWU_INVS) (Vqwu v) {return QWU_INVS(v);}
-INLINE(Vqwi,VQWI_INVS) (Vqwi v) {return QWI_INVS(v);}
-INLINE(Vqdu,VQDU_INVS) (Vqdu v) {return QDU_INVS(v);}
-INLINE(Vqdi,VQDI_INVS) (Vqdi v) {return QDI_INVS(v);}
+INLINE(Vwyu,VWYU_INVS) (Vwyu x) {return ((Vwyu){FLT_INVS(x.V0)});}
+INLINE(Vwbu,VWBU_INVS) (Vwbu x) {return ((Vwbu){FLT_INVS(x.V0)});}
+INLINE(Vwbi,VWBI_INVS) (Vwbi x) {return ((Vwbi){FLT_INVS(x.V0)});}
+INLINE(Vwbc,VWBC_INVS) (Vwbc x) {return ((Vwbc){FLT_INVS(x.V0)});}
+INLINE(Vwhu,VWHU_INVS) (Vwhu x) {return ((Vwhu){FLT_INVS(x.V0)});}
+INLINE(Vwhi,VWHI_INVS) (Vwhi x) {return ((Vwhi){FLT_INVS(x.V0)});}
+INLINE(Vwhf,VWHF_INVS) (Vwhf x) {return ((Vwhf){FLT_INVS(x.V0)});}
+INLINE(Vwwu,VWWU_INVS) (Vwwu x) {return ((Vwwu){FLT_INVS(x.V0)});}
+INLINE(Vwwi,VWWI_INVS) (Vwwi x) {return ((Vwwi){FLT_INVS(x.V0)});}
+INLINE(Vwwf,VWWF_INVS) (Vwwf x) {return ((Vwwf){FLT_INVS(x.V0)});}
 
+INLINE(Vdyu,VDYU_INVS) (Vdyu x) {return ((Vdyu){DDU_INVS(x.V0)});}
+INLINE(Vdbu,VDBU_INVS) (Vdbu x) {return vmvn_u8(x);}
+INLINE(Vdbi,VDBI_INVS) (Vdbi x) {return vmvn_s8(x);}
+INLINE(Vdbc,VDBC_INVS) (Vdbc x) {return ((Vdbc){DBC_INVS(x.V0)});}
+INLINE(Vdhu,VDHU_INVS) (Vdhu x) {return vmvn_u16(x);}
+INLINE(Vdhi,VDHI_INVS) (Vdhi x) {return vmvn_s16(x);}
+INLINE(Vdhf,VDHF_INVS) (Vdhf x) {return DHF_INVS(x);}
+INLINE(Vdwu,VDWU_INVS) (Vdwu x) {return vmvn_u32(x);}
+INLINE(Vdwi,VDWI_INVS) (Vdwi x) {return vmvn_s32(x);}
+INLINE(Vdwi,VDWF_INVS) (Vdwi x) {return DWF_INVS(x);}
+INLINE(Vddu,VDDU_INVS) (Vddu x) {return DDU_INVS(x);}
+INLINE(Vddi,VDDI_INVS) (Vddi x) {return DDI_INVS(x);}
+INLINE(Vddf,VDDF_INVS) (Vddf x) {return DDF_INVS(x);}
+
+INLINE(Vqyu,VQYU_INVS) (Vqyu x) {x.V0=QDU_INVS(x.V0); return x;}
+INLINE(Vqbu,VQBU_INVS) (Vqbu x) {return vmvnq_u8(x);}
+INLINE(Vqbi,VQBI_INVS) (Vqbi x) {return vmvnq_s8(x);}
+INLINE(Vqbc,VQBC_INVS) (Vqbc x) {x.V0=QBC_INVS(x.V0); return x;}
+INLINE(Vqhu,VQHU_INVS) (Vqhu x) {return vmvnq_u16(x);}
+INLINE(Vqhi,VQHI_INVS) (Vqhi x) {return vmvnq_s16(x);}
+INLINE(Vqhf,VQHF_INVS) (Vqhf x) {return QHF_INVS(x);}
+INLINE(Vqwu,VQWU_INVS) (Vqwu x) {return vmvnq_u32(x);}
+INLINE(Vqwi,VQWI_INVS) (Vqwi x) {return vmvnq_s32(x);}
+INLINE(Vqwf,VQWF_INVS) (Vqwf x) {return QWF_INVS(x);}
+INLINE(Vqdu,VQDU_INVS) (Vqdu x) {return QDU_INVS(x);}
+INLINE(Vqdi,VQDI_INVS) (Vqdi x) {return QDI_INVS(x);}
+INLINE(Vqdf,VQDF_INVS) (Vqdf x) {return QDF_INVS(x);}
+INLINE(Vqqu,VQQU_INVS) (Vqqu x) {x.V0=QDU_INVS(x.V0); return x;}
+INLINE(Vqqi,VQQI_INVS) (Vqqi x) {x.V0=QDI_INVS(x.V0); return x;}
+INLINE(Vqqf,VQQF_INVS) (Vqqf x) {x.V0=  invsqf(x.V0); return x;}
 
 #if 0 // _LEAVE_ARM_INVS
 }
@@ -25121,91 +27067,128 @@ INLINE(Vqdi,VQDI_INVS) (Vqdi v) {return QDI_INVS(v);}
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,andsqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a&b;}
-INLINE(QUAD_ITYPE,andsqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a&b;}
+INLINE(flt16_t, FLT16_ANDS)  (flt16_t a,  flt16_t b)
+{
+    DWRD_VTYPE x={.H.F={a}}, y={.H.F={b}};
+    x.H.U = vand_u16(x.H.U, y.H.U);
+    return  vget_lane_f16(x.H.F, 0);
+}
+
+INLINE(  float,   FLT_ANDS)   (float a,   float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vand_u32(x.W.U, y.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE( double,   DBL_ANDS)  (double a,  double b)
+{
+    DWRD_VTYPE x={.D.F={a}}, y={.D.F={b}};
+    x.D.U = vand_u64(x.D.U, y.D.U);
+    return  vget_lane_f64(x.D.F, 0);
+}
+
+INLINE(QUAD_FTYPE,andsqf)  (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE x={.F=a}, y={.F=b};
+    x.D.U = vandq_u64(x.D.U, y.D.U);
+    return  x.F;
+}
+
+#if CHAR_MIN
+#   define  DBC_ANDS vand_s8
+#   define  QBC_ANDS vandq_s8
+#else
+#   define  DBC_ANDS vand_u8
+#   define  QBC_ANDS vandq_u8
 #endif
 
-INLINE(Vwyu,VWYU_ANDS) (Vwyu a, Vwyu b)
+INLINE(float16x4_t,DHF_ANDS) (float16x4_t a, float16x4_t b)
 {
-    return  WYU_ASTV(FLT_ANDS(VWYU_ASTM(a), VWYU_ASTM(b)));
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vand_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwbu,VWBU_ANDS) (Vwbu a, Vwbu b)
+INLINE(float32x2_t,DWF_ANDS) (float32x2_t a, float32x2_t b)
 {
-    return  WBU_ASTV(FLT_ANDS(VWBU_ASTM(a), VWBU_ASTM(b)));
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vand_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vwbi,VWBI_ANDS) (Vwbi a, Vwbi b)
+INLINE(float64x1_t,DDF_ANDS) (float64x1_t a, float64x1_t b)
 {
-    return  WBI_ASTV(FLT_ANDS(VWBI_ASTM(a), VWBI_ASTM(b)));
-}
-
-INLINE(Vwbc,VWBC_ANDS) (Vwbc a, Vwbc b)
-{
-    return  WBC_ASTV(FLT_ANDS(VWBC_ASTM(a), VWBC_ASTM(b)));
-}
-
-INLINE(Vwhu,VWHU_ANDS) (Vwhu a, Vwhu b)
-{
-    return  WHU_ASTV(FLT_ANDS(VWHU_ASTM(a), VWHU_ASTM(b)));
-}
-
-INLINE(Vwhi,VWHI_ANDS) (Vwhi a, Vwhi b)
-{
-    return  WHI_ASTV(FLT_ANDS(VWHI_ASTM(a), VWHI_ASTM(b)));
+    DWRD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vand_u32(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
 
-INLINE(Vwwu,VWWU_ANDS) (Vwwu a, Vwwu b)
+INLINE(float16x8_t,QHF_ANDS) (float16x8_t a, float16x8_t b)
 {
-    return  WWU_ASTV(FLT_ANDS(VWWU_ASTM(a), VWWU_ASTM(b)));
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vandq_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwwi,VWWI_ANDS) (Vwwi a, Vwwi b)
+INLINE(float32x4_t,QWF_ANDS) (float32x4_t a, float32x4_t b)
 {
-    return  WWI_ASTV(FLT_ANDS(VWWI_ASTM(a), VWWI_ASTM(b)));
+    QUAD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vandq_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vdyu,VDYU_ANDS) (Vdyu a, Vdyu b)
+#define QDU_ANDS vandq_u64
+#define QDI_ANDS vandq_s64
+INLINE(float64x2_t,QDF_ANDS) (float64x2_t a, float64x2_t b)
 {
-    return  VDDU_ASYU(vand_u64(VDYU_ASDU(a), VDYU_ASDU(b)));
+    QUAD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vandq_u64(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
+INLINE(Vwyu,VWYU_ANDS) (Vwyu a, Vwyu b) {return ((Vwyu){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwbu,VWBU_ANDS) (Vwbu a, Vwbu b) {return ((Vwbu){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwbi,VWBI_ANDS) (Vwbi a, Vwbi b) {return ((Vwbi){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwbc,VWBC_ANDS) (Vwbc a, Vwbc b) {return ((Vwbc){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwhu,VWHU_ANDS) (Vwhu a, Vwhu b) {return ((Vwhu){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwhi,VWHI_ANDS) (Vwhi a, Vwhi b) {return ((Vwhi){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwhf,VWHF_ANDS) (Vwhf a, Vwhf b) {return ((Vwhf){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_ANDS) (Vwwu a, Vwwu b) {return ((Vwwu){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwwi,VWWI_ANDS) (Vwwi a, Vwwi b) {return ((Vwwi){FLT_ANDS(a.V0,b.V0)});}
+INLINE(Vwwf,VWWF_ANDS) (Vwwf a, Vwwf b) {return ((Vwwf){FLT_ANDS(a.V0,b.V0)});}
+
+INLINE(Vdyu,VDYU_ANDS) (Vdyu a, Vdyu b) {return ((Vdyu){vand_u64(a.V0, b.V0)});}
 INLINE(Vdbu,VDBU_ANDS) (Vdbu a, Vdbu b) {return  vand_u8(a, b);}
 INLINE(Vdbi,VDBI_ANDS) (Vdbi a, Vdbi b) {return  vand_s8(a, b);}
-INLINE(Vdbc,VDBC_ANDS) (Vdbc a, Vdbc b)
-{
-    return  VDDU_ASBC(vand_u64(VDBC_ASDU(a), VDBC_ASDU(b)));
-}
-
+INLINE(Vdbc,VDBC_ANDS) (Vdbc a, Vdyu b) {return ((Vdbc){DBC_ANDS(a.V0, b.V0)});}
 INLINE(Vdhu,VDHU_ANDS) (Vdhu a, Vdhu b) {return  vand_u16(a, b);}
 INLINE(Vdhi,VDHI_ANDS) (Vdhi a, Vdhi b) {return  vand_s16(a, b);}
+INLINE(Vdhf,VDHF_ANDS) (Vdhf a, Vdhf b) {return  DHF_ANDS(a, b);}
 INLINE(Vdwu,VDWU_ANDS) (Vdwu a, Vdwu b) {return  vand_u32(a, b);}
 INLINE(Vdwi,VDWI_ANDS) (Vdwi a, Vdwi b) {return  vand_s32(a, b);}
+INLINE(Vdwf,VDWF_ANDS) (Vdwf a, Vdwf b) {return  DWF_ANDS(a, b);}
 INLINE(Vddu,VDDU_ANDS) (Vddu a, Vddu b) {return  vand_u64(a, b);}
 INLINE(Vddi,VDDI_ANDS) (Vddi a, Vddi b) {return  vand_s64(a, b);}
+INLINE(Vddf,VDDF_ANDS) (Vddf a, Vddf b) {return  DDF_ANDS(a, b);}
 
-
-INLINE(Vqyu,VQYU_ANDS) (Vqyu a, Vqyu b)
-{
-    return  VQDU_ASYU(vandq_u64(VQYU_ASDU(a), VQYU_ASDU(b)));
-}
-
-INLINE(Vqbu,VQBU_ANDS) (Vqbu a, Vqbu b) {return  vandq_u8(a, b);}
-INLINE(Vqbi,VQBI_ANDS) (Vqbi a, Vqbi b) {return  vandq_s8(a, b);}
-INLINE(Vqbc,VQBC_ANDS) (Vqbc a, Vqbc b)
-{
-    return  VQDU_ASBC(vandq_u64(VQBC_ASDU(a), VQBC_ASDU(b)));
-}
-
-INLINE(Vqhu,VQHU_ANDS) (Vqhu a, Vqhu b) {return  vandq_u16(a, b);}
-INLINE(Vqhi,VQHI_ANDS) (Vqhi a, Vqhi b) {return  vandq_s16(a, b);}
-INLINE(Vqwu,VQWU_ANDS) (Vqwu a, Vqwu b) {return  vandq_u32(a, b);}
-INLINE(Vqwi,VQWI_ANDS) (Vqwi a, Vqwi b) {return  vandq_s32(a, b);}
-INLINE(Vqdu,VQDU_ANDS) (Vqdu a, Vqdu b) {return  vandq_u64(a, b);}
-INLINE(Vqdi,VQDI_ANDS) (Vqdi a, Vqdi b) {return  vandq_s64(a, b);}
-
+INLINE(Vqyu,VQYU_ANDS) (Vqyu a, Vqyu b) {return ((Vqyu){QDU_ANDS(a.V0,b.V0)});}
+INLINE(Vqbu,VQBU_ANDS) (Vqbu a, Vqbu b) {return vandq_u8(a, b);}
+INLINE(Vqbi,VQBI_ANDS) (Vqbi a, Vqbi b) {return vandq_s8(a, b);}
+INLINE(Vqbc,VQBC_ANDS) (Vqbc a, Vqyu b) {return ((Vqbc){QBC_ANDS(a.V0,b.V0)});}
+INLINE(Vqhu,VQHU_ANDS) (Vqhu a, Vqhu b) {return vandq_u16(a, b);}
+INLINE(Vqhi,VQHI_ANDS) (Vqhi a, Vqhi b) {return vandq_s16(a, b);}
+INLINE(Vqhf,VQHF_ANDS) (Vqhf a, Vqhf b) {return  QHF_ANDS(a, b);}
+INLINE(Vqwu,VQWU_ANDS) (Vqwu a, Vqwu b) {return vandq_u32(a, b);}
+INLINE(Vqwi,VQWI_ANDS) (Vqwi a, Vqwi b) {return vandq_s32(a, b);}
+INLINE(Vqwf,VQWF_ANDS) (Vqwf a, Vqwf b) {return  QWF_ANDS(a, b);}
+INLINE(Vqdu,VQDU_ANDS) (Vqdu a, Vqdu b) {return vandq_u64(a, b);}
+INLINE(Vqdi,VQDI_ANDS) (Vqdi a, Vqdi b) {return vandq_s64(a, b);}
+INLINE(Vqdf,VQDF_ANDS) (Vqdf a, Vqdf b) {return QDF_ANDS(a, b);}
+INLINE(Vqqu,VQQU_ANDS) (Vqqu a, Vqqu b) {return ((Vqqu){QDU_ANDS(a.V0,b.V0)});}
+INLINE(Vqqi,VQQI_ANDS) (Vqqi a, Vqqi b) {return ((Vqqi){QDI_ANDS(a.V0,b.V0)});}
+INLINE(Vqqf,VQQF_ANDS) (Vqqf a, Vqqf b) {return ((Vqqf){andsqf(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_ANDS
 }
@@ -25215,106 +27198,128 @@ INLINE(Vqdi,VQDI_ANDS) (Vqdi a, Vqdi b) {return  vandq_s64(a, b);}
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,andnqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a&~b;}
-INLINE(QUAD_ITYPE,andnqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a&~b;}
+INLINE(flt16_t, FLT16_ANDN)  (flt16_t a,  flt16_t b)
+{
+    DWRD_VTYPE x={.H.F={a}}, y={.H.F={b}};
+    x.H.U = vbic_u16(x.H.U, y.H.U);
+    return  vget_lane_f16(x.H.F, 0);
+}
+
+INLINE(  float,   FLT_ANDN)   (float a,   float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vbic_u32(x.W.U, y.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE( double,   DBL_ANDN)  (double a,  double b)
+{
+    DWRD_VTYPE x={.D.F={a}}, y={.D.F={b}};
+    x.D.U = vbic_u64(x.D.U, y.D.U);
+    return  vget_lane_f64(x.D.F, 0);
+}
+
+INLINE(QUAD_FTYPE,andnqf)  (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE x={.F=a}, y={.F=b};
+    x.D.U = vbicq_u64(x.D.U, y.D.U);
+    return  x.F;
+}
+
+#if CHAR_MIN
+#   define  DBC_ANDN vbic_s8
+#   define  QBC_ANDN vbicq_s8
+#else
+#   define  DBC_ANDN vbic_u8
+#   define  QBC_ANDN vbicq_u8
 #endif
 
-INLINE(Vwyu,VWYU_ANDN) (Vwyu a, Vwyu b)
+INLINE(float16x4_t,DHF_ANDN) (float16x4_t a, float16x4_t b)
 {
-    return  WYU_ASTV(FLT_ANDN(VWYU_ASTM(a), VWYU_ASTM(b)));
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vbic_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwbu,VWBU_ANDN) (Vwbu a, Vwbu b)
+INLINE(float32x2_t,DWF_ANDN) (float32x2_t a, float32x2_t b)
 {
-    return  WBU_ASTV(FLT_ANDN(VWBU_ASTM(a), VWBU_ASTM(b)));
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vbic_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vwbi,VWBI_ANDN) (Vwbi a, Vwbi b)
+INLINE(float64x1_t,DDF_ANDN) (float64x1_t a, float64x1_t b)
 {
-    return  WBI_ASTV(FLT_ANDN(VWBI_ASTM(a), VWBI_ASTM(b)));
-}
-
-INLINE(Vwbc,VWBC_ANDN) (Vwbc a, Vwbc b)
-{
-    return  WBC_ASTV(FLT_ANDN(VWBC_ASTM(a), VWBC_ASTM(b)));
-}
-
-INLINE(Vwhu,VWHU_ANDN) (Vwhu a, Vwhu b)
-{
-    return  WHU_ASTV(FLT_ANDN(VWHU_ASTM(a), VWHU_ASTM(b)));
-}
-
-INLINE(Vwhi,VWHI_ANDN) (Vwhi a, Vwhi b)
-{
-    return  WHI_ASTV(FLT_ANDN(VWHI_ASTM(a), VWHI_ASTM(b)));
+    DWRD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vbic_u32(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
 
-INLINE(Vwwu,VWWU_ANDN) (Vwwu a, Vwwu b)
+INLINE(float16x8_t,QHF_ANDN) (float16x8_t a, float16x8_t b)
 {
-    return  WWU_ASTV(FLT_ANDN(VWWU_ASTM(a), VWWU_ASTM(b)));
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vbicq_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwwi,VWWI_ANDN) (Vwwi a, Vwwi b)
+INLINE(float32x4_t,QWF_ANDN) (float32x4_t a, float32x4_t b)
 {
-    return  WWI_ASTV(FLT_ANDN(VWWI_ASTM(a), VWWI_ASTM(b)));
+    QUAD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vbicq_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-
-INLINE(Vdyu,VDYU_ANDN) (Vdyu a, Vdyu b)
+#define QDU_ANDN vbicq_u64
+#define QDI_ANDN vbicq_s64
+INLINE(float64x2_t,QDF_ANDN) (float64x2_t a, float64x2_t b)
 {
-    return  VDWU_ASYU(vand_u32(VDYU_ASWU(a), vmvn_u32(VDYU_ASWU(b))));
+    QUAD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vbicq_u64(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
-INLINE(Vdbu,VDBU_ANDN) (Vdbu a, Vdbu b) {return  vand_u8(a, vmvn_u8(b));}
-INLINE(Vdbi,VDBI_ANDN) (Vdbi a, Vdbi b) {return  vand_s8(a, vmvn_s8(b));}
-INLINE(Vdbc,VDBC_ANDN) (Vdbc a, Vdbc b)
-{
-    return  VDWU_ASBC(vand_u32(VDBC_ASWU(a), vmvn_u32(VDBC_ASWU(b))));
-}
+INLINE(Vwyu,VWYU_ANDN) (Vwyu a, Vwyu b) {return ((Vwyu){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwbu,VWBU_ANDN) (Vwbu a, Vwbu b) {return ((Vwbu){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwbi,VWBI_ANDN) (Vwbi a, Vwbi b) {return ((Vwbi){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwbc,VWBC_ANDN) (Vwbc a, Vwbc b) {return ((Vwbc){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwhu,VWHU_ANDN) (Vwhu a, Vwhu b) {return ((Vwhu){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwhi,VWHI_ANDN) (Vwhi a, Vwhi b) {return ((Vwhi){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwhf,VWHF_ANDN) (Vwhf a, Vwhf b) {return ((Vwhf){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_ANDN) (Vwwu a, Vwwu b) {return ((Vwwu){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwwi,VWWI_ANDN) (Vwwi a, Vwwi b) {return ((Vwwi){FLT_ANDN(a.V0,b.V0)});}
+INLINE(Vwwf,VWWF_ANDN) (Vwwf a, Vwwf b) {return ((Vwwf){FLT_ANDN(a.V0,b.V0)});}
 
-INLINE(Vdhu,VDHU_ANDN) (Vdhu a, Vdhu b) {return  vand_u16(a, vmvn_u16(b));}
-INLINE(Vdhi,VDHI_ANDN) (Vdhi a, Vdhi b) {return  vand_s16(a, vmvn_s16(b));}
-INLINE(Vdwu,VDWU_ANDN) (Vdwu a, Vdwu b) {return  vand_u32(a, vmvn_u32(b));}
-INLINE(Vdwi,VDWI_ANDN) (Vdwi a, Vdwi b) {return  vand_s32(a, vmvn_s32(b));}
-INLINE(Vddu,VDDU_ANDN) (Vddu a, Vddu b)
-{
-    return  VDWU_ASDU(vand_u32(VDDU_ASWU(a), vmvn_u32(VDDU_ASWU(b))));
-}
+INLINE(Vdyu,VDYU_ANDN) (Vdyu a, Vdyu b) {return ((Vdyu){vbic_u64(a.V0, b.V0)});}
+INLINE(Vdbu,VDBU_ANDN) (Vdbu a, Vdbu b) {return  vbic_u8(a, b);}
+INLINE(Vdbi,VDBI_ANDN) (Vdbi a, Vdbi b) {return  vbic_s8(a, b);}
+INLINE(Vdbc,VDBC_ANDN) (Vdbc a, Vdyu b) {return ((Vdbc){DBC_ANDN(a.V0, b.V0)});}
+INLINE(Vdhu,VDHU_ANDN) (Vdhu a, Vdhu b) {return  vbic_u16(a, b);}
+INLINE(Vdhi,VDHI_ANDN) (Vdhi a, Vdhi b) {return  vbic_s16(a, b);}
+INLINE(Vdhf,VDHF_ANDN) (Vdhf a, Vdhf b) {return  DHF_ANDN(a, b);}
+INLINE(Vdwu,VDWU_ANDN) (Vdwu a, Vdwu b) {return  vbic_u32(a, b);}
+INLINE(Vdwi,VDWI_ANDN) (Vdwi a, Vdwi b) {return  vbic_s32(a, b);}
+INLINE(Vdwf,VDWF_ANDN) (Vdwf a, Vdwf b) {return  DWF_ANDN(a, b);}
+INLINE(Vddu,VDDU_ANDN) (Vddu a, Vddu b) {return  vbic_u64(a, b);}
+INLINE(Vddi,VDDI_ANDN) (Vddi a, Vddi b) {return  vbic_s64(a, b);}
+INLINE(Vddf,VDDF_ANDN) (Vddf a, Vddf b) {return  DDF_ANDN(a, b);}
 
-INLINE(Vddi,VDDI_ANDN) (Vddi a, Vddi b)
-{
-    return  VDWU_ASDI(vand_u32(VDDI_ASWU(a), vmvn_u32(VDDI_ASWU(b))));
-}
-
-
-
-INLINE(Vqyu,VQYU_ANDN) (Vqyu a, Vqyu b)
-{
-    return  VQWU_ASYU(vandq_u32(VQYU_ASWU(a), vmvnq_u32(VQYU_ASWU(b))));
-}
-
-INLINE(Vqbu,VQBU_ANDN) (Vqbu a, Vqbu b) {return  vandq_u8(a, vmvnq_u8(b));}
-INLINE(Vqbi,VQBI_ANDN) (Vqbi a, Vqbi b) {return  vandq_s8(a, vmvnq_s8(b));}
-INLINE(Vqbc,VQBC_ANDN) (Vqbc a, Vqbc b)
-{
-    return  VQWU_ASBC(vandq_u32(VQBC_ASWU(a), vmvnq_u32(VQBC_ASWU(b))));
-}
-
-INLINE(Vqhu,VQHU_ANDN) (Vqhu a, Vqhu b) {return  vandq_u16(a, vmvnq_u16(b));}
-INLINE(Vqhi,VQHI_ANDN) (Vqhi a, Vqhi b) {return  vandq_s16(a, vmvnq_s16(b));}
-INLINE(Vqwu,VQWU_ANDN) (Vqwu a, Vqwu b) {return  vandq_u32(a, vmvnq_u32(b));}
-INLINE(Vqwi,VQWI_ANDN) (Vqwi a, Vqwi b) {return  vandq_s32(a, vmvnq_s32(b));}
-INLINE(Vqdu,VQDU_ANDN) (Vqdu a, Vqdu b)
-{
-    return  VQWU_ASDU(vandq_u32(VQDU_ASWU(a), vmvnq_u32(VQDU_ASWU(b))));
-}
-INLINE(Vqdi,VQDI_ANDN) (Vqdi a, Vqdi b)
-{
-    return  VQWU_ASDI(vandq_u32(VQDI_ASWU(a), vmvnq_u32(VQDI_ASWU(b))));
-}
-
+INLINE(Vqyu,VQYU_ANDN) (Vqyu a, Vqyu b) {return ((Vqyu){QDU_ANDN(a.V0,b.V0)});}
+INLINE(Vqbu,VQBU_ANDN) (Vqbu a, Vqbu b) {return vbicq_u8(a, b);}
+INLINE(Vqbi,VQBI_ANDN) (Vqbi a, Vqbi b) {return vbicq_s8(a, b);}
+INLINE(Vqbc,VQBC_ANDN) (Vqbc a, Vqyu b) {return ((Vqbc){QBC_ANDN(a.V0,b.V0)});}
+INLINE(Vqhu,VQHU_ANDN) (Vqhu a, Vqhu b) {return vbicq_u16(a, b);}
+INLINE(Vqhi,VQHI_ANDN) (Vqhi a, Vqhi b) {return vbicq_s16(a, b);}
+INLINE(Vqhf,VQHF_ANDN) (Vqhf a, Vqhf b) {return  QHF_ANDN(a, b);}
+INLINE(Vqwu,VQWU_ANDN) (Vqwu a, Vqwu b) {return vbicq_u32(a, b);}
+INLINE(Vqwi,VQWI_ANDN) (Vqwi a, Vqwi b) {return vbicq_s32(a, b);}
+INLINE(Vqwf,VQWF_ANDN) (Vqwf a, Vqwf b) {return  QWF_ANDN(a, b);}
+INLINE(Vqdu,VQDU_ANDN) (Vqdu a, Vqdu b) {return vbicq_u64(a, b);}
+INLINE(Vqdi,VQDI_ANDN) (Vqdi a, Vqdi b) {return vbicq_s64(a, b);}
+INLINE(Vqdf,VQDF_ANDN) (Vqdf a, Vqdf b) {return QDF_ANDN(a, b);}
+INLINE(Vqqu,VQQU_ANDN) (Vqqu a, Vqqu b) {return ((Vqqu){QDU_ANDN(a.V0,b.V0)});}
+INLINE(Vqqi,VQQI_ANDN) (Vqqi a, Vqqi b) {return ((Vqqi){QDI_ANDN(a.V0,b.V0)});}
+INLINE(Vqqf,VQQF_ANDN) (Vqqf a, Vqqf b) {return ((Vqqf){andnqf(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_ANDN
 }
@@ -25516,91 +27521,128 @@ INLINE( int64_t,VQDI_ANDV) (Vqdi a)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,orrsqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a|b;}
-INLINE(QUAD_ITYPE,orrsqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a|b;}
+INLINE(flt16_t, FLT16_ORRS)  (flt16_t a,  flt16_t b)
+{
+    DWRD_VTYPE x={.H.F={a}}, y={.H.F={b}};
+    x.H.U = vorr_u16(x.H.U, y.H.U);
+    return  vget_lane_f16(x.H.F, 0);
+}
+
+INLINE(  float,   FLT_ORRS)   (float a,   float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vorr_u32(x.W.U, y.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE( double,   DBL_ORRS)  (double a,  double b)
+{
+    DWRD_VTYPE x={.D.F={a}}, y={.D.F={b}};
+    x.D.U = vorr_u64(x.D.U, y.D.U);
+    return  vget_lane_f64(x.D.F, 0);
+}
+
+INLINE(QUAD_FTYPE,orrsqf)  (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE x={.F=a}, y={.F=b};
+    x.D.U = vorrq_u64(x.D.U, y.D.U);
+    return  x.F;
+}
+
+#if CHAR_MIN
+#   define  DBC_ORRS vorr_s8
+#   define  QBC_ORRS vorrq_s8
+#else
+#   define  DBC_ORRS vorr_u8
+#   define  QBC_ORRS vorrq_u8
 #endif
 
-INLINE(Vwyu,VWYU_ORRS) (Vwyu a, Vwyu b)
+INLINE(float16x4_t,DHF_ORRS) (float16x4_t a, float16x4_t b)
 {
-    return  WYU_ASTV(FLT_ORRS(VWYU_ASTM(a), VWYU_ASTM(b)));
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vorr_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwbu,VWBU_ORRS) (Vwbu a, Vwbu b)
+INLINE(float32x2_t,DWF_ORRS) (float32x2_t a, float32x2_t b)
 {
-    return  WBU_ASTV(FLT_ORRS(VWBU_ASTM(a), VWBU_ASTM(b)));
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vorr_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vwbi,VWBI_ORRS) (Vwbi a, Vwbi b)
+INLINE(float64x1_t,DDF_ORRS) (float64x1_t a, float64x1_t b)
 {
-    return  WBI_ASTV(FLT_ORRS(VWBI_ASTM(a), VWBI_ASTM(b)));
-}
-
-INLINE(Vwbc,VWBC_ORRS) (Vwbc a, Vwbc b)
-{
-    return  WBC_ASTV(FLT_ORRS(VWBC_ASTM(a), VWBC_ASTM(b)));
-}
-
-INLINE(Vwhu,VWHU_ORRS) (Vwhu a, Vwhu b)
-{
-    return  WHU_ASTV(FLT_ORRS(VWHU_ASTM(a), VWHU_ASTM(b)));
-}
-
-INLINE(Vwhi,VWHI_ORRS) (Vwhi a, Vwhi b)
-{
-    return  WHI_ASTV(FLT_ORRS(VWHI_ASTM(a), VWHI_ASTM(b)));
+    DWRD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vorr_u32(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
 
-INLINE(Vwwu,VWWU_ORRS) (Vwwu a, Vwwu b)
+INLINE(float16x8_t,QHF_ORRS) (float16x8_t a, float16x8_t b)
 {
-    return  WWU_ASTV(FLT_ORRS(VWWU_ASTM(a), VWWU_ASTM(b)));
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vorrq_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwwi,VWWI_ORRS) (Vwwi a, Vwwi b)
+INLINE(float32x4_t,QWF_ORRS) (float32x4_t a, float32x4_t b)
 {
-    return  WWI_ASTV(FLT_ORRS(VWWI_ASTM(a), VWWI_ASTM(b)));
+    QUAD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vorrq_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vdyu,VDYU_ORRS) (Vdyu a, Vdyu b)
+#define QDU_ORRS vorrq_u64
+#define QDI_ORRS vorrq_s64
+INLINE(float64x2_t,QDF_ORRS) (float64x2_t a, float64x2_t b)
 {
-    return  VDDU_ASYU(vorr_u64(VDYU_ASDU(a), VDYU_ASDU(b)));
+    QUAD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vorrq_u64(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
+INLINE(Vwyu,VWYU_ORRS) (Vwyu a, Vwyu b) {return ((Vwyu){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwbu,VWBU_ORRS) (Vwbu a, Vwbu b) {return ((Vwbu){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwbi,VWBI_ORRS) (Vwbi a, Vwbi b) {return ((Vwbi){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwbc,VWBC_ORRS) (Vwbc a, Vwbc b) {return ((Vwbc){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwhu,VWHU_ORRS) (Vwhu a, Vwhu b) {return ((Vwhu){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwhi,VWHI_ORRS) (Vwhi a, Vwhi b) {return ((Vwhi){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwhf,VWHF_ORRS) (Vwhf a, Vwhf b) {return ((Vwhf){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_ORRS) (Vwwu a, Vwwu b) {return ((Vwwu){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwwi,VWWI_ORRS) (Vwwi a, Vwwi b) {return ((Vwwi){FLT_ORRS(a.V0,b.V0)});}
+INLINE(Vwwf,VWWF_ORRS) (Vwwf a, Vwwf b) {return ((Vwwf){FLT_ORRS(a.V0,b.V0)});}
+
+INLINE(Vdyu,VDYU_ORRS) (Vdyu a, Vdyu b) {return ((Vdyu){vorr_u64(a.V0, b.V0)});}
 INLINE(Vdbu,VDBU_ORRS) (Vdbu a, Vdbu b) {return  vorr_u8(a, b);}
 INLINE(Vdbi,VDBI_ORRS) (Vdbi a, Vdbi b) {return  vorr_s8(a, b);}
-INLINE(Vdbc,VDBC_ORRS) (Vdbc a, Vdbc b)
-{
-    return  VDDU_ASBC(vorr_u64(VDBC_ASDU(a), VDBC_ASDU(b)));
-}
-
+INLINE(Vdbc,VDBC_ORRS) (Vdbc a, Vdyu b) {return ((Vdbc){DBC_ORRS(a.V0, b.V0)});}
 INLINE(Vdhu,VDHU_ORRS) (Vdhu a, Vdhu b) {return  vorr_u16(a, b);}
 INLINE(Vdhi,VDHI_ORRS) (Vdhi a, Vdhi b) {return  vorr_s16(a, b);}
+INLINE(Vdhf,VDHF_ORRS) (Vdhf a, Vdhf b) {return  DHF_ORRS(a, b);}
 INLINE(Vdwu,VDWU_ORRS) (Vdwu a, Vdwu b) {return  vorr_u32(a, b);}
 INLINE(Vdwi,VDWI_ORRS) (Vdwi a, Vdwi b) {return  vorr_s32(a, b);}
+INLINE(Vdwf,VDWF_ORRS) (Vdwf a, Vdwf b) {return  DWF_ORRS(a, b);}
 INLINE(Vddu,VDDU_ORRS) (Vddu a, Vddu b) {return  vorr_u64(a, b);}
 INLINE(Vddi,VDDI_ORRS) (Vddi a, Vddi b) {return  vorr_s64(a, b);}
+INLINE(Vddf,VDDF_ORRS) (Vddf a, Vddf b) {return  DDF_ORRS(a, b);}
 
-
-INLINE(Vqyu,VQYU_ORRS) (Vqyu a, Vqyu b)
-{
-    return  VQDU_ASYU(vorrq_u64(VQYU_ASDU(a), VQYU_ASDU(b)));
-}
-
-INLINE(Vqbu,VQBU_ORRS) (Vqbu a, Vqbu b) {return  vorrq_u8(a, b);}
-INLINE(Vqbi,VQBI_ORRS) (Vqbi a, Vqbi b) {return  vorrq_s8(a, b);}
-INLINE(Vqbc,VQBC_ORRS) (Vqbc a, Vqbc b)
-{
-    return  VQDU_ASBC(vorrq_u64(VQBC_ASDU(a), VQBC_ASDU(b)));
-}
-
-INLINE(Vqhu,VQHU_ORRS) (Vqhu a, Vqhu b) {return  vorrq_u16(a, b);}
-INLINE(Vqhi,VQHI_ORRS) (Vqhi a, Vqhi b) {return  vorrq_s16(a, b);}
-INLINE(Vqwu,VQWU_ORRS) (Vqwu a, Vqwu b) {return  vorrq_u32(a, b);}
-INLINE(Vqwi,VQWI_ORRS) (Vqwi a, Vqwi b) {return  vorrq_s32(a, b);}
-INLINE(Vqdu,VQDU_ORRS) (Vqdu a, Vqdu b) {return  vorrq_u64(a, b);}
-INLINE(Vqdi,VQDI_ORRS) (Vqdi a, Vqdi b) {return  vorrq_s64(a, b);}
-
+INLINE(Vqyu,VQYU_ORRS) (Vqyu a, Vqyu b) {return ((Vqyu){QDU_ORRS(a.V0,b.V0)});}
+INLINE(Vqbu,VQBU_ORRS) (Vqbu a, Vqbu b) {return vorrq_u8(a, b);}
+INLINE(Vqbi,VQBI_ORRS) (Vqbi a, Vqbi b) {return vorrq_s8(a, b);}
+INLINE(Vqbc,VQBC_ORRS) (Vqbc a, Vqyu b) {return ((Vqbc){QBC_ORRS(a.V0,b.V0)});}
+INLINE(Vqhu,VQHU_ORRS) (Vqhu a, Vqhu b) {return vorrq_u16(a, b);}
+INLINE(Vqhi,VQHI_ORRS) (Vqhi a, Vqhi b) {return vorrq_s16(a, b);}
+INLINE(Vqhf,VQHF_ORRS) (Vqhf a, Vqhf b) {return  QHF_ORRS(a, b);}
+INLINE(Vqwu,VQWU_ORRS) (Vqwu a, Vqwu b) {return vorrq_u32(a, b);}
+INLINE(Vqwi,VQWI_ORRS) (Vqwi a, Vqwi b) {return vorrq_s32(a, b);}
+INLINE(Vqwf,VQWF_ORRS) (Vqwf a, Vqwf b) {return  QWF_ORRS(a, b);}
+INLINE(Vqdu,VQDU_ORRS) (Vqdu a, Vqdu b) {return vorrq_u64(a, b);}
+INLINE(Vqdi,VQDI_ORRS) (Vqdi a, Vqdi b) {return vorrq_s64(a, b);}
+INLINE(Vqdf,VQDF_ORRS) (Vqdf a, Vqdf b) {return QDF_ORRS(a, b);}
+INLINE(Vqqu,VQQU_ORRS) (Vqqu a, Vqqu b) {return ((Vqqu){QDU_ORRS(a.V0,b.V0)});}
+INLINE(Vqqi,VQQI_ORRS) (Vqqi a, Vqqi b) {return ((Vqqi){QDI_ORRS(a.V0,b.V0)});}
+INLINE(Vqqf,VQQF_ORRS) (Vqqf a, Vqqf b) {return ((Vqqf){orrsqf(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_ORRS
 }
@@ -25610,91 +27652,128 @@ INLINE(Vqdi,VQDI_ORRS) (Vqdi a, Vqdi b) {return  vorrq_s64(a, b);}
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,orrnqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a|~b;}
-INLINE(QUAD_ITYPE,orrnqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a|~b;}
+INLINE(flt16_t, FLT16_ORRN)  (flt16_t a,  flt16_t b)
+{
+    DWRD_VTYPE x={.H.F={a}}, y={.H.F={b}};
+    x.H.U = vorn_u16(x.H.U, y.H.U);
+    return  vget_lane_f16(x.H.F, 0);
+}
+
+INLINE(  float,   FLT_ORRN)   (float a,   float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vorn_u32(x.W.U, y.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE( double,   DBL_ORRN)  (double a,  double b)
+{
+    DWRD_VTYPE x={.D.F={a}}, y={.D.F={b}};
+    x.D.U = vorn_u64(x.D.U, y.D.U);
+    return  vget_lane_f64(x.D.F, 0);
+}
+
+INLINE(QUAD_FTYPE,orrnqf)  (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE x={.F=a}, y={.F=b};
+    x.D.U = vornq_u64(x.D.U, y.D.U);
+    return  x.F;
+}
+
+#if CHAR_MIN
+#   define  DBC_ORRN vorn_s8
+#   define  QBC_ORRN vornq_s8
+#else
+#   define  DBC_ORRN vorn_u8
+#   define  QBC_ORRN vornq_u8
 #endif
 
-INLINE(Vwyu,VWYU_ORRN) (Vwyu a, Vwyu b)
+INLINE(float16x4_t,DHF_ORRN) (float16x4_t a, float16x4_t b)
 {
-    return  WYU_ASTV(FLT_ORRN(VWYU_ASTM(a), VWYU_ASTM(b)));
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vorn_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwbu,VWBU_ORRN) (Vwbu a, Vwbu b)
+INLINE(float32x2_t,DWF_ORRN) (float32x2_t a, float32x2_t b)
 {
-    return  WBU_ASTV(FLT_ORRN(VWBU_ASTM(a), VWBU_ASTM(b)));
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vorn_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vwbi,VWBI_ORRN) (Vwbi a, Vwbi b)
+INLINE(float64x1_t,DDF_ORRN) (float64x1_t a, float64x1_t b)
 {
-    return  WBI_ASTV(FLT_ORRN(VWBI_ASTM(a), VWBI_ASTM(b)));
-}
-
-INLINE(Vwbc,VWBC_ORRN) (Vwbc a, Vwbc b)
-{
-    return  WBC_ASTV(FLT_ORRN(VWBC_ASTM(a), VWBC_ASTM(b)));
-}
-
-INLINE(Vwhu,VWHU_ORRN) (Vwhu a, Vwhu b)
-{
-    return  WHU_ASTV(FLT_ORRN(VWHU_ASTM(a), VWHU_ASTM(b)));
-}
-
-INLINE(Vwhi,VWHI_ORRN) (Vwhi a, Vwhi b)
-{
-    return  WHI_ASTV(FLT_ORRN(VWHI_ASTM(a), VWHI_ASTM(b)));
+    DWRD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vorn_u32(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
 
-INLINE(Vwwu,VWWU_ORRN) (Vwwu a, Vwwu b)
+INLINE(float16x8_t,QHF_ORRN) (float16x8_t a, float16x8_t b)
 {
-    return  WWU_ASTV(FLT_ORRN(VWWU_ASTM(a), VWWU_ASTM(b)));
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = vornq_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwwi,VWWI_ORRN) (Vwwi a, Vwwi b)
+INLINE(float32x4_t,QWF_ORRN) (float32x4_t a, float32x4_t b)
 {
-    return  WWI_ASTV(FLT_ORRN(VWWI_ASTM(a), VWWI_ASTM(b)));
+    QUAD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = vornq_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vdyu,VDYU_ORRN) (Vdyu a, Vdyu b)
+#define QDU_ORRN vornq_u64
+#define QDI_ORRN vornq_s64
+INLINE(float64x2_t,QDF_ORRN) (float64x2_t a, float64x2_t b)
 {
-    return  VDDU_ASYU(vorn_u64(VDYU_ASDU(a), VDYU_ASDU(b)));
+    QUAD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = vornq_u64(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
+INLINE(Vwyu,VWYU_ORRN) (Vwyu a, Vwyu b) {return ((Vwyu){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwbu,VWBU_ORRN) (Vwbu a, Vwbu b) {return ((Vwbu){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwbi,VWBI_ORRN) (Vwbi a, Vwbi b) {return ((Vwbi){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwbc,VWBC_ORRN) (Vwbc a, Vwbc b) {return ((Vwbc){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwhu,VWHU_ORRN) (Vwhu a, Vwhu b) {return ((Vwhu){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwhi,VWHI_ORRN) (Vwhi a, Vwhi b) {return ((Vwhi){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwhf,VWHF_ORRN) (Vwhf a, Vwhf b) {return ((Vwhf){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_ORRN) (Vwwu a, Vwwu b) {return ((Vwwu){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwwi,VWWI_ORRN) (Vwwi a, Vwwi b) {return ((Vwwi){FLT_ORRN(a.V0,b.V0)});}
+INLINE(Vwwf,VWWF_ORRN) (Vwwf a, Vwwf b) {return ((Vwwf){FLT_ORRN(a.V0,b.V0)});}
+
+INLINE(Vdyu,VDYU_ORRN) (Vdyu a, Vdyu b) {return ((Vdyu){vorn_u64(a.V0, b.V0)});}
 INLINE(Vdbu,VDBU_ORRN) (Vdbu a, Vdbu b) {return  vorn_u8(a, b);}
 INLINE(Vdbi,VDBI_ORRN) (Vdbi a, Vdbi b) {return  vorn_s8(a, b);}
-INLINE(Vdbc,VDBC_ORRN) (Vdbc a, Vdbc b)
-{
-    return  VDDU_ASBC(vorn_u64(VDBC_ASDU(a), VDBC_ASDU(b)));
-}
-
+INLINE(Vdbc,VDBC_ORRN) (Vdbc a, Vdyu b) {return ((Vdbc){DBC_ORRN(a.V0, b.V0)});}
 INLINE(Vdhu,VDHU_ORRN) (Vdhu a, Vdhu b) {return  vorn_u16(a, b);}
 INLINE(Vdhi,VDHI_ORRN) (Vdhi a, Vdhi b) {return  vorn_s16(a, b);}
+INLINE(Vdhf,VDHF_ORRN) (Vdhf a, Vdhf b) {return  DHF_ORRN(a, b);}
 INLINE(Vdwu,VDWU_ORRN) (Vdwu a, Vdwu b) {return  vorn_u32(a, b);}
 INLINE(Vdwi,VDWI_ORRN) (Vdwi a, Vdwi b) {return  vorn_s32(a, b);}
+INLINE(Vdwf,VDWF_ORRN) (Vdwf a, Vdwf b) {return  DWF_ORRN(a, b);}
 INLINE(Vddu,VDDU_ORRN) (Vddu a, Vddu b) {return  vorn_u64(a, b);}
 INLINE(Vddi,VDDI_ORRN) (Vddi a, Vddi b) {return  vorn_s64(a, b);}
+INLINE(Vddf,VDDF_ORRN) (Vddf a, Vddf b) {return  DDF_ORRN(a, b);}
 
-
-INLINE(Vqyu,VQYU_ORRN) (Vqyu a, Vqyu b)
-{
-    return  VQDU_ASYU(vornq_u64(VQYU_ASDU(a), VQYU_ASDU(b)));
-}
-
-INLINE(Vqbu,VQBU_ORRN) (Vqbu a, Vqbu b) {return  vornq_u8(a, b);}
-INLINE(Vqbi,VQBI_ORRN) (Vqbi a, Vqbi b) {return  vornq_s8(a, b);}
-INLINE(Vqbc,VQBC_ORRN) (Vqbc a, Vqbc b)
-{
-    return  VQDU_ASBC(vornq_u64(VQBC_ASDU(a), VQBC_ASDU(b)));
-}
-
-INLINE(Vqhu,VQHU_ORRN) (Vqhu a, Vqhu b) {return  vornq_u16(a, b);}
-INLINE(Vqhi,VQHI_ORRN) (Vqhi a, Vqhi b) {return  vornq_s16(a, b);}
-INLINE(Vqwu,VQWU_ORRN) (Vqwu a, Vqwu b) {return  vornq_u32(a, b);}
-INLINE(Vqwi,VQWI_ORRN) (Vqwi a, Vqwi b) {return  vornq_s32(a, b);}
-INLINE(Vqdu,VQDU_ORRN) (Vqdu a, Vqdu b) {return  vornq_u64(a, b);}
-INLINE(Vqdi,VQDI_ORRN) (Vqdi a, Vqdi b) {return  vornq_s64(a, b);}
-
+INLINE(Vqyu,VQYU_ORRN) (Vqyu a, Vqyu b) {return ((Vqyu){QDU_ORRN(a.V0,b.V0)});}
+INLINE(Vqbu,VQBU_ORRN) (Vqbu a, Vqbu b) {return vornq_u8(a, b);}
+INLINE(Vqbi,VQBI_ORRN) (Vqbi a, Vqbi b) {return vornq_s8(a, b);}
+INLINE(Vqbc,VQBC_ORRN) (Vqbc a, Vqyu b) {return ((Vqbc){QBC_ORRN(a.V0,b.V0)});}
+INLINE(Vqhu,VQHU_ORRN) (Vqhu a, Vqhu b) {return vornq_u16(a, b);}
+INLINE(Vqhi,VQHI_ORRN) (Vqhi a, Vqhi b) {return vornq_s16(a, b);}
+INLINE(Vqhf,VQHF_ORRN) (Vqhf a, Vqhf b) {return  QHF_ORRN(a, b);}
+INLINE(Vqwu,VQWU_ORRN) (Vqwu a, Vqwu b) {return vornq_u32(a, b);}
+INLINE(Vqwi,VQWI_ORRN) (Vqwi a, Vqwi b) {return vornq_s32(a, b);}
+INLINE(Vqwf,VQWF_ORRN) (Vqwf a, Vqwf b) {return  QWF_ORRN(a, b);}
+INLINE(Vqdu,VQDU_ORRN) (Vqdu a, Vqdu b) {return vornq_u64(a, b);}
+INLINE(Vqdi,VQDI_ORRN) (Vqdi a, Vqdi b) {return vornq_s64(a, b);}
+INLINE(Vqdf,VQDF_ORRN) (Vqdf a, Vqdf b) {return QDF_ORRN(a, b);}
+INLINE(Vqqu,VQQU_ORRN) (Vqqu a, Vqqu b) {return ((Vqqu){QDU_ORRN(a.V0,b.V0)});}
+INLINE(Vqqi,VQQI_ORRN) (Vqqi a, Vqqi b) {return ((Vqqi){QDI_ORRN(a.V0,b.V0)});}
+INLINE(Vqqf,VQQF_ORRN) (Vqqf a, Vqqf b) {return ((Vqqf){orrnqf(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_ORRN
 }
@@ -25895,91 +27974,128 @@ INLINE( int64_t,VQDI_ORRV) (Vqdi a)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,xorsqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a^b;}
-INLINE(QUAD_ITYPE,xorsqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a^b;}
+INLINE(flt16_t, FLT16_XORS)  (flt16_t a,  flt16_t b)
+{
+    DWRD_VTYPE x={.H.F={a}}, y={.H.F={b}};
+    x.H.U = veor_u16(x.H.U, y.H.U);
+    return  vget_lane_f16(x.H.F, 0);
+}
+
+INLINE(  float,   FLT_XORS)   (float a,   float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = veor_u32(x.W.U, y.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE( double,   DBL_XORS)  (double a,  double b)
+{
+    DWRD_VTYPE x={.D.F={a}}, y={.D.F={b}};
+    x.D.U = veor_u64(x.D.U, y.D.U);
+    return  vget_lane_f64(x.D.F, 0);
+}
+
+INLINE(QUAD_FTYPE,xorsqf)  (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE x={.F=a}, y={.F=b};
+    x.D.U = veorq_u64(x.D.U, y.D.U);
+    return  x.F;
+}
+
+#if CHAR_MIN
+#   define  DBC_XORS veor_s8
+#   define  QBC_XORS veorq_s8
+#else
+#   define  DBC_XORS veor_u8
+#   define  QBC_XORS veorq_u8
 #endif
 
-
-INLINE(Vwyu,VWYU_XORS) (Vwyu a, Vwyu b)
+INLINE(float16x4_t,DHF_XORS) (float16x4_t a, float16x4_t b)
 {
-    return  WYU_ASTV(FLT_XORS(VWYU_ASTM(a), VWYU_ASTM(b)));
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = veor_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwbu,VWBU_XORS) (Vwbu a, Vwbu b)
+INLINE(float32x2_t,DWF_XORS) (float32x2_t a, float32x2_t b)
 {
-    return  WBU_ASTV(FLT_XORS(VWBU_ASTM(a), VWBU_ASTM(b)));
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = veor_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vwbi,VWBI_XORS) (Vwbi a, Vwbi b)
+INLINE(float64x1_t,DDF_XORS) (float64x1_t a, float64x1_t b)
 {
-    return  WBI_ASTV(FLT_XORS(VWBI_ASTM(a), VWBI_ASTM(b)));
-}
-
-INLINE(Vwbc,VWBC_XORS) (Vwbc a, Vwbc b)
-{
-    return  WBC_ASTV(FLT_XORS(VWBC_ASTM(a), VWBC_ASTM(b)));
-}
-
-INLINE(Vwhu,VWHU_XORS) (Vwhu a, Vwhu b)
-{
-    return  WHU_ASTV(FLT_XORS(VWHU_ASTM(a), VWHU_ASTM(b)));
-}
-
-INLINE(Vwhi,VWHI_XORS) (Vwhi a, Vwhi b)
-{
-    return  WHI_ASTV(FLT_XORS(VWHI_ASTM(a), VWHI_ASTM(b)));
+    DWRD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = veor_u32(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
 
-INLINE(Vwwu,VWWU_XORS) (Vwwu a, Vwwu b)
+INLINE(float16x8_t,QHF_XORS) (float16x8_t a, float16x8_t b)
 {
-    return  WWU_ASTV(FLT_XORS(VWWU_ASTM(a), VWWU_ASTM(b)));
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    z.H.U = veorq_u16(x.H.U, y.H.U);
+    return  z.H.F;
 }
 
-INLINE(Vwwi,VWWI_XORS) (Vwwi a, Vwwi b)
+INLINE(float32x4_t,QWF_XORS) (float32x4_t a, float32x4_t b)
 {
-    return  WWI_ASTV(FLT_XORS(VWWI_ASTM(a), VWWI_ASTM(b)));
+    QUAD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.W.U = veorq_u32(x.W.U, y.W.U);
+    return  z.W.F;
 }
 
-INLINE(Vdyu,VDYU_XORS) (Vdyu a, Vdyu b)
+#define QDU_XORS veorq_u64
+#define QDI_XORS veorq_s64
+INLINE(float64x2_t,QDF_XORS) (float64x2_t a, float64x2_t b)
 {
-    return  VDDU_ASYU(veor_u64(VDYU_ASDU(a), VDYU_ASDU(b)));
+    QUAD_VTYPE x={.D.F=a}, y={.D.F=b}, z;
+    z.D.U = veorq_u64(x.D.U, y.D.U);
+    return  z.D.F;
 }
 
+INLINE(Vwyu,VWYU_XORS) (Vwyu a, Vwyu b) {return ((Vwyu){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwbu,VWBU_XORS) (Vwbu a, Vwbu b) {return ((Vwbu){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwbi,VWBI_XORS) (Vwbi a, Vwbi b) {return ((Vwbi){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwbc,VWBC_XORS) (Vwbc a, Vwbc b) {return ((Vwbc){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwhu,VWHU_XORS) (Vwhu a, Vwhu b) {return ((Vwhu){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwhi,VWHI_XORS) (Vwhi a, Vwhi b) {return ((Vwhi){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwhf,VWHF_XORS) (Vwhf a, Vwhf b) {return ((Vwhf){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_XORS) (Vwwu a, Vwwu b) {return ((Vwwu){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwwi,VWWI_XORS) (Vwwi a, Vwwi b) {return ((Vwwi){FLT_XORS(a.V0,b.V0)});}
+INLINE(Vwwf,VWWF_XORS) (Vwwf a, Vwwf b) {return ((Vwwf){FLT_XORS(a.V0,b.V0)});}
+
+INLINE(Vdyu,VDYU_XORS) (Vdyu a, Vdyu b) {return ((Vdyu){veor_u64(a.V0, b.V0)});}
 INLINE(Vdbu,VDBU_XORS) (Vdbu a, Vdbu b) {return  veor_u8(a, b);}
 INLINE(Vdbi,VDBI_XORS) (Vdbi a, Vdbi b) {return  veor_s8(a, b);}
-INLINE(Vdbc,VDBC_XORS) (Vdbc a, Vdbc b)
-{
-    return  VDDU_ASBC(veor_u64(VDBC_ASDU(a), VDBC_ASDU(b)));
-}
-
+INLINE(Vdbc,VDBC_XORS) (Vdbc a, Vdyu b) {return ((Vdbc){DBC_XORS(a.V0, b.V0)});}
 INLINE(Vdhu,VDHU_XORS) (Vdhu a, Vdhu b) {return  veor_u16(a, b);}
 INLINE(Vdhi,VDHI_XORS) (Vdhi a, Vdhi b) {return  veor_s16(a, b);}
+INLINE(Vdhf,VDHF_XORS) (Vdhf a, Vdhf b) {return  DHF_XORS(a, b);}
 INLINE(Vdwu,VDWU_XORS) (Vdwu a, Vdwu b) {return  veor_u32(a, b);}
 INLINE(Vdwi,VDWI_XORS) (Vdwi a, Vdwi b) {return  veor_s32(a, b);}
+INLINE(Vdwf,VDWF_XORS) (Vdwf a, Vdwf b) {return  DWF_XORS(a, b);}
 INLINE(Vddu,VDDU_XORS) (Vddu a, Vddu b) {return  veor_u64(a, b);}
 INLINE(Vddi,VDDI_XORS) (Vddi a, Vddi b) {return  veor_s64(a, b);}
+INLINE(Vddf,VDDF_XORS) (Vddf a, Vddf b) {return  DDF_XORS(a, b);}
 
-
-INLINE(Vqyu,VQYU_XORS) (Vqyu a, Vqyu b)
-{
-    return  VQDU_ASYU(veorq_u64(VQYU_ASDU(a), VQYU_ASDU(b)));
-}
-
-INLINE(Vqbu,VQBU_XORS) (Vqbu a, Vqbu b) {return  veorq_u8(a, b);}
-INLINE(Vqbi,VQBI_XORS) (Vqbi a, Vqbi b) {return  veorq_s8(a, b);}
-INLINE(Vqbc,VQBC_XORS) (Vqbc a, Vqbc b)
-{
-    return  VQDU_ASBC(veorq_u64(VQBC_ASDU(a), VQBC_ASDU(b)));
-}
-
-INLINE(Vqhu,VQHU_XORS) (Vqhu a, Vqhu b) {return  veorq_u16(a, b);}
-INLINE(Vqhi,VQHI_XORS) (Vqhi a, Vqhi b) {return  veorq_s16(a, b);}
-INLINE(Vqwu,VQWU_XORS) (Vqwu a, Vqwu b) {return  veorq_u32(a, b);}
-INLINE(Vqwi,VQWI_XORS) (Vqwi a, Vqwi b) {return  veorq_s32(a, b);}
-INLINE(Vqdu,VQDU_XORS) (Vqdu a, Vqdu b) {return  veorq_u64(a, b);}
-INLINE(Vqdi,VQDI_XORS) (Vqdi a, Vqdi b) {return  veorq_s64(a, b);}
+INLINE(Vqyu,VQYU_XORS) (Vqyu a, Vqyu b) {return ((Vqyu){QDU_XORS(a.V0,b.V0)});}
+INLINE(Vqbu,VQBU_XORS) (Vqbu a, Vqbu b) {return veorq_u8(a, b);}
+INLINE(Vqbi,VQBI_XORS) (Vqbi a, Vqbi b) {return veorq_s8(a, b);}
+INLINE(Vqbc,VQBC_XORS) (Vqbc a, Vqyu b) {return ((Vqbc){QBC_XORS(a.V0,b.V0)});}
+INLINE(Vqhu,VQHU_XORS) (Vqhu a, Vqhu b) {return veorq_u16(a, b);}
+INLINE(Vqhi,VQHI_XORS) (Vqhi a, Vqhi b) {return veorq_s16(a, b);}
+INLINE(Vqhf,VQHF_XORS) (Vqhf a, Vqhf b) {return  QHF_XORS(a, b);}
+INLINE(Vqwu,VQWU_XORS) (Vqwu a, Vqwu b) {return veorq_u32(a, b);}
+INLINE(Vqwi,VQWI_XORS) (Vqwi a, Vqwi b) {return veorq_s32(a, b);}
+INLINE(Vqwf,VQWF_XORS) (Vqwf a, Vqwf b) {return  QWF_XORS(a, b);}
+INLINE(Vqdu,VQDU_XORS) (Vqdu a, Vqdu b) {return veorq_u64(a, b);}
+INLINE(Vqdi,VQDI_XORS) (Vqdi a, Vqdi b) {return veorq_s64(a, b);}
+INLINE(Vqdf,VQDF_XORS) (Vqdf a, Vqdf b) {return QDF_XORS(a, b);}
+INLINE(Vqqu,VQQU_XORS) (Vqqu a, Vqqu b) {return ((Vqqu){QDU_XORS(a.V0,b.V0)});}
+INLINE(Vqqi,VQQI_XORS) (Vqqi a, Vqqi b) {return ((Vqqi){QDI_XORS(a.V0,b.V0)});}
+INLINE(Vqqf,VQQF_XORS) (Vqqf a, Vqqf b) {return ((Vqqf){xorsqf(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_XORS
 }
@@ -25988,135 +28104,263 @@ INLINE(Vqdi,VQDI_XORS) (Vqdi a, Vqdi b) {return  veorq_s64(a, b);}
 #if 0 // _ENTER_ARM_XORN
 {
 #endif
+/*  clang reorders 'a XOR NOT b' to 'NOT (a XOR b)', probably
+    since it limits modifications to a single register. 
+    However, since this is C and xorn is technically defined
+    as equivalent to the C expression 'a^~b', we aren't 
+    going to try to affect the ordering. However, the naive
+    implementation of the float variants is predictably bad,
+    although the difference isn't as significant for XORN 
+    compared to the other 5 bitwise logical ops:
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,xornqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a^~b;}
-INLINE(QUAD_ITYPE,xornqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a^~b;}
+        STG_TYPE x={.F=a}, y={.F=b};
+        x.U ^= ~y.U;
+        return x.F
+    
+    that results in the following:
+
+        fmov w8, s0
+        fmov w9, s1
+        eon  w8, w8, w9
+        fmov s0, w8 
+    
+    Our "complicated" implementation is much more efficient:
+        eor v0.8B, v0.8B, v1.8B
+        mvn v0.8B, v0.8B
+
+*/
+INLINE( uint8x8_t,DBU_XORN)(uint8x8_t a, uint8x8_t b)
+{
+    b = vmvn_u8(b);
+    return  veor_u8(a, b);
+}
+
+INLINE(  int8x8_t,DBI_XORN)(int8x8_t a, int8x8_t b)
+{
+    b = vmvn_s8(b);
+    return  veor_s8(a, b);
+}
+
+#if CHAR_MIN
+#   define DBC_XORN DBI_XORN
+#else
+#   define DBC_XORN DBU_XORN
 #endif
 
-
-INLINE(Vwyu,VWYU_XORN) (Vwyu a, Vwyu b)
+INLINE( uint16x4_t,DHU_XORN)  (uint16x4_t a,  uint16x4_t b)
 {
-    return  WYU_ASTV(FLT_XORN(VWYU_ASTM(a), VWYU_ASTM(b)));
+    DWRD_VTYPE x={.H.U=a}, y={.H.U=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.H.U;
 }
 
-INLINE(Vwbu,VWBU_XORN) (Vwbu a, Vwbu b)
+INLINE(  int16x4_t,DHI_XORN)   (int16x4_t a,   int16x4_t b)
 {
-    return  WBU_ASTV(FLT_XORN(VWBU_ASTM(a), VWBU_ASTM(b)));
+    DWRD_VTYPE x={.H.I=a}, y={.H.I=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.H.I;
 }
 
-INLINE(Vwbi,VWBI_XORN) (Vwbi a, Vwbi b)
+INLINE(float16x4_t,DHF_XORN) (float16x4_t a, float16x4_t b)
 {
-    return  WBI_ASTV(FLT_XORN(VWBI_ASTM(a), VWBI_ASTM(b)));
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.H.F;
 }
 
-INLINE(Vwbc,VWBC_XORN) (Vwbc a, Vwbc b)
+INLINE( uint32x2_t,DWU_XORN)  (uint32x2_t a,  uint32x2_t b)
 {
-    return  WBC_ASTV(FLT_XORN(VWBC_ASTM(a), VWBC_ASTM(b)));
+    DWRD_VTYPE x={.W.U=a}, y={.W.U=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.W.U;
 }
 
-
-INLINE(Vwhu,VWHU_XORN) (Vwhu a, Vwhu b)
+INLINE(  int32x2_t,DWI_XORN)   (int32x2_t a,   int32x2_t b)
 {
-    return  WHU_ASTV(FLT_XORN(VWHU_ASTM(a), VWHU_ASTM(b)));
+    DWRD_VTYPE x={.W.I=a}, y={.W.I=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.W.I;
 }
 
-INLINE(Vwhi,VWHI_XORN) (Vwhi a, Vwhi b)
+INLINE(float32x2_t,DWF_XORN) (float32x2_t a, float32x2_t b)
 {
-    return  WHI_ASTV(FLT_XORN(VWHI_ASTM(a), VWHI_ASTM(b)));
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.W.F;
 }
 
-
-INLINE(Vwwu,VWWU_XORN) (Vwwu a, Vwwu b)
+INLINE( uint64x1_t,DDU_XORN)  (uint64x1_t a,  uint64x1_t b)
 {
-    return  WWU_ASTV(FLT_XORN(VWWU_ASTM(a), VWWU_ASTM(b)));
+    DWRD_VTYPE x={.D.U=a}, y={.D.U=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.D.U;
 }
 
-INLINE(Vwwi,VWWI_XORN) (Vwwi a, Vwwi b)
+INLINE(  int64x1_t,DDI_XORN)   (int64x1_t a,   int64x1_t b)
 {
-    return  WWI_ASTV(FLT_XORN(VWWI_ASTM(a), VWWI_ASTM(b)));
+    DWRD_VTYPE x={.D.I=a}, y={.D.I=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.D.I;
 }
 
-
-INLINE(Vdyu,VDYU_XORN) (Vdyu a, Vdyu b)
+INLINE(float64x1_t,DDF_XORN) (float64x1_t a, float64x1_t b)
 {
-    uint64x1_t d = VDYU_ASDU(b);
-    uint32x2_t w = vreinterpret_u32_u64(d);
-    w = vmvn_u32(w);
-    d = vreinterpret_u64_u32(w);
-    d = veor_u64(VDYU_ASDU(a), d);
-    return  VDDU_ASYU(d);
-}
-
-INLINE(Vdbu,VDBU_XORN) (Vdbu a, Vdbu b) {return  veor_u8(a, vmvn_u8(b));}           
-INLINE(Vdbi,VDBI_XORN) (Vdbi a, Vdbi b) {return  veor_s8(a, vmvn_s8(b));}
-INLINE(Vdbc,VDBC_XORN) (Vdbc a, Vdbc b)
-{
-    uint8x8_t c = VDBC_ASBU(b);
-    c = vmvn_u8(c);
-    c = veor_u8(VDBC_ASWU(a), c);
-    return  VDBU_ASBC(c);
-}
-
-INLINE(Vdhu,VDHU_XORN) (Vdhu a, Vdhu b) {return  veor_u16(a, vmvn_u16(b));}
-INLINE(Vdhi,VDHI_XORN) (Vdhi a, Vdhi b) {return  veor_s16(a, vmvn_s16(b));}
-
-INLINE(Vdwu,VDWU_XORN) (Vdwu a, Vdwu b) {return  veor_u32(a, vmvn_u32(b));}
-INLINE(Vdwi,VDWI_XORN) (Vdwi a, Vdwi b) {return  veor_s32(a, vmvn_s32(b));}
-
-INLINE(Vddu,VDDU_XORN) (Vddu a, Vddu b) 
-{
-    uint8x8_t c = vreinterpret_u8_u64(b);
-    c = vmvn_u8(c);
-    b = vreinterpret_u64_u8(c);
-    return  veor_u64(a, b);
-}
-
-INLINE(Vddi,VDDI_XORN) (Vddi a, Vddi b) 
-{
-    uint8x8_t c = vreinterpret_u8_s64(b);
-    c = vmvn_u8(c);
-    b = vreinterpret_s64_u8(c);
-    return  veor_s64(a, b);
+    DWRD_VTYPE x={.D.F=a}, y={.D.F=b};
+    x.B.U = DBU_XORN(x.B.U, y.B.U);
+    return  x.D.F;
 }
 
 
-INLINE(Vqyu,VQYU_XORN) (Vqyu a, Vqyu b)
+INLINE( uint8x16_t,QBU_XORN)  (uint8x16_t a,  uint8x16_t b)
 {
-    uint64x2_t d = VQYU_ASDU(b);
-    uint8x16_t q = vreinterpretq_u8_u64(d);
-    q = vmvnq_u8(q);
-    d = vreinterpretq_u64_u8(q);
-    d = veorq_u64(VQYU_ASDU(a), d);
-    return  VQDU_ASYU(d);
+    b = vmvnq_u8(b);
+    return  veorq_u8(a, b);
 }
 
-INLINE(Vqbu,VQBU_XORN) (Vqbu a, Vqbu b) {return  veorq_u8(a, b);}
-INLINE(Vqbi,VQBI_XORN) (Vqbi a, Vqbi b) {return  veorq_s8(a, b);}
-INLINE(Vqbc,VQBC_XORN) (Vqbc a, Vqbc b)
+INLINE(int8x16_t,QBI_XORN)(int8x16_t a, int8x16_t b)
 {
-    return  VQDU_ASBC(veorq_u64(VQBC_ASDU(a), VQBC_ASDU(b)));
+    b = vmvnq_u8(b);
+    return  veorq_u8(a, b);
 }
 
-INLINE(Vqhu,VQHU_XORN) (Vqhu a, Vqhu b) {return  veorq_u16(a, b);}
-INLINE(Vqhi,VQHI_XORN) (Vqhi a, Vqhi b) {return  veorq_s16(a, b);}
-INLINE(Vqwu,VQWU_XORN) (Vqwu a, Vqwu b) {return  veorq_u32(a, b);}
-INLINE(Vqwi,VQWI_XORN) (Vqwi a, Vqwi b) {return  veorq_s32(a, b);}
-INLINE(Vqdu,VQDU_XORN) (Vqdu a, Vqdu b) 
+#if CHAR_MIN
+#   define QBC_XORN QBI_XORN
+#else
+#   define QBC_XORN QBU_XORN
+#endif
+
+INLINE(uint16x8_t,QHU_XORN)(uint16x8_t a, uint16x8_t b)
 {
-    uint8x16_t c = vreinterpretq_u8_u64(b);
-    c = vmvnq_u8(c);
-    b = vreinterpretq_u64_u8(c);
-    return  veorq_u64(a, b);
+    QUAD_VTYPE x={.H.U=a}, y={.H.U=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.H.U;
 }
 
-INLINE(Vqdi,VQDI_XORN) (Vqdi a, Vqdi b) 
+INLINE(int16x8_t,QHI_XORN)(int16x8_t a, int16x8_t b)
 {
-    uint8x16_t c = vreinterpretq_u8_s64(b);
-    c = vmvnq_u8(c);
-    b = vreinterpretq_s64_u8(c);
-    return  veorq_s64(a, b);
+    QUAD_VTYPE x={.H.I=a}, y={.H.I=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.H.I;
 }
+
+INLINE(float16x8_t,QHF_XORN) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.H.F;
+}
+
+INLINE(uint32x4_t,QWU_XORN)(uint32x4_t a, uint32x4_t b)
+{
+    QUAD_VTYPE x={.W.U=a}, y={.W.U=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.W.U;
+}
+
+INLINE(int32x4_t,QWI_XORN)(int32x4_t a, int32x4_t b)
+{
+    QUAD_VTYPE x={.W.I=a}, y={.W.I=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.W.I;
+}
+
+INLINE(float32x4_t,QWF_XORN) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.W.F;
+}
+
+INLINE(uint64x2_t,QDU_XORN) (uint64x2_t a, uint64x2_t b)
+{
+    QUAD_VTYPE x={.D.U=a}, y={.D.U=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.D.U;
+}
+
+INLINE(int64x2_t,QDI_XORN) (int64x2_t a, int64x2_t b)
+{
+    QUAD_VTYPE x={.D.I=a}, y={.D.I=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.D.I;
+}
+
+INLINE(float64x2_t,QDF_XORN) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE x={.D.F=a}, y={.D.F=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.D.F;
+}
+
+INLINE(flt16_t, FLT16_XORN)  (flt16_t a,  flt16_t b)
+{
+    float16x4_t x={a}, y={b};
+    x = DHF_XORN(x, y);
+    return  vget_lane_f16(x, 0);
+}
+
+INLINE(  float,   FLT_XORN)   (float a,   float b)
+{    
+    float32x2_t x={a}, y={b};
+    x = DWF_XORN(x, y);
+    return  vget_lane_f32(x, 0);
+}
+
+INLINE( double,   DBL_XORN)  (double a,  double b)
+{
+    float64x1_t x={a}, y={b};
+    x = DDF_XORN(x, y);
+    return  vget_lane_f64(x, 0);
+}
+
+INLINE(QUAD_FTYPE,xornqf)  (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE x={.F=a}, y={.F=b};
+    x.B.U = QBU_XORN(x.B.U, y.B.U);
+    return  x.F;
+}
+
+INLINE(Vwyu,VWYU_XORN) (Vwyu a, Vwyu b) {return ((Vwyu){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwbu,VWBU_XORN) (Vwbu a, Vwbu b) {return ((Vwbu){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwbi,VWBI_XORN) (Vwbi a, Vwbi b) {return ((Vwbi){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwbc,VWBC_XORN) (Vwbc a, Vwbc b) {return ((Vwbc){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwhu,VWHU_XORN) (Vwhu a, Vwhu b) {return ((Vwhu){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwhi,VWHI_XORN) (Vwhi a, Vwhi b) {return ((Vwhi){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwhf,VWHF_XORN) (Vwhf a, Vwhf b) {return ((Vwhf){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_XORN) (Vwwu a, Vwwu b) {return ((Vwwu){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwwi,VWWI_XORN) (Vwwi a, Vwwi b) {return ((Vwwi){FLT_XORN(a.V0,b.V0)});}
+INLINE(Vwwf,VWWF_XORN) (Vwwf a, Vwwf b) {return ((Vwwf){FLT_XORN(a.V0,b.V0)});}
+
+INLINE(Vdyu,VDYU_XORN) (Vdyu a, Vdyu b) {return ((Vdyu){DDU_XORN(a.V0, b.V0)});}
+INLINE(Vdbu,VDBU_XORN) (Vdbu a, Vdbu b) {return  DBU_XORN(a, b);}
+INLINE(Vdbi,VDBI_XORN) (Vdbi a, Vdbi b) {return  DBI_XORN(a, b);}
+INLINE(Vdbc,VDBC_XORN) (Vdbc a, Vdbc b) {return ((Vdbc){DBC_XORN(a.V0, b.V0)});}
+INLINE(Vdhu,VDHU_XORN) (Vdhu a, Vdhu b) {return  DHU_XORN(a, b);}
+INLINE(Vdhi,VDHI_XORN) (Vdhi a, Vdhi b) {return  DHI_XORN(a, b);}
+INLINE(Vdhf,VDHF_XORN) (Vdhf a, Vdhf b) {return  DHF_XORN(a, b);}
+INLINE(Vdwu,VDWU_XORN) (Vdwu a, Vdwu b) {return  DWU_XORN(a, b);}
+INLINE(Vdwi,VDWI_XORN) (Vdwi a, Vdwi b) {return  DWI_XORN(a, b);}
+INLINE(Vdwf,VDWF_XORN) (Vdwf a, Vdwf b) {return  DWF_XORN(a, b);}
+INLINE(Vddu,VDDU_XORN) (Vddu a, Vddu b) {return  DDU_XORN(a, b);}
+INLINE(Vddi,VDDI_XORN) (Vddi a, Vddi b) {return  DDI_XORN(a, b);}
+INLINE(Vddf,VDDF_XORN) (Vddf a, Vddf b) {return  DDF_XORN(a, b);}
+
+INLINE(Vqyu,VQYU_XORN) (Vqyu a, Vqyu b) {return ((Vqyu){QDU_XORN(a.V0,b.V0)});}
+INLINE(Vqbu,VQBU_XORN) (Vqbu a, Vqbu b) {return QBU_XORN(a, b);}
+INLINE(Vqbi,VQBI_XORN) (Vqbi a, Vqbi b) {return QBI_XORN(a, b);}
+INLINE(Vqbc,VQBC_XORN) (Vqbc a, Vqbc b) {return ((Vqbc){QBC_XORN(a.V0,b.V0)});}
+INLINE(Vqhu,VQHU_XORN) (Vqhu a, Vqhu b) {return QHU_XORN(a, b);}
+INLINE(Vqhi,VQHI_XORN) (Vqhi a, Vqhi b) {return QHI_XORN(a, b);}
+INLINE(Vqhf,VQHF_XORN) (Vqhf a, Vqhf b) {return QHF_XORN(a, b);}
+INLINE(Vqwu,VQWU_XORN) (Vqwu a, Vqwu b) {return QWU_XORN(a, b);}
+INLINE(Vqwi,VQWI_XORN) (Vqwi a, Vqwi b) {return QWI_XORN(a, b);}
+INLINE(Vqwf,VQWF_XORN) (Vqwf a, Vqwf b) {return QWF_XORN(a, b);}
+INLINE(Vqdu,VQDU_XORN) (Vqdu a, Vqdu b) {return QDU_XORN(a, b);}
+INLINE(Vqdi,VQDI_XORN) (Vqdi a, Vqdi b) {return QDI_XORN(a, b);}
+INLINE(Vqdf,VQDF_XORN) (Vqdf a, Vqdf b) {return QDF_XORN(a, b);}
+INLINE(Vqqu,VQQU_XORN) (Vqqu a, Vqqu b) {return ((Vqqu){QDU_XORN(a.V0,b.V0)});}
+INLINE(Vqqi,VQQI_XORN) (Vqqi a, Vqqi b) {return ((Vqqi){QDI_XORN(a.V0,b.V0)});}
+INLINE(Vqqf,VQQF_XORN) (Vqqf a, Vqqf b) {return ((Vqqf){xornqf(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_XORN
 }
@@ -27707,27 +29951,11 @@ INLINE(Vqdi,VDWI_SHL2) (Vdwi a, Rc(0, 32) b)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,shlrqu) (QUAD_UTYPE a, Rc(0, 128) b) 
-{
-    return  a>>(128-b);
-}
-
-INLINE(QUAD_ITYPE,shlrqi) (QUAD_ITYPE a, Rc(0, 128) b) 
-{
-    return  a>>(128-b);
-}
-
-#endif
-
-
 INLINE(Vwyu,VWYU_SHLR) (Vwyu a, Rc(0, 1) b)
 {
 #define     VWYU_SHLR(A, B) ((B==1)?A:((Vwyu){0}))
     return  (b==1) ? a : ((Vwyu){0});
 }
-
 
 INLINE(Vwbu,VWBU_SHLR) (Vwbu a, Rc(0, 8) b)
 {
@@ -28380,105 +30608,65 @@ INLINE(Vqdi,VQDI_SHLR) (Vqdi a, Rc(0, 64) b)
 {
 #endif
 
-INLINE( _Bool,  BOOL_SHRS)  (_Bool a, Rc(0,  1) b)
+#ifndef SCHAR_SHRS
+INLINE( schar, SCHAR_SHRS)  (signed a, Rc(0, SCHAR_WIDTH) b)
 {
-#define     BOOL_SHRS(A, B)  ((_Bool)(A&&!B))
-    return  a && !b;
+#define  MY_SCHAR_SHRS(A, B, ...) ((SCHAR_SHRS)(A,B))
+#define     SCHAR_SHRS(...) MY_SCHAR_SHRS(__VA_ARGS__,1)
+    return  vqshlb_s8(a, -b);
 }
-
-INLINE( uchar, UCHAR_SHRS)  (uchar a, Rc(0,  UCHAR_WIDTH) b)
-{
-#define     UCHAR_SHRS(A, B)    ((uchar)(((unsigned) A)>>B))
-    return  a>>b;
-}
-
-INLINE( schar, SCHAR_SHRS)  (schar a, Rc(0,  SCHAR_WIDTH) b)
-{
-#define     SCHAR_SHRS(A, B)    vqshlb_s8(A,(0-B))
-    return  SCHAR_SHRS(a, b);
-}
-
-INLINE(  char,  CHAR_SHRS)   (char a, Rc(0,   CHAR_WIDTH) b)
-{
-#if CHAR_MIN
-#   define  CHAR_SHRS(A, B) ((char) vqshlb_s8(A,(0-B)))
-#else
-#   define  CHAR_SHRS(A, B) ((char)(((unsigned) A)>>B))
 #endif
-    return  CHAR_SHRS(a, b);
+
+#ifndef SHRT_SHRS
+
+INLINE( short, SHRT_SHRS)  (signed a, Rc(0, SHRT_WIDTH) b)
+{
+#define  MY_SHRT_SHRS(A, B, ...) ((SHRT_SHRS)(A,B))
+#define     SHRT_SHRS(...) MY_SHRT_SHRS(__VA_ARGS__,1)
+    return  vqshlh_s16(a, -b);
 }
 
-INLINE(ushort, USHRT_SHRS) (ushort a, Rc(0,  USHRT_WIDTH) b)
+#endif
+
+#ifndef INT_SHRS
+
+INLINE( int, INT_SHRS)  (int a, Rc(0, INT_WIDTH) b)
 {
-#define     USHRT_SHRS(A, B)    ((ushort)(((unsigned) A)>>B))
-    return  a>>b;
+#define  MY_INT_SHRS(A, B, ...) ((INT_SHRS)(A,B))
+#define     INT_SHRS(...) MY_INT_SHRS(__VA_ARGS__,1)
+    return  vqshls_s32(a, -b);
 }
 
-INLINE( short,  SHRT_SHRS)  (short a, Rc(0,   SHRT_WIDTH) b)
-{
-#define     SHRT_SHRS(A, B)    vqshlh_s16(A,(0-B))
-    return  SHRT_SHRS(a, b);
-}
+#endif
 
-INLINE(  uint,  UINT_SHRS)   (uint a, Rc(0,   UINT_WIDTH) b)
+#ifndef LONG_SHRS
+INLINE( long, LONG_SHRS)  (long a, Rc(0, LONG_WIDTH) b)
 {
-#define     UINT_SHRS(A, B)    (((unsigned) A)>>B)
-    return  a>>b;
-}
-
-INLINE(   int,   INT_SHRS)    (int a, Rc(0,    INT_WIDTH) b)
-{
-#define     INT_SHRS(A, B)    vqshls_s32(A,(0-B))
-    return  INT_SHRS(a, b);
-}
-
-INLINE( ulong, ULONG_SHRS)  (ulong a, Rc(0,  ULONG_WIDTH) b)
-{
-#define     ULONG_SHRS(A, B) (((unsigned long) A)>>B)
-    return  a>>b;
-}
-
-INLINE(  long,  LONG_SHRS)   (long a, Rc(0,   LONG_WIDTH) b)
-{
+#define  MY_LONG_SHRS(A, B, ...) ((LONG_SHRS)(A,B))
+#define     LONG_SHRS(...) MY_LONG_SHRS(__VA_ARGS__,1)
 #if DWRD_NLONG == 2
-#   define  LONG_SHRS(A, B)  ((long) vqshls_s32(A,(0-B)))
+    return  vqshls_s32(a,-b);
 #else
-#   define  LONG_SHRS(A, B)  vqshld_s64(A, (0-B))
+    return  vqshld_s64(a,-b);
 #endif
-    return  LONG_SHRS(a, b);
 }
 
-INLINE(ullong,ULLONG_SHRS) (ullong a, Rc(0, ULLONG_WIDTH) b)
-{
-#define     ULLONG_SHRS(A, B)    (((ullong) A)>>B)
-    return  a>>b;
-}
-
-INLINE( llong, LLONG_SHRS)  (llong a, Rc(0,  LLONG_WIDTH) b)
-{
-#if QUAD_NLONG == 2
-#   define  LLONG_SHRS(A, B)  ((llong) vqshld_s64(A, (0-B)))
-#else
-#   error "does vqshlq_s128 exist yet?"
 #endif
-    return  LLONG_SHRS(a, b);
-}
 
+#ifndef LLONG_SHRS
+INLINE(llong, LLONG_SHRS)  (llong a, Rc(0, LLONG_WIDTH) b)
+{
+#define  MY_LLONG_SHRS(A, B, ...) ((LLONG_SHRS)(A,B))
+#define     LLONG_SHRS(...) MY_LLONG_SHRS(__VA_ARGS__,1)
 #if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE, shrsqu) (QUAD_UTYPE a, Rc(0, 128) b)
-{
-#define         shrsqu(A, B) (((QUAD_UTYPE) A)>>B)
-    return  a>>b;
-}
-
-INLINE(QUAD_ITYPE, shrsqi) (QUAD_ITYPE a, Rc(0, 128) b)
-{
-#define         shrsqi(A, B) (((QUAD_ITYPE) A)>>B)
-    return  a>>b;
+    return  vqshld_s64(a, -b);
+#else
+#error "128 bit shoulda had LLONG_SHRS defined in <allop.h>"
+#endif
 }
 
 #endif
+
 
 INLINE(Vwyu,VWYU_SHRS) (Vwyu a, Rc(0, 1) b)
 {
@@ -28888,12 +31076,10 @@ INLINE(Vqdi,VQDI_SHRS) (Vqdi a, Rc(0, 64) b)
 {
 #endif
 
-
 INLINE(Vwyu,VWYU_SILL) (Vwyu a, Vwyu b, Rc(0, 1) c)
 {
     return c == 0 ? a : b;
 }
-
 
 INLINE(Vwbu,VWBU_SILL) (Vwbu a, Vwbu b, Rc(0, 8) c)
 {
@@ -30895,6 +33081,7 @@ INLINE(Vqdf,VQDF_SPRL) (Vqdf l, Vqdf r, Rc(0, 2) n)
 /*
 0,0=0, 0,1=0, 1,0=1, 1,1=0
 */
+#define     DYU_SVLL        vbic_u64
 #define     DBU_SVLL(A,B)   vshl_u8(A,vreinterpret_s8_u8(B))
 #define     DBI_SVLL(A,B)   vshl_s8(A,vreinterpret_s8_u8(B))
 #if CHAR_MIN
@@ -30910,6 +33097,7 @@ INLINE(Vqdf,VQDF_SPRL) (Vqdf l, Vqdf r, Rc(0, 2) n)
 #define     DDU_SVLL(A, B)  vshl_u64(A,vreinterpret_s64_u64(B))
 #define     DDI_SVLL(A, B)  vshl_s64(A,vreinterpret_s64_u64(B))
 
+#define     QYU_SVLL        vbicq_u64
 #define     QBU_SVLL(A, B)  vshlq_u8(A,vreinterpretq_s8_u8(B))
 #define     QBI_SVLL(A, B)  vshlq_s8(A,vreinterpretq_s8_u8(B))
 #if CHAR_MIN
@@ -30945,101 +33133,76 @@ INLINE(Vwyu,VWYU_SVLL) (Vwyu a, Vwyu b)
 
 INLINE(Vwbu,VWBU_SVLL) (Vwbu a, Vwbu b)
 {
-    float32x2_t l = vdup_n_f32(VWBU_ASTM(a));
-    float32x2_t r = vdup_n_f32(VWBU_ASTM(b));
-    uint8x8_t   v = vshl_u8(
-        vreinterpret_u8_f32(l),
-        vreinterpret_s8_f32(r)
-    );
-    l = vreinterpret_f32_u8(v);
-    return  WBU_ASTV(vget_lane_f32(l,0));
+    DWRD_VTYPE x = {.W.F={a.V0}};
+    DWRD_VTYPE y = {.W.F={b.V0}};
+    x.B.U = vshl_u8(x.B.U, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
 }
 
 INLINE(Vwbi,VWBI_SVLL) (Vwbi a, Vwbu b)
 {
-    float32x2_t l = vdup_n_f32(VWBI_ASTM(a));
-    float32x2_t r = vdup_n_f32(VWBU_ASTM(b));
-    int8x8_t    v = vshl_s8(
-        vreinterpret_s8_f32(l),
-        vreinterpret_s8_f32(r)
-    );
-    l = vreinterpret_f32_s8(v);
-    return  WBI_ASTV(vget_lane_f32(l,0));
+    DWRD_VTYPE x = {.W.F={a.V0}};
+    DWRD_VTYPE y = {.W.F={b.V0}};
+    x.B.U = vshl_u8(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
 }
 
 INLINE(Vwbc,VWBC_SVLL) (Vwbc a, Vwbu b)
 {
+    DWRD_VTYPE x = {.W.F={a.V0}};
+    DWRD_VTYPE y = {.W.F={b.V0}};
 #if CHAR_MIN
-    return  VWBI_ASBC(VWBI_SVLL(VWBC_ASBI(a), b));
+    x.B.I = vshl_s8(x.B.I, y.B.I);
 #else
-    return  VWBU_ASBC(VWBU_SVLL(VWBC_ASBU(a), b));
+    x.B.U = vshl_u8(x.B.U, y.B.I);
 #endif
-
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
 }
 
 INLINE(Vwhu,VWHU_SVLL) (Vwhu a, Vwhu b)
 {
-    float32x2_t l = vdup_n_f32(VWHU_ASTM(a));
-    float32x2_t r = vdup_n_f32(VWHU_ASTM(b));
-    uint16x4_t   v = vshl_u16(
-        vreinterpret_u16_f32(l),
-        vreinterpret_s16_f32(r)
-    );
-    l = vreinterpret_f32_u16(v);
-    return  WHU_ASTV(vget_lane_f32(l,0));
+    DWRD_VTYPE x = {.W.F={a.V0}};
+    DWRD_VTYPE y = {.W.F={b.V0}};
+    x.H.U = vshl_u16(x.H.U, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
 }
 
 INLINE(Vwhi,VWHI_SVLL) (Vwhi a, Vwhu b)
 {
-    float32x2_t l = vdup_n_f32(VWHI_ASTM(a));
-    float32x2_t r = vdup_n_f32(VWHU_ASTM(b));
-    int16x4_t   v = vshl_s16(
-        vreinterpret_s16_f32(l),
-        vreinterpret_s16_f32(r)
-    );
-    l = vreinterpret_f32_s16(v);
-    return  WHI_ASTV(vget_lane_f32(l,0));
+    DWRD_VTYPE x = {.W.F={a.V0}};
+    DWRD_VTYPE y = {.W.F={b.V0}};
+    x.H.I = vshl_s16(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
 }
 
 INLINE(Vwwu,VWWU_SVLL) (Vwwu a, Vwwu b)
 {
-    float32x2_t l = vdup_n_f32(VWWU_ASTM(a));
-    float32x2_t r = vdup_n_f32(VWWU_ASTM(b));
-    uint32x2_t  v = vshl_u32(
-        vreinterpret_u32_f32(l),
-        vreinterpret_s32_f32(r)
-    );
-    l = vreinterpret_f32_u32(v);
-    return  WWU_ASTV(vget_lane_f32(l,0));
+    DWRD_VTYPE x = {.W.F={a.V0}};
+    DWRD_VTYPE y = {.W.F={b.V0}};
+    x.W.U = vshl_u32(x.W.U, y.W.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
 }
 
 INLINE(Vwwi,VWWI_SVLL) (Vwwi a, Vwwu b)
 {
-    float32x2_t l = vdup_n_f32(VWWI_ASTM(a));
-    float32x2_t r = vdup_n_f32(VWWU_ASTM(b));
-    int32x2_t   v = vshl_s32(
-        vreinterpret_s32_f32(l),
-        vreinterpret_s32_f32(r)
-    );
-    l = vreinterpret_f32_s32(v);
-    return  WWI_ASTV(vget_lane_f32(l,0));
-}
-
-
-INLINE(Vdyu,VDYU_SVLL) (Vdyu a, Vdyu b)
-{
-    a.V0 = vbic_u64(a.V0, b.V0);
+    DWRD_VTYPE x = {.W.F={a.V0}};
+    DWRD_VTYPE y = {.W.F={b.V0}};
+    x.W.I = vshl_s32(x.W.U, y.W.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
     return  a;
 }
 
 
+INLINE(Vdyu,VDYU_SVLL) (Vdyu a, Vdyu b) {return ((Vdyu){DYU_SVLL(a.V0,b.V0)});}
 INLINE(Vdbu,VDBU_SVLL) (Vdbu a, Vdbu b) {return DBU_SVLL(a, b);}
 INLINE(Vdbi,VDBI_SVLL) (Vdbi a, Vdbu b) {return DBI_SVLL(a, b);}
-INLINE(Vdbc,VDBC_SVLL) (Vdbc a, Vdbu b)
-{
-    return  DBC_ASTV(DBC_SVLL(VDBC_ASTM(a), b));
-}
-
+INLINE(Vdbc,VDBC_SVLL) (Vdbc a, Vdbu b) {return ((Vdbc){DBC_SVLL(a.V0,b)});}
 INLINE(Vdhu,VDHU_SVLL) (Vdhu a, Vdhu b) {return DHU_SVLL(a, b);}
 INLINE(Vdhi,VDHI_SVLL) (Vdhi a, Vdhu b) {return DHI_SVLL(a, b);}
 INLINE(Vdwu,VDWU_SVLL) (Vdwu a, Vdwu b) {return DWU_SVLL(a, b);}
@@ -31047,26 +33210,14 @@ INLINE(Vdwi,VDWI_SVLL) (Vdwi a, Vdwu b) {return DWI_SVLL(a, b);}
 INLINE(Vddu,VDDU_SVLL) (Vddu a, Vddu b) {return DDU_SVLL(a, b);}
 INLINE(Vddi,VDDI_SVLL) (Vddi a, Vddu b) {return DDI_SVLL(a, b);}
 
-
-INLINE(Vqyu,VQYU_SVLL) (Vqyu a, Vqyu b) 
-{
-    a.V0 = vbicq_u64(a.V0, b.V0);
-    return  a;
-}
-
+INLINE(Vqyu,VQYU_SVLL) (Vqyu a, Vqyu b) {return ((Vqyu){QYU_SVLL(a.V0,b.V0)});}
 INLINE(Vqbu,VQBU_SVLL) (Vqbu a, Vqbu b) {return QBU_SVLL(a, b);}
 INLINE(Vqbi,VQBI_SVLL) (Vqbi a, Vqbu b) {return QBI_SVLL(a, b);}
-INLINE(Vqbc,VQBC_SVLL) (Vqbc a, Vqbu b)
-{
-    return  QBC_ASTV(QBC_SVLL(VQBC_ASTM(a), b));
-}
-
+INLINE(Vqbc,VQBC_SVLL) (Vqbc a, Vqbu b) {return ((Vqbc){QBC_SVLL(a.V0,b)});}
 INLINE(Vqhu,VQHU_SVLL) (Vqhu a, Vqhu b) {return QHU_SVLL(a, b);}
 INLINE(Vqhi,VQHI_SVLL) (Vqhi a, Vqhu b) {return QHI_SVLL(a, b);}
-
 INLINE(Vqwu,VQWU_SVLL) (Vqwu a, Vqwu b) {return QWU_SVLL(a, b);}
 INLINE(Vqwi,VQWI_SVLL) (Vqwi a, Vqwu b) {return QWI_SVLL(a, b);}
-
 INLINE(Vqdu,VQDU_SVLL) (Vqdu a, Vqdu b) {return QDU_SVLL(a, b);}
 INLINE(Vqdi,VQDI_SVLL) (Vqdi a, Vqdu b) {return QDI_SVLL(a, b);}
 
@@ -31224,6 +33375,39 @@ INLINE(Vqwu,VQWU_SVLS) (Vqwu a, Vqwu b) {return QWU_SVLS(a, b);}
 INLINE(Vqwi,VQWI_SVLS) (Vqwi a, Vqwu b) {return QWI_SVLS(a, b);}
 INLINE(Vqdu,VQDU_SVLS) (Vqdu a, Vqdu b) {return QDU_SVLS(a, b);}
 INLINE(Vqdi,VQDI_SVLS) (Vqdi a, Vqdu b) {return QDI_SVLS(a, b);}
+INLINE(Vqqu,VQQU_SVLS) (Vqqu a, Vqqu b)
+{
+    QUAD_VTYPE  c = {.Q.U=a};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE  r = {.D.U=vget_high_u64(c.D.U)};
+    DWRD_VTYPE  n = {.D.U=vget_low_u64(b.V0)};
+    if (n.D0.I < 64)
+    {
+        // c.Lo.U = (l<<b);
+        c.D.U = vcopyq_lane_u64(
+            c.D.U, 0,
+            vshl_u64(l.D.U, n.D.I), 0
+        );
+        // c.Hi.U = (r<<b)|(l>>(64-b));
+        r.D.U = vshl_u64(r.D.U, n.D.I);
+        n.D.I = vadd_s64(n.D.I, vdup_n_s64(-64));
+        l.D.U = vshl_u64(l.D.U, n.D.I);
+        c.D.U = vcopyq_lane_u64(
+            c.D.U, 1,
+            l.D.U, 0
+        );
+        
+    }
+    else
+    {
+        // c.Lo.U = 0;
+        //c.Hi.U = (l<<(b-64));
+        n.D.I = vadd_s64(n.D.I, vdup_n_s64(-64));
+        l.D.U = vshl_u64(l.D.U, n.D.I);
+        c.D.U = vcombine_u64(vdup_n_u64(0), l.D.U);
+    }
+    return  c.Q.U;
+}
 
 #if 0 // _LEAVE_ARM_SVLS
 }
@@ -31970,7 +34154,10 @@ INLINE(Vqdu,VQDU_ROTL) (Vqdu a, Rc(1, 63) b)
 {
 #endif
 
-INLINE( uchar, UCHAR_ROTR)  (uchar a, Rc(1,  UCHAR_WIDTH-1) b)
+#define DBU_ROTR(A, B) \
+vsri_n_u8(vshl_n_u8(A,(7&(8-B))),A,((B&7)+(0==B)))
+
+INLINE( uchar, UCHAR_ROTR)  (unsigned a, Rc(1, UCHAR_WIDTH-1) b)
 {
 #define     UCHAR_ROTR(A, B)                \
 (                                           \
@@ -31984,7 +34171,7 @@ INLINE( uchar, UCHAR_ROTR)  (uchar a, Rc(1,  UCHAR_WIDTH-1) b)
     return  UCHAR_ROTR(a, b);
 }
 
-INLINE(  char,  CHAR_ROTR)   (char a, Rc(1,   CHAR_WIDTH-1) b)
+INLINE(  char,  CHAR_ROTR)   (int a, Rc(1, CHAR_WIDTH-1) b)
 {
 #define     CHAR_ROTR(A, B)                 \
 (                                           \
@@ -31998,7 +34185,7 @@ INLINE(  char,  CHAR_ROTR)   (char a, Rc(1,   CHAR_WIDTH-1) b)
     return  CHAR_ROTR(a, b);
 }
 
-INLINE(ushort, USHRT_ROTR) (ushort a, Rc(1,  USHRT_WIDTH-1) b)
+INLINE(ushort, USHRT_ROTR) (unsigned a, Rc(1, USHRT_WIDTH-1) b)
 {
 #define     USHRT_ROTR(A, B)                \
 (                                           \
@@ -32012,27 +34199,27 @@ INLINE(ushort, USHRT_ROTR) (ushort a, Rc(1,  USHRT_WIDTH-1) b)
     return  USHRT_ROTR(a, b);
 }
 
-INLINE(  uint,  UINT_ROTR)   (uint a, Rc(1,   UINT_WIDTH-1) b)
+INLINE(  uint,  UINT_ROTR)   (uint a, Rc(1, UINT_WIDTH-1) b)
 {
-#define     UINT_ROTR   __ror
+#define     UINT_ROTR(A, B)   ((uint) __ror(A,B))
     return  __ror(a, b);
 }
 
 INLINE( ulong, ULONG_ROTR)  (ulong a, Rc(1,  ULONG_WIDTH-1) b)
 {
-#define     ULONG_ROTR(A, B)   __rorl(A, B)
+#define     ULONG_ROTR(A, B)   ((ulong) __rorl(A,B))
     return  ULONG_ROTR(a, b);
 }
 
 INLINE(ullong,ULLONG_ROTR) (ullong a, Rc(1, ULLONG_WIDTH-1) b)
 {
-#define     ULLONG_ROTR(A, B)   __rorll(A, B)
+#define     ULLONG_ROTR(A, B)   ((ullong) __rorll(A,B))
     return  ULLONG_ROTR(a, b);
 }
 
 #if QUAD_NLLONG == 2
 
-INLINE(QUAD_UTYPE, rorsqu) (QUAD_UTYPE a, Rc(1, 127) b)
+INLINE(QUAD_UTYPE, rorsqu) (QUAD_UTYPE a, Rc(1, +127) b)
 {
     return (a>>b)|(a<<(128-b));
 }
@@ -32152,16 +34339,7 @@ INLINE(Vwwu,VWWU_ROTR) (Vwwu a, Rc(1, 31) b)
 
 INLINE(Vdbu,VDBU_ROTR) (Vdbu a, Rc(1, 7) b)
 {
-#define     VDBU_ROTR(A, B)             \
-(                                       \
-    ((B < 1) || (B > 7))                \
-    ?   A                               \
-    :   vsri_n_u8(                      \
-            vshl_n_u8(A,(8-(B&7))),     \
-            A,                          \
-            ((B&7)+(B==0))              \
-        )                               \
-)
+#define     VDBU_ROTR(A, B)  (((B<1)||(B>7))?A:DBU_ROTR(A,B))
     int8x8_t    n = vdup_n_s8(b);
     n = vneg_s8(n);
     return  vorr_u8(
@@ -32476,6 +34654,14 @@ INLINE(Vqdu,VQDU_ROVL) (Vqdu a, Vqdu b)
     return  vorrq_u64(r, vshlq_u64(a, n));
 }
 
+INLINE(Vqqu,VQQU_ROVL) (Vqqu a, Vqqu b)
+{
+    (void) b;
+    return a;
+//    QUAD_VTYPE  l = {.Q.U=(VQQU_SVLL)(a, b)};
+//  return l.Q.U;
+}
+
 #if 0 // _LEAVE_ARM_ROVL
 }
 #endif
@@ -32599,11 +34785,6 @@ INLINE(Vqdu,VQDU_ROVR) (Vqdu a, Vqdu b)
 
 #if 0 // _ENTER_ARM_ADDL
 {
-#endif
-
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,addlqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a+b;}
-INLINE(QUAD_ITYPE,addlqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a+b;}
 #endif
 
 INLINE(Vwyu,VWYU_ADDL) (Vwyu a, Vwyu b)
@@ -32742,6 +34923,42 @@ INLINE(Vqwu,VQWU_ADDL) (Vqwu a, Vqwu b) {return vaddq_u32(a, b);}
 INLINE(Vqwi,VQWI_ADDL) (Vqwi a, Vqwi b) {return vaddq_s32(a, b);}
 INLINE(Vqdu,VQDU_ADDL) (Vqdu a, Vqdu b) {return vaddq_u64(a, b);}
 INLINE(Vqdi,VQDI_ADDL) (Vqdi a, Vqdi b) {return vaddq_s64(a, b);}
+INLINE(Vqqu,VQQU_ADDL) (Vqqu a, Vqqu b)
+{
+/*
+    Vqqu c = {vaddq_u64(a.V0, b.V0)};
+    if (vgetq_lane_u64(c.V0, 0) < vgetq_lane_u64(a.V0, 0))
+    {
+        uint64x1_t x = vget_low_u64(c.V0);
+        x = vadd_u64(x, vdup_n_u64(1));
+        c.V0 = vcopyq_lane_u64(c.V0, 1, x, 0);
+    }
+    return c;
+*/
+    QUAD_VTYPE x={.Q.U=a}, y={.Q.U=b}, z;
+    z.U = x.U+y.U;
+    return z.Q.U;
+}
+INLINE(Vqqi,VQQI_ADDL) (Vqqi a, Vqqi b)
+{
+    QUAD_VTYPE x={.Q.I=a}, y={.Q.I=b}, z;
+    z.U = x.U+y.U;
+    return z.Q.I;
+#if 0
+    uint64x2_t p = vreinterpretq_u64_s64(a.V0);
+    uint64x2_t q = vreinterpretq_u64_s64(b.V0);
+    uint64x2_t r = vaddq_u64(p, q);
+    if (vgetq_lane_u64(r, 0) < vgetq_lane_u64(r, 0))
+    {
+        uint64x1_t x = vget_low_u64(r);
+        x = vadd_u64(x, vdup_n_u64(1));
+        r = vcopyq_lane_u64(r, 1, x, 0);
+    }
+    Vqqi c;
+    c.V0 = vreinterpretq_s64_u64(r);
+    return  c;
+#endif
+}
 
 #if 0 // _LEAVE_ARM_ADDL
 }
@@ -32753,57 +34970,59 @@ INLINE(Vqdi,VQDI_ADDL) (Vqdi a, Vqdi b) {return vaddq_s64(a, b);}
 
 INLINE( _Bool,  BOOL_ADDS)  (_Bool a,  _Bool b) {return a|b;}
 
-INLINE( uchar, UCHAR_ADDS)  (uchar a,  uchar b)
+INLINE( uchar, UCHAR_ADDS)  (unsigned a, unsigned b)
 {
+#define     UCHAR_ADDS  vqaddb_u8
     return  vqaddb_u8(a, b);
 }
 
-INLINE( schar, SCHAR_ADDS)  (schar a,  schar b)
+INLINE( schar, SCHAR_ADDS)  (signed a,  signed b)
 {
+#define     SCHAR_ADDS  vqaddb_s8
     return  vqaddb_s8(a, b);
 }
 
-INLINE(  char,  CHAR_ADDS)   (char a,   char b)
+INLINE(  char,  CHAR_ADDS)   (int a,   int b)
 {
-/*  Of course char+char doesn't make sense but this is
-    probably the best example of practicality over purity.
-    Besides, the Microsoft abi considers char compatible with
-    signed char so addsbc would be required for INT8_ADDS
-    anyway.
-*/
 #if CHAR_MIN
+#   define  CHAR_ADDS(A, B)  ((char) vqaddb_s8(A,B))
     return  vqaddb_s8(a, b);
 #else
+#   define  CHAR_ADDS(A, B)  ((char) vqaddb_u8(A,B))
     return  vqaddb_u8(a, b);
 #endif
 }
 
-INLINE(ushort, USHRT_ADDS) (ushort a, ushort b)
+INLINE(ushort, USHRT_ADDS) (unsigned a, unsigned b)
 {
+#define     USHRT_ADDS  vqaddh_u16
     return  vqaddh_u16(a, b);
 }
 
-INLINE( short,  SHRT_ADDS)  (short a,  short b)
+INLINE( short,  SHRT_ADDS)  (signed a,  signed b)
 {
+#define     SHRT_ADDS  vqaddh_s16
     return  vqaddh_s16(a, b);
 }
 
 INLINE(  uint,  UINT_ADDS)   (uint a,   uint b)
 {
+#define     UINT_ADDS  vqadds_u32
     return  vqadds_u32(a, b);
 }
 
 INLINE(   int,   INT_ADDS)    (int a,    int b)
 {
+#define     INT_ADDS  vqadds_s32
     return  vqadds_s32(a, b);
 }
 
 INLINE( ulong, ULONG_ADDS)  (ulong a,  ulong b)
 {
 #if DWRD_NLONG == 2
-#   define  ULONG_ADDS(A, B) ((ulong) vqadds_u32(A, B))
+#   define  ULONG_ADDS(A, B)  ((ulong) vqadds_u32(A,B))
 #else
-#   define  ULONG_ADDS(A, B) vqaddd_u64(A, B)
+#   define  ULONG_ADDS vqaddd_u64
 #endif
     return  ULONG_ADDS(a, b);
 }
@@ -32811,9 +35030,9 @@ INLINE( ulong, ULONG_ADDS)  (ulong a,  ulong b)
 INLINE(  long,  LONG_ADDS)   (long a,   long b)
 {
 #if DWRD_NLONG == 2
-#   define  LONG_ADDS(A, B) ((long) vqadds_s32(A, B))
+#   define  LONG_ADDS(A, B)  ((long) vqadds_s32(A,B))
 #else
-#   define  LONG_ADDS(A, B) vqaddd_s64(A, B)
+#   define  LONG_ADDS vqaddd_s64
 #endif
     return  LONG_ADDS(a, b);
 }
@@ -32821,10 +35040,9 @@ INLINE(  long,  LONG_ADDS)   (long a,   long b)
 INLINE(ullong,ULLONG_ADDS) (ullong a, ullong b)
 {
 #if QUAD_NLLONG == 2
-#   define  ULLONG_ADDS(A, B) ((ullong) vqaddd_u64(A, B))
+#   define  ULLONG_ADDS(A, B) ((ullong) vqaddd_u64(A,B))
 #else
 // ??
-#   define  ULLONG_ADDS(A, B) vqaddq_u128(A, B)
 #endif
     return  ULLONG_ADDS(a, b);
 }
@@ -32832,152 +35050,147 @@ INLINE(ullong,ULLONG_ADDS) (ullong a, ullong b)
 INLINE( llong, LLONG_ADDS)  (llong a,  llong b)
 {
 #if QUAD_NLLONG == 2
-#   define  LLONG_ADDS(A, B) ((llong) vqaddd_s64(A, B))
+#   define  LLONG_ADDS(A, B) ((llong) vqaddd_s64(A,B))
 #else
 // ??
-#   define  LLONG_ADDS(A, B) vqaddq_s128(A, B)
 #endif
     return  LLONG_ADDS(a, b);
 }
 
 #if QUAD_NLLONG == 2
+
 INLINE(QUAD_UTYPE,addsqu) (QUAD_UTYPE a, QUAD_UTYPE b) 
 {
-    b += a;
-    return (b >= a) ? b : (((QUAD_UTYPE) 0)-1);
+    QUAD_TYPE   c;
+#if defined(__SIZEOF_INT128__)
+    c.U = a+b;
+    if (c.U < b)
+        c.U = -1;
+#else
+    c.U = addlqu(a, b);
+    if (cltyqu(c.U, b))
+        c.Lo.I=-1, c.Hi.I=-1;
+#endif
+    return  c.U;
 }
 
 INLINE(QUAD_ITYPE,addsqi) (QUAD_ITYPE a, QUAD_ITYPE b)
 {
-    QUAD_ITYPE c = a+b;
-    if (a <= 0)
+    QUAD_TYPE x={.I=a}, y={.I=b}, z;
+#if defined(__SIZEOF_INT128__)
+    z.U = x.U+y.U;
+    if (0 > a)
     {
-        if ((b < 0) && (c > a))
+        if ((0 >= b) && (z.U > x.U))
         {
-            QUAD_UTYPE r = 1;
-            r <<= 127;
-            return  (QUAD_ITYPE) r;
+            z.Hi.I = INT64_MIN;
+            z.Lo.I = 0;
         }
     }
     else 
     {
-        if ((b > 0) && (c < a))
+        if ((0 < b) && (z.U < x.U))
         {
-            QUAD_UTYPE r = 0;
-            r -= 1;
-            r >>= 1;
-            return  (QUAD_ITYPE) r;
+            z.Hi.I = INT64_MAX;
+            z.Lo.I = -1;
         }
     }
-    return c;
+#else
+    z.U = addlqu(x.U, y.U);
+    if (zgtyqi(a))
+    {
+        if (zgeyqi(b) && cgtyqu(z.U, x.U))
+        {
+            z.Hi.I = INT64_MIN;
+            z.Lo.I = 0;
+        }
+    }
+    else 
+    {
+        if (zltyqi(b) && cltyqu(z.U, x.U))
+        {
+            z.Hi.I = INT64_MAX;
+            z.Lo.I = -1;
+        }
+    }
+#endif
+    return  z.I;
 }
 #endif
 
+
+INLINE(float,WBU_ADDS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.B.U = vqadd_u8(x.B.U, y.B.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WBI_ADDS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.B.I = vqadd_s8(x.B.I, y.B.I);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+#if CHAR_MIN
+#   define  WBC_ADDS WBI_ADDS
+#   define  DBC_ADDS vqadd_s8
+#   define  QBC_ADDS vqaddq_s8
+#else
+#   define  WBC_ADDS WBU_ADDS
+#   define  DBC_ADDS vqadd_u8
+#   define  QBC_ADDS vqaddq_u8
+#endif
+
+INLINE(float,WHU_ADDS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.U = vqadd_u16(x.H.U, y.H.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WHI_ADDS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.I = vqadd_u16(x.H.I, y.H.I);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WWU_ADDS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.W.U = vqadd_u32(x.W.U, y.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WWI_ADDS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.W.I = vqadd_s32(x.W.I, y.W.I);
+    return  vget_lane_f32(x.W.F, 0);
+}
 
 INLINE(Vwyu,VWYU_ADDS) (Vwyu a, Vwyu b)
 {
-#define     VWYU_ADDS(A, B) \
-WYU_ASTV(((VWWU_ASTV(VWYU_ASWU(A)))|(VWWU_ASTV(VWYU_ASWU(B)))))
-    return  VWYU_ADDS(a, b);
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = vorr_u8(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
 }
 
-INLINE(Vwbu,VWBU_ADDS) (Vwbu a, Vwbu b) 
-{
-    float       am = VWBU_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    uint8x8_t   az = vreinterpret_u8_f32(af);
-    float       bm = VWBU_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    uint8x8_t   bz = vreinterpret_u8_f32(bf);
-    az = vqadd_u8(az, bz);
-    af = vreinterpret_f32_u8(az);
-    am = vget_lane_f32(af, 0);
-    return  WBU_ASTV(am);
-}
+INLINE(Vwbu,VWBU_ADDS) (Vwbu a, Vwbu b) {a.V0=WBU_ADDS(a.V0,b.V0); return a;}
+INLINE(Vwbi,VWBI_ADDS) (Vwbi a, Vwbi b) {a.V0=WBI_ADDS(a.V0,b.V0); return a;}
+INLINE(Vwbc,VWBC_ADDS) (Vwbc a, Vwbc b) {a.V0=WBC_ADDS(a.V0,b.V0); return a;}
+INLINE(Vwhu,VWHU_ADDS) (Vwhu a, Vwhu b) {a.V0=WHU_ADDS(a.V0,b.V0); return a;}
+INLINE(Vwhi,VWHI_ADDS) (Vwhi a, Vwhi b) {a.V0=WHI_ADDS(a.V0,b.V0); return a;}
+INLINE(Vwwu,VWWU_ADDS) (Vwwu a, Vwwu b) {a.V0=WWU_ADDS(a.V0,b.V0); return a;}
+INLINE(Vwwi,VWWI_ADDS) (Vwwi a, Vwwi b) {a.V0=WWI_ADDS(a.V0,b.V0); return a;}
 
-INLINE(Vwbi,VWBI_ADDS) (Vwbi a, Vwbi b) 
-{
-    float       am = VWBI_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    int8x8_t    az = vreinterpret_s8_f32(af);
-    float       bm = VWBI_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    int8x8_t    bz = vreinterpret_s8_f32(bf);
-    az = vqadd_s8(az, bz);
-    af = vreinterpret_f32_s8(az);
-    am = vget_lane_f32(af, 0);
-    return  WBI_ASTV(am);
-}
-
-INLINE(Vwbc,VWBC_ADDS) (Vwbc a, Vwbc b) 
-{
-#if CHAR_MIN
-    return  VWBI_ASBC(VWBI_ADDS(VWBC_ASBI(a), VWBC_ASBI(b)));
-#else
-    return  VWBU_ASBC(VWBU_ADDS(VWBC_ASBU(a), VWBC_ASBU(b)));
-#endif
-}
-
-
-INLINE(Vwhu,VWHU_ADDS) (Vwhu a, Vwhu b) 
-{
-    float       am = VWHU_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    uint16x4_t  az = vreinterpret_u16_f32(af);
-    float       bm = VWHU_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    uint16x4_t  bz = vreinterpret_u16_f32(bf);
-    az = vqadd_u16(az, bz);
-    af = vreinterpret_f32_u16(az);
-    am = vget_lane_f32(af, 0);
-    return  WHU_ASTV(am);
-}
-
-INLINE(Vwhi,VWHI_ADDS) (Vwhi a, Vwhi b) 
-{
-    float       am = VWHI_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    int16x4_t   az = vreinterpret_s16_f32(af);
-    float       bm = VWHI_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    int16x4_t   bz = vreinterpret_s16_f32(bf);
-    az = vqadd_s16(az, bz);
-    af = vreinterpret_f32_s16(az);
-    am = vget_lane_f32(af, 0);
-    return  WHI_ASTV(am);
-}
-
-
-INLINE(Vwwu,VWWU_ADDS) (Vwwu a, Vwwu b) 
-{
-    uint64_t c = VWWU_ASTV(a)+VWWU_ASTV(b);
-    return  UINT32_ASTV(vqmovnd_u64(c));
-}
-
-INLINE(Vwwi,VWWI_ADDS) (Vwwi a, Vwwi b) 
-{
-    int64_t c = VWWI_ASTV(a)+VWWI_ASTV(b);
-    return  INT32_ASTV(vqmovnd_s64(c));
-}
-
-
-INLINE(Vdyu,VDYU_ADDS) (Vdyu a, Vdyu b)
-{
-#define     VDYU_ADDS(A, B) DYU_ASTV(vorr_u64(VDYU_ASTM(A),VDYU_ASTM(B)))
-    return  VDYU_ADDS(a, b);
-}
-
+INLINE(Vdyu,VDYU_ADDS) (Vdyu a, Vdyu b) {a.V0=vorr_u64(a.V0,b.V0); return a;}
 INLINE(Vdbu,VDBU_ADDS) (Vdbu a, Vdbu b) {return vqadd_u8(a, b);}
 INLINE(Vdbi,VDBI_ADDS) (Vdbi a, Vdbi b) {return vqadd_s8(a, b);}
-INLINE(Vdbc,VDBC_ADDS) (Vdbc a, Vdbc b)
-{
-#if CHAR_MIN
-#   define  VDBC_ADDS(A, B) VDBI_ASBC(vqadd_s8(VDBC_ASBI(A), VDBC_ASBI(B)))
-#else
-#   define  VDBC_ADDS(A, B) VDBU_ASBC(vqadd_u8(VDBC_ASBU(A), VDBC_ASBU(B)))
-#endif
-    return  VDBC_ADDS(a, b);
-}
+INLINE(Vdbc,VDBC_ADDS) (Vdbc a, Vdbc b) {a.V0=DBC_ADDS(a.V0,b.V0); return a;}
 INLINE(Vdhu,VDHU_ADDS) (Vdhu a, Vdhu b) {return vqadd_u16(a, b);}
 INLINE(Vdhi,VDHI_ADDS) (Vdhi a, Vdhi b) {return vqadd_s16(a, b);}
 INLINE(Vdwu,VDWU_ADDS) (Vdwu a, Vdwu b) {return vqadd_u32(a, b);}
@@ -32985,29 +35198,28 @@ INLINE(Vdwi,VDWI_ADDS) (Vdwi a, Vdwi b) {return vqadd_s32(a, b);}
 INLINE(Vddu,VDDU_ADDS) (Vddu a, Vddu b) {return vqadd_u64(a, b);}
 INLINE(Vddi,VDDI_ADDS) (Vddi a, Vddi b) {return vqadd_s64(a, b);}
 
-
-INLINE(Vqyu,VQYU_ADDS) (Vqyu a, Vqyu b)
-{
-#define     VQYU_ADDS(A, B) QYU_ASTV(vorrq_u64(VQYU_ASTM(A),VQYU_ASTM(B)))
-    return  VQYU_ADDS(a, b);
-}
+INLINE(Vqyu,VQYU_ADDS) (Vqyu a, Vqyu b) {a.V0=vorrq_u64(a.V0,b.V0); return a;}
 INLINE(Vqbu,VQBU_ADDS) (Vqbu a, Vqbu b) {return vqaddq_u8(a, b);}
 INLINE(Vqbi,VQBI_ADDS) (Vqbi a, Vqbi b) {return vqaddq_s8(a, b);}
-INLINE(Vqbc,VQBC_ADDS) (Vqbc a, Vqbc b)
-{
-#if CHAR_MIN
-#   define  VQBC_ADDS(A, B) VQBI_ASBC(vqaddq_s8(VQBC_ASBI(A), VQBC_ASBI(B)))
-#else
-#   define  VQBC_ADDS(A, B) VQBU_ASBC(vqaddq_u8(VQBC_ASBU(A), VQBC_ASBU(B)))
-#endif
-    return  VQBC_ADDS(a, b);
-}
+INLINE(Vqbc,VQBC_ADDS) (Vqbc a, Vqbc b) {a.V0=QBC_ADDS(a.V0,b.V0); return a;}
 INLINE(Vqhu,VQHU_ADDS) (Vqhu a, Vqhu b) {return vqaddq_u16(a, b);}
 INLINE(Vqhi,VQHI_ADDS) (Vqhi a, Vqhi b) {return vqaddq_s16(a, b);}
 INLINE(Vqwu,VQWU_ADDS) (Vqwu a, Vqwu b) {return vqaddq_u32(a, b);}
 INLINE(Vqwi,VQWI_ADDS) (Vqwi a, Vqwi b) {return vqaddq_s32(a, b);}
 INLINE(Vqdu,VQDU_ADDS) (Vqdu a, Vqdu b) {return vqaddq_u64(a, b);}
 INLINE(Vqdi,VQDI_ADDS) (Vqdi a, Vqdi b) {return vqaddq_s64(a, b);}
+INLINE(Vqqu,VQQU_ADDS) (Vqqu a, Vqqu b)
+{
+    QUAD_VTYPE x={.D.U=a.V0}, y={.D.U=b.V0};
+    x.U = addsqu(x.U, y.U);
+    return  x.Q.U;
+}
+INLINE(Vqqi,VQQI_ADDS) (Vqqi a, Vqqi b)
+{
+    QUAD_VTYPE x={.D.I=a.V0}, y={.D.I=b.V0};
+    x.U = addsqi(x.I, y.I);
+    return  x.Q.I;
+}
 
 #if 0 // _LEAVE_ARM_ADDS
 }
@@ -33016,36 +35228,6 @@ INLINE(Vqdi,VQDI_ADDS) (Vqdi a, Vqdi b) {return vqaddq_s64(a, b);}
 #if 0 // _ENTER_ARM_ADD2
 {
 #endif
-
-#if DWRD_NLONG == 1
-
-INLINE(QUAD_UTYPE, ULONG_ADD2)  (ulong a, ulong b) 
-{
-    return (QUAD_UTYPE) a+b;
-}
-
-INLINE(QUAD_ITYPE,  LONG_ADD2)   (long a,  long b) 
-{
-    return (QUAD_ITYPE) a+b;
-}
-
-#endif
-
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE, ULLONG_ADD2)  (ullong a, ullong b) 
-{
-    return (QUAD_UTYPE) a+b;
-}
-
-INLINE(QUAD_ITYPE, LLONG_ADD2)   (llong a,  llong b) 
-{
-    return (QUAD_ITYPE) a+b;
-}
-
-#endif
-
 
 INLINE(Vdhu,VWBU_ADD2) (Vwbu a, Vwbu b) 
 {
@@ -33877,11 +36059,6 @@ INLINE(Vqdf,VQDF_ADDD) (Vqdf a, Vqdf b)
 #endif
 
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,icrlqu) (QUAD_UTYPE a) {return 1+a;}
-INLINE(QUAD_ITYPE,icrlqi) (QUAD_ITYPE a) {return 1+a;}
-#endif
-
 
 INLINE(Vwyu,VWYU_ICRL) (Vwyu a)
 {
@@ -34013,212 +36190,642 @@ INLINE(Vqdi,VQDI_ICRL) (Vqdi a) {return vaddq_s64(a,vdupq_n_s64(1));}
 #if 0 // _ENTER_ARM_AVGL
 {
 #endif
+/*
+AVeraGe (truncated)
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,avglqu) (QUAD_UTYPE a, QUAD_UTYPE b) 
+For each corresponding pair of elements, compute the mean.
+Fractional results are rounded by truncation.
+
+    -4  = -2.0 = -2
+    -3  = -1.5 = -1
+    -2  = -1.0 = -1
+    -1  = -0.5 = -0
+    +0  = +0.0 = +0
+    +1  = +0.5 = +0
+    +2  = +1.0 = +1
+    +3  = +1.5 = +1
+    +4  = +2.0 = +2
+
+UHADD is directly equivalent to AVGL. SHADD, however, is
+equivalent to to AVGN.
+
+*/
+
+#define     DBU_AVGL    vhadd_u8
+
+INLINE(int8x8_t,DBI_AVGL) (int8x8_t a, int8x8_t b)
 {
-    return ((a/2)+(b/2))+((a&1)&(b&1));
+    DWRD_VTYPE  n, p, v;
+    QUAD_VTYPE  x, y, z;
+    x.H.I   = vaddl_s8(a, b);
+    y.H.I   = vabsq_s16(x.H.I); 
+    z.H.U   = vceqq_s16(x.H.I, y.H.I);
+    y.H.U   = vshrq_n_u16(y.H.U, 1);
+    v.B.I   = vmovn_s16(y.H.I);
+    p.B.U   = vmovn_u16(z.H.U);
+    n.B.U   = vmvn_u8(p.B.U);
+    p.B.U   = vshr_n_u8(p.B.U, 7);
+    n.B.U   = vorr_u8(p.B.U, n.B.U);
+    return  vmul_s8(v.B.I, n.B.I);
 }
 
-INLINE(QUAD_ITYPE,avglqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return ((a/2)+(b/2))+((a&1)&(b&1));
-}
-
-#endif
-
-INLINE(Vwyu,VWYU_AVGL) (Vwyu a, Vwyu b)
-{
-#define     VWYU_AVGL(A, B) \
-WYU_ASTV(((VWWU_ASTV(VWYU_ASWU(A)))&(VWWU_ASTV(VWYU_ASWU(B)))))
-    return  VWYU_AVGL(a, b);
-}
-
-INLINE(Vwbu,VWBU_AVGL) (Vwbu a, Vwbu b) 
-{
-    float       am = VWBU_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    uint8x8_t   az = vreinterpret_u8_f32(af);
-    float       bm = VWBU_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    uint8x8_t   bz = vreinterpret_u8_f32(bf);
-    az = vhadd_u8(az, bz);
-    af = vreinterpret_f32_u8(az);
-    am = vget_lane_f32(af, 0);
-    return  WBU_ASTV(am);
-}
-
-INLINE(Vwbi,VWBI_AVGL) (Vwbi a, Vwbi b) 
-{
-    float       am = VWBI_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    int8x8_t    az = vreinterpret_s8_f32(af);
-    float       bm = VWBI_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    int8x8_t    bz = vreinterpret_s8_f32(bf);
-    az = vhadd_s8(az, bz);
-    af = vreinterpret_f32_s8(az);
-    am = vget_lane_f32(af, 0);
-    return  WBI_ASTV(am);
-}
-
-INLINE(Vwbc,VWBC_AVGL) (Vwbc a, Vwbc b) 
-{
 #if CHAR_MIN
-    return  VWBI_ASBC(VWBI_AVGL(VWBC_ASBI(a), VWBC_ASBI(b)));
+#   define  DBC_AVGL DBI_AVGL
 #else
-    return  VWBU_ASBC(VWBU_AVGL(VWBC_ASBU(a), VWBC_ASBU(b)));
+#   define  DBC_AVGL DBU_AVGL
 #endif
+
+
+#define     DHU_AVGL vhadd_u16
+
+INLINE(int16x4_t,DHI_AVGL) (int16x4_t a, int16x4_t b)
+{
+    DWRD_VTYPE  n, p, v;
+    QUAD_VTYPE  x, y, z;
+    x.W.I   = vaddl_s16(a, b);
+    y.W.I   = vabsq_s32(x.W.I); 
+    z.W.U   = vceqq_s32(x.W.I, y.W.I);
+    y.W.U   = vshrq_n_u32(y.W.U, 1);
+    v.H.I   = vmovn_s32(y.W.I);
+    p.H.U   = vmovn_u32(z.W.U);
+    n.H.U   = vmvn_u16(p.H.U);
+    p.H.U   = vshr_n_u16(p.H.U, 15);
+    n.H.U   = vorr_u8(p.H.U, n.H.U);
+    return  vmul_s16(v.H.I, n.H.I);
 }
 
-
-INLINE(Vwhu,VWHU_AVGL) (Vwhu a, Vwhu b) 
+#define     DWU_AVGL vhadd_u32
+INLINE(int32x2_t,DWI_AVGL) (int32x2_t a, int32x2_t b)
 {
-    float       am = VWHU_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    uint16x4_t  az = vreinterpret_u16_f32(af);
-    float       bm = VWHU_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    uint16x4_t  bz = vreinterpret_u16_f32(bf);
-    az = vhadd_u16(az, bz);
-    af = vreinterpret_f32_u16(az);
-    am = vget_lane_f32(af, 0);
-    return  WHU_ASTV(am);
+    DWRD_VTYPE  n, p, v;
+    QUAD_VTYPE  x, y, z;
+    x.D.I   = vaddl_s32(a, b);
+    y.D.I   = vabsq_s64(x.D.I); 
+    z.D.U   = vceqq_s64(x.D.I, y.D.I);
+    y.D.U   = vshrq_n_u64(y.D.U, 1);
+    v.W.I   = vmovn_s64(y.D.I);
+    p.W.U   = vmovn_u64(z.D.U);
+    n.W.U   = vmvn_u32(p.W.U);
+    p.W.U   = vshr_n_u32(p.W.U, 31);
+    n.W.U   = vorr_u16(p.W.U, n.W.U);
+    return  vmul_s32(v.W.I, n.W.I);
 }
 
-INLINE(Vwhi,VWHI_AVGL) (Vwhi a, Vwhi b) 
+INLINE(uint64x1_t,DDU_AVGL) (uint64x1_t a, uint64x1_t b)
 {
-    float       am = VWHI_ASTM(a);
-    float32x2_t af = vdup_n_f32(am);
-    int16x4_t   az = vreinterpret_s16_f32(af);
-    float       bm = VWHI_ASTM(b);
-    float32x2_t bf = vdup_n_f32(bm);
-    int16x4_t   bz = vreinterpret_s16_f32(bf);
-    az = vhadd_s16(az, bz);
-    af = vreinterpret_f32_s16(az);
-    am = vget_lane_f32(af, 0);
-    return  WHI_ASTV(am);
-}
-
-
-INLINE(Vwwu,VWWU_AVGL) (Vwwu a, Vwwu b) 
-{
-#define     VWWU_AVGL(A, B)  \
-UINT32_ASTV(UINT_AVGL(VWWU_ASTV(A), VWWU_ASTV(B)))
-    return  VWWU_AVGL(a, b);
-}
-
-INLINE(Vwwi,VWWI_AVGL) (Vwwi a, Vwwi b) 
-{
-#define     VWWI_AVGL(A, B)  \
-INT32_ASTV(INT_AVGL(VWWI_ASTV(A), VWWI_ASTV(B)))
-    return  VWWI_AVGL(a, b);
-}
-
-
-INLINE(Vdyu,VDYU_AVGL) (Vdyu a, Vdyu b)
-{
-#define     VDYU_AVGL(A, B) DYU_ASTV(vand_u64(VDYU_ASTM(A),VDYU_ASTM(B)))
-    return  VDYU_AVGL(a, b);
-}
-
-INLINE(Vdbu,VDBU_AVGL) (Vdbu a, Vdbu b) {return vhadd_u8(a, b);}
-INLINE(Vdbi,VDBI_AVGL) (Vdbi a, Vdbi b) {return vhadd_s8(a, b);}
-INLINE(Vdbc,VDBC_AVGL) (Vdbc a, Vdbc b)
-{
-#if CHAR_MIN
-#   define  VDBC_AVGL(A, B) VDBI_ASBC(VDBI_AVGL(VDBC_ASBI(A), VDBC_ASBI(B)))
-#else
-#   define  VDBC_AVGL(A, B) VDBU_ASBC(VDBU_AVGL(VDBC_ASBU(A), VDBC_ASBU(B)))
-#endif
-    return  VDBC_AVGL(a, b);
-}
-
-INLINE(Vdhu,VDHU_AVGL) (Vdhu a, Vdhu b) {return vhadd_u16(a, b);}
-INLINE(Vdhi,VDHI_AVGL) (Vdhi a, Vdhi b) {return vhadd_s16(a, b);}
-INLINE(Vdwu,VDWU_AVGL) (Vdwu a, Vdwu b) {return vhadd_u32(a, b);}
-INLINE(Vdwi,VDWI_AVGL) (Vdwi a, Vdwi b) {return vhadd_s32(a, b);}
-INLINE(Vddu,VDDU_AVGL) (Vddu a, Vddu b)
-{
-    Vddu c = vand_u64(a, b);
-    c = vand_u64(vdup_n_u64(1), c);
+    uint64x1_t c = vand_u64(a, b);
+    c = vand_u64(c, vdup_n_u64(1));
     a = vshr_n_u64(a, 1);
     b = vshr_n_u64(b, 1);
     a = vadd_u64(a, b);
     c = vadd_u64(a, c);
     return  c;
-    
 }
 
-INLINE(Vddi,VDDI_AVGL) (Vddi a, Vddi b) 
+INLINE(int64x1_t,DDI_AVGL) (int64x1_t a, int64x1_t b)
 {
-    Vddi c = vand_s64(a, b);
-    c = vand_s64(vdup_n_s64(1), c);
-    a = vshr_n_s64(a, 1);
-    b = vshr_n_s64(b, 1);
-    a = vadd_s64(a, b);
-    c = vadd_s64(a, c);
-    return  c;
+    int64_t l = vget_lane_s64(a, 0);
+    int64_t r = vget_lane_s64(b, 0);
+    l = INT64_AVGL(l, r);
+    return  vdup_n_s64(l);
 }
 
-INLINE(Vqyu,VQYU_AVGL) (Vqyu a, Vqyu b)
+#define QBU_AVGL vhaddq_u8
+INLINE(int8x16_t,QBI_AVGL) (int8x16_t a, int8x16_t b)
 {
-#define     VQYU_AVGL(A, B) QYU_ASTV(vandq_u64(VQYU_ASTM(A),VQYU_ASTM(B)))
-    return  VQYU_AVGL(a, b);
+    int8x8_t l = DBI_AVGL(vget_low_s8(a), vget_low_s8(b));
+    int8x8_t r = DBI_AVGL(vget_high_s8(a), vget_high_s8(b));
+    return  vcombine_s8(l, r);
 }
 
-INLINE(Vqbu,VQBU_AVGL) (Vqbu a, Vqbu b) {return vhaddq_u8(a, b);}
-INLINE(Vqbi,VQBI_AVGL) (Vqbi a, Vqbi b) {return vhaddq_s8(a, b);}
+#if CHAR_MIN
+#   define  DBC_AVGL DBI_AVGL
+#   define  QBC_AVGL QBI_AVGL
+#else
+#   define  DBC_AVGL DBU_AVGL
+#   define  QBC_AVGL QBU_AVGL
+#endif
+
+#define QHU_AVGL vhaddq_u16
+INLINE(int16x8_t,QHI_AVGL) (int16x8_t a, int16x8_t b)
+{
+    int16x4_t l = DHI_AVGL(vget_low_s16( a), vget_low_s16( b));
+    int16x4_t r = DHI_AVGL(vget_high_s16(a), vget_high_s16(b));
+    return  vcombine_s16(l, r);
+}
+
+#define QWU_AVGL vhaddq_u32
+INLINE(int32x4_t,QWI_AVGL) (int32x4_t a, int32x4_t b)
+{
+    int32x2_t l = DWI_AVGL(vget_low_s32( a), vget_low_s32( b));
+    int32x2_t r = DWI_AVGL(vget_high_s32(a), vget_high_s32(b));
+    return  vcombine_s32(l, r);
+}
+
+INLINE(uint64x2_t,QDU_AVGL) (uint64x2_t a, uint64x2_t b)
+{
+    uint64x1_t l = DDU_AVGL(vget_low_u64( a), vget_low_u64( b));
+    uint64x1_t r = DDU_AVGL(vget_high_u64(a), vget_high_u64(b));
+    return  vcombine_u64(l, r);
+}
+
+INLINE(int64x2_t,QDI_AVGL) (int64x2_t a, int64x2_t b)
+{
+    int64x1_t l = DDI_AVGL(vget_low_s64( a), vget_low_s64( b));
+    int64x1_t r = DDI_AVGL(vget_high_s64(a), vget_high_s64(b));
+    return  vcombine_s64(l, r);
+}
+
+INLINE(Vwbu,VWBU_AVGL) (Vwbu a, Vwbu b) 
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.B.U   = DBU_AVGL(x.B.U, y.B.U);
+    a.V0    = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+INLINE(Vwbi,VWBI_AVGL) (Vwbi a, Vwbi b) 
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.B.I   = DBI_AVGL(x.B.I, y.B.I);
+    a.V0    = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+INLINE(Vwbc,VWBC_AVGL) (Vwbc a, Vwbc b) 
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+#if CHAR_MIN
+    x.B.I = DBI_AVGL(x.B.I, y.B.I);
+#else
+    x.B.U = DBU_AVGL(x.B.U, y.B.U);
+#endif
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vwhu,VWHU_AVGL) (Vwhu a, Vwhu b) 
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.H.U   = DHU_AVGL(x.H.U, y.H.U);
+    a.V0    = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+INLINE(Vwhi,VWHI_AVGL) (Vwhi a, Vwhi b) 
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.H.I   = DHI_AVGL(x.H.I, y.H.I);
+    a.V0    = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vwwu,VWWU_AVGL) (Vwwu a, Vwwu b) 
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.W.U   = DHU_AVGL(x.W.U, y.W.U);
+    a.V0    = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+INLINE(Vwwi,VWWI_AVGL) (Vwwi a, Vwwi b) 
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.W.I   = DHI_AVGL(x.W.I, y.W.I);
+    a.V0    = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vdbu,VDBU_AVGL) (Vdbu a, Vdbu b) {return DBU_AVGL(a, b);}
+INLINE(Vdbi,VDBI_AVGL) (Vdbi a, Vdbi b) {return DBI_AVGL(a, b);}
+INLINE(Vdbc,VDBC_AVGL) (Vdbc a, Vdbc b)
+{
+    a.V0 = DBC_AVGL(a.V0, b.V0);
+    return a;
+}
+
+INLINE(Vdhu,VDHU_AVGL) (Vdhu a, Vdhu b) {return DHU_AVGL(a, b);}
+INLINE(Vdhi,VDHI_AVGL) (Vdhi a, Vdhi b) {return DHI_AVGL(a, b);}
+INLINE(Vdwu,VDWU_AVGL) (Vdwu a, Vdwu b) {return DWU_AVGL(a, b);}
+INLINE(Vdwi,VDWI_AVGL) (Vdwi a, Vdwi b) {return DWI_AVGL(a, b);}
+INLINE(Vddu,VDDU_AVGL) (Vddu a, Vddu b) {return DDU_AVGL(a, b);}
+INLINE(Vddi,VDDI_AVGL) (Vddi a, Vddi b) {return DDI_AVGL(a, b);}
+
+INLINE(Vqbu,VQBU_AVGL) (Vqbu a, Vqbu b) {return QBU_AVGL(a, b);}
+INLINE(Vqbi,VQBI_AVGL) (Vqbi a, Vqbi b) {return QBI_AVGL(a, b);}
+
 INLINE(Vqbc,VQBC_AVGL) (Vqbc a, Vqbc b)
 {
-#if CHAR_MIN
-#   define  VQBC_AVGL(A, B) VQBI_ASBC(VQBI_AVGL(VQBC_ASBI(A), VQBC_ASBI(B)))
-#else
-#   define  VQBC_AVGL(A, B) VQBU_ASBC(VQBU_AVGL(VQBC_ASBU(A), VQBC_ASBU(B)))
-#endif
-    return  VQBC_AVGL(a, b);
+    a.V0 = QBC_AVGL(a.V0, b.V0);
+    return a;
 }
 
-
-INLINE(Vqhu,VQHU_AVGL) (Vqhu a, Vqhu b) {return vhaddq_u16(a, b);}
-INLINE(Vqhi,VQHI_AVGL) (Vqhi a, Vqhi b) {return vhaddq_s16(a, b);}
-INLINE(Vqwu,VQWU_AVGL) (Vqwu a, Vqwu b) {return vhaddq_u32(a, b);}
-INLINE(Vqwi,VQWI_AVGL) (Vqwi a, Vqwi b) {return vhaddq_s32(a, b);}
-INLINE(Vqdu,VQDU_AVGL) (Vqdu a, Vqdu b) 
+INLINE(Vqhu,VQHU_AVGL) (Vqhu a, Vqhu b) {return QHU_AVGL(a, b);}
+INLINE(Vqhi,VQHI_AVGL) (Vqhi a, Vqhi b) {return QHI_AVGL(a, b);}
+INLINE(Vqwu,VQWU_AVGL) (Vqwu a, Vqwu b) {return QWU_AVGL(a, b);}
+INLINE(Vqwi,VQWI_AVGL) (Vqwi a, Vqwi b) {return QWI_AVGL(a, b);}
+INLINE(Vqdu,VQDU_AVGL) (Vqdu a, Vqdu b) {return QDU_AVGL(a, b);}
+INLINE(Vqdi,VQDI_AVGL) (Vqdi a, Vqdi b) {return QDI_AVGL(a, b);}
+/*  TODO: optimize avglqq */
+INLINE(Vqqu,VQQU_AVGL) (Vqqu a, Vqqu b) 
 {
-    Vqdu c = vandq_u64(a, b);
-    c = vandq_u64(vdupq_n_u64(1), c);
-    a = vshrq_n_u64(a, 1);
-    b = vshrq_n_u64(b, 1);
-    a = vaddq_u64(a, b);
-    c = vaddq_u64(a, c);
-    return  c;
+    QUAD_VTYPE x={.Q.U=a}, y={.Q.U=b};
+    x.U = avglqu(x.U, y.U);
+    return  x.Q.U;
 }
 
-INLINE(Vqdi,VQDI_AVGL) (Vqdi a, Vqdi b) 
+INLINE(Vqqi,VQQI_AVGL) (Vqqi a, Vqqi b) 
 {
-    Vqdi c = vandq_s64(a, b);
-    c = vandq_s64(vdupq_n_s64(1), c);
-    a = vshrq_n_s64(a, 1);
-    b = vshrq_n_s64(b, 1);
-    a = vaddq_s64(a, b);
-    c = vaddq_s64(a, c);
-    return  c;
+    QUAD_VTYPE x={.Q.I=a}, y={.Q.I=b};
+    x.I = avglqi(x.I, y.I);
+    return  x.Q.I;
 }
 
 #if 0 // _LEAVE_ARM_AVGL
 }
 #endif
 
-#if 0 // _ENTER_ARM_SUBL
+#if 0 // _ENTER_ARM_AVGP
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,sublqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a-b;}
-INLINE(QUAD_ITYPE,sublqi) (QUAD_ITYPE a, QUAD_ITYPE b) {return a-b;}
+/*
+    -1.5 = -1
+    -0.5 = -0
+    +0.5 = +0
+    +1.5 = +1
+*/
+#define     DBU_AVGP vrhadd_u8
+#define     DBI_AVGP vrhadd_s8
+
+#if CHAR_MIN
+#   define  DBC_AVGP DBI_AVGP
+#else
+#   define  DBC_AVGP DBU_AVGP
 #endif
 
+#define     DHU_AVGP vrhadd_u16
+#define     DHI_AVGP vrhadd_s16
+
+#define     DWU_AVGP vrhadd_u32
+#define     DWI_AVGP vrhadd_s32
+
+#if 0
+INLINE(int8x8_t,DBI_AVGP) (int8x8_t a, int8x8_t b)
+{
+    int8x8_t c = vorr_s8(a, b);
+    c = vand_s8(c, vdup_n_s8(1));
+    a = vshr_n_s8(a, 1);
+    b = vshr_n_s8(b, 1);
+    a = vadd_s8(a, b);
+    return  vadd_s8(a, c);
+}
+
+INLINE(int8x8_t,DBI_AVGP) (int8x8_t a, int8x8_t b)
+{
+    int8x8_t c = vorr_s8(a, b);
+    c = vand_s8(c, vdup_n_s8(1));
+    a = vshr_n_s8(a, 1);
+    b = vshr_n_s8(b, 1);
+    a = vadd_s8(a, b);
+    return  vadd_s8(a, c);
+}
+
+INLINE(int16x4_t,DHI_AVGP) (int16x4_t a, int16x4_t b)
+{
+    int16x4_t c = vorr_s16(a, b);
+    c = vand_s16(c, vdup_n_s16(1));
+    a = vshr_n_s16(a, 1);
+    b = vshr_n_s16(b, 1);
+    a = vadd_s16(a, b);
+    return  vadd_s16(a, c);
+}
+
+INLINE(int32x2_t,DWI_AVGP) (int32x2_t a, int32x2_t b)
+{
+    int32x2_t c = vorr_s32(a, b);
+    c = vand_s32(c, vdup_n_s32(1));
+    a = vshr_n_s32(a, 1);
+    b = vshr_n_s32(b, 1);
+    a = vadd_s32(a, b);
+    return  vadd_s32(a, c);
+}
+
+#endif
+
+INLINE(uint64x1_t,DDU_AVGP) (uint64x1_t a, uint64x1_t b)
+{
+    uint64x1_t c = vorr_u64(a, b);
+    c = vand_u64(c, vdup_n_u64(1));
+    a = vshr_n_u64(a, 1);
+    b = vshr_n_u64(b, 1);
+    a = vadd_u64(a, b);
+    return  vadd_u64(a, c);
+}
+
+INLINE( int64x1_t,DDI_AVGP)  (int64x1_t a,  int64x1_t b)
+{
+    int64x1_t c = vorr_s64(a, b);
+    c = vand_s64(c, vdup_n_s64(1));
+    a = vshr_n_s64(a, 1);
+    b = vshr_n_s64(b, 1);
+    a = vadd_s64(a, b);
+    return  vadd_s64(a, c);
+}
+
+#define     QBU_AVGP vrhaddq_u8
+#define     QBI_AVGP vrhaddq_s8
+
+#if CHAR_MIN
+#   define  QBC_AVGP QBI_AVGP
+#else
+#   define  QBC_AVGP QBU_AVGP
+#endif
+
+#define     QHU_AVGP vrhaddq_u16
+#define     QHI_AVGP vrhaddq_s16
+#define     QWU_AVGP vrhaddq_u32
+#define     QWI_AVGP vrhaddq_s32
+
+INLINE(uint64x2_t,QDU_AVGP) (uint64x2_t a, uint64x2_t b)
+{
+    uint64x2_t c = vorrq_u64(a, b);
+    c = vandq_u64(c, vdupq_n_u64(1));
+    a = vshrq_n_u64(a, 1);
+    b = vshrq_n_u64(b, 1);
+    a = vaddq_u64(a, b);
+    return  vaddq_u64(a, c);
+}
+
+INLINE( int64x2_t,QDI_AVGP)  (int64x2_t a,  int64x2_t b)
+{
+    int64x2_t c = vorrq_s64(a, b);
+    c = vandq_s64(c, vdupq_n_s64(1));
+    a = vshrq_n_s64(a, 1);
+    b = vshrq_n_s64(b, 1);
+    a = vaddq_s64(a, b);
+    return  vaddq_s64(a, c);
+}
+
+INLINE(Vwbu,VWBU_AVGP) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.B.U = DBU_AVGP(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_AVGP) (Vwbi a, Vwbi b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.B.I = DBI_AVGP(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_AVGP) (Vwbc a, Vwbc b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+#if CHAR_MIN
+    x.B.I = DBI_AVGP(x.B.I, y.B.I);
+#else
+    x.B.U = DBU_AVGP(x.B.U, y.B.U);
+#endif
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhu,VWHU_AVGP) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.H.U = DHU_AVGP(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_AVGP) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.H.I = DHI_AVGP(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwwu,VWWU_AVGP) (Vwwu a, Vwwu b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.W.U = DWU_AVGP(x.W.U, y.W.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwwi,VWWI_AVGP) (Vwwi a, Vwwi b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.W.I = DWI_AVGP(x.W.I, y.W.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vdbu,VDBU_AVGP) (Vdbu a, Vdbu b) {return DBU_AVGP(a, b);}
+INLINE(Vdbi,VDBI_AVGP) (Vdbi a, Vdbi b) {return DBI_AVGP(a, b);}
+INLINE(Vdbc,VDBC_AVGP) (Vdbc a, Vdbc b) 
+{
+    a.V0 = DBC_AVGP(a.V0, b.V0);
+    return  a;
+}
+
+INLINE(Vdhu,VDHU_AVGP) (Vdhu a, Vdhu b) {return DHU_AVGP(a, b);}
+INLINE(Vdhi,VDHI_AVGP) (Vdhi a, Vdhi b) {return DHI_AVGP(a, b);}
+INLINE(Vdwu,VDWU_AVGP) (Vdwu a, Vdwu b) {return DWU_AVGP(a, b);}
+INLINE(Vdwi,VDWI_AVGP) (Vdwi a, Vdwi b) {return DWI_AVGP(a, b);}
+INLINE(Vddu,VDDU_AVGP) (Vddu a, Vddu b) {return DDU_AVGP(a, b);}
+INLINE(Vddi,VDDI_AVGP) (Vddi a, Vddi b) {return DDI_AVGP(a, b);}
+INLINE(Vqbu,VQBU_AVGP) (Vqbu a, Vqbu b) {return QBU_AVGP(a, b);}
+INLINE(Vqbi,VQBI_AVGP) (Vqbi a, Vqbi b) {return QBI_AVGP(a, b);}
+INLINE(Vqbc,VQBC_AVGP) (Vqbc a, Vqbc b) 
+{
+    a.V0 = QBC_AVGP(a.V0, b.V0);
+    return  a;
+}
+
+INLINE(Vqhu,VQHU_AVGP) (Vqhu a, Vqhu b) {return QHU_AVGP(a, b);}
+INLINE(Vqhi,VQHI_AVGP) (Vqhi a, Vqhi b) {return QHI_AVGP(a, b);}
+INLINE(Vqwu,VQWU_AVGP) (Vqwu a, Vqwu b) {return QWU_AVGP(a, b);}
+INLINE(Vqwi,VQWI_AVGP) (Vqwi a, Vqwi b) {return QWI_AVGP(a, b);}
+INLINE(Vqdu,VQDU_AVGP) (Vqdu a, Vqdu b) {return QDU_AVGP(a, b);}
+INLINE(Vqdi,VQDI_AVGP) (Vqdi a, Vqdi b) {return QDI_AVGP(a, b);}
+
+
+#if 0 // _LEAVE_ARM_AVGP
+}
+#endif
+
+#if 0 // _ENTER_ARM_AVGN
+{
+#endif
+
+/*  AVeraGe (rounded to -inf)
+    -1.5 = -2
+    -0.5 = -1
+    +0.5 = +0
+    +1.5 = +1
+*/
+
+#define     DBU_AVGN DBU_AVGL
+#define     DBI_AVGN vhadd_s8
+
+#if CHAR_MIN
+#   define  DBC_AVGN DBI_AVGN
+#else
+#   define  DBC_AVGN DBU_AVGN
+#endif
+
+#define     DHU_AVGN DHU_AVGL
+#define     DHI_AVGN vhadd_s16
+
+#define     DWU_AVGN DDU_AVGL
+#define     DWI_AVGN vhadd_s32
+
+#define     DDU_AVGN DDU_AVGL
+
+INLINE( int64x1_t,DDI_AVGN)  (int64x1_t a,  int64x1_t b)
+{
+    int64x1_t c = vand_s64(a, b);
+    c = vand_s64(c, vdup_n_s64(1));
+    a = vshr_n_s64(a, 1);
+    b = vshr_n_s64(b, 1);
+    b = vadd_s64(b, c);
+    return  vadd_s64(a, b);
+}
+
+#define     QBU_AVGN vrhaddq_u8
+#define     QBI_AVGN vrhaddq_s8
+
+#if CHAR_MIN
+#   define  QBC_AVGN QBI_AVGN
+#else
+#   define  QBC_AVGN QBU_AVGN
+#endif
+
+#define     QHU_AVGN QHU_AVGL
+#define     QHI_AVGN vhaddq_s16
+#define     QWU_AVGN QWU_AVGL
+#define     QWI_AVGN vhaddq_s32
+
+#define     QDU_AVGN QDU_AVGL
+
+INLINE( int64x2_t,QDI_AVGN)  (int64x2_t a,  int64x2_t b)
+{
+    int64x2_t c = vandq_s64(a, b);
+    c = vandq_s64(c, vdupq_n_s64(1));
+    a = vshrq_n_s64(a, 1);
+    b = vshrq_n_s64(b, 1);
+    b = vaddq_s64(b, c);
+    return  vaddq_s64(a, b);
+}
+
+INLINE(Vwbu,VWBU_AVGN) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.B.U = DBU_AVGN(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_AVGN) (Vwbi a, Vwbi b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.B.I = DBI_AVGN(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_AVGN) (Vwbc a, Vwbc b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+#if CHAR_MIN
+    x.B.I = DBI_AVGN(x.B.I, y.B.I);
+#else
+    x.B.U = DBU_AVGN(x.B.U, y.B.U);
+#endif
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhu,VWHU_AVGN) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.H.U = DHU_AVGN(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_AVGN) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.H.I = DHI_AVGN(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwwu,VWWU_AVGN) (Vwwu a, Vwwu b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.W.U = DWU_AVGN(x.W.U, y.W.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwwi,VWWI_AVGN) (Vwwi a, Vwwi b)
+{
+    DWRD_VTYPE  x={.W.F={a.V0}}, y={.W.F={b.V0}};
+    x.W.I = DWI_AVGN(x.W.I, y.W.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vdbu,VDBU_AVGN) (Vdbu a, Vdbu b) {return DBU_AVGN(a, b);}
+INLINE(Vdbi,VDBI_AVGN) (Vdbi a, Vdbi b) {return DBI_AVGN(a, b);}
+INLINE(Vdbc,VDBC_AVGN) (Vdbc a, Vdbc b) 
+{
+    a.V0 = DBC_AVGN(a.V0, b.V0);
+    return  a;
+}
+
+INLINE(Vdhu,VDHU_AVGN) (Vdhu a, Vdhu b) {return DHU_AVGN(a, b);}
+INLINE(Vdhi,VDHI_AVGN) (Vdhi a, Vdhi b) {return DHI_AVGN(a, b);}
+INLINE(Vdwu,VDWU_AVGN) (Vdwu a, Vdwu b) {return DWU_AVGN(a, b);}
+INLINE(Vdwi,VDWI_AVGN) (Vdwi a, Vdwi b) {return DWI_AVGN(a, b);}
+INLINE(Vddu,VDDU_AVGN) (Vddu a, Vddu b) {return DDU_AVGN(a, b);}
+INLINE(Vddi,VDDI_AVGN) (Vddi a, Vddi b) {return DDI_AVGN(a, b);}
+INLINE(Vqbu,VQBU_AVGN) (Vqbu a, Vqbu b) {return QBU_AVGN(a, b);}
+INLINE(Vqbi,VQBI_AVGN) (Vqbi a, Vqbi b) {return QBI_AVGN(a, b);}
+INLINE(Vqbc,VQBC_AVGN) (Vqbc a, Vqbc b) 
+{
+    a.V0 = QBC_AVGN(a.V0, b.V0);
+    return  a;
+}
+
+INLINE(Vqhu,VQHU_AVGN) (Vqhu a, Vqhu b) {return QHU_AVGN(a, b);}
+INLINE(Vqhi,VQHI_AVGN) (Vqhi a, Vqhi b) {return QHI_AVGN(a, b);}
+INLINE(Vqwu,VQWU_AVGN) (Vqwu a, Vqwu b) {return QWU_AVGN(a, b);}
+INLINE(Vqwi,VQWI_AVGN) (Vqwi a, Vqwi b) {return QWI_AVGN(a, b);}
+INLINE(Vqdu,VQDU_AVGN) (Vqdu a, Vqdu b) {return QDU_AVGN(a, b);}
+INLINE(Vqdi,VQDI_AVGN) (Vqdi a, Vqdi b) {return QDI_AVGN(a, b);}
+INLINE(Vqqu,VQQU_AVGN) (Vqqu a, Vqqu b) {return VQQU_AVGL(a, b);}
+INLINE(Vqqi,VQQI_AVGN) (Vqqi a, Vqqi b) {return VQQI_AVGL(a, b);}
+
+#if 0 // _LEAVE_ARM_AVGN
+}
+#endif
+
+#if 0 // _ENTER_ARM_SUBL
+{
+#endif
 
 INLINE(Vwyu,VWYU_SUBL) (Vwyu a, Vwyu b)
 {
@@ -35248,11 +37855,6 @@ INLINE(Vqdf,VQDF_SUBD) (Vqdf a, Vqdf b)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,dcrlqu) (QUAD_UTYPE a) {return a-1;}
-INLINE(QUAD_ITYPE,dcrlqi) (QUAD_ITYPE a) {return dcrlqu(a);}
-#endif
-
 INLINE(Vwyu,VWYU_DCRL) (Vwyu a)
 {
     int32x2_t   z = vdup_n_s32(-1);
@@ -36103,6 +38705,235 @@ INLINE(Vqdi,VQDI_MULS) (Vqdi a, Vqdi b)
 }
 #endif
 
+
+#if 0 // _ENTER_ARM_MULR
+{
+#endif
+
+INLINE( uint8x8_t,DBU_MULR)  (uint8x8_t a,  uint8x8_t b)
+{
+    QUAD_VTYPE c = {.H.U=vmull_u8(a, b)};
+    return  vshrn_n_u16(c.H.U, 8);
+}
+
+INLINE(  int8x8_t,DBI_MULR)   (int8x8_t a,   int8x8_t b)
+{
+    QUAD_VTYPE c = {.H.U=vmull_s8(a, b)};
+    return  vshrn_n_s16(c.H.I, 8);
+}
+
+#if CHAR_MIN
+#   define DBC_MULR DBI_MULR
+#   define QBC_MULR QBI_MULR
+#else
+#   define DBC_MULR DBU_MULR
+#   define QBC_MULR QBU_MULR
+#endif
+
+INLINE(uint16x4_t,DHU_MULR) (uint16x4_t a, uint16x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vmull_u16(a, b)};
+    return  vshrn_n_u32(c.W.U, 16);
+}
+
+INLINE( int16x4_t,DHI_MULR)  (int16x4_t a,  int16x4_t b)
+{
+    QUAD_VTYPE c = {.W.I=vmull_s16(a, b)};
+    return  vshrn_n_s32(c.W.I, 16);
+}
+
+INLINE(uint32x2_t,DWU_MULR) (uint32x2_t a, uint32x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vmull_u32(a, b)};
+    return  vshrn_n_u64(c.D.U, 32);
+}
+
+INLINE( int32x2_t,DWI_MULR)  (int32x2_t a,  int32x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vmull_s32(a, b)};
+    return  vshrn_n_s64(c.D.I, 32);
+}
+
+INLINE(uint64x1_t,DDU_MULR) (uint64x1_t a, uint64x1_t b)
+{
+    QUAD_UTYPE x = vget_lane_u64(a, 0);
+    QUAD_UTYPE y = vget_lane_u64(b, 0);
+    x = (x*y)>>64;
+    return  vdup_n_u64(x);
+}
+
+INLINE( int64x1_t,DDI_MULR)  (int64x1_t a,  int64x1_t b)
+{
+    QUAD_ITYPE x = vget_lane_s64(a, 0);
+    QUAD_ITYPE y = vget_lane_s64(b, 0);
+    x = (x*y)>>64;
+    return  vdup_n_s64(x);
+}
+
+INLINE(uint8x16_t,QBU_MULR)  (uint8x16_t a,  uint8x16_t b)
+{
+    uint8x8_t   x=vget_low_u8(a), y=vget_low_u8(b), z;
+    uint16x8_t  c = vmull_u8(x, y);
+    z = vshrn_n_u16(c, 8);
+    x=vget_high_u8(a), y=vget_high_u8(b);
+    c = vmull_u8(x, y);
+    x = vshrn_n_u16(c, 8);
+    return vcombine_u8(x, z);
+}
+
+INLINE( int8x16_t,QBI_MULR)  (int8x16_t a,  int8x16_t b)
+{
+    int8x8_t   x=vget_low_s8(a), y=vget_low_s8(b), z;
+    int16x8_t  c = vmull_s8(x, y);
+    z = vshrn_n_s16(c, 8);
+    x=vget_high_s8(a), y=vget_high_s8(b);
+    c = vmull_s8(x, y);
+    x = vshrn_n_s16(c, 8);
+    return  vcombine_s8(x, z);
+}
+
+INLINE(uint16x8_t,QHU_MULR)  (uint16x8_t a,  uint16x8_t b)
+{
+    uint16x4_t   x=vget_low_u16(a), y=vget_low_u16(b), z;
+    uint32x4_t  c = vmull_u16(x, y);
+    z = vshrn_n_u32(c, 16);
+    x=vget_high_u16(a), y=vget_high_u16(b);
+    c = vmull_u16(x, y);
+    x = vshrn_n_u32(c, 16);
+    return  vcombine_u16(x, z);
+}
+
+INLINE(int16x8_t,QHI_MULR)  (int16x8_t a,  int16x8_t b)
+{
+    int16x4_t  x=vget_low_s16(a), y=vget_low_s16(b), z;
+    int32x4_t  c = vmull_s16(x, y);
+    z = vshrn_n_s32(c, 16);
+    x=vget_high_s16(a), y=vget_high_s16(b);
+    c = vmull_s16(x, y);
+    x = vshrn_n_s32(c, 16);
+    return  vcombine_s16(x, z);
+}
+
+INLINE(uint32x4_t,QWU_MULR)  (uint32x4_t a,  uint32x4_t b)
+{
+    uint32x2_t   x=vget_low_u32(a), y=vget_low_u32(b), z;
+    uint64x2_t  c = vmull_u32(x, y);
+    x=vget_high_u32(a), y=vget_high_u32(b);
+    z = vshrn_n_u64(c, 32);
+    c = vmull_u32(x, y);
+    x = vshrn_n_u64(c, 32);
+    return  vcombine_u32(x, z);
+}
+
+
+INLINE( int32x4_t,QWI_MULR)   (int32x4_t a,   int32x4_t b)
+{
+    int32x2_t   x=vget_low_s32(a), y=vget_low_s32(b), z;
+    int64x2_t   c = vmull_s32(x, y);
+    x=vget_high_s32(a), y=vget_high_s32(b);
+    z = vshrn_n_s64(c, 32);
+    c = vmull_s32(x, y);
+    x = vshrn_n_s64(c, 32);
+    return  vcombine_s32(x, z);
+}
+
+INLINE(uint64x2_t,QDU_MULR)  (uint64x2_t a,  uint64x2_t b)
+{
+    uint64x1_t x, y, z;
+    x = vget_low_u64(a);
+    y = vget_low_u64(b);
+    z = DDU_MULR(x, y);
+    x = vget_high_u64(a);
+    y = vget_high_u64(b);
+    return vcombine_u64(z, DDU_MULR(x, y));
+    
+}
+
+INLINE( int64x2_t,QDI_MULR)   (int64x2_t a,   int64x2_t b)
+{
+    int64x1_t x, y, z;
+    x = vget_low_s64(a);
+    y = vget_low_s64(b);
+    z = DDI_MULR(x, y);
+    x = vget_high_s64(a);
+    y = vget_high_s64(b);
+    return  vcombine_s64(z, DDI_MULR(x, y));
+    
+}
+
+INLINE(Vwbu,VWBU_MULR) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_MULR(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_MULR) (Vwbi a, Vwbi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBI_MULR(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhu,VWHU_MULR) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.U = DHU_MULR(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_MULR) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHI_MULR(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwwu,VWWU_MULR) (Vwwu a, Vwwu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.W.U = DWU_MULR(x.W.U, y.W.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwwi,VWWI_MULR) (Vwwi a, Vwwi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.W.I = DWI_MULR(x.W.I, y.W.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vdbu,VDBU_MULR) (Vdbu a, Vdbu b) {return DBU_MULR(a, b);}
+INLINE(Vdbi,VDBI_MULR) (Vdbi a, Vdbi b) {return DBI_MULR(a, b);}
+INLINE(Vdbc,VDBC_MULR) (Vdbc a, Vdbc b) {a.V0=DBC_MULR(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_MULR) (Vdhu a, Vdhu b) {return DHU_MULR(a, b);}
+INLINE(Vdhi,VDHI_MULR) (Vdhi a, Vdhi b) {return DHI_MULR(a, b);}
+INLINE(Vdwu,VDWU_MULR) (Vdwu a, Vdwu b) {return DWU_MULR(a, b);}
+INLINE(Vdwi,VDWI_MULR) (Vdwi a, Vdwi b) {return DWI_MULR(a, b);}
+INLINE(Vddu,VDDU_MULR) (Vddu a, Vddu b) {return DDU_MULR(a, b);}
+INLINE(Vddi,VDDI_MULR) (Vddi a, Vddi b) {return DDI_MULR(a, b);}
+
+INLINE(Vqbu,VQBU_MULR) (Vqbu a, Vqbu b) {return QBU_MULR(a, b);}
+INLINE(Vqbi,VQBI_MULR) (Vqbi a, Vqbi b) {return QBI_MULR(a, b);}
+INLINE(Vqbc,VQBC_MULR) (Vqbc a, Vqbc b) {a.V0=QBC_MULR(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_MULR) (Vqhu a, Vqhu b) {return QHU_MULR(a, b);}
+INLINE(Vqhi,VQHI_MULR) (Vqhi a, Vqhi b) {return QHI_MULR(a, b);}
+INLINE(Vqwu,VQWU_MULR) (Vqwu a, Vqwu b) {return QWU_MULR(a, b);}
+INLINE(Vqwi,VQWI_MULR) (Vqwi a, Vqwi b) {return QWI_MULR(a, b);}
+INLINE(Vqdu,VQDU_MULR) (Vqdu a, Vqdu b) {return QDU_MULR(a, b);}
+INLINE(Vqdi,VQDI_MULR) (Vqdi a, Vqdi b) {return QDI_MULR(a, b);}
+
+
+#if 0 // _LEAVE_ARM_MULR
+}
+#endif
+
 #if 0 // _ENTER_ARM_MULH
 {
 #endif
@@ -36710,41 +39541,9 @@ INLINE(Vqdf,VQDF_MULD) (Vqdf a, Vqdf b)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_FAML)  (_Bool a,   _Bool b,   _Bool c) {return a+b*c;}
-INLINE(  uchar, UCHAR_FAML)  (uchar a,   uchar b,   uchar c) {return a+b*c;}
-INLINE(  schar, SCHAR_FAML)  (schar a,   schar b,   schar c) {return a+b*c;}
-INLINE(   char,  CHAR_FAML)   (char a,    char b,    char c) {return a+b*c;}
-INLINE( ushort, USHRT_FAML) (ushort a,  ushort b,  ushort c) {return a+b*c;}
-INLINE(  short,  SHRT_FAML)  (short a,   short b,   short c) {return a+b*c;}
-INLINE(   uint,  UINT_FAML)   (uint a,    uint b,    uint c) {return a+b*c;}
-INLINE(    int,   INT_FAML)    (int a,     int b,     int c) {return a+b*c;}
-INLINE(  ulong, ULONG_FAML)  (ulong a,   ulong b,   ulong c) {return a+b*c;}
-INLINE(   long,  LONG_FAML)   (long a,    long b,    long c) {return a+b*c;}
-INLINE( ullong,ULLONG_FAML) (ullong a,  ullong b,  ullong c) {return a+b*c;}
-INLINE(  llong, LLONG_FAML)  (llong a,   llong b,   llong c) {return a+b*c;}
-
 INLINE(flt16_t, FLT16_FAML)(flt16_t a, flt16_t b, flt16_t c) {return a+b*c;}
 INLINE(  float,   FLT_FAML)  (float a,   float b,   float c) {return a+b*c;}
 INLINE(  float,   DBL_FAML) (double a,  double b,  double c) {return a+b*c;}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,famlqu) (QUAD_UTYPE a, QUAD_UTYPE b, QUAD_UTYPE c)
-{
-    return  a+(b*c);
-}
-
-INLINE(QUAD_ITYPE,famlqi) (QUAD_ITYPE a, QUAD_ITYPE b, QUAD_ITYPE c)
-{
-    return  a+(b*c);
-}
-
-INLINE(QUAD_FTYPE,famlqf) (QUAD_FTYPE a, QUAD_FTYPE b, QUAD_FTYPE c)
-{
-    return  a+(b*c);
-}
-
-#endif
 
 INLINE(Vwyu,VWYU_FAML) (Vwyu a, Vwyu b, Vwyu c)
 {
@@ -36987,88 +39786,6 @@ INLINE(Vqdi,VQDI_FAML) (Vqdi a, Vqdi b, Vqdi c)
 {
 #endif
 
-INLINE(ushort, USHRT_FAM2) (ushort a,  uint8_t b,  uint8_t c)
-{
-    return a+(uint) b*c;
-}
-
-INLINE( short,  SHRT_FAM2)  (short a,   int8_t b,   int8_t c)
-{
-    return a+(int) b*c;
-}
-
-INLINE(  uint,  UINT_FAM2)   (uint a, uint16_t b, uint16_t c)
-{
-    return a+(uint) b*c;
-}
-
-INLINE(   int,   INT_FAM2)    (int a,  int16_t b,  int16_t c)
-{
-    return a+(int) b*c;
-}
-
-#if DWRD_NLONG == 2
-
-INLINE( ulong, ULONG_FAM2)  (ulong a, uint16_t b, uint16_t c)
-{
-    return a+(ulong) b*c;
-}
-
-INLINE(  long,  LONG_FAM2)   (long a,  int16_t b,  int16_t c)
-{
-    return a+(long) b*c;
-}
-
-#else
-
-INLINE( ulong, ULONG_FAM2)  (ulong a, uint32_t b, uint32_t c)
-{
-    return a+(ulong) b*c;
-}
-
-INLINE(  long,  LONG_FAM2)   (long a,  int32_t b,  int32_t c)
-{
-    return a+(long) b*c;
-}
-
-#endif
-
-#if QUAD_NLLONG == 2
-
-INLINE(ullong,ULLONG_FAM2) (ullong a, uint32_t b, uint32_t c)
-{
-    return a+(ullong) b*c;
-}
-
-INLINE( llong, LLONG_FAM2)  (llong a,  int32_t b,  int32_t c)
-{
-    return a+(llong) b*c;
-}
-
-INLINE(QUAD_UTYPE,fam2qu) (QUAD_UTYPE a, uint64_t b, uint64_t c)
-{
-    return a+(unsigned __int128) b*c;
-}
-
-INLINE(QUAD_ITYPE,fam2qi) (QUAD_ITYPE a,  int64_t b,  int64_t c)
-{
-    return a+(signed __int128) b*c;
-}
-
-#else
-
-INLINE(ullong,ULLONG_FAM2) (ullong a, uint64_t b, uint64_t c)
-{
-    return a+(ullong) b*c;
-}
-
-INLINE( llong, LLONG_FAM2)  (llong a,  int64_t b,  int64_t c)
-{
-    return a+(llong) b*c;
-}
-
-#endif
-
 INLINE(Vdhu,VDHU_FAM2) (Vdhu a, Vwbu b, Vwbu c)
 {
     return  vget_low_u16(
@@ -37273,6 +39990,194 @@ INLINE(Vqdf,VQDF_FAMF) (Vqdf a, Vqdf b, Vqdf c)
 }
 
 #if 0 // _LEAVE_ARM_FAMF
+}
+#endif
+
+#if 0 // _ENTER_ARM_FSML
+{
+#endif
+
+#define     DBU_FSML vmls_u8
+#define     DBI_FSML vmls_s8
+#if CHAR_MIN
+#   define  DBC_FSML vmls_s8
+#else
+#   define  DBC_FSML vmls_u8
+#endif
+
+#define     DHU_FSML vmls_u16
+#define     DHI_FSML vmls_s16
+
+#define     DWU_FSML vmls_u32
+#define     DWI_FSML vmls_s32
+
+INLINE(uint64x1_t,DDU_FSML) (uint64x1_t a, uint64x1_t b, uint64x1_t c)
+{
+    uint64_t p = vget_lane_u64(b, 0)*vget_lane_u64(c, 0);
+    b = vdup_n_u64(p);
+    return  vsub_u64(a, b);
+}
+
+INLINE( int64x1_t,DDI_FSML)  (int64x1_t a,  int64x1_t b,  int64x1_t c)
+{
+    DWRD_VTYPE x={.D.I=a}, y={.D.I=b}, z={.D.I=c};
+    x.D.U = DDU_FSML(x.D.U, y.D.U, z.D.U);
+    return  x.D.I;
+}
+
+#define     QBU_FSML vmlsq_u8
+#define     QBI_FSML vmlsq_s8
+#if CHAR_MIN
+#   define  QBC_FSML vmlsq_s8
+#else
+#   define  QBC_FSML vmlsq_u8
+#endif
+
+#define     QHU_FSML vmlsq_u16
+#define     QHI_FSML vmlsq_s16
+
+#define     QWU_FSML vmlsq_u32
+#define     QWI_FSML vmlsq_s32
+
+INLINE(uint64x2_t,QDU_FSML) (uint64x2_t a, uint64x2_t b, uint64x2_t c)
+{
+    uint64_t p;
+    p = vgetq_lane_u64(b, 0)*vgetq_lane_u64(c, 0);
+    b = vsetq_lane_u64(p, b, 0);
+    p = vgetq_lane_u64(b, 1)*vgetq_lane_u64(c, 1);
+    b = vsetq_lane_u64(p, b, 1);
+    return  vsubq_u64(a, b);
+}
+
+INLINE( int64x2_t,QDI_FSML)  (int64x2_t a,  int64x2_t b,  int64x2_t c)
+{
+    QUAD_VTYPE x={.D.I=a}, y={.D.I=b}, z={.D.I=c};
+    x.D.U = QDU_FSML(x.D.U, y.D.U, z.D.U);
+    return  x.D.I;
+}
+
+INLINE(float, WBZ_FSML) (float a, float b, float c)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}}, z={.W.F={c}};
+    x.B.U = DBU_FSML(x.B.U, y.B.U, z.B.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float, WHZ_FSML) (float a, float b, float c)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}}, z={.W.F={c}};
+    x.H.U = DHU_FSML(x.H.U, y.H.U, z.H.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float, WWZ_FSML) (float a, float b, float c)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}}, z={.W.F={c}};
+    x.W.U = DHU_FSML(x.W.U, y.W.U, z.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+
+INLINE(Vwbu,VWBU_FSML) (Vwbu a, Vwbu b, Vwbu c) 
+{
+    a.V0 = WBZ_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_FSML) (Vwbi a, Vwbi b, Vwbi c) 
+{
+    a.V0 = WBZ_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_FSML) (Vwbc a, Vwbc b, Vwbc c) 
+{
+    a.V0 = WBZ_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+
+INLINE(Vwhu,VWHU_FSML) (Vwhu a, Vwhu b, Vwhu c) 
+{
+    a.V0 = WHZ_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_FSML) (Vwhi a, Vwhi b, Vwhi c) 
+{
+    a.V0 = WHZ_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+
+INLINE(Vwwu,VWWU_FSML) (Vwwu a, Vwwu b, Vwwu c) 
+{
+    a.V0 = WHZ_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+INLINE(Vwwi,VWWI_FSML) (Vwwi a, Vwwi b, Vwwi c) 
+{
+    a.V0 = WHZ_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+INLINE(Vdbu,VDBU_FSML) (Vdbu a, Vdbu b, Vdbu c) {return DBU_FSML(a, b, c);}
+INLINE(Vdbi,VDBI_FSML) (Vdbi a, Vdbi b, Vdbi c) {return DBI_FSML(a, b, c);}
+INLINE(Vdbc,VDBC_FSML) (Vdbc a, Vdbc b, Vdbc c)
+{
+    a.V0 = DBC_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+INLINE(Vdhu,VDHU_FSML) (Vdhu a, Vdhu b, Vdhu c) {return DHU_FSML(a, b, c);}
+INLINE(Vdhi,VDHI_FSML) (Vdhi a, Vdhi b, Vdhi c) {return DHI_FSML(a, b, c);}
+
+INLINE(Vdwu,VDWU_FSML) (Vdwu a, Vdwu b, Vdwu c) {return DWU_FSML(a, b, c);}
+INLINE(Vdwi,VDWI_FSML) (Vdwi a, Vdwi b, Vdwi c) {return DWI_FSML(a, b, c);}
+
+INLINE(Vddu,VDDU_FSML) (Vddu a, Vddu b, Vddu c) {return DDU_FSML(a, b, c);}
+INLINE(Vddi,VDDI_FSML) (Vddi a, Vddi b, Vddi c) {return DDI_FSML(a, b, c);}
+
+
+INLINE(Vqbu,VQBU_FSML) (Vqbu a, Vqbu b, Vqbu c) {return QBU_FSML(a, b, c);}
+INLINE(Vqbi,VQBI_FSML) (Vqbi a, Vqbi b, Vqbi c) {return QBI_FSML(a, b, c);}
+INLINE(Vqbc,VQBC_FSML) (Vqbc a, Vqbc b, Vqbc c)
+{
+    a.V0 = QBC_FSML(a.V0, b.V0, c.V0);
+    return a;
+}
+
+INLINE(Vqhu,VQHU_FSML) (Vqhu a, Vqhu b, Vqhu c) {return QHU_FSML(a, b, c);}
+INLINE(Vqhi,VQHI_FSML) (Vqhi a, Vqhi b, Vqhi c) {return QHI_FSML(a, b, c);}
+
+INLINE(Vqwu,VQWU_FSML) (Vqwu a, Vqwu b, Vqwu c) {return QWU_FSML(a, b, c);}
+INLINE(Vqwi,VQWI_FSML) (Vqwi a, Vqwi b, Vqwi c) {return QWI_FSML(a, b, c);}
+
+INLINE(Vqdu,VQDU_FSML) (Vqdu a, Vqdu b, Vqdu c) {return QDU_FSML(a, b, c);}
+INLINE(Vqdi,VQDI_FSML) (Vqdi a, Vqdi b, Vqdi c) {return QDI_FSML(a, b, c);}
+
+INLINE(Vqqu,VQQU_FSML) (Vqqu a, Vqqu b, Vqqu c)
+{
+    QUAD_VTYPE x={.Q.U=a}, y={.Q.U=b}, z={.Q.U=c};
+#if 1
+    x.U -= y.U*z.U;
+#else
+#endif
+    return x.Q.U;
+}
+
+INLINE(Vqqi,VQQI_FSML) (Vqqi a, Vqqi b, Vqqi c)
+{
+    QUAD_VTYPE x={.Q.I=a}, y={.Q.I=b}, z={.Q.I=c};
+#if 1
+    x.U -= y.U*z.U;
+#else
+#endif
+    return  x.Q.I;
+}
+
+#if 0 // _LEAVE_ARM_FSML
 }
 #endif
 
@@ -37749,16 +40654,11 @@ INLINE( double,VQDF_SUMF) (Vqdf a)
 }
 #endif
 
-#if 0 // _ENTER_ARM_MODL
+#if 0 // _ENTER_ARM_REML
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,modloqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a%b;}
-INLINE(QUAD_ITYPE,modloqi) (QUAD_ITYPE a, QUAD_UTYPE b) {return a%b;}
-#endif
-
-INLINE(Vwbu,VWBU_MODL) (Vwbu a, Vwbu b)
+INLINE(Vwbu,VWBU_REML) (Vwbu a, Vwbu b)
 {
     return  UINT8_NEWW(
         (VWBU_GET1(a, 0)%VWBU_GET1(b, 0)),
@@ -37768,7 +40668,7 @@ INLINE(Vwbu,VWBU_MODL) (Vwbu a, Vwbu b)
     );
 }
 
-INLINE(Vwbi,VWBI_MODL) (Vwbi a, Vwbi b)
+INLINE(Vwbi,VWBI_REML) (Vwbi a, Vwbi b)
 {
     return  VWBI_NEWL(
         (VWBI_GET1(a, 0)%VWBI_GET1(b, 0)),
@@ -37778,7 +40678,7 @@ INLINE(Vwbi,VWBI_MODL) (Vwbi a, Vwbi b)
     );
 }
 
-INLINE(Vwbc,VWBC_MODL) (Vwbc a, Vwbc b)
+INLINE(Vwbc,VWBC_REML) (Vwbc a, Vwbc b)
 {
     return  VWBC_NEWL(
         (VWBC_GET1(a, 0)%VWBC_GET1(b, 0)),
@@ -37788,7 +40688,7 @@ INLINE(Vwbc,VWBC_MODL) (Vwbc a, Vwbc b)
     );
 }
 
-INLINE(Vwhu,VWHU_MODL) (Vwhu a, Vwhu b)
+INLINE(Vwhu,VWHU_REML) (Vwhu a, Vwhu b)
 {
     return  VWHU_NEWL(
         (VWHU_GET1(a, 0)%VWHU_GET1(b, 0)),
@@ -37796,7 +40696,7 @@ INLINE(Vwhu,VWHU_MODL) (Vwhu a, Vwhu b)
     );
 }
 
-INLINE(Vwhi,VWHI_MODL) (Vwhi a, Vwhi b)
+INLINE(Vwhi,VWHI_REML) (Vwhi a, Vwhi b)
 {
     return  VWHI_NEWL(
         (VWHI_GET1(a, 0)%VWHI_GET1(b, 0)),
@@ -37804,18 +40704,18 @@ INLINE(Vwhi,VWHI_MODL) (Vwhi a, Vwhi b)
     );
 }
 
-INLINE(Vwwu,VWWU_MODL) (Vwwu a, Vwwu b)
+INLINE(Vwwu,VWWU_REML) (Vwwu a, Vwwu b)
 {
     return  UINT_ASTV( (VWWU_ASTV(a)%VWWU_ASTV(b)) );
 }
 
-INLINE(Vwwi,VWWI_MODL) (Vwwi a, Vwwi b)
+INLINE(Vwwi,VWWI_REML) (Vwwi a, Vwwi b)
 {
     return  INT_ASTV( (VWWI_ASTV(a)%VWWI_ASTV(b)) );
 }
 
 
-INLINE(Vdbu,VDBU_MODL) (Vdbu a, Vdbu b)
+INLINE(Vdbu,VDBU_REML) (Vdbu a, Vdbu b)
 {
     return  VDBU_NEWL(
         (VDBU_GET1(a,0)%VDBU_GET1(b,0)),
@@ -37829,7 +40729,7 @@ INLINE(Vdbu,VDBU_MODL) (Vdbu a, Vdbu b)
     );
 }
 
-INLINE(Vdbi,VDBI_MODL) (Vdbi a, Vdbi b)
+INLINE(Vdbi,VDBI_REML) (Vdbi a, Vdbi b)
 {
     return  VDBI_NEWL(
         (VDBI_GET1(a,0)%VDBI_GET1(b,0)),
@@ -37843,7 +40743,7 @@ INLINE(Vdbi,VDBI_MODL) (Vdbi a, Vdbi b)
     );
 }
 
-INLINE(Vdbc,VDBC_MODL) (Vdbc a, Vdbc b)
+INLINE(Vdbc,VDBC_REML) (Vdbc a, Vdbc b)
 {
     return  VDBC_NEWL(
         (VDBC_GET1(a,0)%VDBC_GET1(b,0)),
@@ -37857,7 +40757,7 @@ INLINE(Vdbc,VDBC_MODL) (Vdbc a, Vdbc b)
     );
 }
 
-INLINE(Vdhu,VDHU_MODL) (Vdhu a, Vdhu b)
+INLINE(Vdhu,VDHU_REML) (Vdhu a, Vdhu b)
 {
     return VDHU_NEWL(
         (VDHU_GET1(a, 0)%VDHU_GET1(b, 0)),
@@ -37867,7 +40767,7 @@ INLINE(Vdhu,VDHU_MODL) (Vdhu a, Vdhu b)
     );
 }
 
-INLINE(Vdhi,VDHI_MODL) (Vdhi a, Vdhi b)
+INLINE(Vdhi,VDHI_REML) (Vdhi a, Vdhi b)
 {
     return VDHI_NEWL(
         (VDHI_GET1(a, 0)%VDHI_GET1(b, 0)),
@@ -37877,7 +40777,7 @@ INLINE(Vdhi,VDHI_MODL) (Vdhi a, Vdhi b)
     );
 }
 
-INLINE(Vdwu,VDWU_MODL) (Vdwu a, Vdwu b)
+INLINE(Vdwu,VDWU_REML) (Vdwu a, Vdwu b)
 {
     return VDWU_NEWL(
         (VDWU_GET1(a, 0)%VDWU_GET1(b, 0)),
@@ -37885,7 +40785,7 @@ INLINE(Vdwu,VDWU_MODL) (Vdwu a, Vdwu b)
     );
 }
 
-INLINE(Vdwi,VDWI_MODL) (Vdwi a, Vdwi b)
+INLINE(Vdwi,VDWI_REML) (Vdwi a, Vdwi b)
 {
     return VDWI_NEWL(
         (VDWI_GET1(a, 0)%VDWI_GET1(b, 0)),
@@ -37893,18 +40793,18 @@ INLINE(Vdwi,VDWI_MODL) (Vdwi a, Vdwi b)
     );
 }
 
-INLINE(Vddu,VDDU_MODL) (Vddu a, Vddu b)
+INLINE(Vddu,VDDU_REML) (Vddu a, Vddu b)
 {
     return  UINT64_ASTV( (VDDU_ASTV(a)%VDDU_ASTV(b)) );
 }
 
-INLINE(Vddi,VDDI_MODL) (Vddi a, Vddi b)
+INLINE(Vddi,VDDI_REML) (Vddi a, Vddi b)
 {
     return  INT64_ASTV( (VDDI_ASTV(a)%VDDI_ASTV(b)) );
 }
 
 
-INLINE(Vqbu,VQBU_MODL) (Vqbu a, Vqbu b)
+INLINE(Vqbu,VQBU_REML) (Vqbu a, Vqbu b)
 {
     return  VQBU_NEWL(
         (VQBU_GET1(a, 0)%VQBU_GET1(b, 0)),
@@ -37926,7 +40826,7 @@ INLINE(Vqbu,VQBU_MODL) (Vqbu a, Vqbu b)
     );
 }
 
-INLINE(Vqbi,VQBI_MODL) (Vqbi a, Vqbi b)
+INLINE(Vqbi,VQBI_REML) (Vqbi a, Vqbi b)
 {
     return  VQBI_NEWL(
         (VQBI_GET1(a, 0)%VQBI_GET1(b, 0)),
@@ -37949,7 +40849,7 @@ INLINE(Vqbi,VQBI_MODL) (Vqbi a, Vqbi b)
 }
 
 
-INLINE(Vqbc,VQBC_MODL) (Vqbc a, Vqbc b)
+INLINE(Vqbc,VQBC_REML) (Vqbc a, Vqbc b)
 {
     return  VQBC_NEWL(
         (VQBC_GET1(a, 0)%VQBC_GET1(b, 0)),
@@ -37971,7 +40871,7 @@ INLINE(Vqbc,VQBC_MODL) (Vqbc a, Vqbc b)
     );
 }
 
-INLINE(Vqhu,VQHU_MODL) (Vqhu a, Vqhu b)
+INLINE(Vqhu,VQHU_REML) (Vqhu a, Vqhu b)
 {
     return  VQHU_NEWL(
         (VQHU_GET1(a, 0)%VQHU_GET1(b, 0)),
@@ -37985,7 +40885,7 @@ INLINE(Vqhu,VQHU_MODL) (Vqhu a, Vqhu b)
     );
 }
 
-INLINE(Vqhi,VQHI_MODL) (Vqhi a, Vqhi b)
+INLINE(Vqhi,VQHI_REML) (Vqhi a, Vqhi b)
 {
     return  VQHI_NEWL(
         (VQHI_GET1(a, 0)%VQHI_GET1(b, 0)),
@@ -37999,7 +40899,7 @@ INLINE(Vqhi,VQHI_MODL) (Vqhi a, Vqhi b)
     );
 }
 
-INLINE(Vqwu,VQWU_MODL) (Vqwu a, Vqwu b)
+INLINE(Vqwu,VQWU_REML) (Vqwu a, Vqwu b)
 {
     return  VQWU_NEWL(
         (VQWU_GET1(a, 0)%VQWU_GET1(b, 0)),
@@ -38009,7 +40909,7 @@ INLINE(Vqwu,VQWU_MODL) (Vqwu a, Vqwu b)
     );
 }
 
-INLINE(Vqwi,VQWI_MODL) (Vqwi a, Vqwi b)
+INLINE(Vqwi,VQWI_REML) (Vqwi a, Vqwi b)
 {
     return  VQWI_NEWL(
         (VQWI_GET1(a, 0)%VQWI_GET1(b, 0)),
@@ -38019,7 +40919,7 @@ INLINE(Vqwi,VQWI_MODL) (Vqwi a, Vqwi b)
     );
 }
 
-INLINE(Vqdu,VQDU_MODL) (Vqdu a, Vqdu b)
+INLINE(Vqdu,VQDU_REML) (Vqdu a, Vqdu b)
 {
     return  VQDU_NEWL(
         (VQDU_GET1(a, 0)%VQDU_GET1(b, 0)),
@@ -38027,7 +40927,7 @@ INLINE(Vqdu,VQDU_MODL) (Vqdu a, Vqdu b)
     );
 }
 
-INLINE(Vqdi,VQDI_MODL) (Vqdi a, Vqdi b)
+INLINE(Vqdi,VQDI_REML) (Vqdi a, Vqdi b)
 {
     return  VQDI_NEWL(
         (VQDI_GET1(a, 0)%VQDI_GET1(b, 0)),
@@ -38035,15 +40935,15 @@ INLINE(Vqdi,VQDI_MODL) (Vqdi a, Vqdi b)
     );
 }
 
-#if 0 // _LEAVE_ARM_MODL
+#if 0 // _LEAVE_ARM_REML
 }
 #endif
 
-#if 0 // _ENTER_ARM_MOD2
+#if 0 // _ENTER_ARM_REM2
 {
 #endif
 
-INLINE(Vwbu,VDHU_MOD2) (Vdhu a, Vwbu b)
+INLINE(Vwbu,VDHU_REM2) (Vdhu a, Vwbu b)
 {
     return  UINT8_NEWW(
         (vget_lane_u16(a, 0)%VWBU_GET1(b, 0)),
@@ -38053,7 +40953,7 @@ INLINE(Vwbu,VDHU_MOD2) (Vdhu a, Vwbu b)
     );
 }
 
-INLINE(Vwbi,VDHI_MOD2) (Vdhi a, Vwbi b)
+INLINE(Vwbi,VDHI_REM2) (Vdhi a, Vwbi b)
 {
     return  VWBI_NEWL(
         (vget_lane_s16(a, 0)%VWBI_GET1(b, 0)),
@@ -38064,7 +40964,7 @@ INLINE(Vwbi,VDHI_MOD2) (Vdhi a, Vwbi b)
 }
 
 
-INLINE(Vwhu,VDWU_MOD2) (Vdwu a, Vwhu b)
+INLINE(Vwhu,VDWU_REM2) (Vdwu a, Vwhu b)
 {
     return  VWHU_NEWL(
         (vget_lane_u32(a, 0)%VWHU_GET1(b, 0)),
@@ -38072,7 +40972,7 @@ INLINE(Vwhu,VDWU_MOD2) (Vdwu a, Vwhu b)
     );
 }
 
-INLINE(Vwhi,VDWI_MOD2) (Vdwi a, Vwhi b)
+INLINE(Vwhi,VDWI_REM2) (Vdwi a, Vwhi b)
 {
     return  VWHI_NEWL(
         (vget_lane_s32(a, 0)%VWHI_GET1(b, 0)),
@@ -38081,18 +40981,18 @@ INLINE(Vwhi,VDWI_MOD2) (Vdwi a, Vwhi b)
 }
 
 
-INLINE(Vwwu,VDDU_MOD2) (Vddu a, Vwwu b)
+INLINE(Vwwu,VDDU_REM2) (Vddu a, Vwwu b)
 {
     return  UINT32_ASTV((vget_lane_u64(a, 0)%VWWU_ASTV(b)));
 }
 
-INLINE(Vwwi,VDDI_MOD2) (Vddi a, Vwwi b)
+INLINE(Vwwi,VDDI_REM2) (Vddi a, Vwwi b)
 {
     return  INT32_ASTV((vget_lane_s64(a, 0)%VWWI_ASTV(b)));
 }
 
 
-INLINE(Vdbu,VQHU_MOD2) (Vqhu a, Vdbu b)
+INLINE(Vdbu,VQHU_REM2) (Vqhu a, Vdbu b)
 {
     return  VDBU_NEWL(
         (vgetq_lane_u16(a, 0)%vget_lane_u8(b, 0)),
@@ -38106,7 +41006,7 @@ INLINE(Vdbu,VQHU_MOD2) (Vqhu a, Vdbu b)
     );
 }
 
-INLINE(Vdbi,VQHI_MOD2) (Vqhi a, Vdbi b)
+INLINE(Vdbi,VQHI_REM2) (Vqhi a, Vdbi b)
 {
     return  VDBU_NEWL(
         (vgetq_lane_s16(a, 0)%vget_lane_s8(b, 0)),
@@ -38121,7 +41021,7 @@ INLINE(Vdbi,VQHI_MOD2) (Vqhi a, Vdbi b)
 }
 
 
-INLINE(Vdhu,VQWU_MOD2) (Vqwu a, Vdhu b)
+INLINE(Vdhu,VQWU_REM2) (Vqwu a, Vdhu b)
 {
     return  VDHU_NEWL(
         (vgetq_lane_u32(a, 0)%vget_lane_u16(b, 0)),
@@ -38131,7 +41031,7 @@ INLINE(Vdhu,VQWU_MOD2) (Vqwu a, Vdhu b)
     );
 }
 
-INLINE(Vdhi,VQWI_MOD2) (Vqwi a, Vdhi b)
+INLINE(Vdhi,VQWI_REM2) (Vqwi a, Vdhi b)
 {
     return  VDHI_NEWL(
         (vgetq_lane_s32(a, 0)%vget_lane_s16(b, 0)),
@@ -38142,7 +41042,7 @@ INLINE(Vdhi,VQWI_MOD2) (Vqwi a, Vdhi b)
 }
 
 
-INLINE(Vdwu,VQDU_MOD2) (Vqdu a, Vdwu b)
+INLINE(Vdwu,VQDU_REM2) (Vqdu a, Vdwu b)
 {
     return  VDWU_NEWL(
         (vgetq_lane_u64(a, 0)%vget_lane_u32(b, 0)),
@@ -38150,7 +41050,7 @@ INLINE(Vdwu,VQDU_MOD2) (Vqdu a, Vdwu b)
     );
 }
 
-INLINE(Vdwi,VQDI_MOD2) (Vqdi a, Vdwi b)
+INLINE(Vdwi,VQDI_REM2) (Vqdi a, Vdwi b)
 {
     return  VDWI_NEWL(
         (vgetq_lane_s64(a, 0)%vget_lane_s32(b, 0)),
@@ -38158,7 +41058,7 @@ INLINE(Vdwi,VQDI_MOD2) (Vqdi a, Vdwi b)
     );
 }
 
-#if 0 // _LEAVE_ARM_MOD2
+#if 0 // _LEAVE_ARM_REM2
 }
 #endif
 
@@ -38166,16 +41066,23 @@ INLINE(Vdwi,VQDI_MOD2) (Vqdi a, Vdwi b)
 {
 #endif
 
-INLINE(QUAD_UTYPE,tstsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(int16_t,FLT16_TSTS) (flt16_t a, unsigned b)
 {
-    return  ((QUAD_UTYPE) 0)-(0 != (a&b));
+    HALF_TYPE z = {.F=a};
+    return  (z.U&b) ? -1 : 0;
 }
 
-INLINE(QUAD_ITYPE,tstsqi) (QUAD_ITYPE a, QUAD_UTYPE b)
+INLINE(int32_t,FLT_TSTS) (float a, unsigned b)
 {
-    return  ((QUAD_ITYPE) 0)-(0 != (a&b));
+    WORD_TYPE z = {.F=a};
+    return  (z.U&b) ? -1 : 0;
 }
 
+INLINE(int64_t,DBL_TSTS) (double a, uint64_t b)
+{
+    DWRD_TYPE z = {.F=a};
+    return  (z.U&b) ? -1 : 0;
+}
 
 INLINE(float,WBZ_TSTS) (float a, float b) 
 {
@@ -38364,19 +41271,26 @@ INLINE(Vqdi,VQDF_TSTS) (Vqdf a, Vqdu b)
 {
 #endif
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,tstyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(_Bool,FLT16_TSTY) (flt16_t a, unsigned b)
 {
-    return  0 != (a&b);
+#define FLT16_TSTY(A, B) ((_Bool) (B&(HALF_TYPE){.F=A}.U))
+    HALF_TYPE z = {.F=a};
+    return  b&z.U;
 }
 
-INLINE(QUAD_ITYPE,tstyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+INLINE(_Bool,FLT_TSTY) (float a, uint32_t b)
 {
-    return  0 != (a&b);
+#define FLT_TSTY(A, B) ((_Bool) (B&(WORD_TYPE){.F=A}.U))
+    HALF_TYPE z = {.F=a};
+    return  b&z.U;
 }
 
-#endif
+INLINE(_Bool,DBL_TSTY) (double a, uint64_t b)
+{
+#define DBL_TSTY(A, B) ((_Bool) (B&(DWRD_TYPE){.F=A}.U))
+    DWRD_TYPE z = {.F=a};
+    return  b&z.U;
+}
 
 INLINE(float,WBZ_TSTY) (float a, float b) 
 {
@@ -38590,6 +41504,35 @@ INLINE(Vqdi,VQDF_TSTY) (Vqdf a, Vqdu b)
     return  VQDU_ASTI(VQDU_TSTY(VQDF_ASTU(a), b));
 }
 
+INLINE(Vqqu,VQQU_TSTY) (Vqqu a, Vqqu b)
+{
+    a.V0 = vtstq_u64(a.V0, b.V0);
+    uint64x1_t l = vget_low_u64(a.V0);
+    uint64x1_t r = vget_high_u64(a.V0);
+    l = vorr_u64(l, r);
+    l = vshl_n_u64(l, 63);
+    a.V0 = vcombine_u64(l, vdup_n_u64(0));
+    return  a;
+}
+    
+INLINE(Vqqi,VQQI_TSTY) (Vqqi a, Vqqu b)
+{
+    b.V0 = vtstq_u64(vreinterpretq_u64_s64(a.V0), b.V0);
+    uint64x1_t l = vget_low_u64(b.V0);
+    uint64x1_t r = vget_high_u64(b.V0);
+    l = vorr_u64(l, r);
+    l = vshl_n_u64(l, 63);
+    b.V0 = vcombine_u64(l, vdup_n_u64(0));
+    a.V0 = vreinterpretq_u64_s64(b.V0);
+    return  a;
+}
+    
+INLINE(Vqqi,VQQF_TSTY) (Vqqf a, Vqqu b)
+{
+    return VQQI_TSTY(VQQF_ASTI(a), b);
+}
+ 
+
 #if 0 // _LEAVE_ARM_TSTY
 }
 #endif
@@ -38597,56 +41540,6 @@ INLINE(Vqdi,VQDF_TSTY) (Vqdf a, Vqdu b)
 #if 0 // _ENTER_ARM_CEQS
 {
 #endif
-
-INLINE(ptrdiff_t, ADDR_CEQS)
-(
-    void volatile const *a,
-    void volatile const *b
-)
-{
-    return (a == b) ? (NULL-((void *) INTPTR_C(1))) : 0;
-}
-
-INLINE(  _Bool,   BOOL_CEQS)   (_Bool a,   _Bool b) {return a==b;}
-INLINE(  uchar,  UCHAR_CEQS)   (uchar a,   uchar b)
-{
-    return  (a == b) ? UCHAR_MAX : 0;
-}
-
-INLINE(  schar,  SCHAR_CEQS)   (schar a,   schar b) {return  0-(a==b);}
-
-INLINE(   char,   CHAR_CEQS)    (char a,    char b)
-{
-    return  (a == b) ? '\xff' : '\x00';
-}
-
-INLINE( ushort,  USHRT_CEQS)  (ushort a,  ushort b)
-{
-    return  (a == b) ? USHRT_MAX : 0;
-}
-
-INLINE(  short,   SHRT_CEQS)   (short a,   short b) {return  0-(a==b);}
-
-INLINE(   uint,   UINT_CEQS)    (uint a,    uint b)
-{
-    return  (a == b) ? UINT_MAX : 0u;
-}
-
-INLINE(    int,    INT_CEQS)     (int a,     int b) {return  0-(a==b);}
-
-INLINE(  ulong,  ULONG_CEQS)   (ulong a,   ulong b)
-{
-    return  (a==b) ? ULONG_MAX : 0ul;
-}
-
-INLINE(   long,   LONG_CEQS)    (long a,    long b) {return  0l-(a==b);}
-
-INLINE( ullong, ULLONG_CEQS)  (ullong a,  ullong b)
-{
-    return  (a==b) ? ULLONG_MAX : 0ull;
-}
-
-INLINE(  llong,  LLONG_CEQS)   (llong a,   llong b) {return  0ll-(a==b);}
 
 INLINE(int16_t,  FLT16_CEQS) (flt16_t a, flt16_t b)
 {
@@ -38660,44 +41553,88 @@ INLINE(int16_t,  FLT16_CEQS) (flt16_t a, flt16_t b)
 INLINE(int32_t,    FLT_CEQS)   (float a,   float b) {return vceqs_f32(a, b);}
 INLINE(int64_t,    DBL_CEQS)  (double a,  double b) {return vceqd_f64(a, b);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,ceqsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(int64x2_t,QQF_ZEQS) (QUAD_FTYPE x)
 {
-    return  (QUAD_UTYPE) 0-(a==b);
+    QUAD_VTYPE p, n, c={.F=x};
+    DWRD_VTYPE s={.D.U=vdup_n_u64((1ULL<<63))};
+    p.D.U = vdupq_n_s64(0);
+    n.D.U = vcopyq_lane_u64(p.D.U, 1, s.D.U, 0);
+    p.D.U = vceqq_u64(p.D.U, c.D.U); // x==+0.0L
+    n.D.U = vceqq_u64(n.D.U, c.D.U); // x==-0.0L
+    c.D.U = vorrq_u64(p.D.U, n.D.U); // p|n
+    return  c.D.I;
 }
 
-INLINE(QUAD_ITYPE,ceqsqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+
+INLINE(int64x2_t,QQF_CEQS) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
-    return  (QUAD_ITYPE) 0-(a==b);
+    QUAD_VTYPE x, z, l={.F=a}, r={.F=b};
+
+    // exact match
+    x.D.U = vceqq_u64(l.D.U, r.D.U);
+
+    // !a
+    l.D.I = QQF_ZEQS(a);
+    
+    // !b
+    r.D.I = QQF_ZEQS(b);
+    
+    z.D.U = vandq_u64(l.D.U, r.D.U);
+    return  vorrq_u64(x.D.U, z.D.U);
 }
 
 INLINE(QUAD_ITYPE,ceqsqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
-    return  (QUAD_ITYPE) 0-(a==b);
+    QUAD_VTYPE c={.D.I=QQF_CEQS(a, b)};
+    return  c.I;
 }
 
+INLINE(float,WBZ_CEQS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vceq_u8(x.B.U, y.B.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WHZ_CEQS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vceq_u16(x.H.U, y.H.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WWZ_CEQS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vceq_u32(x.W.U, y.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WHF_CEQS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+#if defined(SPC_ARM_FP16_SIMD)
+    x.H.U = vceq_f16(x.H.F, y.H.F);
+#else
+    QUAD_VTYPE  z;
+    float32x4_t l = vcvt_f32_f16(x.H.F);
+    float32x4_t r = vcvt_f32_f16(y.H.F);
+    z.W.U = vceqq_f32(l, r);
+    x.H.U = vmovn_u32(z.W.U);
 #endif
+    return  vget_lane_f32(x.W.F, 0);
+}
 
-#define MY_CEQD(U, S, F, A, B)  \
-vreinterpret_##S(               \
-    vceq_##F(                   \
-        vreinterpret_##U(A),    \
-        vreinterpret_##U(B)     \
-    )                           \
-)
+INLINE(float,WWF_CEQS) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vceq_f32(x.W.F, y.W.F);
+    return  vget_lane_f32(x.W.F, 0);
+}
 
-#define MY_CEQQ(U, S, F, A, B)  \
-vreinterpretq_##S(              \
-    vceqq_##F(                  \
-        vreinterpretq_##U(A),   \
-        vreinterpretq_##U(B)    \
-    )                           \
-)
-
-#define     DYU_CEQS            vand_u64
+#define     DYU_CEQS 
 #define     DBU_CEQS            vceq_u8
-#define     DBI_CEQS(A, B)      MY_CEQD(s8_u8,u8_s8,u8,A,B)
+#define     DBI_CEQS(A, B) vreinterpret_s8_u8(vceq_s8(A,B))
 #if CHAR_MIN
 #   define  DBC_CEQS            DBI_CEQS
 #else
@@ -38705,218 +41642,98 @@ vreinterpretq_##S(              \
 #endif
 
 #define     DHU_CEQS            vceq_u16
-#define     DHI_CEQS(A, B)      MY_CEQD(s16_u16,u16_s16,u16,A,B)
+#define     DHI_CEQS(A, B) vreinterpret_s16_u16(vceq_s16(A,B))
+#if defined(SPC_ARM_FP16_SIMD)
+#   define  DHF_CEQS(A, B) vreinterpret_s16_u16(vceq_f16(A,B))
+#else
 INLINE(int16x4_t,DHF_CEQS) (float16x4_t a, float16x4_t b)
 {
-#if defined(SPC_ARM_FP16_SIMD)
-    return  vreinterpret_s16_u16(vceq_f16(a, b));
-#else
-    float32x4_t l = vcvt_f32_f16(a);
-    float32x4_t r = vcvt_f32_f16(a);
-    uint32x4_t  m = vceqq_f32(l, r);
-    return vreinterpret_s16_u16(vmovn_u32(m));
-#endif
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b};
+    QUAD_VTYPE l, r;
+    l.W.F = vcvt_f32_f16(x.H.F);
+    r.W.F = vcvt_f32_f16(y.H.F);
+    l.W.U = vceqq_f32(l.W.F, r.W.F);
+    x.H.U = vmovn_u32(l.W.U);
+    return x.H.I;
 }
-
-#define     DWU_CEQS            vceq_u32
-#define     DWI_CEQS(A, B)      MY_CEQD(s32_u32,u32_s32,u32,A,B)
-#define     DWF_CEQS(A, B)      MY_CEQD(f32_u32,u32_s32,u32,A,B)
-#define     DDU_CEQS            vceq_u64
-#define     DDI_CEQS(A, B)      MY_CEQD(s64_u64,u64_s64,u64,A,B)
-#define     DDF_CEQS(A, B)      MY_CEQD(f64_u64,u64_s64,u64,A,B)
-
-#define     QYU_CEQS            vandq_u64
-#define     QBU_CEQS            vceqq_u8
-#if CHAR_MIN
-#   define  QBC_CEQS            QBI_CEQS
-#else
-#   define  QBC_CEQS            QBU_CEQS
 #endif
 
-#define     QBI_CEQS(A, B)      MY_CEQQ(s8_u8,u8_s8,u8,A,B)
-#define     QHU_CEQS            vceqq_u16
-#define     QHI_CEQS(A, B)      MY_CEQQ(s16_u16,u16_s16,u16,A,B)
+#define     DWU_CEQS        vceq_u32
+#define     DWI_CEQS(A, B)  vreinterpret_s32_u32(vceq_s32(A,B))
+#define     DWF_CEQS(A, B)  vreinterpret_s32_u32(vceq_f32(A,B))
+#define     DDU_CEQS        vceq_u64
+#define     DDI_CEQS(A, B)  vreinterpret_s64_u64(vceq_s64(A,B))
+#define     DDF_CEQS(A, B)  vreinterpret_s64_u64(vceq_f64(A,B))
+
+#define     QBU_CEQS        vceqq_u8
+#define     QBI_CEQS(A, B)  vreinterpretq_s8_u8(vceqq_s8(A,B))
+#if CHAR_MIN
+#   define  QBC_CEQS        QBI_CEQS
+#else
+#   define  QBC_CEQS        QBU_CEQS
+#endif
+
+#define     QHU_CEQS        vceqq_u16
+#define     QHI_CEQS(A, B)  vreinterpretq_s16_u16(vceqq_s16(A,B))
+#if defined(SPC_ARM_FP16_SIMD)
+#   define  QHF_CEQS(A, B)  vreinterpretq_s16_u16(vceqq_f16(A,B))
+#else
 INLINE(int16x8_t,QHF_CEQS) (float16x8_t a, float16x8_t b)
 {
-#if defined(SPC_ARM_FP16_SIMD)
-    return  vreinterpretq_s16_u16(vceqq_f16(a, b));
-#else
-    float32x4_t al = vcvt_f32_f16(vget_low_f16(a));
-    float32x4_t ar = vcvt_f32_f16(vget_high_f16(a));
-    float32x4_t bl = vcvt_f32_f16(vget_low_f16(b));
-    float32x4_t br = vcvt_f32_f16(vget_high_f16(b));
-    uint32x4_t  cl = vceqq_f32(al, bl);
-    uint32x4_t  cr = vceqq_f32(ar, br);
-    return vreinterpretq_s16_u16(
-        vcombine_u16(
-            vmovn_u32(cl),
-            vmovn_u32(cr)
-        )
-    );
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    QUAD_VTYPE l, r;
+    z.W.F = vcvt_f32_f16(vget_low_f16(x.H.F));
+    r.W.F = vcvt_f32_f16(vget_low_f16(y.H.F));
+    l.W.U = vceqq_f32(z.W.F, r.W.F);
+    z.W.F = vcvt_f32_f16(vget_high_f16(z.H.F));
+    r.W.F = vcvt_f32_f16(vget_high_f16(y.H.F));
+    r.W.U = vceqq_f32(z.W.F, r.W.F);
+    z.H.U = vcombine_u16(vmovn_u32(l.W.U),vmovn_u32(r.W.U));
+    return  z.H.I;
 #endif
 }
 
-#define     QWU_CEQS            vceqq_u32
-#define     QWI_CEQS(A, B)      MY_CEQQ(s32_u32,u32_s32,u32,A,B)
-#define     QWF_CEQS(A, B)      MY_CEQQ(f32_u32,u32_s32,u32,A,B)
-#define     QDU_CEQS            vceqq_u64
-#define     QDI_CEQS(A, B)      MY_CEQQ(s64_u64,u64_s64,u64,A,B)
-#define     QDF_CEQS(A, B)      MY_CEQQ(f64_u64,u64_s64,u64,A,B)
+#define     QWU_CEQS        vceqq_u32
+#define     QWI_CEQS(A, B)  vreinterpretq_s32_u32(vceqq_s32(A,B))
+#define     QWF_CEQS(A, B)  vreinterpretq_s32_u32(vceqq_f32(A,B))
 
-INLINE(Vwyu,VWYU_CEQS) (Vwyu a, Vwyu b)
+#define     QDU_CEQS        vceqq_u64
+#define     QDI_CEQS(A, B)  vreinterpretq_s64_u64(vceqq_s64(A,B))
+#define     QDF_CEQS(A, B)  vreinterpretq_s64_u64(vceqq_f64(A,B))
+
+INLINE(uint64x2_t,QQU_CEQS) (uint64x2_t a, uint64x2_t b)
 {
-    return  WYU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u32(
-                vand_u32(
-                    vreinterpret_u32_f32(vdup_n_f32(VWYU_ASTM(a))),
-                    vreinterpret_u32_f32(vdup_n_f32(VWYU_ASTM(b)))
-                )
-            ),
-            0
-        )
-    );
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.D.U = vand_u64(l.D.U, r.D.U);
+    return  vdupq_lane_u64(l.D.U, 0);
 }
 
-INLINE(Vwbu,VWBU_CEQS) (Vwbu a, Vwbu b)
+INLINE(int64x2_t,QQI_CEQS) (int64x2_t a, int64x2_t b)
 {
-    float32x2_t l = vset_lane_f32(VWBU_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWBU_ASTM(a), r, 0);
-    uint8x8_t   p = vreinterpret_u8_f32(l);
-    uint8x8_t   q = vreinterpret_u8_f32(r);
-    return WBU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(DBU_CEQS(p, q)),
-            0
-        )
-    );
+    QUAD_VTYPE c = {.D.U=vceqq_s64(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.D.U = vand_u64(l.D.U, r.D.U);
+    return  vdupq_lane_s64(l.D.I, 0);
 }
 
-INLINE(Vwbi,VWBI_CEQS) (Vwbi a, Vwbi b)
-{
-    float32x2_t l = vset_lane_f32(VWBI_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWBI_ASTM(a), r, 0);
-    uint8x8_t   p = vreinterpret_u8_f32(l);
-    uint8x8_t   q = vreinterpret_u8_f32(r);
-    return  WBI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(DBU_CEQS(p, q)),
-            0
-        )
-    );
-}
+#define     VWYU_CEQS VWYU_XORN
+INLINE(Vwbu,VWBU_CEQS) (Vwbu a, Vwbu b) {a.V0=WBZ_CEQS(a.V0, b.V0); return a;}
+INLINE(Vwbi,VWBI_CEQS) (Vwbi a, Vwbi b) {a.V0=WBZ_CEQS(a.V0, b.V0); return a;}
+INLINE(Vwbc,VWBC_CEQS) (Vwbc a, Vwbc b) {a.V0=WBZ_CEQS(a.V0, b.V0); return a;}
+INLINE(Vwhu,VWHU_CEQS) (Vwhu a, Vwhu b) {a.V0=WHZ_CEQS(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHI_CEQS) (Vwhi a, Vwhi b) {a.V0=WHZ_CEQS(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHF_CEQS) (Vwhf a, Vwhf b) {return ((Vwhi){WHF_CEQS(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_CEQS) (Vwwu a, Vwwu b) {a.V0=WWZ_CEQS(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWI_CEQS) (Vwwi a, Vwwi b) {a.V0=WWZ_CEQS(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWF_CEQS) (Vwwf a, Vwwf b) {return ((Vwwi){WWF_CEQS(a.V0,b.V0)});}
 
-INLINE(Vwbc,VWBC_CEQS) (Vwbc a, Vwbc b)
-{
-    float32x2_t l = vset_lane_f32(VWBC_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWBC_ASTM(a), r, 0);
-    uint8x8_t   p = vreinterpret_u8_f32(l);
-    uint8x8_t   q = vreinterpret_u8_f32(r);
-    return  WBC_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(DBU_CEQS(p, q)),
-            0
-        )
-    );
-}
-
-
-INLINE(Vwhu,VWHU_CEQS) (Vwhu a, Vwhu b)
-{
-    float32x2_t l = vset_lane_f32(VWHU_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWHU_ASTM(a), r, 0);
-    uint16x4_t  p = vreinterpret_u16_f32(l);
-    uint16x4_t  q = vreinterpret_u16_f32(r);
-    return  WHU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u16(DHU_CEQS(p, q)),
-            0
-        )
-    );
-}
-
-INLINE(Vwhi,VWHI_CEQS) (Vwhi a, Vwhi b)
-{
-    float32x2_t l = vset_lane_f32(VWHI_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWHI_ASTM(a), r, 0);
-    uint16x4_t  p = vreinterpret_u16_f32(l);
-    uint16x4_t  q = vreinterpret_u16_f32(r);
-    return  WHI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u16(DHU_CEQS(p, q)),
-            0
-        )
-    );
-}
-
-INLINE(Vwhi,VWHF_CEQS) (Vwhf a, Vwhf b)
-{
-    float32x2_t l = vset_lane_f32(VWHF_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWHF_ASTM(a), r, 0);
-    uint16x4_t  p = vreinterpret_u16_f32(l);
-    uint16x4_t  q = vreinterpret_u16_f32(r);
-    return  WHI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u16(DHU_CEQS(p, q)),
-            0
-        )
-    );
-}
-
-
-INLINE(Vwwu,VWWU_CEQS) (Vwwu a, Vwwu b)
-{
-    float32x2_t l = vset_lane_f32(VWWU_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWWU_ASTM(a), r, 0);
-    uint32x2_t  p = vreinterpret_u32_f32(l);
-    uint32x2_t  q = vreinterpret_u32_f32(r);
-    return  WWU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u32(DWU_CEQS(p, q)),
-            0
-        )
-    );
-}
-
-INLINE(Vwwi,VWWI_CEQS) (Vwwi a, Vwwi b)
-{
-    float32x2_t l = vset_lane_f32(VWWI_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWWI_ASTM(a), r, 0);
-    uint32x2_t  p = vreinterpret_u32_f32(l);
-    uint32x2_t  q = vreinterpret_u32_f32(r);
-    return  WWI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u32(DWU_CEQS(p, q)),
-            0
-        )
-    );
-}
-
-INLINE(Vwwi,VWWF_CEQS) (Vwwf a, Vwwf b)
-{
-    float32x2_t l = vset_lane_f32(VWWF_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWWF_ASTM(a), r, 0);
-    uint32x2_t  p = vreinterpret_u32_f32(l);
-    uint32x2_t  q = vreinterpret_u32_f32(r);
-    return  WWI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u32(DWU_CEQS(p, q)),
-            0
-        )
-    );
-}
-
+#define     VDYU_CEQS VDYU_XORN
 INLINE(Vdbu,VDBU_CEQS) (Vdbu a, Vdbu b) {return DBU_CEQS(a, b);}
 INLINE(Vdbi,VDBI_CEQS) (Vdbi a, Vdbi b) {return DBI_CEQS(a, b);}
-INLINE(Vdbc,VDBC_CEQS) (Vdbc a, Vdbc b)
-{
-#if CHAR_MIN
-    return  VDBI_ASBC(VDBI_CEQS(VDBC_ASBI(a), VDBC_ASBI(b)));
-#else
-    return  VDBU_ASBC(VDBU_CEQS(VDBC_ASBU(a), VDBC_ASBU(b)));
-#endif
-}
-
+INLINE(Vdbc,VDBC_CEQS) (Vdbc a, Vdbc b) {a.V0=DBC_CEQS(a.V0, b.V0); return a;}
 INLINE(Vdhu,VDHU_CEQS) (Vdhu a, Vdhu b) {return DHU_CEQS(a, b);}
 INLINE(Vdhi,VDHI_CEQS) (Vdhi a, Vdhi b) {return DHI_CEQS(a, b);}
 INLINE(Vdhi,VDHF_CEQS) (Vdhf a, Vdhf b) {return DHF_CEQS(a, b);}
@@ -38927,25 +41744,236 @@ INLINE(Vddu,VDDU_CEQS) (Vddu a, Vddu b) {return DDU_CEQS(a, b);}
 INLINE(Vddi,VDDI_CEQS) (Vddi a, Vddi b) {return DDI_CEQS(a, b);}
 INLINE(Vddi,VDDF_CEQS) (Vddf a, Vddf b) {return DDF_CEQS(a, b);}
 
-
-INLINE(Vqbu,VQBU_CEQS) (Vqbu a, Vqbu b) {return QBU_CEQS(a, b);}
-INLINE(Vqbi,VQBI_CEQS) (Vqbi a, Vqbi b) {return QBI_CEQS(a, b);}
-INLINE(Vqbc,VQBC_CEQS) (Vqbc a, Vqbc b)
-{
-    return  QBC_ASTV(QBC_CEQS(VQBC_ASTM(b), VQBC_ASTM(b)));
-}
-
-INLINE(Vqhu,VQHU_CEQS) (Vqhu a, Vqhu b) {return QHU_CEQS(a, b);}
-INLINE(Vqhi,VQHI_CEQS) (Vqhi a, Vqhi b) {return QHI_CEQS(a, b);}
-INLINE(Vqhi,VQHF_CEQS) (Vqhf a, Vqhf b) {return QHF_CEQS(a, b);}
-INLINE(Vqwu,VQWU_CEQS) (Vqwu a, Vqwu b) {return QWU_CEQS(a, b);}
-INLINE(Vqwi,VQWI_CEQS) (Vqwi a, Vqwi b) {return QWI_CEQS(a, b);}
-INLINE(Vqwi,VQWF_CEQS) (Vqwf a, Vqwf b) {return QWF_CEQS(a, b);}
-INLINE(Vqdu,VQDU_CEQS) (Vqdu a, Vqdu b) {return QDU_CEQS(a, b);}
-INLINE(Vqdi,VQDI_CEQS) (Vqdi a, Vqdi b) {return QDI_CEQS(a, b);}
-INLINE(Vqdi,VQDF_CEQS) (Vqdf a, Vqdf b) {return QDF_CEQS(a, b);}
+#define     VQYU_CEQS VQYU_XORN
+INLINE(Vqbu,VQBU_CEQS) (Vqbu a, Vqbu b) {return QBU_CEQS(a,b);}
+INLINE(Vqbi,VQBI_CEQS) (Vqbi a, Vqbi b) {return QBI_CEQS(a,b);}
+INLINE(Vqbc,VQBC_CEQS) (Vqbc a, Vqbc b) {a.V0=QBC_CEQS(a.V0, b.V0); return a;}
+INLINE(Vqhu,VQHU_CEQS) (Vqhu a, Vqhu b) {return QHU_CEQS(a,b);}
+INLINE(Vqhi,VQHI_CEQS) (Vqhi a, Vqhi b) {return QHI_CEQS(a,b);}
+INLINE(Vqhi,VQHF_CEQS) (Vqhf a, Vqhf b) {return QHF_CEQS(a,b);}
+INLINE(Vqwu,VQWU_CEQS) (Vqwu a, Vqwu b) {return QWU_CEQS(a,b);}
+INLINE(Vqwi,VQWI_CEQS) (Vqwi a, Vqwi b) {return QWI_CEQS(a,b);}
+INLINE(Vqwi,VQWF_CEQS) (Vqwf a, Vqwf b) {return QWF_CEQS(a,b);}
+INLINE(Vqdu,VQDU_CEQS) (Vqdu a, Vqdu b) {return QDU_CEQS(a,b);}
+INLINE(Vqdi,VQDI_CEQS) (Vqdi a, Vqdi b) {return QDI_CEQS(a,b);}
+INLINE(Vqdi,VQDF_CEQS) (Vqdf a, Vqdf b) {return QDF_CEQS(a,b);}
+INLINE(Vqqu,VQQU_CEQS) (Vqqu a, Vqqu b) {a.V0=QQU_CEQS(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQI_CEQS) (Vqqi a, Vqqi b) {a.V0=QQI_CEQS(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQF_CEQS) (Vqqf a, Vqqf b) {return ((Vqqi){QQF_CEQS(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_CEQS
+}
+#endif
+
+#if 0 // _ENTER_ARM_CEQL
+{
+#endif
+
+INLINE(int16_t,FLT16_CEQL) (flt16_t a, flt16_t b) {return a==b;}
+INLINE(int32_t,  FLT_CEQL)   (float a,   float b) {return a==b;}
+INLINE(int64_t,  DBL_CEQL)  (double a,  double b) {return a==b;}
+
+INLINE(QUAD_ITYPE,ceqlqf) (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE c = {.D.I=QQF_CEQS(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vdup_n_u64(0)};
+    l.D.U = vshr_n_u64(l.D.U, 63);
+    c.D.U = vcombine_u64(l.D.U, r.D.U);
+    return  c.I;
+}
+
+INLINE(float,WBZ_CEQL) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vceq_u8(x.B.U, y.B.U);
+    x.B.U = vshr_n_u8(x.B.U, 7);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WHZ_CEQL) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vceq_u16(x.H.U, y.H.U);
+    x.H.U = vshr_n_u16(x.H.U, 15);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WWZ_CEQL) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vceq_u32(x.W.U, y.W.U);
+    x.W.U = vshr_n_u32(x.W.U, 31);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WHF_CEQL) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+#if defined(SPC_ARM_FP16_SIMD)
+    x.H.U = vceq_f16(x.H.F, y.H.F);
+#else
+    QUAD_VTYPE  z;
+    float32x4_t l = vcvt_f32_f16(x.H.F);
+    float32x4_t r = vcvt_f32_f16(y.H.F);
+    z.W.U = vceqq_f32(l, r);
+    x.H.U = vmovn_u32(z.W.U);
+#endif
+    x.H.U = vshr_n_u16(x.H.U, 15);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WWF_CEQL) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vceq_f32(x.W.F, y.W.F);
+    x.W.U = vshr_n_u32(x.W.U, 31);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+
+#define     DBU_CEQL(A, B)            vshr_n_u8(vceq_u8(A,B),7)
+#define     DBI_CEQL(A, B)  VDBU_ASTI(vshr_n_u8(vceq_s8(A,B),7))
+#if CHAR_MIN
+#   define  DBC_CEQL        DBI_CEQL
+#else
+#   define  DBC_CEQL        DBU_CEQL
+#endif
+
+#define     DHU_CEQL(A, B)            vshr_n_u16(vceq_u16(A,B),15)
+#define     DHI_CEQL(A, B)  VDHU_ASTI(vshr_n_u16(vceq_s16(A,B),15))
+
+#if defined(SPC_ARM_FP16_SIMD)
+#   define  DHF_CEQL(A, B)  VDHU_ASTI(vshr_n_u16(vceq_f16(A,B),15))
+#else
+INLINE(int16x4_t,DHF_CEQL) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b};
+    QUAD_VTYPE l, r;
+    l.W.F = vcvt_f32_f16(x.H.F);
+    r.W.F = vcvt_f32_f16(y.H.F);
+    l.W.U = vceqq_f32(l.W.F, r.W.F);
+    x.H.U = vmovn_u32(l.W.U);
+    x.H.U = vshr_n_u16(x.H.U, 15);
+    return x.H.I;
+}
+
+#endif
+
+#define     DWU_CEQL(A, B)            vshr_n_u32(vceq_u32(A,B),31)
+#define     DWI_CEQL(A, B)  VDWU_ASTI(vshr_n_u32(vceq_s32(A,B),31))
+#define     DWF_CEQL(A, B)  VDWU_ASTI(vshr_n_u32(vceq_f32(A,B),31))
+
+#define     DDU_CEQL(A, B)            vshr_n_u64(vceq_u64(A,B),63)
+#define     DDI_CEQL(A, B)  VDDU_ASTI(vshr_n_u64(vceq_s64(A,B),63))
+#define     DDF_CEQL(A, B)  VDDU_ASTI(vshr_n_u64(vceq_f64(A,B),63))
+
+#define     QBU_CEQL(A, B)            vshrq_n_u8(vceqq_u8(A,B),7)
+#define     QBI_CEQL(A, B)  VQBU_ASTI(vshrq_n_u8(vceqq_s8(A,B),7))
+#if CHAR_MIN
+#   define  QBC_CEQL        QBI_CEQL
+#else
+#   define  QBC_CEQL        QBU_CEQL
+#endif
+
+#define     QHU_CEQL(A, B)            vshrq_n_u16(vceqq_u16(A,B),15)
+#define     QHI_CEQL(A, B)  VQHU_ASTI(vshrq_n_u16(vceqq_s16(A,B),15))
+#if defined(SPC_ARM_FP16_SIMD)
+#   define  QHF_CEQL(A, B)  VQHU_ASTI(vshrq_n_u16(vceqq_f16(A,B),15))
+#else
+INLINE(int16x8_t,QHF_CEQL) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE x={.H.F=a}, y={.H.F=b}, z;
+    QUAD_VTYPE l, r;
+    z.W.F = vcvt_f32_f16(vget_low_f16(x.H.F));
+    r.W.F = vcvt_f32_f16(vget_low_f16(y.H.F));
+    l.W.U = vceqq_f32(z.W.F, r.W.F);
+    z.W.F = vcvt_f32_f16(vget_high_f16(z.H.F));
+    r.W.F = vcvt_f32_f16(vget_high_f16(y.H.F));
+    r.W.U = vceqq_f32(z.W.F, r.W.F);
+    z.H.U = vcombine_u16(vmovn_u32(l.W.U),vmovn_u32(r.W.U));
+    z.H.U = vshlq_n_u16(z.H.U, 15);
+    return  z.H.I;
+}
+
+#endif
+
+#define     QWU_CEQL(A, B)            vshrq_n_u32(vceqq_u32(A,B),31)
+#define     QWI_CEQL(A, B)  VQWU_ASTI(vshrq_n_u32(vceqq_s32(A,B),31))
+#define     QWF_CEQL(A, B)  VQWU_ASTI(vshrq_n_u32(vceqq_f32(A,B),31))
+
+#define     QDU_CEQL(A, B)            vshrq_n_u64(vceqq_u64(A,B),63)
+#define     QDI_CEQL(A, B)  VQDU_ASTI(vshrq_n_u64(vceqq_s64(A,B),63))
+#define     QDF_CEQL(A, B)  VQDU_ASTI(vshrq_n_u64(vceqq_f64(A,B),63))
+
+
+INLINE(uint64x2_t,QQU_CEQL) (uint64x2_t a, uint64x2_t b) 
+{
+    DWRD_VTYPE l, r;
+    QUAD_VTYPE c = {.D.U=QQU_CEQS(a, b)};
+    l.D.U = vget_low_u64(c.D.U);
+    r.D.U = vget_high_u64(c.D.U);
+    l.B.U = vand_u8(l.D.U, r.D.U);
+    l.B.U = vshl_n_u64(l.B.U, 63);
+    return  vcombine_u64(l.D.U, vdup_n_u64(0));
+}
+
+INLINE(int64x2_t,QQI_CEQL) (int64x2_t a, int64x2_t b) 
+{
+    QUAD_VTYPE l={.D.I=a}, r={.D.I=b};
+    l.D.U = QQU_CEQL(l.D.U, r.D.U);
+    return l.D.I;
+}
+
+INLINE(int64x2_t,QQF_CEQL) (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE c = {.D.I=QQF_CEQS(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.I=vdup_n_s64(0)};
+    l.D.U = vshr_n_u64(l.D.U, 63);
+    return  vcombine_s64(l.D.I, r.D.I);
+}
+
+INLINE(Vwbu,VWBU_CEQL) (Vwbu a, Vwbu b) {a.V0=WBZ_CEQL(a.V0, b.V0); return a;}
+INLINE(Vwbi,VWBI_CEQL) (Vwbi a, Vwbi b) {a.V0=WBZ_CEQL(a.V0, b.V0); return a;}
+INLINE(Vwbc,VWBC_CEQL) (Vwbc a, Vwbc b) {a.V0=WBZ_CEQL(a.V0, b.V0); return a;}
+INLINE(Vwhu,VWHU_CEQL) (Vwhu a, Vwhu b) {a.V0=WHZ_CEQL(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHI_CEQL) (Vwhi a, Vwhi b) {a.V0=WHZ_CEQL(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHF_CEQL) (Vwhf a, Vwhf b) {return ((Vwhi){WHF_CEQL(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_CEQL) (Vwwu a, Vwwu b) {a.V0=WWZ_CEQL(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWI_CEQL) (Vwwi a, Vwwi b) {a.V0=WWZ_CEQL(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWF_CEQL) (Vwwf a, Vwwf b) {return ((Vwwi){WWF_CEQL(a.V0,b.V0)});}
+
+INLINE(Vdbu,VDBU_CEQL) (Vdbu a, Vdbu b) {return DBU_CEQL(a, b);}
+INLINE(Vdbi,VDBI_CEQL) (Vdbi a, Vdbi b) {return DBI_CEQL(a, b);}
+INLINE(Vdbc,VDBC_CEQL) (Vdbc a, Vdbc b) {a.V0=DBC_CEQL(a.V0, b.V0); return a;}
+INLINE(Vdhu,VDHU_CEQL) (Vdhu a, Vdhu b) {return DHU_CEQL(a, b);}
+INLINE(Vdhi,VDHI_CEQL) (Vdhi a, Vdhi b) {return DHI_CEQL(a, b);}
+INLINE(Vdhi,VDHF_CEQL) (Vdhf a, Vdhf b) {return DHF_CEQL(a, b);}
+INLINE(Vdwu,VDWU_CEQL) (Vdwu a, Vdwu b) {return DWU_CEQL(a, b);}
+INLINE(Vdwi,VDWI_CEQL) (Vdwi a, Vdwi b) {return DWI_CEQL(a, b);}
+INLINE(Vdwi,VDWF_CEQL) (Vdwf a, Vdwf b) {return DWF_CEQL(a, b);}
+INLINE(Vddu,VDDU_CEQL) (Vddu a, Vddu b) {return DDU_CEQL(a, b);}
+INLINE(Vddi,VDDI_CEQL) (Vddi a, Vddi b) {return DDI_CEQL(a, b);}
+INLINE(Vddi,VDDF_CEQL) (Vddf a, Vddf b) {return DDF_CEQL(a, b);}
+
+INLINE(Vqbu,VQBU_CEQL) (Vqbu a, Vqbu b) {return QBU_CEQL(a,b);}
+INLINE(Vqbi,VQBI_CEQL) (Vqbi a, Vqbi b) {return QBI_CEQL(a,b);}
+INLINE(Vqbc,VQBC_CEQL) (Vqbc a, Vqbc b) {a.V0=QBC_CEQL(a.V0, b.V0); return a;}
+INLINE(Vqhu,VQHU_CEQL) (Vqhu a, Vqhu b) {return QHU_CEQL(a,b);}
+INLINE(Vqhi,VQHI_CEQL) (Vqhi a, Vqhi b) {return QHI_CEQL(a,b);}
+INLINE(Vqhi,VQHF_CEQL) (Vqhf a, Vqhf b) {return QHF_CEQL(a,b);}
+INLINE(Vqwu,VQWU_CEQL) (Vqwu a, Vqwu b) {return QWU_CEQL(a,b);}
+INLINE(Vqwi,VQWI_CEQL) (Vqwi a, Vqwi b) {return QWI_CEQL(a,b);}
+INLINE(Vqwi,VQWF_CEQL) (Vqwf a, Vqwf b) {return QWF_CEQL(a,b);}
+INLINE(Vqdu,VQDU_CEQL) (Vqdu a, Vqdu b) {return QDU_CEQL(a,b);}
+INLINE(Vqdi,VQDI_CEQL) (Vqdi a, Vqdi b) {return QDI_CEQL(a,b);}
+INLINE(Vqdi,VQDF_CEQL) (Vqdf a, Vqdf b) {return QDF_CEQL(a,b);}
+INLINE(Vqqu,VQQU_CEQL) (Vqqu a, Vqqu b) {a.V0=QQU_CEQL(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQI_CEQL) (Vqqi a, Vqqi b) {a.V0=QQI_CEQL(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQF_CEQL) (Vqqf a, Vqqf b) {return ((Vqqi){QQF_CEQL(a.V0,b.V0)});}
+
+#if 0 // _LEAVE_ARM_CEQL
 }
 #endif
 
@@ -38953,360 +41981,241 @@ INLINE(Vqdi,VQDF_CEQS) (Vqdf a, Vqdf b) {return QDF_CEQS(a, b);}
 {
 #endif
 
-INLINE(int16_t, FLT16_CEQY) (flt16_t a, flt16_t b) {return a==b;}
-INLINE(int32_t,   FLT_CEQY)   (float a,   float b) {return a==b;}
-INLINE(int64_t,   DBL_CEQY)  (double a,  double b) {return a==b;}
+INLINE(_Bool,FLT16_CEQY) (flt16_t a, flt16_t b) {return a==b;}
+INLINE(_Bool,  FLT_CEQY)   (float a,   float b) {return a==b;}
+INLINE(_Bool,  DBL_CEQY)  (double a,  double b) {return a==b;}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,ceqyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(_Bool,WWZ_CEQY) (float a, float b) 
 {
-    return  (a==b);
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vceq_u32(x.W.U, y.W.U);
+    return  vget_lane_u32(x.W.U, 0);
 }
 
-INLINE(QUAD_ITYPE,ceqyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+INLINE(_Bool,VWYU_CEQY) (Vwyu a, Vwyu b) 
 {
-    return  (a==b);
+    WORD_TYPE p={.F=a.V0}, q={.F=b.V0};
+    return  p.U==q.U;
 }
 
-INLINE(QUAD_ITYPE,ceqyqf) (QUAD_FTYPE a, QUAD_FTYPE b)
+INLINE(_Bool,VWBU_CEQY) (Vwbu a, Vwbu b) {return WWZ_CEQY(a.V0, b.V0);}         
+INLINE(_Bool,VWBI_CEQY) (Vwbi a, Vwbi b) {return WWZ_CEQY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_CEQY) (Vwbc a, Vwbc b) {return WWZ_CEQY(a.V0, b.V0);}
+INLINE(_Bool,VWHU_CEQY) (Vwhu a, Vwhu b) {return WWZ_CEQY(a.V0, b.V0);}         
+INLINE(_Bool,VWHI_CEQY) (Vwhi a, Vwhi b) {return WWZ_CEQY(a.V0, b.V0);}         
+INLINE(_Bool,VWHF_CEQY) (Vwhf a, Vwhf b) 
 {
-    return  (a==b);
+    Vwhi c = VWHF_CEQS(a, b);
+    return  UINT32_MAX==((WORD_TYPE){.F=c.V0}).U;
 }
 
-#endif
+INLINE(_Bool,VWWU_CEQY) (Vwwu a, Vwwu b) {return WWZ_CEQY(a.V0, b.V0);}         
+INLINE(_Bool,VWWI_CEQY) (Vwwi a, Vwwi b) {return WWZ_CEQY(a.V0, b.V0);}         
+INLINE(_Bool,VWWF_CEQY) (Vwwf a, Vwwf b) {return a.V0==b.V0;}
 
-INLINE( Wbu,WBU_CEQY) (Wbu a, Wbu b)
+INLINE(_Bool,VDYU_CEQY) (Vdyu a, Vdyu b)
 {
-#define     WBU_CEQY    WBU_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
-    uint8x8_t   r = vceq_u8(
-        vreinterpret_u8_f32(p),
-        vreinterpret_u8_f32(q)
-    );
-    return  vget_lane_f32(
-        vreinterpret_f32_u8(vshr_n_u8(r, 7)),
-        0
-    );
+    a.V0 = vceq_u64(a.V0, b.V0);
+    return  vget_lane_u64(a.V0, 0);
 }
 
-INLINE( Wbu,WBI_CEQY) (Wbi a, Wbi b)
+INLINE(_Bool,VDBU_CEQY) (Vdbu a, Vdbu b) 
 {
-#define     WBI_CEQY    WBI_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
-    return  vget_lane_f32(
-        vreinterpret_f32_u8(
-            vshr_n_u8(
-                vceq_s8(
-                    vreinterpret_s8_f32(p),
-                    vreinterpret_s8_f32(q)
-                ),
-                7
-            )
-        ),
-        0
-    );
+    DWRD_VTYPE c = {.B.U=vceq_u8(a, b)};
+    return  c.U==UINT64_MAX;
 }
 
+INLINE(_Bool,VDBI_CEQY) (Vdbi a, Vdbi b) 
+{
+    DWRD_VTYPE c = {.B.U=vceq_s8(a, b)};
+    return  c.U==UINT64_MAX;
+}
+
+INLINE(_Bool,VDBC_CEQY) (Vdbc a, Vdbc b) 
+{
+    DWRD_VTYPE c;
 #if CHAR_MIN
-#   define  WBC_CEQY    WBI_CEQY
+    c.B.U = vceq_s8(a.V0, b.V0);
 #else
-#   define  WBC_CEQY    WBU_CEQY
+    c.B.U = vceq_u8(a.V0, b.V0);
 #endif
-
-INLINE( Whu,WHU_CEQY) (Whu a, Whu b)
-{
-#define     WHU_CEQY    WHU_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
-    return  vget_lane_f32(
-        vreinterpret_f32_u16(
-            vshr_n_u16(
-                vceq_u16(
-                    vreinterpret_u16_f32(p),
-                    vreinterpret_u16_f32(q)
-                ),
-                15
-            )
-        ),
-        0
-    );
+    return c.U==UINT64_MAX;
 }
 
-INLINE( Whu,WHI_CEQY) (Whi a, Whi b)
+INLINE(_Bool,VDHU_CEQY) (Vdhu a, Vdhu b) 
 {
-#define     WHI_CEQY    WHI_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
-    return  vget_lane_f32(
-        vreinterpret_f32_u16(
-            vshr_n_u16(
-                vceq_s16(
-                    vreinterpret_s16_f32(p),
-                    vreinterpret_s16_f32(q)
-                ),
-                15
-            )
-        ),
-        0
-    );
+    DWRD_VTYPE c = {.H.U=vceq_u16(a, b)};
+    return  c.U==UINT64_MAX;
 }
 
-INLINE( Whu,WHF_CEQY) (Whf a, Whf b)
+INLINE(_Bool,VDHI_CEQY) (Vdhi a, Vdhi b) 
 {
-#define     WHF_CEQY    WHF_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
+    DWRD_VTYPE c = {.H.U=vceq_s16(a, b)};
+    return  c.U==UINT64_MAX;
+}
+
+INLINE(_Bool,VDHF_CEQY) (Vdhf a, Vdhf b) 
+{
+    DWRD_VTYPE c;
 #if defined(SPC_ARM_FP16_SIMD)
-    return  vget_lane_f32(
-        vreinterpret_f32_u16(
-            vshr_n_u16(
-                vceq_s16(
-                    vreinterpret_s16_f32(p),
-                    vreinterpret_s16_f32(q)
-                ),
-                15
-            )
-        ),
-        0
-    );
+    c.H.U = vceq_f16(a, b);
 #else
-    float32x4_t l = vcvt_f32_f16(vreinterpret_f16_f32(p));
-    float32x4_t r = vcvt_f32_f16(vreinterpret_f16_f32(q));
-    uint16x4_t  v = vshr_n_u16(vmovn_u32(vceqq_f32(l, r)), 15);
-    return  vget_lane_f32(vreinterpret_f32_u16(v), 0);
+    QUAD_VTYPE l, r;
+    l.W.F = vcvt_f32_f16(a);
+    r.W.F = vcvt_f32_f16(b);
+    l.W.U = vceqq_f32(l.W.F, r.W.F);
+    c.H.U = vmovn_u32(l.W.U);
 #endif
+    return  c.U==UINT64_MAX;
 }
 
-INLINE( Wwu,WWU_CEQY) (Wwu a, Wwu b)
+INLINE(_Bool,VDWU_CEQY) (Vdwu a, Vdwu b) 
 {
-#define     WWU_CEQY    WWU_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
-    return  vget_lane_f32(
-        vreinterpret_f32_u32(
-            vshr_n_u32(
-                vceq_u32(
-                    vreinterpret_u32_f32(p),
-                    vreinterpret_u32_f32(q)
-                ),
-                31
-            )
-        ),
-        0
-    );
+    DWRD_VTYPE c = {.W.U=vceq_u32(a, b)};
+    return  c.U==UINT64_MAX;
 }
 
-INLINE( Wwu,WWI_CEQY) (Wwi a, Wwi b)
+INLINE(_Bool,VDWI_CEQY) (Vdwi a, Vdwi b) 
 {
-#define     WWI_CEQY    WWI_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
-    return  vget_lane_f32(
-        vreinterpret_f32_u32(
-            vshr_n_u32(
-                vceq_s32(
-                    vreinterpret_s32_f32(p),
-                    vreinterpret_s32_f32(q)
-                ),
-                31
-            )
-        ),
-        0
-    );
+    DWRD_VTYPE c = {.W.U=vceq_s32(a, b)};
+    return  c.U==UINT64_MAX;
 }
 
-INLINE( Wwu,WWF_CEQY) (Wwf a, Wwf b)
+INLINE(_Bool,VDWF_CEQY) (Vdwf a, Vdwf b) 
 {
-#define     WWF_CEQY    WWF_CEQY
-    float32x2_t p = vset_lane_f32(a, p, 0);
-    float32x2_t q = vset_lane_f32(b, q, 0);
-    return  vget_lane_f32(
-        vreinterpret_f32_u32(vshr_n_u32(vceq_f32(p, q), 31)),
-        0
-    );
+    DWRD_VTYPE c = {.W.U=vceq_f32(a, b)};
+    return  c.U==UINT64_MAX;
 }
 
-#define     DBU_CEQY(A, B)            vshr_n_u8(vceq_u8(A,B),7)
-#define     DBI_CEQY(A, B)  VDBU_ASTI(vshr_n_u8(vceq_s8(A,B),7))
+INLINE(_Bool,VDDU_CEQY) (Vddu a, Vddu b) 
+{
+    return  vget_lane_u64(a,0)==vget_lane_u64(b,0);
+}
+
+INLINE(_Bool,VDDI_CEQY) (Vddi a, Vddi b) 
+{
+    return  vget_lane_s64(a,0)==vget_lane_s64(b,0);
+}
+
+INLINE(_Bool,VDDF_CEQY) (Vddf a, Vddf b) 
+{
+    return  vget_lane_f64(a,0)==vget_lane_f64(b,0);
+}
+
+
+INLINE(_Bool,QQU_CEQY) (uint64x2_t a, uint64x2_t b)
+{
+//  !((a.Lo^b.Lo)|(a.Hi^b.Hi))
+    a = veorq_u64(a, b);
+    return  !(vgetq_lane_u64(a, 0)|vgetq_lane_u64(a, 1));
+}
+
+INLINE(_Bool,QQI_CEQY) (int64x2_t a, int64x2_t b)
+{
+    a = veorq_s64(a, b);
+    return  !(vgetq_lane_s64(a, 0)|vgetq_lane_s64(a, 1));
+}
+
+INLINE(_Bool,QQF_CEQY) (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    return a==b;
+}
+
+INLINE(_Bool,VQYU_CEQY) (Vqyu a, Vqyu b) {return QQU_CEQY(a.V0, b.V0);}
+
+INLINE(_Bool,VQBU_CEQY) (Vqbu a, Vqbu b) 
+{
+    QUAD_VTYPE c = {.B.U=vceqq_u8(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
+}
+
+INLINE(_Bool,VQBI_CEQY) (Vqbi a, Vqbi b) 
+{
+    QUAD_VTYPE c = {.B.U=vceqq_s8(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
+}
+
+INLINE(_Bool,VQBC_CEQY) (Vqbc a, Vqbc b) 
+{
+    QUAD_VTYPE c;
 #if CHAR_MIN
-#   define  DBC_CEQY        DBI_CEQY
+    c.B.U = vceqq_s8(a.V0, b.V0);
 #else
-#   define  DBC_CEQY        DBU_CEQY
+    c.B.U = vceqq_u8(a.V0, b.V0);
 #endif
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
+}
 
-#define     DHU_CEQY(A, B)            vshr_n_u16(vceq_u16(A,B),15)
-#define     DHI_CEQY(A, B)  VDHU_ASTI(vshr_n_u16(vceq_s16(A,B),15))
+
+INLINE(_Bool,VQHU_CEQY) (Vqhu a, Vqhu b) 
+{
+    QUAD_VTYPE c = {.H.U=vceqq_u16(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
+}
+
+INLINE(_Bool,VQHI_CEQY) (Vqhi a, Vqhi b) 
+{
+    QUAD_VTYPE c = {.H.U=vceqq_s16(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
+}
+
+INLINE(_Bool,VQHF_CEQY) (Vqhf a, Vqhf b) 
+{
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  DHF_CEQY(A, B)  VDHU_ASTI(vshr_n_u16(vceq_f16(A,B),15))
+    QUAD_VTYPE c = {.H.U=vceqq_f16(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
 #else
-#   define  DHF_CEQY(A, B)      \
-VDHU_ASHI(                      \
-    vshr_n_u16(                 \
-        vmovn_u32(              \
-            vceqq_f32(          \
-                vcvt_f32_f16(a),\
-                vcvt_f32_f16(b) \
-            )                   \
-        ),                      \
-        15                      \
-    )                           \
-)
-#endif
-
-#define     DWU_CEQY(A, B)            vshr_n_u32(vceq_u32(A,B),31)
-#define     DWI_CEQY(A, B)  VDWU_ASTI(vshr_n_u32(vceq_s32(A,B),31))
-#define     DWF_CEQY(A, B)  VDWU_ASTI(vshr_n_u32(vceq_f32(A,B),31))
-
-#define     DDU_CEQY(A, B)            vshr_n_u64(vceq_u64(A,B),63)
-#define     DDI_CEQY(A, B)  VDDU_ASTI(vshr_n_u64(vceq_s64(A,B),63))
-#define     DDF_CEQY(A, B)  VDDU_ASTI(vshr_n_u64(vceq_f64(A,B),63))
-
-
-#define     QBU_CEQY(A, B)            vshrq_n_u8(vceqq_u8(A,B),7)
-#define     QBI_CEQY(A, B)  VQBU_ASTI(vshrq_n_u8(vceqq_s8(A,B),7))
-#if CHAR_MIN
-#   define  QBC_CEQY        QBI_CEQY
-#else
-#   define  QBC_CEQY        QBU_CEQY
-#endif
-
-#define     QHU_CEQY(A, B)            vshrq_n_u16(vceqq_u16(A,B),15)
-#define     QHI_CEQY(A, B)  VQHU_ASTI(vshrq_n_u16(vceqq_s16(A,B),15))
-#if defined(SPC_ARM_FP16_SIMD)
-#   define  QHF_CEQY(A, B)  VQHU_ASTI(vshrq_n_u16(vceqq_f16(A,B),15))
-#else
-#   define  QHF_CEQY(A, B)                          \
-vreinterpretq_s16_u16(                              \
-    vshrq_n_u16(                                    \
-        vcombine_u16(                               \
-            vmovn_u32(                              \
-                vceqq_f32(                          \
-                    vcvt_f32_f16(vget_low_f16(A)),  \
-                    vcvt_f32_f16(vget_low_f16(B))   \
-                )                                   \
-            ),                                      \
-            vmovn_u32(                              \
-                vceqq_f32(                          \
-                    vcvt_f32_f16(vget_high_f16(A)), \
-                    vcvt_f32_f16(vget_high_f16(B))  \
-                )                                   \
-            )                                       \
-        ),                                          \
-        15                                          \
-    )                                               \
-)
-#endif
-
-#define     QWU_CEQY(A, B)            vshrq_n_u32(vceqq_u32(A,B),31)
-#define     QWI_CEQY(A, B)  VQWU_ASTI(vshrq_n_u32(vceqq_s32(A,B),31))
-#define     QWF_CEQY(A, B)  VQWU_ASTI(vshrq_n_u32(vceqq_f32(A,B),31))
-
-#define     QDU_CEQY(A, B)            vshrq_n_u64(vceqq_u64(A,B),63)
-#define     QDI_CEQY(A, B)  VQDU_ASTI(vshrq_n_u64(vceqq_s64(A,B),63))
-#define     QDF_CEQY(A, B)  VQDU_ASTI(vshrq_n_u64(vceqq_f64(A,B),63))
-
-
-INLINE(Vwbu,VWBU_CEQY) (Vwbu a, Vwbu b)
-{
-#define     VWBU_CEQY(A, B) WBU_ASTV(WBU_CEQY(VWBU_ASTM(A),VWBU_ASTM(B)))
-    return  VWBU_CEQY(a, b);
-}
-
-INLINE(Vwbi,VWBI_CEQY) (Vwbi a, Vwbi b)
-{
-#define     VWBI_CEQY(A, B) WBI_ASTV(WBI_CEQY(VWBI_ASTM(A),VWBI_ASTM(B)))
-    return  VWBI_CEQY(a, b);
-}
-
-INLINE(Vwbc,VWBC_CEQY) (Vwbc a, Vwbc b)
-{
-#define     VWBC_CEQY(A, B) WBC_ASTV(WBC_CEQY(VWBC_ASTM(A),VWBC_ASTM(B)))
-    return  VWBC_CEQY(a, b);
-}
-
-
-INLINE(Vwhu,VWHU_CEQY) (Vwhu a, Vwhu b)
-{
-#define     VWHU_CEQY(A, B) WHU_ASTV(WHU_CEQY(VWHU_ASTM(A),VWHU_ASTM(B)))
-    return  VWHU_CEQY(a, b);
-}
-
-INLINE(Vwhi,VWHI_CEQY) (Vwhi a, Vwhi b)
-{
-#define     VWHI_CEQY(A, B) WHI_ASTV(WHI_CEQY(VWHI_ASTM(A),VWHI_ASTM(B)))
-    return  VWHI_CEQY(a, b);
-}
-
-INLINE(Vwhi,VWHF_CEQY) (Vwhf a, Vwhf b)
-{
-#define     VWHF_CEQY(A, B) WHI_ASTV(WHF_CEQY(VWHF_ASTM(A),VWHF_ASTM(B)))
-    return  VWHF_CEQY(a, b);
-}
-
-
-INLINE(Vwwu,VWWU_CEQY) (Vwwu a, Vwwu b)
-{
-#define     VWWU_CEQY(A, B) WWU_ASTV(WWU_CEQY(VWWU_ASTM(A),VWWU_ASTM(B)))
-    return  VWWU_CEQY(a, b);
-}
-
-INLINE(Vwwi,VWWI_CEQY) (Vwwi a, Vwwi b)
-{
-#define     VWWI_CEQY(A, B) WWI_ASTV(WWI_CEQY(VWWI_ASTM(A),VWWI_ASTM(B)))
-    return  VWWI_CEQY(a, b);
-}
-
-INLINE(Vwwi,VWWF_CEQY) (Vwwf a, Vwwf b)
-{
-#define     VWWF_CEQY(A, B) WWI_ASTV(WWF_CEQY(VWWF_ASTM(A),VWWF_ASTM(B)))
-    return  VWWF_CEQY(a, b);
-}
-
-
-INLINE(Vdbu,VDBU_CEQY) (Vdbu a, Vdbu b) {return DBU_CEQY(a, b);}
-INLINE(Vdbi,VDBI_CEQY) (Vdbi a, Vdbi b) {return DBI_CEQY(a, b);}
-INLINE(Vdbc,VDBC_CEQY) (Vdbc a, Vdbc b)
-{
-    return  DBC_ASTV(
-        DBC_CEQY(
-            VDBC_ASTM(a),
-            VDBC_ASTM(b)
-        )
+    return (
+        VDHF_CEQY( vget_low_f16(a),  vget_low_f16(b))
+    &&  VDHF_CEQY(vget_high_f16(a), vget_high_f16(b))
     );
+#endif
 }
 
-INLINE(Vdhu,VDHU_CEQY) (Vdhu a, Vdhu b) {return DHU_CEQY(a, b);}
-INLINE(Vdhi,VDHI_CEQY) (Vdhi a, Vdhi b) {return DHI_CEQY(a, b);}
-INLINE(Vdhi,VDHF_CEQY) (Vdhf a, Vdhf b) {return DHF_CEQY(a, b);}
 
-INLINE(Vdwu,VDWU_CEQY) (Vdwu a, Vdwu b) {return DWU_CEQY(a, b);}
-INLINE(Vdwi,VDWI_CEQY) (Vdwi a, Vdwi b) {return DWI_CEQY(a, b);}
-INLINE(Vdwi,VDWF_CEQY) (Vdwf a, Vdwf b) {return DWF_CEQY(a, b);}
-
-INLINE(Vddu,VDDU_CEQY) (Vddu a, Vddu b) {return DDU_CEQY(a, b);}
-INLINE(Vddi,VDDI_CEQY) (Vddi a, Vddi b) {return DDI_CEQY(a, b);}
-INLINE(Vddi,VDDF_CEQY) (Vddf a, Vddf b) {return DDF_CEQY(a, b);}
-
-
-INLINE(Vqbu,VQBU_CEQY) (Vqbu a, Vqbu b) {return QBU_CEQY(a,b);}
-INLINE(Vqbi,VQBI_CEQY) (Vqbi a, Vqbi b) {return QBI_CEQY(a,b);}
-INLINE(Vqbc,VQBC_CEQY) (Vqbc a, Vqbc b)
+INLINE(_Bool,VQWU_CEQY) (Vqwu a, Vqwu b) 
 {
-    return  QBC_ASTV(QBC_CEQY(VQBC_ASTM(a),VQBC_ASTM(b)));
+    QUAD_VTYPE c = {.W.U=vceqq_u32(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
 }
 
-INLINE(Vqhu,VQHU_CEQY) (Vqhu a, Vqhu b) {return QHU_CEQY(a,b);}
-INLINE(Vqhi,VQHI_CEQY) (Vqhi a, Vqhi b) {return QHI_CEQY(a,b);}
-INLINE(Vqhi,VQHF_CEQY) (Vqhf a, Vqhf b) {return QHF_CEQY(a,b);}
-INLINE(Vqwu,VQWU_CEQY) (Vqwu a, Vqwu b) {return QWU_CEQY(a,b);}
-INLINE(Vqwi,VQWI_CEQY) (Vqwi a, Vqwi b) {return QWI_CEQY(a,b);}
-INLINE(Vqwi,VQWF_CEQY) (Vqwf a, Vqwf b) {return QWF_CEQY(a,b);}
-INLINE(Vqdu,VQDU_CEQY) (Vqdu a, Vqdu b) {return QDU_CEQY(a,b);}
-INLINE(Vqdi,VQDI_CEQY) (Vqdi a, Vqdi b) {return QDI_CEQY(a,b);}
-INLINE(Vqdi,VQDF_CEQY) (Vqdf a, Vqdf b) {return QDF_CEQY(a,b);}
+INLINE(_Bool,VQWI_CEQY) (Vqwi a, Vqwi b) 
+{
+    QUAD_VTYPE c = {.W.U=vceqq_s32(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
+}
+
+INLINE(_Bool,VQWF_CEQY) (Vqwf a, Vqwf b) 
+{
+    QUAD_VTYPE c = {.W.U=vceqq_f32(a, b)};
+    return  UINT64_MAX==(vgetq_lane_u64(c.D.U,0)&vgetq_lane_u64(c.D.U,1));
+}
+
+
+INLINE(_Bool,VQDU_CEQY) (Vqdu a, Vqdu b) 
+{
+    return  (vgetq_lane_u64(a,0) == vgetq_lane_u64(b, 0))
+    ?   vgetq_lane_u64(a,1)==vgetq_lane_u64(b,1)
+    :   0;
+}
+
+INLINE(_Bool,VQDI_CEQY) (Vqdi a, Vqdi b) 
+{
+    return  (vgetq_lane_s64(a,0) == vgetq_lane_s64(b, 0))
+    ?   vgetq_lane_s64(a,1)==vgetq_lane_s64(b,1)
+    :   0;
+}
+
+INLINE(_Bool,VQDF_CEQY) (Vqdf a, Vqdf b) 
+{
+    return  (vgetq_lane_f64(a,0) == vgetq_lane_f64(b, 0))
+    ?   vgetq_lane_f64(a,1)==vgetq_lane_f64(b,1)
+    :   0;
+}
+
+INLINE(_Bool,VQQU_CEQY) (Vqqu a, Vqqu b) {return  QQU_CEQY(a.V0, b.V0);}
+INLINE(_Bool,VQQI_CEQY) (Vqqi a, Vqqi b) {return  QQU_CEQY(a.V0, b.V0);}
+INLINE(_Bool,VQQF_CEQY) (Vqqf a, Vqqf b) {return  a.V0==b.V0;}
 
 #if 0 // _LEAVE_ARM_CEQY
 }
@@ -39316,278 +42225,279 @@ INLINE(Vqdi,VQDF_CEQY) (Vqdf a, Vqdf b) {return QDF_CEQY(a,b);}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_CNES)
-(
-    void volatile const *a,
-    void volatile const *b
-)
+INLINE(uint8x8_t,DBU_CNES) (uint8x8_t a, uint8x8_t b)
 {
-    return (a != b) ? NULL-((void *) INTPTR_C(1)) : 0;
+    a = vceq_u8(a, b);
+    return  vmvn_u8(a);
 }
 
-INLINE(  _Bool,   BOOL_CNES)   (_Bool a,   _Bool b) {return a!=b;}
-INLINE(  uchar,  UCHAR_CNES)   (uchar a,   uchar b)
+INLINE( int8x8_t,DBI_CNES)  (int8x8_t a,  int8x8_t b)
 {
-    return  (a != b) ? UCHAR_MAX : 0;
+    DWRD_VTYPE c = {.B.U=vceq_s8(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.B.I;
 }
 
-INLINE(  schar,  SCHAR_CNES)   (schar a,   schar b) {return  0-(a!=b);}
-INLINE(   char,   CHAR_CNES)    (char a,    char b)
+#if CHAR_MIN
+#   define  DBC_CNES    DBI_CNES
+#else
+#   define  DBC_CNES    DBU_CNES
+#endif
+
+INLINE(uint16x4_t,DHU_CNES)  (uint16x4_t a,  uint16x4_t b)
 {
-    return  (a !=b ) ? '\xff' : '\x00';
+    a = vceq_u16(a, b);
+    return  vmvn_u16(a);
 }
 
-INLINE( ushort,  USHRT_CNES)  (ushort a,  ushort b)
+INLINE( int16x4_t,DHI_CNES)   (int16x4_t a,  int16x4_t b)
 {
-    return  (a !=b ) ? USHRT_MAX : 0;
+    DWRD_VTYPE c = {.H.U=vceq_s16(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.H.I;
 }
 
-INLINE(  short,   SHRT_CNES)   (short a,   short b) {return  0-(a!=b);}
-
-INLINE(   uint,   UINT_CNES)    (uint a,    uint b)
+INLINE( int16x4_t,DHF_CNES) (float16x4_t a, float16x4_t b)
 {
-    return  (a != b) ? UINT_MAX : 0u;
+    DWRD_VTYPE c = {.H.I=DHF_CEQS(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.H.I;
 }
 
-INLINE(    int,    INT_CNES)     (int a,     int b) {return  0-(a!=b);}
 
-INLINE(  ulong,  ULONG_CNES)   (ulong a,   ulong b)
+INLINE(uint32x2_t,DWU_CNES)  (uint32x2_t a,  uint32x2_t b)
 {
-    return  (a != b) ? ULONG_MAX : 0ul;
+    a = vceq_u32(a, b);
+    return  vmvn_u32(a);
 }
 
-INLINE(   long,   LONG_CNES)    (long a,    long b) {return  0l-(a!=b);}
-
-INLINE( ullong, ULLONG_CNES)  (ullong a,  ullong b)
+INLINE( int32x2_t,DWI_CNES)   (int32x2_t a,   int32x2_t b)
 {
-    return  (a != b) ? ULLONG_MAX : 0ull;
+    DWRD_VTYPE c = {.W.U=vceq_s32(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.W.I;
 }
 
-INLINE(  llong,  LLONG_CNES)   (llong a,   llong b) {return  0ll-(a!=b);}
+INLINE( int32x2_t,DWF_CNES) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_f32(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.W.I;
+}
+
+
+INLINE(uint64x1_t,DDU_CNES)  (uint64x1_t a,  uint64x1_t b)
+{
+    DWRD_VTYPE c = {.D.U=vceq_u64(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.D.U;
+}
+
+INLINE( int64x1_t,DDI_CNES)   (int64x1_t a,   int64x1_t b)
+{
+    DWRD_VTYPE c = {.D.U=vceq_s64(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.D.I;
+}
+
+INLINE( int64x1_t,DDF_CNES) (float64x1_t a, float64x1_t b)
+{
+    DWRD_VTYPE c = {.D.U=vceq_f64(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  c.D.I;
+}
+
+
+INLINE(uint8x16_t,QBU_CNES)  (uint8x16_t a,  uint8x16_t b)
+{
+    a = vceqq_u8(a, b);
+    return  vmvnq_u8(a);
+}
+
+INLINE( int8x16_t,QBI_CNES)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE c = {.B.U=vceqq_s8(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.B.I;
+}
+
+#if CHAR_MIN
+#   define  QBC_CNES    QBI_CNES
+#else
+#   define  QBC_CNES    QBU_CNES
+#endif
+
+INLINE(uint16x8_t,QHU_CNES)  (uint16x8_t a,  uint16x8_t b)
+{
+    a = vceqq_u16(a, b);
+    return  vmvnq_u16(a);
+}
+
+INLINE( int16x8_t,QHI_CNES)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE c = {.H.U=vceqq_s16(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.H.I;
+}
+
+INLINE( int16x8_t,QHF_CNES) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE c = {.H.I = QHF_CEQS(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.H.I;
+}
+
+
+INLINE(uint32x4_t,QWU_CNES)  (uint32x4_t a,  uint32x4_t b)
+{
+    a = vceqq_u32(a, b);
+    return  vmvnq_u32(a);
+}
+
+INLINE( int32x4_t,QWI_CNES)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_s32(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.W.I;
+}
+
+INLINE( int32x4_t,QWF_CNES) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_f32(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.W.I;
+}
+
+
+INLINE(uint64x2_t,QDU_CNES)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.D.U;
+}
+
+INLINE( int64x2_t,QDI_CNES)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_s64(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.D.I;
+}
+
+INLINE( int64x2_t,QDF_CNES) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_f64(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.D.I;
+}
+
+
+INLINE(uint64x2_t,QQU_CNES)  (uint64x2_t a,  uint64x2_t b)
+{
+/*
+is dupqdu(invsdu(x)) rly faster than invsqdu(dupqdu(x))?
+*/
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vand_u8(l.B.U, r.B.U);
+    l.B.U = vmvn_u8(l.B.U);
+    return  vdupq_lane_u64(l.D.U, 0);
+}
+
+INLINE( int64x2_t,QQI_CNES)   (int64x2_t a,  int64x2_t b)
+{
+    QUAD_VTYPE l={.D.I=a}, r={.D.I=b};
+    l.D.U = QQU_CNES(l.D.U, r.D.U);
+    return  l.D.I;
+}
+
+INLINE(QUAD_FTYPE,QQF_CNES) (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE c = {.Q.I=QQF_CEQS(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  c.F;
+}
+
+
 INLINE(int16_t,  FLT16_CNES) (flt16_t a, flt16_t b)
 {
-#if defined(SPC_ARM_FP16_SIMD)
-    return ~vceqh_f16(a, b);
+#if defined(SPC_ARM_FLT16_SIMD)
+    return  ~vceqh_f16(a, b);
 #else
-    return 0-(a!=b);
+    DWRD_VTYPE x={.H.F={a}}, y={.H.F={b}}, z;
+    z.H.I = DHF_CNES(x.H.F, y.H.F);
+    return  vget_lane_s16(z.H.I, 0);
 #endif
 }
 
-INLINE(int32_t,    FLT_CNES)   (float a,   float b) {return ~vceqs_f32(a, b);}
-INLINE(int64_t,    DBL_CNES)  (double a,  double b) {return ~vceqd_f64(a, b);}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cnesqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(int32_t, FLT_CNES)   (float a,   float b) 
 {
-    return  (QUAD_UTYPE) 0-(a!=b);
+    return  ~vceqs_f32(a, b);
 }
 
-INLINE(QUAD_ITYPE,cnesqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+INLINE(int64_t, DBL_CNES)  (double a,  double b) 
 {
-    return  (QUAD_ITYPE) 0-(a!=b);
+    return  ~vceqd_f64(a, b);
 }
 
 INLINE(QUAD_ITYPE,cnesqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
-    return  (QUAD_ITYPE) 0-(a!=b);
+    return  invsqi(ceqsqf(a, b));
 }
 
-#endif
-
-#define MY_CNED(R, S, A, B)  \
-vreinterpret_##R##_u8(             \
-    vmvn_u8(                       \
-        vceq_u8(                   \
-            vreinterpret_u8_##S(A),\
-            vreinterpret_u8_##S(B) \
-        )                           \
-    )                               \
-)
-
-#define     DBU_CNES(A, B)      vmvn_u8(vceq_u8(A,B))
-#define     DBI_CNES(A, B)      MY_CNED(s8,s8,A,B)
-#if CHAR_MIN
-#   define  DBC_CNES(A, B)      MY_CNED(s8,s8,A,B)
-#else
-#   define  DBC_CNES(A, B)      vmvn_u8(vceq_u8(A,B))
-#endif
-
-#define     DHU_CNES(A, B)      vmvn_u16(vceq_u16(A,B))
-#define     DHI_CNES(A, B)      MY_CNED(s16,s16,A,B)
-#define     DHF_CNES(A, B)      MY_CNED(s16,f16,A,B)
-
-#define     DWU_CNES(A, B)      vmvn_u32(vceq_u32(A,B))
-#define     DWI_CNES(A, B)      MY_CNED(s32,s32,A,B)
-#define     DWF_CNES(A, B)      MY_CNED(s32,f32,A,B)
-#define     DDU_CNES(A, B)      MY_CNED(u64,u64,A,B)
-#define     DDI_CNES(A, B)      MY_CNED(s64,s64,A,B)
-#define     DDF_CNES(A, B)      MY_CNED(s64,f64,A,B)
-
-
-#define MY_CNEQ(R, S, A, B)         \
-vreinterpretq_##R##_u8(             \
-    vmvnq_u8(                       \
-        vceqq_u8(                   \
-            vreinterpretq_u8_##S(A),\
-            vreinterpretq_u8_##S(B) \
-        )                           \
-    )                               \
-)
-#define     QBU_CNES(A, B)      vmvnq_u8(vceqq_u8(A,B))
-#define     QBI_CNES(A, B)      MY_CNEQ(s8,s8,A,B)
-#if CHAR_MIN
-#   define  QBC_CNES(A, B)      MY_CNEQ(s8,s8,A,B)
-#else
-#   define  QBC_CNES(A, B)      vmvnq_u8(vceqq_u8(A,B))
-#endif
-
-#define     QHU_CNES(A, B)      vmvnq_u16(vceqq_u8(A,B))
-#define     QHI_CNES(A, B)      MY_CNEQ(s16,s16,A,B)
-#define     QHF_CNES(A, B)      MY_CNEQ(s16,f16,A,B)
-
-#define     QWU_CNES(A, B)      vmvnq_u32(vceqq_u8(A,B))
-#define     QWI_CNES(A, B)      MY_CNEQ(s32,s32,A,B)
-#define     QWF_CNES(A, B)      MY_CNEQ(s32,f32,A,B)
-#define     QDU_CNES(A, B)      MY_CNEQ(u64,u64,A,A)
-#define     QDI_CNES(A, B)      MY_CNEQ(s64,s64,A,B)
-#define     QDF_CNES(A, B)      MY_CNEQ(s64,f64,A,B)
-
-
-INLINE(Vwbu,VWBU_CNES) (Vwbu a, Vwbu b)
+INLINE(float,WBZ_CNES) (float a, float b)
 {
-    float32x2_t l = vset_lane_f32(VWBU_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWBU_ASTM(a), r, 0);
-    uint8x8_t   p = vreinterpret_u8_f32(l);
-    uint8x8_t   q = vreinterpret_u8_f32(r);
-    return WBU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(DBU_CNES(p, q)),
-            0
-        )
-    );
+    DWRD_VTYPE l = {.W.F={a}};
+    DWRD_VTYPE r = {.W.F={b}};
+    l.B.U = DBU_CNES(l.B.U, r.B.U);
+    return  vget_lane_f32(l.W.F, 0);
 }
 
-INLINE(Vwbi,VWBI_CNES) (Vwbi a, Vwbi b)
+INLINE(float,WHZ_CNES) (float a, float b)
 {
-    float32x2_t l = vset_lane_f32(VWBI_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWBI_ASTM(a), r, 0);
-    uint8x8_t   p = vreinterpret_u8_f32(l);
-    uint8x8_t   q = vreinterpret_u8_f32(r);
-    return  WBI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(DBU_CNES(p, q)),
-            0
-        )
-    );
+    DWRD_VTYPE l = {.W.F={a}};
+    DWRD_VTYPE r = {.W.F={b}};
+    l.H.U = DHU_CNES(l.H.U, r.H.U);
+    return  vget_lane_f32(l.W.F, 0);
 }
 
-INLINE(Vwbc,VWBC_CNES) (Vwbc a, Vwbc b)
+INLINE(float,WWZ_CNES) (float a, float b)
 {
-    float32x2_t l = vset_lane_f32(VWBC_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWBC_ASTM(a), r, 0);
-    uint8x8_t   p = vreinterpret_u8_f32(l);
-    uint8x8_t   q = vreinterpret_u8_f32(r);
-    return  WBC_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u8(DBU_CNES(p, q)),
-            0
-        )
-    );
+    DWRD_VTYPE l = {.W.F={a}};
+    DWRD_VTYPE r = {.W.F={b}};
+    l.W.U = DWU_CNES(l.W.U, r.W.U);
+    return  vget_lane_f32(l.W.F, 0);
 }
 
-INLINE(Vwhu,VWHU_CNES) (Vwhu a, Vwhu b)
+INLINE(float,WHF_CNES) (float a, float b)
 {
-    float32x2_t l = vset_lane_f32(VWHU_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWHU_ASTM(a), r, 0);
-    uint16x4_t  p = vreinterpret_u16_f32(l);
-    uint16x4_t  q = vreinterpret_u16_f32(r);
-    return  WHU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u16(DHU_CNES(p, q)),
-            0
-        )
-    );
+    DWRD_VTYPE p={.W.F={a}}, q={.W.F={b}};
+    p.H.I = DHF_CNES(p.H.F, q.H.F);
+    return  vget_lane_f32(p.W.F, 0);
 }
 
-INLINE(Vwhi,VWHI_CNES) (Vwhi a, Vwhi b)
+INLINE(float,WWF_CNES) (float a, float b)
 {
-    float32x2_t l = vset_lane_f32(VWHI_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWHI_ASTM(a), r, 0);
-    uint16x4_t  p = vreinterpret_u16_f32(l);
-    uint16x4_t  q = vreinterpret_u16_f32(r);
-    return  WHI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u16(DHU_CNES(p, q)),
-            0
-        )
-    );
+    DWRD_VTYPE l={.W.F={a}}, r={.W.F={b}};
+    l.W.I = DWF_CNES(l.W.F, r.W.F);
+    return  vget_lane_f32(l.W.F, 0);
 }
 
-INLINE(Vwhf,VWHF_CNES) (Vwhf a, Vwhf b)
-{
-    float32x2_t l = vset_lane_f32(VWHF_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWHF_ASTM(a), r, 0);
-    uint16x4_t  p = vreinterpret_u16_f32(l);
-    uint16x4_t  q = vreinterpret_u16_f32(r);
-    return  WHF_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u16(DHU_CNES(p, q)),
-            0
-        )
-    );
-}
+#define     VWYU_CNES VWYU_XORS
+INLINE(Vwbu,VWBU_CNES) (Vwbu a, Vwbu b) {a.V0=WBZ_CNES(a.V0, b.V0); return a;}
+INLINE(Vwbi,VWBI_CNES) (Vwbi a, Vwbi b) {a.V0=WBZ_CNES(a.V0, b.V0); return a;}
+INLINE(Vwbc,VWBC_CNES) (Vwbc a, Vwbc b) {a.V0=WBZ_CNES(a.V0, b.V0); return a;}
+INLINE(Vwhu,VWHU_CNES) (Vwhu a, Vwhu b) {a.V0=WHZ_CNES(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHI_CNES) (Vwhi a, Vwhi b) {a.V0=WHZ_CNES(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHF_CNES) (Vwhf a, Vwhf b) {return ((Vwhi){WHF_CNES(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_CNES) (Vwwu a, Vwwu b) {a.V0=WWZ_CNES(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWI_CNES) (Vwwi a, Vwwi b) {a.V0=WWZ_CNES(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWF_CNES) (Vwwf a, Vwwf b) {return ((Vwwi){WWF_CNES(a.V0,b.V0)});}
 
-INLINE(Vwwu,VWWU_CNES) (Vwwu a, Vwwu b)
-{
-    float32x2_t l = vset_lane_f32(VWWU_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWWU_ASTM(a), r, 0);
-    uint32x2_t  p = vreinterpret_u32_f32(l);
-    uint32x2_t  q = vreinterpret_u32_f32(r);
-    return  WWU_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u32(DWU_CNES(p, q)),
-            0
-        )
-    );
-}
-
-INLINE(Vwwi,VWWI_CNES) (Vwwi a, Vwwi b)
-{
-    float32x2_t l = vset_lane_f32(VWWI_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWWI_ASTM(a), r, 0);
-    uint32x2_t  p = vreinterpret_u32_f32(l);
-    uint32x2_t  q = vreinterpret_u32_f32(r);
-    return  WWI_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u32(DWU_CNES(p, q)),
-            0
-        )
-    );
-}
-
-INLINE(Vwwf,VWWF_CNES) (Vwwf a, Vwwf b)
-{
-    float32x2_t l = vset_lane_f32(VWWF_ASTM(a), l, 0);
-    float32x2_t r = vset_lane_f32(VWWF_ASTM(a), r, 0);
-    uint32x2_t  p = vreinterpret_u32_f32(l);
-    uint32x2_t  q = vreinterpret_u32_f32(r);
-    return  WWF_ASTV(
-        vget_lane_f32(
-            vreinterpret_f32_u32(DWU_CNES(p, q)),
-            0
-        )
-    );
-}
-
-
+#define     VDYU_CNES VDYU_XORS
 INLINE(Vdbu,VDBU_CNES) (Vdbu a, Vdbu b) {return DBU_CNES(a, b);}
 INLINE(Vdbi,VDBI_CNES) (Vdbi a, Vdbi b) {return DBI_CNES(a, b);}
-INLINE(Vdbc,VDBC_CNES) (Vdbc a, Vdbc b)
-{
-    return  DBC_ASTV(DBC_CNES(VDBC_ASTM(b), VDBC_ASTM(b)));
-}
-
+INLINE(Vdbc,VDBC_CNES) (Vdbc a, Vdbc b) {a.V0=DBC_CNES(a.V0, b.V0); return a;}
 INLINE(Vdhu,VDHU_CNES) (Vdhu a, Vdhu b) {return DHU_CNES(a, b);}
 INLINE(Vdhi,VDHI_CNES) (Vdhi a, Vdhi b) {return DHI_CNES(a, b);}
 INLINE(Vdhi,VDHF_CNES) (Vdhf a, Vdhf b) {return DHF_CNES(a, b);}
@@ -39598,26 +42508,350 @@ INLINE(Vddu,VDDU_CNES) (Vddu a, Vddu b) {return DDU_CNES(a, b);}
 INLINE(Vddi,VDDI_CNES) (Vddi a, Vddi b) {return DDI_CNES(a, b);}
 INLINE(Vddi,VDDF_CNES) (Vddf a, Vddf b) {return DDF_CNES(a, b);}
 
-
-INLINE(Vqbu,VQBU_CNES) (Vqbu a, Vqbu b) {return QBU_CNES(a, b);}
-INLINE(Vqbi,VQBI_CNES) (Vqbi a, Vqbi b) {return QBI_CNES(a, b);}
-INLINE(Vqbc,VQBC_CNES) (Vqbc a, Vqbc b)
-{
-    return  QBC_ASTV(QBC_CNES(VQBC_ASTM(b), VQBC_ASTM(b)));
-}
-
-INLINE(Vqhu,VQHU_CNES) (Vqhu a, Vqhu b) {return QHU_CNES(a, b);}
-INLINE(Vqhi,VQHI_CNES) (Vqhi a, Vqhi b) {return QHI_CNES(a, b);}
-INLINE(Vqhi,VQHF_CNES) (Vqhf a, Vqhf b) {return QHF_CNES(a, b);}
-INLINE(Vqwu,VQWU_CNES) (Vqwu a, Vqwu b) {return QWU_CNES(a, b);}
-INLINE(Vqwi,VQWI_CNES) (Vqwi a, Vqwi b) {return QWI_CNES(a, b);}
-INLINE(Vqwi,VQWF_CNES) (Vqwf a, Vqwf b) {return QWF_CNES(a, b);}
-INLINE(Vqdu,VQDU_CNES) (Vqdu a, Vqdu b) {return QDU_CNES(a, b);}
-INLINE(Vqdi,VQDI_CNES) (Vqdi a, Vqdi b) {return QDI_CNES(a, b);}
-INLINE(Vqdi,VQDF_CNES) (Vqdf a, Vqdf b) {return QDF_CNES(a, b);}
-
+#define     VQYU_CNES VQYU_XORS
+INLINE(Vqbu,VQBU_CNES) (Vqbu a, Vqbu b) {return QBU_CNES(a,b);}
+INLINE(Vqbi,VQBI_CNES) (Vqbi a, Vqbi b) {return QBI_CNES(a,b);}
+INLINE(Vqbc,VQBC_CNES) (Vqbc a, Vqbc b) {a.V0=QBC_CNES(a.V0, b.V0); return a;}
+INLINE(Vqhu,VQHU_CNES) (Vqhu a, Vqhu b) {return QHU_CNES(a,b);}
+INLINE(Vqhi,VQHI_CNES) (Vqhi a, Vqhi b) {return QHI_CNES(a,b);}
+INLINE(Vqhi,VQHF_CNES) (Vqhf a, Vqhf b) {return QHF_CNES(a,b);}
+INLINE(Vqwu,VQWU_CNES) (Vqwu a, Vqwu b) {return QWU_CNES(a,b);}
+INLINE(Vqwi,VQWI_CNES) (Vqwi a, Vqwi b) {return QWI_CNES(a,b);}
+INLINE(Vqwi,VQWF_CNES) (Vqwf a, Vqwf b) {return QWF_CNES(a,b);}
+INLINE(Vqdu,VQDU_CNES) (Vqdu a, Vqdu b) {return QDU_CNES(a,b);}
+INLINE(Vqdi,VQDI_CNES) (Vqdi a, Vqdi b) {return QDI_CNES(a,b);}
+INLINE(Vqdi,VQDF_CNES) (Vqdf a, Vqdf b) {return QDF_CNES(a,b);}
+INLINE(Vqqu,VQQU_CNES) (Vqqu a, Vqqu b) {a.V0=QQU_CNES(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQI_CNES) (Vqqi a, Vqqi b) {a.V0=QQI_CNES(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQF_CNES) (Vqqf a, Vqqf b) {return ((Vqqi){QQF_CNES(a.V0,b.V0)});}
 
 #if 0 // _LEAVE_ARM_CNES
+}
+#endif
+
+#if 0 // _ENTER_ARM_CNEL
+{
+#endif
+
+INLINE(uint8x8_t,DBU_CNEL) (uint8x8_t a, uint8x8_t b)
+{
+    a = vceq_u8(a, b);
+    a = vmvn_u8(a);
+    return  vshr_n_u8(a, 7);
+}
+
+INLINE( int8x8_t,DBI_CNEL)  (int8x8_t a,  int8x8_t b)
+{
+    uint8x8_t c = vceq_s8(a, b);
+    c = vmvn_u8(c);
+    c = vshr_n_u8(c, 7);
+    return  vreinterpret_s8_u8(c);
+}
+
+#if CHAR_MIN
+#   define  DBC_CNEL    DBI_CNEL
+#else
+#   define  DBC_CNEL    DBU_CNEL
+#endif
+
+INLINE(uint16x4_t,DHU_CNEL)  (uint16x4_t a,  uint16x4_t b)
+{
+    a = vceq_u16(a, b);
+    b = vmvn_u16(a);
+    return  vshr_n_u16(b, 15);
+}
+
+INLINE( int16x4_t,DHI_CNEL)   (int16x4_t a,  int16x4_t b)
+{
+    uint16x4_t c = vceq_s16(a, b);
+    c = vmvn_u16(c);
+    c = vshr_n_u16(c, 15);
+    return  vreinterpret_s16_u16(c);
+}
+
+INLINE( int16x4_t,DHF_CNEL) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE c = {.H.I=DHF_CEQS(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.H.U = vshr_n_u16(c.H.U, 15);
+    return  c.H.I;
+}
+
+
+INLINE(uint32x2_t,DWU_CNEL)  (uint32x2_t a,  uint32x2_t b)
+{
+    a = vceq_u32(a, b);
+    a = vmvn_u32(a);
+    return  vshr_n_u32(a, 31);
+}
+
+INLINE( int32x2_t,DWI_CNEL)   (int32x2_t a,   int32x2_t b)
+{
+    uint32x2_t c = vceq_s32(a, b);
+    c = vmvn_u32(c);
+    c = vshr_n_u32(c, 31);
+    return  vreinterpret_s32_u32(c);
+}
+
+INLINE( int32x2_t,DWF_CNEL) (float32x2_t a, float32x2_t b)
+{
+    uint32x2_t c = vceq_f32(a, b);
+    c = vmvn_u32(c);
+    c = vshr_n_u32(c, 31);
+    return  vreinterpret_s32_u32(c);
+}
+
+
+INLINE(uint64x1_t,DDU_CNEL)  (uint64x1_t a,  uint64x1_t b)
+{
+    DWRD_VTYPE c = {.D.U=vceq_u64(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    return  vshr_n_u64(c.D.U, 63);
+}
+
+INLINE( int64x1_t,DDI_CNEL)   (int64x1_t a,   int64x1_t b)
+{
+    DWRD_VTYPE c = {.D.U=vceq_s64(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.D.U = vshr_n_u64(c.D.U, 63);
+    return  c.D.I;
+}
+
+INLINE( int64x1_t,DDF_CNEL) (float64x1_t a, float64x1_t b)
+{
+    DWRD_VTYPE c = {.D.U=vceq_f64(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.D.U = vshr_n_u64(c.D.U, 63);
+    return  c.D.I;
+}
+
+INLINE(uint8x16_t,QBU_CNEL) (uint8x16_t a, uint8x16_t b)
+{
+    a = vceqq_u8(a, b);
+    a = vmvnq_u8(a);
+    return  vshrq_n_u8(a, 7);
+}
+
+INLINE( int8x16_t,QBI_CNEL)  (int8x16_t a,  int8x16_t b)
+{
+    uint8x16_t c = vceqq_s8(a, b);
+    c = vmvnq_u8(c);
+    c = vshrq_n_u8(c, 7);
+    return  vreinterpretq_s8_u8(c);
+}
+
+#if CHAR_MIN
+#   define  QBC_CNEL    QBI_CNEL
+#else
+#   define  QBC_CNEL    QBU_CNEL
+#endif
+
+INLINE(uint16x8_t,QHU_CNEL)  (uint16x8_t a,  uint16x8_t b)
+{
+    a = vceqq_u16(a, b);
+    b = vmvnq_u16(a);
+    return  vshrq_n_u16(b, 15);
+}
+
+INLINE( int16x8_t,QHI_CNEL)   (int16x8_t a,  int16x8_t b)
+{
+    uint16x8_t c = vceqq_s16(a, b);
+    c = vmvnq_u16(c);
+    c = vshrq_n_u16(c, 15);
+    return  vreinterpretq_s16_u16(c);
+}
+
+INLINE( int16x8_t,QHF_CNEL) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE c = {.H.I=QHF_CEQS(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    c.H.U = vshrq_n_u16(c.H.U, 15);
+    return  c.H.I;
+}
+
+
+INLINE(uint32x4_t,QWU_CNEL)  (uint32x4_t a,  uint32x4_t b)
+{
+    a = vceqq_u32(a, b);
+    a = vmvnq_u32(a);
+    return  vshrq_n_u32(a, 31);
+}
+
+INLINE( int32x4_t,QWI_CNEL)   (int32x4_t a,   int32x4_t b)
+{
+    uint32x4_t c = vceqq_s32(a, b);
+    c = vmvnq_u32(c);
+    c = vshrq_n_u32(c, 31);
+    return  vreinterpretq_s32_u32(c);
+}
+
+INLINE( int32x4_t,QWF_CNEL) (float32x4_t a, float32x4_t b)
+{
+    uint32x4_t c = vceqq_f32(a, b);
+    c = vmvnq_u32(c);
+    c = vshrq_n_u32(c, 31);
+    return  vreinterpretq_s32_u32(c);
+}
+
+
+INLINE(uint64x2_t,QDU_CNEL)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    return  vshrq_n_u64(c.D.U, 63);
+}
+
+INLINE( int64x2_t,QDI_CNEL)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_s64(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    c.D.U = vshrq_n_u64(c.D.U, 63);
+    return  c.D.I;
+}
+
+INLINE( int64x2_t,QDF_CNEL) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_f64(a, b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    c.D.U = vshrq_n_u64(c.D.U, 63);
+    return  c.D.I;
+}
+
+INLINE(uint64x2_t,QQU_CNEL)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vand_u8(l.B.U, r.B.U);
+    l.B.U = vmvn_u8(l.B.U);
+    l.D.U = vshr_n_u64(l.D.U, 63);
+    r.D.U = vdup_n_u64(0);
+    return  vcombine_u64(l.D.U, r.D.U);
+}
+
+INLINE( int64x2_t,QQI_CNEL)   (int64x2_t a,  int64x2_t b)
+{
+    QUAD_VTYPE l={.D.I=a}, r={.D.I=b};
+    l.D.U = QQU_CNEL(l.D.U, r.D.U);
+    return  l.D.I;
+}
+
+INLINE(QUAD_FTYPE,QQF_CNEL) (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE c = {.Q.I=QQF_CEQS(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    l.B.U = vmvn_u8(l.B.U);
+    l.D.U = vshr_n_u64(l.D.U, 63);
+    c.D.U = vcombine_u64(l.D.U, vdup_n_u64(0));
+    return  c.F;
+}
+
+
+INLINE(int16_t,  FLT16_CNEL) (flt16_t a, flt16_t b)
+{
+    DWRD_VTYPE x={.H.F={a}}, y={.H.F={b}};
+    x.H.I = DHF_CNEL(x.H.F, y.H.F);
+    return  vget_lane_s16(x.H.I, 0);
+}
+
+INLINE(int32_t, FLT_CNEL)   (float a,   float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.I = DWF_CNEL(x.W.F, y.W.F);
+    return  vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(int64_t, DBL_CNEL)  (double a,  double b) 
+{
+    DWRD_VTYPE x={.D.F={a}}, y={.D.F={b}};
+    x.D.I = DDF_CNEL(x.D.F, y.D.F);
+    return  vget_lane_s64(x.D.I, 0);
+}
+
+INLINE(QUAD_ITYPE,cnelqf) (QUAD_FTYPE a, QUAD_FTYPE b)
+{
+    QUAD_VTYPE c = {.F=QQF_CNEL(a, b)};
+    return  c.I;
+}
+
+INLINE(float,WBZ_CNEL) (float a, float b)
+{
+    DWRD_VTYPE l={.W.F={a}}, r={.W.F={b}};
+    l.B.U = DBU_CNEL(l.B.U, r.B.U);
+    return  vget_lane_f32(l.W.F, 0);
+}
+
+INLINE(float,WHZ_CNEL) (float a, float b)
+{
+    DWRD_VTYPE l={.W.F={a}}, r={.W.F={b}};
+    l.H.U = DHU_CNEL(l.H.U, r.H.U);
+    return  vget_lane_f32(l.W.F, 0);
+}
+
+INLINE(float,WWZ_CNEL) (float a, float b)
+{
+    DWRD_VTYPE l={.W.F={a}}, r={.W.F={b}};
+    l.W.U = DWU_CNEL(l.W.U, r.W.U);
+    return  vget_lane_f32(l.W.F, 0);
+}
+
+INLINE(float,WHF_CNEL) (float a, float b)
+{
+    DWRD_VTYPE l={.W.F={a}}, r={.W.F={b}};
+    l.W.U = DHF_CNEL(l.W.U, r.W.U);
+    return  vget_lane_f32(l.W.F, 0);
+}
+
+INLINE(float,WWF_CNEL) (float a, float b)
+{
+    DWRD_VTYPE l={.W.F={a}}, r={.W.F={b}};
+    l.W.I = DWF_CNEL(l.W.F, r.W.F);
+    return  vget_lane_f32(l.W.F, 0);
+}
+
+#define     VWYU_CNEL VWYU_XORS
+INLINE(Vwbu,VWBU_CNEL) (Vwbu a, Vwbu b) {a.V0=WBZ_CNEL(a.V0, b.V0); return a;}
+INLINE(Vwbi,VWBI_CNEL) (Vwbi a, Vwbi b) {a.V0=WBZ_CNEL(a.V0, b.V0); return a;}
+INLINE(Vwbc,VWBC_CNEL) (Vwbc a, Vwbc b) {a.V0=WBZ_CNEL(a.V0, b.V0); return a;}
+INLINE(Vwhu,VWHU_CNEL) (Vwhu a, Vwhu b) {a.V0=WHZ_CNEL(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHI_CNEL) (Vwhi a, Vwhi b) {a.V0=WHZ_CNEL(a.V0, b.V0); return a;}
+INLINE(Vwhi,VWHF_CNEL) (Vwhf a, Vwhf b) {return ((Vwhi){WHF_CNEL(a.V0,b.V0)});}
+INLINE(Vwwu,VWWU_CNEL) (Vwwu a, Vwwu b) {a.V0=WWZ_CNEL(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWI_CNEL) (Vwwi a, Vwwi b) {a.V0=WWZ_CNEL(a.V0, b.V0); return a;}
+INLINE(Vwwi,VWWF_CNEL) (Vwwf a, Vwwf b) {return ((Vwwi){WWF_CNEL(a.V0,b.V0)});}
+
+#define     VDYU_CNEL VDYU_XORS
+INLINE(Vdbu,VDBU_CNEL) (Vdbu a, Vdbu b) {return DBU_CNEL(a, b);}
+INLINE(Vdbi,VDBI_CNEL) (Vdbi a, Vdbi b) {return DBI_CNEL(a, b);}
+INLINE(Vdbc,VDBC_CNEL) (Vdbc a, Vdbc b) {a.V0=DBC_CNEL(a.V0, b.V0); return a;}
+INLINE(Vdhu,VDHU_CNEL) (Vdhu a, Vdhu b) {return DHU_CNEL(a, b);}
+INLINE(Vdhi,VDHI_CNEL) (Vdhi a, Vdhi b) {return DHI_CNEL(a, b);}
+INLINE(Vdhi,VDHF_CNEL) (Vdhf a, Vdhf b) {return DHF_CNEL(a, b);}
+INLINE(Vdwu,VDWU_CNEL) (Vdwu a, Vdwu b) {return DWU_CNEL(a, b);}
+INLINE(Vdwi,VDWI_CNEL) (Vdwi a, Vdwi b) {return DWI_CNEL(a, b);}
+INLINE(Vdwi,VDWF_CNEL) (Vdwf a, Vdwf b) {return DWF_CNEL(a, b);}
+INLINE(Vddu,VDDU_CNEL) (Vddu a, Vddu b) {return DDU_CNEL(a, b);}
+INLINE(Vddi,VDDI_CNEL) (Vddi a, Vddi b) {return DDI_CNEL(a, b);}
+INLINE(Vddi,VDDF_CNEL) (Vddf a, Vddf b) {return DDF_CNEL(a, b);}
+
+#define     VQYU_CNEL VQYU_XORS
+INLINE(Vqbu,VQBU_CNEL) (Vqbu a, Vqbu b) {return QBU_CNEL(a,b);}
+INLINE(Vqbi,VQBI_CNEL) (Vqbi a, Vqbi b) {return QBI_CNEL(a,b);}
+INLINE(Vqbc,VQBC_CNEL) (Vqbc a, Vqbc b) {a.V0=QBC_CNEL(a.V0, b.V0); return a;}
+INLINE(Vqhu,VQHU_CNEL) (Vqhu a, Vqhu b) {return QHU_CNEL(a,b);}
+INLINE(Vqhi,VQHI_CNEL) (Vqhi a, Vqhi b) {return QHI_CNEL(a,b);}
+INLINE(Vqhi,VQHF_CNEL) (Vqhf a, Vqhf b) {return QHF_CNEL(a,b);}
+INLINE(Vqwu,VQWU_CNEL) (Vqwu a, Vqwu b) {return QWU_CNEL(a,b);}
+INLINE(Vqwi,VQWI_CNEL) (Vqwi a, Vqwi b) {return QWI_CNEL(a,b);}
+INLINE(Vqwi,VQWF_CNEL) (Vqwf a, Vqwf b) {return QWF_CNEL(a,b);}
+INLINE(Vqdu,VQDU_CNEL) (Vqdu a, Vqdu b) {return QDU_CNEL(a,b);}
+INLINE(Vqdi,VQDI_CNEL) (Vqdi a, Vqdi b) {return QDI_CNEL(a,b);}
+INLINE(Vqdi,VQDF_CNEL) (Vqdf a, Vqdf b) {return QDF_CNEL(a,b);}
+INLINE(Vqqu,VQQU_CNEL) (Vqqu a, Vqqu b) {a.V0=QQU_CNEL(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQI_CNEL) (Vqqi a, Vqqi b) {a.V0=QQI_CNEL(a.V0, b.V0); return a;}
+INLINE(Vqqi,VQQF_CNEL) (Vqqf a, Vqqf b) {return ((Vqqi){QQF_CNEL(a.V0,b.V0)});}
+
+#if 0 // _LEAVE_ARM_CNEL
 }
 #endif
 
@@ -39625,409 +42859,290 @@ INLINE(Vqdi,VQDF_CNES) (Vqdf a, Vqdf b) {return QDF_CNES(a, b);}
 {
 #endif
 
-INLINE(int16_t, FLT16_CNEY) (flt16_t a, flt16_t b) {return a!=b;}
-INLINE(int32_t,   FLT_CNEY)   (float a,   float b) {return a!=b;}
-INLINE(int64_t,   DBL_CNEY)  (double a,  double b) {return a!=b;}
+INLINE(_Bool,FLT16_CNEY) (flt16_t a, flt16_t b) {return a!=b;}
 
-#if QUAD_NLLONG == 2
+INLINE(_Bool,  FLT_CNEY)   (float a,   float b) {return a!=b;}
 
-INLINE(QUAD_UTYPE,cneyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
-{
-    return  (a!=b);
-}
-
-INLINE(QUAD_ITYPE,cneyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return  (a!=b);
-}
-
-INLINE(QUAD_ITYPE,cneyqf) (QUAD_FTYPE a, QUAD_FTYPE b)
-{
-    return  (a!=b);
-}
-
-#endif
-
-INLINE(float,WBU_CNEY) (float a, float b)
-{
-    float32x2_t p = vdup_n_f32(a);
-    float32x2_t q = vdup_n_f32(b);
-    uint8x8_t   r = vceq_u8(
-        vreinterpret_u8_f32(p),
-        vreinterpret_u8_f32(q)
-    );
-    r = vmvn_u8(r);
-    r = vshr_n_u8(r, 7);
-    p = vreinterpret_f32_u8(r);
-    return  vget_lane_f32(p, 0);
-}
-
-INLINE(float,WBI_CNEY) (float a, float b)
-{
-    float32x2_t p = vdup_n_f32(a);
-    float32x2_t q = vdup_n_f32(b);
-    uint8x8_t   r = vceq_s8(
-        vreinterpret_s8_f32(p),
-        vreinterpret_s8_f32(q)
-    );
-    r = vmvn_u8(r);
-    r = vshr_n_u8(r, 7);
-    p = vreinterpret_f32_u8(r);
-    return  vget_lane_f32(p, 0);
-}
+INLINE(_Bool,  DBL_CNEY)  (double a,  double b) {return a!=b;}
 
 #if CHAR_MIN
-#   define  WBC_CNEY WBI_CNEY
+#   define  DBC_CNEY DBI_CNEY
+#   define  QBC_CNEY QBI_CNEY
 #else
-#   define  WBC_CNEY WBU_CNEY
+#   define  DBC_CNEY QBU_CNEY
+#   define  QBC_CNEY QBU_CNEY
 #endif
 
-INLINE(float,WHU_CNEY) (float a, float b)
+INLINE(_Bool,WYU_CNEY)       (float a,       float b) 
 {
-    float32x2_t p = vdup_n_f32(a);
-    float32x2_t q = vdup_n_f32(b);
-    uint16x4_t  r = vceq_u16(
-        vreinterpret_u16_f32(p),
-        vreinterpret_u16_f32(q)
-    );
-    r = vmvn_u16(r);
-    r = vshr_n_u16(r, 15);
-    p = vreinterpret_f32_u16(r);
-    return  vget_lane_f32(p, 0);
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    y.B.U = vmvn_u8(y.B.U);
+    x.W.U = vceq_u32(x.W.U, y.W.U);
+    return  vget_lane_u32(x.W.U, 0);
 }
 
-INLINE(float,WHI_CNEY) (float a, float b)
+INLINE(_Bool,WBZ_CNEY)       (float a,       float b) 
 {
-    float32x2_t p = vdup_n_f32(a);
-    float32x2_t q = vdup_n_f32(b);
-    uint16x4_t  r = vceq_s16(
-        vreinterpret_s16_f32(p),
-        vreinterpret_s16_f32(q)
-    );
-    r = vmvn_u16(r);
-    r = vshr_n_u16(r, 15);
-    p = vreinterpret_f32_u16(r);
-    return  vget_lane_f32(p, 0);
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vceq_u8(x.B.U, y.B.U);
+    return  !vget_lane_u32(x.W.U, 0);
 }
 
-INLINE(float,WHF_CNEY) (float a, float b)
+INLINE(_Bool,WHZ_CNEY)       (float a,       float b) 
 {
-    float32x2_t p = vdup_n_f32(a);
-    float32x2_t q = vdup_n_f32(b);
-    uint16x4_t  m;
-#if defined(SPC_ARM_FP16_SIMD)
-    m = vceq_f16(
-        vreinterpret_f16_f32(p),
-        vreinterpret_f16_f32(q)
-    );
-#else
-    float32x4_t l = vcvt_f32_f16(vreinterpret_f16_f32(p));
-    float32x4_t r = vcvt_f32_f16(vreinterpret_f16_f32(p));
-    m = vmovn_u32(vceqq_f32(l, r));
-#endif
-    m = vmvn_u16(m);
-    m = vshr_n_u16(m, 15);
-    p = vreinterpret_f32_u16(m);
-    return  vget_lane_f32(p, 0);
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vceq_u16(x.B.U, y.W.U);
+    return  !vget_lane_u32(x.W.U, 0);
 }
 
-
-INLINE(float,WWU_CNEY) (float a, float b)
+INLINE(_Bool,WHF_CNEY)       (float a,       float b) 
 {
-    float32x2_t p = vdup_n_f32(a);
-    float32x2_t q = vdup_n_f32(b);
-    uint32x2_t  r = vceq_u32(
-        vreinterpret_u32_f32(p),
-        vreinterpret_u32_f32(q)
-    );
-    r = vmvn_u32(r);
-    r = vshr_n_u32(r, 31);
-    p = vreinterpret_f32_u32(r);
-    return  vget_lane_f32(p, 0);
+    DWRD_VTYPE c = {.W.F={WHF_CEQS(a, b)}};
+    return  !vget_lane_u32(c.W.U, 0);
 }
 
-INLINE(float,WWI_CNEY) (float a, float b)
+INLINE(_Bool,WWZ_CNEY)       (float a,       float b) 
 {
-    float32x2_t p = vdup_n_f32(a);
-    float32x2_t q = vdup_n_f32(b);
-    uint32x2_t  r = vceq_s32(
-        vreinterpret_s32_f32(p),
-        vreinterpret_s32_f32(q)
-    );
-    r = vmvn_u32(r);
-    r = vshr_n_u32(r, 31);
-    p = vreinterpret_f32_u32(r);
-    return  vget_lane_f32(p, 0);
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.W.U = vceq_u32(x.W.U, y.W.U);
+    return  !vget_lane_u32(x.W.U, 0);
 }
 
-INLINE(float,WWF_CNEY) (float a, float b)
+INLINE(_Bool,DYU_CNEY)  (uint64x1_t a,  uint64x1_t b) 
 {
-    return  INT_ASWF((a!=b));
+    DWRD_VTYPE c = {.D.U=b};
+    c.B.U = vmvn_u8(c.B.U);
+    a = vceq_u64(a, c.D.U);
+    return  vget_lane_u64(a, 0);
 }
 
-#define     DBU_CNEY(A, B)            vshr_n_u8(vmvn_u8(vceq_u8(A,B)),7)
-#define     DBI_CNEY(A, B)  VDBU_ASTI(vshr_n_u8(vmvn_u8(vceq_s8(A,B)),7))
-#if CHAR_MIN
-#   define  DBC_CNEY        DBI_CNEY
-#else
-#   define  DBC_CNEY        DBU_CNEY
-#endif
-
-#define     DHU_CNEY(A, B)            vshr_n_u16(vmvn_u16(vceq_u16(A,B)),15)
-#define     DHI_CNEY(A, B)  VDHU_ASTI(vshr_n_u16(vmvn_u16(vceq_s16(A,B)),15))
-#if defined(SPC_ARM_FP16_SIMD)
-#   define  DHF_CNEY(A, B)  \
-VDHU_ASTI(vshr_n_u16(vmvn_u16(vceqz_f16(vsub_f16(A,B))),15))
-#else
-
-INLINE(int16x4_t,DHF_CNEY) (float16x4_t a, float16x4_t b)
+INLINE(_Bool,DBU_CNEY)   (uint8x8_t a,   uint8x8_t b)
 {
-/*  TODO: figure out the following macro doesn't work
-    since the error messages are completely nonsensical
-
-#define    MY_DHF_CNEY(A, B)        \
-vreinterpret_s16_u16(               \
-    vshr_n_u16(                     \
-        vmovn_u32(                  \
-            vmvnq_u32(              \
-                vceqq_f32(          \
-                    vcvt_f32_f16(a),\
-                    vcvt_f32_f16(b) \
-                )                   \
-            )                       \
-        ),                          \
-        15                          \
-    )                               \
-)
-
-*/
-    float32x4_t aq = vcvt_f32_f16(a);
-    float32x4_t bq = vcvt_f32_f16(b);
-    aq = vsubq_f32(aq, bq);
-    uint32x4_t  yq = vceqzq_f32(aq);
-    yq = vmvnq_u32(yq);
-    yq = vshrq_n_u32(yq, 31);
-    return vreinterpret_s16_u16(vmovn_u32(yq));
+    DWRD_VTYPE c = {.B.U=vceq_u8(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
 }
 
-#endif
-
-#define     DWU_CNEY(A, B)            vshr_n_u32(vmvn_u32(vceq_u32(A,B)),31)
-#define     DWI_CNEY(A, B)  VDWU_ASWI(vshr_n_u32(vmvn_u32(vceq_s32(A,B)),31))
-#define     DWF_CNEY(A, B)  VDWU_ASWI(vshr_n_u32(vmvn_u32(vceqz_f32((A-B))),31))
-
-#define     DDU_CNEY(A, B)          \
-vshr_n_u64(                         \
-    vreinterpret_u64_u32(           \
-        vmvn_u32(                   \
-            vreinterpret_u32_u64(   \
-                vceq_u64(A,B)       \
-            )                       \
-        )                           \
-    ),                              \
-    63                              \
-)
-
-#define     DDI_CNEY(A, B)              \
-vreinterpret_s64_u64(                   \
-    vshr_n_u64(                         \
-        vreinterpret_u64_u32(           \
-            vmvn_u32(                   \
-                vreinterpret_u32_u64(   \
-                    vceq_s64(A,B)       \
-                )                       \
-            )                           \
-        ),                              \
-        63                              \
-    )                                   \
-)
-
-#define     DDF_CNEY(A, B)              \
-vreinterpret_s64_u64(                   \
-    vshr_n_u64(                         \
-        vreinterpret_u64_u32(           \
-            vmvn_u32(                   \
-                vreinterpret_u32_u64(   \
-                    vceqz_f64((A-B))    \
-                )                       \
-            )                           \
-        ),                              \
-        63                              \
-    )                                   \
-)
-
-#define     QBU_CNEY(A, B)            vshrq_n_u8(vmvnq_u8(vceqq_u8(A,B)),7)
-#define     QBI_CNEY(A, B)  VQBU_ASTI(vshrq_n_u8(vmvnq_u8(vceqq_s8(A,B)),7))
-#if CHAR_MIN
-#   define  QBC_CNEY        QBI_CNEY
-#else
-#   define  QBC_CNEY        QBU_CNEY
-#endif
-
-#define     QHU_CNEY(A, B)            vshrq_n_u16(vmvnq_u16(vceqq_u16(A,B)),15)
-#define     QHI_CNEY(A, B)  VQHU_ASTI(vshrq_n_u16(vmvnq_u16(vceqq_s16(A,B)),15))
-#if defined(SPC_ARM_FP16_SIMD)
-#   define  QHF_CNEY(A, B)  VQHU_ASTI(vshrq_n_u16(vmvnq_u16(vceqq_f16(A,B)),15))
-#else
-INLINE(int16x8_t,QHF_CNEY) (float16x8_t a, float16x8_t b)
+INLINE(_Bool,DBI_CNEY)    (int8x8_t a,    int8x8_t b)
 {
-    int16x4_t l = DHF_CNEY(
-        vget_low_f16(a),
-        vget_low_f16(b)
-    );
-    int16x4_t r = DHF_CNEY(
-        vget_high_f16(a),
-        vget_high_f16(b)
-    );
-    return vcombine_s16(l, r);
+    DWRD_VTYPE c = {.B.U=vceq_s8(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
 }
 
-#endif
-
-#define     QWU_CNEY(A, B)            vshrq_n_u32(vmvnq_u32(vceqq_u32(A,B)),31)
-#define     QWI_CNEY(A, B)  VQWU_ASWI(vshrq_n_u32(vmvnq_u32(vceqq_s32(A,B)),31))
-#define     QWF_CNEY(A, B)  VQWU_ASWI(vshrq_n_u32(vmvnq_u32(vceqq_f32(A,B)),31))
-#define     QDU_CNEY(A, B)          \
-vshrq_n_u64(                        \
-    vreinterpretq_u64_u32(          \
-        vmvnq_u32(                  \
-            vreinterpretq_u32_u64(  \
-                vceqq_u64(A,B)      \
-            )                       \
-        )                           \
-    ),                              \
-    63                              \
-)
-
-#define     QDI_CNEY(A, B)              \
-vreinterpretq_s64_u64(                  \
-    vshrq_n_u64(                        \
-        vreinterpretq_u64_u32(          \
-            vmvnq_u32(                  \
-                vreinterpretq_u32_u64(  \
-                    vceqq_s64(A,B)      \
-                )                       \
-            )                           \
-        ),                              \
-        63                              \
-    )                                   \
-)
-
-#define     QDF_CNEY(A, B)              \
-vreinterpretq_s64_u64(                  \
-    vshrq_n_u64(                        \
-        vreinterpretq_u64_u32(          \
-            vmvnq_u32(                  \
-                vreinterpretq_u32_u64(  \
-                    vceqq_f64(A,B)      \
-                )                       \
-            )                           \
-        ),                              \
-        63                              \
-    )                                   \
-)
-
-
-INLINE(Vwbu,VWBU_CNEY) (Vwbu a, Vwbu b)
+INLINE(_Bool,DHU_CNEY)  (uint16x4_t a,  uint16x4_t b)
 {
-#define     VWBU_CNEY(A, B) WBU_ASTV(WBU_CNEY(VWBU_ASTM(A),VWBU_ASTM(B)))
-    return  VWBU_CNEY(a, b);
+    DWRD_VTYPE c = {.H.U=vceq_u16(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
 }
 
-INLINE(Vwbi,VWBI_CNEY) (Vwbi a, Vwbi b)
+INLINE(_Bool,DHI_CNEY)   (int16x4_t a,   int16x4_t b)
 {
-#define     VWBI_CNEY(A, B) WBI_ASTV(WBI_CNEY(VWBI_ASTM(A),VWBI_ASTM(B)))
-    return  VWBI_CNEY(a, b);
+    DWRD_VTYPE c = {.H.U=vceq_s16(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
 }
 
-INLINE(Vwbc,VWBC_CNEY) (Vwbc a, Vwbc b)
+INLINE(_Bool,DHF_CNEY) (float16x4_t a, float16x4_t b)
 {
-#define     VWBC_CNEY(A, B) WBC_ASTV(WBC_CNEY(VWBC_ASTM(A),VWBC_ASTM(B)))
-    return  VWBC_CNEY(a, b);
+    DWRD_VTYPE c = {.H.I=DHF_CEQS(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
+}
+
+INLINE(_Bool,DWU_CNEY)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_u32(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
+}
+
+INLINE(_Bool,DWI_CNEY)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_s32(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
+}
+
+INLINE(_Bool,DWF_CNEY) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_f32(a, b)};
+    return  !vget_lane_u64(c.D.U, 0);
+}
+
+INLINE(_Bool,DDU_CNEY)  (uint64x1_t a,  uint64x1_t b)
+{
+    a = vceq_u64(a, b);
+    return  !vget_lane_u64(a, 0);
+}
+
+INLINE(_Bool,DDI_CNEY)   (int64x1_t a,   int64x1_t b)
+{
+    uint64x1_t c = vceq_s64(a, b);
+    return  !vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,DDF_CNEY) (float64x1_t a, float64x1_t b)
+{
+    uint64x1_t c = vceq_f64(a, b);
+    return  !vget_lane_f64(c, 0);
 }
 
 
-INLINE(Vwhu,VWHU_CNEY) (Vwhu a, Vwhu b)
+INLINE(_Bool,QYU_CNEY)  (uint64x2_t a,  uint64x2_t b) 
 {
-#define     VWHU_CNEY(A, B) WHU_ASTV(WHU_CNEY(VWHU_ASTM(A),VWHU_ASTM(B)))
-    return  VWHU_CNEY(a, b);
+    QUAD_VTYPE c={.D.U=b};
+    c.B.U = vmvnq_u8(c.B.U);
+    a = vceqq_u64(a, c.D.U);
+    return  vgetq_lane_u64(a, 0)&vgetq_lane_u64(a, 1);
 }
 
-INLINE(Vwhi,VWHI_CNEY) (Vwhi a, Vwhi b)
+INLINE(_Bool,QBU_CNEY)  (uint8x16_t a,  uint8x16_t b)
 {
-#define     VWHI_CNEY(A, B) WHI_ASTV(WHI_CNEY(VWHI_ASTM(A),VWHI_ASTM(B)))
-    return  VWHI_CNEY(a, b);
+    QUAD_VTYPE  c = {.B.U=vceqq_u8(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
 }
 
-INLINE(Vwhi,VWHF_CNEY) (Vwhf a, Vwhf b)
+INLINE(_Bool,QBI_CNEY)   (int8x16_t a,   int8x16_t b)
 {
-#define     VWHF_CNEY(A, B) WHI_ASTV(WHF_CNEY(VWHF_ASTM(A),VWHF_ASTM(B)))
-    return  VWHF_CNEY(a, b);
+    QUAD_VTYPE  c = {.B.U=vceqq_s8(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
 }
 
-
-INLINE(Vwwu,VWWU_CNEY) (Vwwu a, Vwwu b)
+INLINE(_Bool,QHU_CNEY)  (uint16x8_t a,  uint16x8_t b)
 {
-#define     VWWU_CNEY(A, B) WWU_ASTV(WWU_CNEY(VWWU_ASTM(A),VWWU_ASTM(B)))
-    return  VWWU_CNEY(a, b);
+    QUAD_VTYPE  c = {.H.U=vceqq_u16(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
 }
 
-INLINE(Vwwi,VWWI_CNEY) (Vwwi a, Vwwi b)
+INLINE(_Bool,QHI_CNEY)   (int16x8_t a,   int16x8_t b)
 {
-#define     VWWI_CNEY(A, B) WWI_ASTV(WWI_CNEY(VWWI_ASTM(A),VWWI_ASTM(B)))
-    return  VWWI_CNEY(a, b);
+    QUAD_VTYPE  c = {.H.U=vceqq_s16(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
 }
 
-INLINE(Vwwi,VWWF_CNEY) (Vwwf a, Vwwf b)
+INLINE(_Bool,QHF_CNEY) (float16x8_t a, float16x8_t b)
 {
-#define     VWWF_CNEY(A, B) WWI_ASTV(WWF_CNEY(VWWF_ASTM(A),VWWF_ASTM(B)))
-    return  VWWF_CNEY(a, b);
+    QUAD_VTYPE  c = {.H.I=VQHF_CEQS(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
 }
 
-
-
-INLINE(Vdbu,VDBU_CNEY) (Vdbu a, Vdbu b) {return DBU_CNEY(a, b);}
-INLINE(Vdbi,VDBI_CNEY) (Vdbi a, Vdbi b) {return DBI_CNEY(a, b);}
-INLINE(Vdbc,VDBC_CNEY) (Vdbc a, Vdbc b)
+INLINE(_Bool,QWU_CNEY)  (uint32x4_t a,  uint32x4_t b)
 {
-    return  DBC_ASTV(
-        DBC_CNEY(
-            VDBC_ASTM(a),
-            VDBC_ASTM(b)
-        )
-    );
+    QUAD_VTYPE  c = {.W.U=vceqq_u32(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
 }
 
-INLINE(Vdhu,VDHU_CNEY) (Vdhu a, Vdhu b) {return DHU_CNEY(a, b);}
-INLINE(Vdhi,VDHI_CNEY) (Vdhi a, Vdhi b) {return DHI_CNEY(a, b);}
-INLINE(Vdhi,VDHF_CNEY) (Vdhf a, Vdhf b) {return DHF_CNEY(a, b);}
-
-INLINE(Vdwu,VDWU_CNEY) (Vdwu a, Vdwu b) {return DWU_CNEY(a, b);}
-INLINE(Vdwi,VDWI_CNEY) (Vdwi a, Vdwi b) {return DWI_CNEY(a, b);}
-INLINE(Vdwi,VDWF_CNEY) (Vdwf a, Vdwf b) {return DWF_CNEY(a, b);}
-
-INLINE(Vddu,VDDU_CNEY) (Vddu a, Vddu b) {return DDU_CNEY(a, b);}
-INLINE(Vddi,VDDI_CNEY) (Vddi a, Vddi b) {return DDI_CNEY(a, b);}
-INLINE(Vddi,VDDF_CNEY) (Vddf a, Vddf b) {return DDF_CNEY(a, b);}
-
-
-INLINE(Vqbu,VQBU_CNEY) (Vqbu a, Vqbu b) {return QBU_CNEY(a,b);}
-INLINE(Vqbi,VQBI_CNEY) (Vqbi a, Vqbi b) {return QBI_CNEY(a,b);}
-INLINE(Vqbc,VQBC_CNEY) (Vqbc a, Vqbc b)
+INLINE(_Bool,QWI_CNEY)   (int32x4_t a,   int32x4_t b)
 {
-    return  QBC_ASTV(QBC_CNEY(VQBC_ASTM(a),VQBC_ASTM(b)));
+    QUAD_VTYPE  c = {.W.U=vceqq_s32(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
 }
 
-INLINE(Vqhu,VQHU_CNEY) (Vqhu a, Vqhu b) {return QHU_CNEY(a,b);}
-INLINE(Vqhi,VQHI_CNEY) (Vqhi a, Vqhi b) {return QHI_CNEY(a,b);}
-INLINE(Vqhi,VQHF_CNEY) (Vqhf a, Vqhf b) {return QHF_CNEY(a,b);}
+INLINE(_Bool,QWF_CNEY) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE  c = {.W.U=vceqq_f32(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
+}
 
-INLINE(Vqwu,VQWU_CNEY) (Vqwu a, Vqwu b) {return QWU_CNEY(a,b);}
-INLINE(Vqwi,VQWI_CNEY) (Vqwi a, Vqwi b) {return QWI_CNEY(a,b);}
-INLINE(Vqwi,VQWF_CNEY) (Vqwf a, Vqwf b) {return QWF_CNEY(a,b);}
-INLINE(Vqdu,VQDU_CNEY) (Vqdu a, Vqdu b) {return QDU_CNEY(a,b);}
-INLINE(Vqdi,VQDI_CNEY) (Vqdi a, Vqdi b) {return QDI_CNEY(a,b);}
-INLINE(Vqdi,VQDF_CNEY) (Vqdf a, Vqdf b) {return QDF_CNEY(a,b);}
+INLINE(_Bool,QDU_CNEY)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_u64(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
+}
+
+INLINE(_Bool,QDI_CNEY)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_s64(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
+}
+
+INLINE(_Bool,QDF_CNEY) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_f64(a, b)};
+    DWRD_VTYPE  l = {.D.U=vget_low_u64(c.D.U)};
+    uint64x1_t  r = vget_high_u64(c.D.U);
+    r = vorr_u64(l.D.U, r);
+    return  !vget_lane_u64(r, 0);
+}
+
+INLINE(_Bool,QQU_CNEY)  (uint64x2_t a,  uint64x2_t b)
+{
+    a = vceqq_u64(a, b);
+    return !(vgetq_lane_u64(a, 0)&vgetq_lane_u64(a, 1));
+}
+
+INLINE(_Bool,QQI_CNEY)   (int64x2_t a,   int64x2_t b)
+{
+    uint64x2_t c = vceqq_s64(a, b);
+    return !(vgetq_lane_u64(a, 0)&vgetq_lane_u64(a, 1));
+}
+
+INLINE(_Bool,VWYU_CNEY) (Vwyu a, Vwyu b) {return WYU_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VWBU_CNEY) (Vwbu a, Vwbu b) {return WBZ_CNEY(a.V0, b.V0);}         
+INLINE(_Bool,VWBI_CNEY) (Vwbi a, Vwbi b) {return WBZ_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_CNEY) (Vwbc a, Vwbc b) {return WBZ_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VWHU_CNEY) (Vwhu a, Vwhu b) {return WHZ_CNEY(a.V0, b.V0);}         
+INLINE(_Bool,VWHI_CNEY) (Vwhi a, Vwhi b) {return WHZ_CNEY(a.V0, b.V0);}         
+INLINE(_Bool,VWHF_CNEY) (Vwhf a, Vwhf b) {return WHF_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VWWU_CNEY) (Vwwu a, Vwwu b) {return WWZ_CNEY(a.V0, b.V0);}         
+INLINE(_Bool,VWWI_CNEY) (Vwwi a, Vwwi b) {return WWZ_CNEY(a.V0, b.V0);}         
+INLINE(_Bool,VWWF_CNEY) (Vwwf a, Vwwf b) {return a.V0!=b.V0;}
+
+INLINE(_Bool,VDYU_CNEY) (Vdyu a, Vdyu b) {return DYU_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VDBU_CNEY) (Vdbu a, Vdbu b) {return DBU_CNEY(a, b);}
+INLINE(_Bool,VDBI_CNEY) (Vdbi a, Vdbi b) {return DBI_CNEY(a, b);}
+INLINE(_Bool,VDBC_CNEY) (Vdbc a, Vdbc b) {return DBC_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VDHU_CNEY) (Vdhu a, Vdhu b) {return DHU_CNEY(a, b);}
+INLINE(_Bool,VDHI_CNEY) (Vdhi a, Vdhi b) {return DHI_CNEY(a, b);}
+INLINE(_Bool,VDHF_CNEY) (Vdhf a, Vdhf b) {return DHF_CNEY(a, b);}
+INLINE(_Bool,VDWU_CNEY) (Vdwu a, Vdwu b) {return DWU_CNEY(a, b);}
+INLINE(_Bool,VDWI_CNEY) (Vdwi a, Vdwi b) {return DWI_CNEY(a, b);}
+INLINE(_Bool,VDWF_CNEY) (Vdwf a, Vdwf b) {return DWF_CNEY(a, b);}
+INLINE(_Bool,VDDU_CNEY) (Vddu a, Vddu b) {return DDU_CNEY(a, b);} 
+INLINE(_Bool,VDDI_CNEY) (Vddi a, Vddi b) {return DDI_CNEY(a, b);} 
+INLINE(_Bool,VDDF_CNEY) (Vddf a, Vddf b) {return DDF_CNEY(a, b);} 
+
+INLINE(_Bool,VQYU_CNEY) (Vqyu a, Vqyu b) {return QYU_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VQBU_CNEY) (Vqbu a, Vqbu b) {return QBU_CNEY(a, b);}
+INLINE(_Bool,VQBI_CNEY) (Vqbi a, Vqbi b) {return QBI_CNEY(a, b);}
+INLINE(_Bool,VQBC_CNEY) (Vqbc a, Vqbc b) {return QBC_CNEY(a.V0, b.V0);}
+INLINE(_Bool,VQHU_CNEY) (Vqhu a, Vqhu b) {return QHU_CNEY(a, b);}
+INLINE(_Bool,VQHI_CNEY) (Vqhi a, Vqhi b) {return QHI_CNEY(a, b);}
+INLINE(_Bool,VQHF_CNEY) (Vqhf a, Vqhf b) {return QHF_CNEY(a, b);}
+INLINE(_Bool,VQWU_CNEY) (Vqwu a, Vqwu b) {return QWU_CNEY(a, b);}
+INLINE(_Bool,VQWI_CNEY) (Vqwi a, Vqwi b) {return QWI_CNEY(a, b);}
+INLINE(_Bool,VQWF_CNEY) (Vqwf a, Vqwf b) {return QWF_CNEY(a, b);}
+INLINE(_Bool,VQDU_CNEY) (Vqdu a, Vqdu b) {return QDU_CNEY(a, b);} 
+INLINE(_Bool,VQDI_CNEY) (Vqdi a, Vqdi b) {return QDI_CNEY(a, b);} 
+INLINE(_Bool,VQDF_CNEY) (Vqdf a, Vqdf b) {return QDF_CNEY(a, b);} 
+INLINE(_Bool,VQQU_CNEY) (Vqqu a, Vqqu b) {return QQU_CNEY(a.V0, b.V0);} 
+INLINE(_Bool,VQQI_CNEY) (Vqqi a, Vqqi b) {return QQI_CNEY(a.V0, b.V0);} 
+INLINE(_Bool,VQQF_CNEY) (Vqqf a, Vqqf b) {return a.V0!=b.V0;}
 
 #if 0 // _LEAVE_ARM_CNEY
 }
@@ -40037,54 +43152,6 @@ INLINE(Vqdi,VQDF_CNEY) (Vqdf a, Vqdf b) {return QDF_CNEY(a,b);}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_CLTS)
-(
-    void volatile const *a,
-    void volatile const *b
-)
-{
-    return (a != b) ? NULL-((void *) INTPTR_C(1)) : 0;
-}
-
-INLINE(  _Bool,   BOOL_CLTS)   (_Bool a,   _Bool b) {return a<b;}
-INLINE(  uchar,  UCHAR_CLTS)   (uchar a,   uchar b)
-{
-    return  (a<b) ? UCHAR_MAX : 0;
-}
-
-INLINE(  schar,  SCHAR_CLTS)   (schar a,   schar b) {return  0-(a<b);}
-INLINE(   char,   CHAR_CLTS)    (char a,    char b)
-{
-    return  (a<b) ? '\xff' : '\x00';
-}
-
-INLINE( ushort,  USHRT_CLTS)  (ushort a,  ushort b)
-{
-    return  (a<b) ? USHRT_MAX : 0;
-}
-
-INLINE(  short,   SHRT_CLTS)   (short a,   short b) {return  0-(a<b);}
-
-INLINE(   uint,   UINT_CLTS)    (uint a,    uint b)
-{
-    return  (a<b) ? UINT_MAX : 0u;
-}
-
-INLINE(    int,    INT_CLTS)     (int a,     int b) {return  0-(a<b);}
-
-INLINE(  ulong,  ULONG_CLTS)   (ulong a,   ulong b)
-{
-    return  (a<b) ? ULONG_MAX : 0ul;
-}
-
-INLINE(   long,   LONG_CLTS)    (long a,    long b) {return  0l-(a<b);}
-
-INLINE( ullong, ULLONG_CLTS)  (ullong a,  ullong b)
-{
-    return  (a<b) ? ULLONG_MAX : 0ull;
-}
-
-INLINE(  llong,  LLONG_CLTS)   (llong a,   llong b) {return  0ll-(a<b);}
 INLINE(int16_t,  FLT16_CLTS) (flt16_t a, flt16_t b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
@@ -40093,27 +43160,15 @@ INLINE(int16_t,  FLT16_CLTS) (flt16_t a, flt16_t b)
     return  0-(a<b);
 #endif
 }
+
 INLINE(int32_t,    FLT_CLTS)   (float a,   float b) {return  vclts_f32(a, b);}
+
 INLINE(int64_t,    DBL_CLTS)  (double a,  double b) {return  vcltd_f64(a, b);}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cltsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
-{
-    return  (QUAD_UTYPE) 0-(a<b);
-}
-
-INLINE(QUAD_ITYPE,cltsqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return  (QUAD_ITYPE) 0-(a<b);
-}
 
 INLINE(QUAD_ITYPE,cltsqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (QUAD_ITYPE) 0-(a<b);
 }
-
-#endif
 
 #define     DBU_CLTS            vclt_u8
 #define     DBI_CLTS(A, B)      vreinterpret_s16_u16(vclt_s8(A,B))
@@ -40348,36 +43403,22 @@ INLINE(Vqdi,VQDF_CLTS) (Vqdf a, Vqdf b) {return QDF_CLTS(a, b);}
 }
 #endif
 
-#if 0 // _ENTER_ARM_CLTY
+#if 0 // _ENTER_ARM_CLTL
 {
 #endif
 
-INLINE(int16_t, FLT16_CLTY) (flt16_t a, flt16_t b) {return a<b;}
-INLINE(int32_t,   FLT_CLTY)   (float a,   float b) {return a<b;}
-INLINE(int64_t,   DBL_CLTY)  (double a,  double b) {return a<b;}
+INLINE(_Bool, FLT16_CLTL) (flt16_t a, flt16_t b) {return a<b;}
+INLINE(_Bool,   FLT_CLTL)   (float a,   float b) {return a<b;}
+INLINE(_Bool,   DBL_CLTL)  (double a,  double b) {return a<b;}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cltyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(_Bool,cltlqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (a<b);
 }
 
-INLINE(QUAD_ITYPE,cltyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+INLINE( Wbu,WBU_CLTL) (Wbu a, Wbu b)
 {
-    return  (a<b);
-}
-
-INLINE(QUAD_ITYPE,cltyqf) (QUAD_FTYPE a, QUAD_FTYPE b)
-{
-    return  (a<b);
-}
-
-#endif
-
-INLINE( Wbu,WBU_CLTY) (Wbu a, Wbu b)
-{
-#define     WBU_CLTY    WBU_CLTY
+#define     WBU_CLTL    WBU_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     uint8x8_t   r = vclt_u8(
@@ -40390,9 +43431,9 @@ INLINE( Wbu,WBU_CLTY) (Wbu a, Wbu b)
     );
 }
 
-INLINE( Wbu,WBI_CLTY) (Wbi a, Wbi b)
+INLINE( Wbu,WBI_CLTL) (Wbi a, Wbi b)
 {
-#define     WBI_CLTY    WBI_CLTY
+#define     WBI_CLTL    WBI_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -40410,14 +43451,14 @@ INLINE( Wbu,WBI_CLTY) (Wbi a, Wbi b)
 }
 
 #if CHAR_MIN
-#   define  WBC_CLTY    WBI_CLTY
+#   define  WBC_CLTL    WBI_CLTL
 #else
-#   define  WBC_CLTY    WBU_CLTY
+#   define  WBC_CLTL    WBU_CLTL
 #endif
 
-INLINE( Whu,WHU_CLTY) (Whu a, Whu b)
+INLINE( Whu,WHU_CLTL) (Whu a, Whu b)
 {
-#define     WHU_CLTY    WHU_CLTY
+#define     WHU_CLTL    WHU_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -40434,9 +43475,9 @@ INLINE( Whu,WHU_CLTY) (Whu a, Whu b)
     );
 }
 
-INLINE( Whu,WHI_CLTY) (Whi a, Whi b)
+INLINE( Whu,WHI_CLTL) (Whi a, Whi b)
 {
-#define     WHI_CLTY    WHI_CLTY
+#define     WHI_CLTL    WHI_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -40453,9 +43494,9 @@ INLINE( Whu,WHI_CLTY) (Whi a, Whi b)
     );
 }
 
-INLINE( Whu,WHF_CLTY) (Whf a, Whf b)
+INLINE( Whu,WHF_CLTL) (Whf a, Whf b)
 {
-#define     WHF_CLTY    WHF_CLTY
+#define     WHF_CLTL    WHF_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
 #if defined(SPC_ARM_FP16_SIMD)
@@ -40479,9 +43520,9 @@ INLINE( Whu,WHF_CLTY) (Whf a, Whf b)
 #endif
 }
 
-INLINE( Wwu,WWU_CLTY) (Wwu a, Wwu b)
+INLINE( Wwu,WWU_CLTL) (Wwu a, Wwu b)
 {
-#define     WWU_CLTY    WWU_CLTY
+#define     WWU_CLTL    WWU_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -40498,9 +43539,9 @@ INLINE( Wwu,WWU_CLTY) (Wwu a, Wwu b)
     );
 }
 
-INLINE( Wwu,WWI_CLTY) (Wwi a, Wwi b)
+INLINE( Wwu,WWI_CLTL) (Wwi a, Wwi b)
 {
-#define     WWI_CLTY    WWI_CLTY
+#define     WWI_CLTL    WWI_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -40517,9 +43558,9 @@ INLINE( Wwu,WWI_CLTY) (Wwi a, Wwi b)
     );
 }
 
-INLINE( Wwu,WWF_CLTY) (Wwf a, Wwf b)
+INLINE( Wwu,WWF_CLTL) (Wwf a, Wwf b)
 {
-#define     WWF_CLTY    WWF_CLTY
+#define     WWF_CLTL    WWF_CLTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -40528,20 +43569,20 @@ INLINE( Wwu,WWF_CLTY) (Wwf a, Wwf b)
     );
 }
 
-#define     DBU_CLTY(A, B)            vshr_n_u8(vclt_u8(A,B),7)
-#define     DBI_CLTY(A, B)  VDBU_ASTI(vshr_n_u8(vclt_s8(A,B),7))
+#define     DBU_CLTL(A, B)            vshr_n_u8(vclt_u8(A,B),7)
+#define     DBI_CLTL(A, B)  VDBU_ASTI(vshr_n_u8(vclt_s8(A,B),7))
 #if CHAR_MIN
-#   define  DBC_CLTY        DBI_CLTY
+#   define  DBC_CLTL        DBI_CLTL
 #else
-#   define  DBC_CLTY        DBU_CLTY
+#   define  DBC_CLTL        DBU_CLTL
 #endif
 
-#define     DHU_CLTY(A, B)            vshr_n_u16(vclt_u16(A,B),15)
-#define     DHI_CLTY(A, B)  VDHU_ASTI(vshr_n_u16(vclt_s16(A,B),15))
+#define     DHU_CLTL(A, B)            vshr_n_u16(vclt_u16(A,B),15)
+#define     DHI_CLTL(A, B)  VDHU_ASTI(vshr_n_u16(vclt_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  DHF_CLTY(A, B)  VDHU_ASTI(vshr_n_u16(vclt_f16(A,B),15))
+#   define  DHF_CLTL(A, B)  VDHU_ASTI(vshr_n_u16(vclt_f16(A,B),15))
 #else
-#   define  DHF_CLTY(A, B)      \
+#   define  DHF_CLTL(A, B)      \
 VDHU_ASHI(                      \
     vshr_n_u16(                 \
         vmovn_u32(              \
@@ -40555,29 +43596,29 @@ VDHU_ASHI(                      \
 )
 #endif
 
-#define     DWU_CLTY(A, B)            vshr_n_u32(vclt_u32(A,B),31)
-#define     DWI_CLTY(A, B)  VDWU_ASTI(vshr_n_u32(vclt_s32(A,B),31))
-#define     DWF_CLTY(A, B)  VDWU_ASTI(vshr_n_u32(vclt_f32(A,B),31))
+#define     DWU_CLTL(A, B)            vshr_n_u32(vclt_u32(A,B),31)
+#define     DWI_CLTL(A, B)  VDWU_ASTI(vshr_n_u32(vclt_s32(A,B),31))
+#define     DWF_CLTL(A, B)  VDWU_ASTI(vshr_n_u32(vclt_f32(A,B),31))
 
-#define     DDU_CLTY(A, B)            vshr_n_u64(vclt_u64(A,B),63)
-#define     DDI_CLTY(A, B)  VDDU_ASTI(vshr_n_u64(vclt_s64(A,B),63))
-#define     DDF_CLTY(A, B)  VDDU_ASTI(vshr_n_u64(vclt_f64(A,B),63))
+#define     DDU_CLTL(A, B)            vshr_n_u64(vclt_u64(A,B),63)
+#define     DDI_CLTL(A, B)  VDDU_ASTI(vshr_n_u64(vclt_s64(A,B),63))
+#define     DDF_CLTL(A, B)  VDDU_ASTI(vshr_n_u64(vclt_f64(A,B),63))
 
 
-#define     QBU_CLTY(A, B)            vshrq_n_u8(vcltq_u8(A,B),7)
-#define     QBI_CLTY(A, B)  VQBU_ASTI(vshrq_n_u8(vcltq_s8(A,B),7))
+#define     QBU_CLTL(A, B)            vshrq_n_u8(vcltq_u8(A,B),7)
+#define     QBI_CLTL(A, B)  VQBU_ASTI(vshrq_n_u8(vcltq_s8(A,B),7))
 #if CHAR_MIN
-#   define  QBC_CLTY        QBI_CLTY
+#   define  QBC_CLTL        QBI_CLTL
 #else
-#   define  QBC_CLTY        QBU_CLTY
+#   define  QBC_CLTL        QBU_CLTL
 #endif
 
-#define     QHU_CLTY(A, B)            vshrq_n_u16(vcltq_u16(A,B),15)
-#define     QHI_CLTY(A, B)  VQHU_ASTI(vshrq_n_u16(vcltq_s16(A,B),15))
+#define     QHU_CLTL(A, B)            vshrq_n_u16(vcltq_u16(A,B),15)
+#define     QHI_CLTL(A, B)  VQHU_ASTI(vshrq_n_u16(vcltq_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  QHF_CLTY(A, B)  VQHU_ASTI(vshrq_n_u16(vcltq_f16(A,B),15))
+#   define  QHF_CLTL(A, B)  VQHU_ASTI(vshrq_n_u16(vcltq_f16(A,B),15))
 #else
-#   define  QHF_CLTY(A, B)                          \
+#   define  QHF_CLTL(A, B)                          \
 vreinterpretq_s16_u16(                              \
     vshrq_n_u16(                                    \
         vcombine_u16(                               \
@@ -40599,80 +43640,80 @@ vreinterpretq_s16_u16(                              \
 )
 #endif
 
-#define     QWU_CLTY(A, B)            vshrq_n_u32(vcltq_u32(A,B),31)
-#define     QWI_CLTY(A, B)  VQWU_ASTI(vshrq_n_u32(vcltq_s32(A,B),31))
-#define     QWF_CLTY(A, B)  VQWU_ASTI(vshrq_n_u32(vcltq_f32(A,B),31))
+#define     QWU_CLTL(A, B)            vshrq_n_u32(vcltq_u32(A,B),31)
+#define     QWI_CLTL(A, B)  VQWU_ASTI(vshrq_n_u32(vcltq_s32(A,B),31))
+#define     QWF_CLTL(A, B)  VQWU_ASTI(vshrq_n_u32(vcltq_f32(A,B),31))
 
-#define     QDU_CLTY(A, B)            vshrq_n_u64(vcltq_u64(A,B),63)
-#define     QDI_CLTY(A, B)  VQDU_ASTI(vshrq_n_u64(vcltq_s64(A,B),63))
-#define     QDF_CLTY(A, B)  VQDU_ASTI(vshrq_n_u64(vcltq_f64(A,B),63))
+#define     QDU_CLTL(A, B)            vshrq_n_u64(vcltq_u64(A,B),63)
+#define     QDI_CLTL(A, B)  VQDU_ASTI(vshrq_n_u64(vcltq_s64(A,B),63))
+#define     QDF_CLTL(A, B)  VQDU_ASTI(vshrq_n_u64(vcltq_f64(A,B),63))
 
 
-INLINE(Vwyu,VWYU_CLTY) (Vwyu a, Vwyu b)
+INLINE(Vwyu,VWYU_CLTL) (Vwyu a, Vwyu b)
 {
     uint32_t p = VWWU_ASTV(VWYU_ASWU(a));
     uint32_t q = VWWU_ASTV(VWYU_ASWU(b));
     return  VWWU_ASYU(UINT_ASTV((~p&q)));
 }
 
-INLINE(Vwbu,VWBU_CLTY) (Vwbu a, Vwbu b)
+INLINE(Vwbu,VWBU_CLTL) (Vwbu a, Vwbu b)
 {
-#define     VWBU_CLTY(A, B) WBU_ASTV(WBU_CLTY(VWBU_ASTM(A),VWBU_ASTM(B)))
-    return  VWBU_CLTY(a, b);
+#define     VWBU_CLTL(A, B) WBU_ASTV(WBU_CLTL(VWBU_ASTM(A),VWBU_ASTM(B)))
+    return  VWBU_CLTL(a, b);
 }
 
-INLINE(Vwbi,VWBI_CLTY) (Vwbi a, Vwbi b)
+INLINE(Vwbi,VWBI_CLTL) (Vwbi a, Vwbi b)
 {
-#define     VWBI_CLTY(A, B) WBI_ASTV(WBI_CLTY(VWBI_ASTM(A),VWBI_ASTM(B)))
-    return  VWBI_CLTY(a, b);
+#define     VWBI_CLTL(A, B) WBI_ASTV(WBI_CLTL(VWBI_ASTM(A),VWBI_ASTM(B)))
+    return  VWBI_CLTL(a, b);
 }
 
-INLINE(Vwbc,VWBC_CLTY) (Vwbc a, Vwbc b)
+INLINE(Vwbc,VWBC_CLTL) (Vwbc a, Vwbc b)
 {
-#define     VWBC_CLTY(A, B) WBC_ASTV(WBC_CLTY(VWBC_ASTM(A),VWBC_ASTM(B)))
-    return  VWBC_CLTY(a, b);
-}
-
-
-INLINE(Vwhu,VWHU_CLTY) (Vwhu a, Vwhu b)
-{
-#define     VWHU_CLTY(A, B) WHU_ASTV(WHU_CLTY(VWHU_ASTM(A),VWHU_ASTM(B)))
-    return  VWHU_CLTY(a, b);
-}
-
-INLINE(Vwhi,VWHI_CLTY) (Vwhi a, Vwhi b)
-{
-#define     VWHI_CLTY(A, B) WHI_ASTV(WHI_CLTY(VWHI_ASTM(A),VWHI_ASTM(B)))
-    return  VWHI_CLTY(a, b);
-}
-
-INLINE(Vwhi,VWHF_CLTY) (Vwhf a, Vwhf b)
-{
-#define     VWHF_CLTY(A, B) WHI_ASTV(WHF_CLTY(VWHF_ASTM(A),VWHF_ASTM(B)))
-    return  VWHF_CLTY(a, b);
+#define     VWBC_CLTL(A, B) WBC_ASTV(WBC_CLTL(VWBC_ASTM(A),VWBC_ASTM(B)))
+    return  VWBC_CLTL(a, b);
 }
 
 
-INLINE(Vwwu,VWWU_CLTY) (Vwwu a, Vwwu b)
+INLINE(Vwhu,VWHU_CLTL) (Vwhu a, Vwhu b)
 {
-#define     VWWU_CLTY(A, B) WWU_ASTV(WWU_CLTY(VWWU_ASTM(A),VWWU_ASTM(B)))
-    return  VWWU_CLTY(a, b);
+#define     VWHU_CLTL(A, B) WHU_ASTV(WHU_CLTL(VWHU_ASTM(A),VWHU_ASTM(B)))
+    return  VWHU_CLTL(a, b);
 }
 
-INLINE(Vwwi,VWWI_CLTY) (Vwwi a, Vwwi b)
+INLINE(Vwhi,VWHI_CLTL) (Vwhi a, Vwhi b)
 {
-#define     VWWI_CLTY(A, B) WWI_ASTV(WWI_CLTY(VWWI_ASTM(A),VWWI_ASTM(B)))
-    return  VWWI_CLTY(a, b);
+#define     VWHI_CLTL(A, B) WHI_ASTV(WHI_CLTL(VWHI_ASTM(A),VWHI_ASTM(B)))
+    return  VWHI_CLTL(a, b);
 }
 
-INLINE(Vwwi,VWWF_CLTY) (Vwwf a, Vwwf b)
+INLINE(Vwhi,VWHF_CLTL) (Vwhf a, Vwhf b)
 {
-#define     VWWF_CLTY(A, B) WWI_ASTV(WWF_CLTY(VWWF_ASTM(A),VWWF_ASTM(B)))
-    return  VWWF_CLTY(a, b);
+#define     VWHF_CLTL(A, B) WHI_ASTV(WHF_CLTL(VWHF_ASTM(A),VWHF_ASTM(B)))
+    return  VWHF_CLTL(a, b);
 }
 
 
-INLINE(Vdyu,VDYU_CLTY) (Vdyu a, Vdyu b)
+INLINE(Vwwu,VWWU_CLTL) (Vwwu a, Vwwu b)
+{
+#define     VWWU_CLTL(A, B) WWU_ASTV(WWU_CLTL(VWWU_ASTM(A),VWWU_ASTM(B)))
+    return  VWWU_CLTL(a, b);
+}
+
+INLINE(Vwwi,VWWI_CLTL) (Vwwi a, Vwwi b)
+{
+#define     VWWI_CLTL(A, B) WWI_ASTV(WWI_CLTL(VWWI_ASTM(A),VWWI_ASTM(B)))
+    return  VWWI_CLTL(a, b);
+}
+
+INLINE(Vwwi,VWWF_CLTL) (Vwwf a, Vwwf b)
+{
+#define     VWWF_CLTL(A, B) WWI_ASTV(WWF_CLTL(VWWF_ASTM(A),VWWF_ASTM(B)))
+    return  VWWF_CLTL(a, b);
+}
+
+
+INLINE(Vdyu,VDYU_CLTL) (Vdyu a, Vdyu b)
 {
     uint64x1_t p = VDYU_ASDU(a);
     uint64x1_t q = VDYU_ASDU(b);
@@ -40681,32 +43722,32 @@ INLINE(Vdyu,VDYU_CLTY) (Vdyu a, Vdyu b)
 }
 
 
-INLINE(Vdbu,VDBU_CLTY) (Vdbu a, Vdbu b) {return DBU_CLTY(a, b);}
-INLINE(Vdbi,VDBI_CLTY) (Vdbi a, Vdbi b) {return DBI_CLTY(a, b);}
-INLINE(Vdbc,VDBC_CLTY) (Vdbc a, Vdbc b)
+INLINE(Vdbu,VDBU_CLTL) (Vdbu a, Vdbu b) {return DBU_CLTL(a, b);}
+INLINE(Vdbi,VDBI_CLTL) (Vdbi a, Vdbi b) {return DBI_CLTL(a, b);}
+INLINE(Vdbc,VDBC_CLTL) (Vdbc a, Vdbc b)
 {
     return  DBC_ASTV(
-        DBC_CLTY(
+        DBC_CLTL(
             VDBC_ASTM(a),
             VDBC_ASTM(b)
         )
     );
 }
 
-INLINE(Vdhu,VDHU_CLTY) (Vdhu a, Vdhu b) {return DHU_CLTY(a, b);}
-INLINE(Vdhi,VDHI_CLTY) (Vdhi a, Vdhi b) {return DHI_CLTY(a, b);}
-INLINE(Vdhi,VDHF_CLTY) (Vdhf a, Vdhf b) {return DHF_CLTY(a, b);}
+INLINE(Vdhu,VDHU_CLTL) (Vdhu a, Vdhu b) {return DHU_CLTL(a, b);}
+INLINE(Vdhi,VDHI_CLTL) (Vdhi a, Vdhi b) {return DHI_CLTL(a, b);}
+INLINE(Vdhi,VDHF_CLTL) (Vdhf a, Vdhf b) {return DHF_CLTL(a, b);}
 
-INLINE(Vdwu,VDWU_CLTY) (Vdwu a, Vdwu b) {return DWU_CLTY(a, b);}
-INLINE(Vdwi,VDWI_CLTY) (Vdwi a, Vdwi b) {return DWI_CLTY(a, b);}
-INLINE(Vdwi,VDWF_CLTY) (Vdwf a, Vdwf b) {return DWF_CLTY(a, b);}
+INLINE(Vdwu,VDWU_CLTL) (Vdwu a, Vdwu b) {return DWU_CLTL(a, b);}
+INLINE(Vdwi,VDWI_CLTL) (Vdwi a, Vdwi b) {return DWI_CLTL(a, b);}
+INLINE(Vdwi,VDWF_CLTL) (Vdwf a, Vdwf b) {return DWF_CLTL(a, b);}
 
-INLINE(Vddu,VDDU_CLTY) (Vddu a, Vddu b) {return DDU_CLTY(a, b);}
-INLINE(Vddi,VDDI_CLTY) (Vddi a, Vddi b) {return DDI_CLTY(a, b);}
-INLINE(Vddi,VDDF_CLTY) (Vddf a, Vddf b) {return DDF_CLTY(a, b);}
+INLINE(Vddu,VDDU_CLTL) (Vddu a, Vddu b) {return DDU_CLTL(a, b);}
+INLINE(Vddi,VDDI_CLTL) (Vddi a, Vddi b) {return DDI_CLTL(a, b);}
+INLINE(Vddi,VDDF_CLTL) (Vddf a, Vddf b) {return DDF_CLTL(a, b);}
 
 
-INLINE(Vqyu,VQYU_CLTY) (Vqyu a, Vqyu b)
+INLINE(Vqyu,VQYU_CLTL) (Vqyu a, Vqyu b)
 {
     uint64x2_t p = VQYU_ASDU(a);
     uint64x2_t q = VQYU_ASDU(b);
@@ -40714,81 +43755,331 @@ INLINE(Vqyu,VQYU_CLTY) (Vqyu a, Vqyu b)
     return  VQDU_ASYU(p);
 }
 
-INLINE(Vqbu,VQBU_CLTY) (Vqbu a, Vqbu b) {return QBU_CLTY(a,b);}
-INLINE(Vqbi,VQBI_CLTY) (Vqbi a, Vqbi b) {return QBI_CLTY(a,b);}
-INLINE(Vqbc,VQBC_CLTY) (Vqbc a, Vqbc b)
+INLINE(Vqbu,VQBU_CLTL) (Vqbu a, Vqbu b) {return QBU_CLTL(a,b);}
+INLINE(Vqbi,VQBI_CLTL) (Vqbi a, Vqbi b) {return QBI_CLTL(a,b);}
+INLINE(Vqbc,VQBC_CLTL) (Vqbc a, Vqbc b)
 {
-    return  QBC_ASTV(QBC_CLTY(VQBC_ASTM(a),VQBC_ASTM(b)));
+    return  QBC_ASTV(QBC_CLTL(VQBC_ASTM(a),VQBC_ASTM(b)));
 }
 
-INLINE(Vqhu,VQHU_CLTY) (Vqhu a, Vqhu b) {return QHU_CLTY(a,b);}
-INLINE(Vqhi,VQHI_CLTY) (Vqhi a, Vqhi b) {return QHI_CLTY(a,b);}
-INLINE(Vqhi,VQHF_CLTY) (Vqhf a, Vqhf b) {return QHF_CLTY(a,b);}
-INLINE(Vqwu,VQWU_CLTY) (Vqwu a, Vqwu b) {return QWU_CLTY(a,b);}
-INLINE(Vqwi,VQWI_CLTY) (Vqwi a, Vqwi b) {return QWI_CLTY(a,b);}
-INLINE(Vqwi,VQWF_CLTY) (Vqwf a, Vqwf b) {return QWF_CLTY(a,b);}
-INLINE(Vqdu,VQDU_CLTY) (Vqdu a, Vqdu b) {return QDU_CLTY(a,b);}
-INLINE(Vqdi,VQDI_CLTY) (Vqdi a, Vqdi b) {return QDI_CLTY(a,b);}
-INLINE(Vqdi,VQDF_CLTY) (Vqdf a, Vqdf b) {return QDF_CLTY(a,b);}
+INLINE(Vqhu,VQHU_CLTL) (Vqhu a, Vqhu b) {return QHU_CLTL(a,b);}
+INLINE(Vqhi,VQHI_CLTL) (Vqhi a, Vqhi b) {return QHI_CLTL(a,b);}
+INLINE(Vqhi,VQHF_CLTL) (Vqhf a, Vqhf b) {return QHF_CLTL(a,b);}
+INLINE(Vqwu,VQWU_CLTL) (Vqwu a, Vqwu b) {return QWU_CLTL(a,b);}
+INLINE(Vqwi,VQWI_CLTL) (Vqwi a, Vqwi b) {return QWI_CLTL(a,b);}
+INLINE(Vqwi,VQWF_CLTL) (Vqwf a, Vqwf b) {return QWF_CLTL(a,b);}
+INLINE(Vqdu,VQDU_CLTL) (Vqdu a, Vqdu b) {return QDU_CLTL(a,b);}
+INLINE(Vqdi,VQDI_CLTL) (Vqdi a, Vqdi b) {return QDI_CLTL(a,b);}
+INLINE(Vqdi,VQDF_CLTL) (Vqdf a, Vqdf b) {return QDF_CLTL(a,b);}
+
+#if 0 // _LEAVE_ARM_CLTL
+}
+#endif
+
+
+#if 0 // _ENTER_ARM_CLTY
+{
+#endif
+
+INLINE(_Bool,FLT16_CLTY) (flt16_t a, flt16_t b) {return a<b;}
+INLINE(_Bool,  FLT_CLTY)   (float a,   float b) {return a<b;}
+INLINE(_Bool,  DBL_CLTY)  (double a,  double b) {return a<b;}
+
+INLINE(_Bool,WBU_CLTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vclt_u8(x.B.U, y.B.U);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WBI_CLTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vclt_s8(x.B.I, y.B.I);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+#if CHAR_MIN
+#   define WBC_CLTY WBI_CLTY
+#else
+#   define WBC_CLTY WBU_CLTY
+#endif
+
+INLINE(_Bool,WHU_CLTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vclt_u16(x.H.U, y.H.U);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WHI_CLTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vclt_s16(x.H.I, y.H.I);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WHF_CLTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = VDHF_CLTS(x.H.F, y.H.F);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WWU_CLTY) (float a, float b) 
+{
+    WORD_TYPE p={.F=a}, q={.F=b};
+    return  p.U < q.U;
+}
+
+INLINE(_Bool,WWI_CLTY) (float a, float b) 
+{
+    WORD_TYPE p={.F=a}, q={.F=b};
+    return  p.I < q.I;
+}
+
+
+INLINE(_Bool,VWYU_CLTY) (Vwyu a, Vwyu b)
+{
+    WORD_TYPE p={.F=a.V0}, q={b.V0};
+    return  (!p.U) && (-1==q.I);
+}
+
+INLINE(_Bool,VWBU_CLTY) (Vwbu a, Vwbu b) {return WBU_CLTY(a.V0, b.V0);}         
+INLINE(_Bool,VWBI_CLTY) (Vwbi a, Vwbi b) {return WBI_CLTY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_CLTY) (Vwbc a, Vwbc b) {return WBC_CLTY(a.V0, b.V0);}
+INLINE(_Bool,VWHU_CLTY) (Vwhu a, Vwhu b) {return WHU_CLTY(a.V0, b.V0);}
+INLINE(_Bool,VWHI_CLTY) (Vwhi a, Vwhi b) {return WHI_CLTY(a.V0, b.V0);}         
+INLINE(_Bool,VWHF_CLTY) (Vwhf a, Vwhf b) {return WHF_CLTY(a.V0, b.V0);}
+INLINE(_Bool,VWWU_CLTY) (Vwwu a, Vwwu b) {return WWU_CLTY(a.V0, b.V0);}         
+INLINE(_Bool,VWWI_CLTY) (Vwwi a, Vwwi b) {return WWI_CLTY(a.V0, b.V0);}         
+INLINE(_Bool,VWWF_CLTY) (Vwwf a, Vwwf b) {return a.V0<b.V0;}
+
+INLINE(_Bool,VDYU_CLTY) (Vdyu a, Vdyu b)
+{
+    DWRD_VTYPE x={.D.U=a.V0}, y={.D.U=b.V0};
+    return (!x.U) && (-1==y.I);
+}
+
+INLINE(_Bool,VDBU_CLTY) (Vdbu a, Vdbu b)
+{
+    DWRD_VTYPE x={.B.U=a}, y={.B.U=b};
+    x.B.U = vclt_u8(x.B.U, y.B.U);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDBI_CLTY) (Vdbi a, Vdbi b)
+{
+    DWRD_VTYPE x={.B.I=a}, y={.B.I=b};
+    x.B.U = vclt_s8(x.B.I, y.B.I);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDBC_CLTY) (Vdbc a, Vdbc b)
+{
+#if CHAR_MIN
+    return  VDBI_CLTY(a.V0, b.V0);
+#else
+    return  VDBU_CLTY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VDHU_CLTY) (Vdhu a, Vdhu b)
+{
+    DWRD_VTYPE x={.H.U=a}, y={.H.U=b};
+    x.H.U = vclt_u16(x.H.U, y.H.U);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDHI_CLTY) (Vdhi a, Vdhi b)
+{
+    DWRD_VTYPE x={.H.I=a}, y={.H.I=b};
+    x.H.U = vclt_s16(x.H.I, y.H.I);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDHF_CLTY) (Vdhf a, Vdhf b)
+{
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b};
+    x.H.I = VDHF_CLTS(a, b);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDWU_CLTY) (Vdwu a, Vdwu b)
+{
+    DWRD_VTYPE x={.W.U=a}, y={.W.U=b};
+    x.W.U = vclt_u32(x.W.U, y.W.U);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDWI_CLTY) (Vdwi a, Vdwi b)
+{
+    DWRD_VTYPE x={.W.I=a}, y={.W.I=b};
+    x.W.U = vclt_u32(x.W.I, y.W.I);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDWF_CLTY) (Vdwf a, Vdwf b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.W.U = vclt_f32(x.W.F, y.W.F);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDDU_CLTY) (Vddu a, Vddu b)
+{
+    uint64x1_t  c = vclt_u64(a, b);
+    return  vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDDI_CLTY) (Vddi a, Vddi b)
+{
+    uint64x1_t  c = vclt_s64(a, b);
+    return  vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDDF_CLTY) (Vddf a, Vddf b)
+{
+    uint64x1_t  c = vclt_f64(a, b);
+    return  vget_lane_u64(c, 0);
+}
+
+
+INLINE(_Bool,VQYU_CLTY) (Vqyu a, Vqyu b)
+{
+    uint64_t x0 = vgetq_lane_u64(a.V0, 0);
+    uint64_t x1 = vgetq_lane_u64(a.V0, 1);
+
+    uint64_t x2 = vgetq_lane_u64(b.V0, 0);
+    uint64_t x3 = vgetq_lane_u64(b.V0, 1);
+    return  (!(x0|x1)) && (UINT64_MAX==(x2&x3));
+}
+
+#define     MY_CLTYZ(C) \
+(UINT64_MAX==vget_lane_u64(vand_u64(vget_low_u64(C),vget_high_u64(C)),0))
+
+INLINE(_Bool,VQBU_CLTY) (Vqbu a, Vqbu b)
+{
+    uint8x16_t  u = vcltq_u8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQBI_CLTY) (Vqbi a, Vqbi b)
+{
+    uint8x16_t  u = vcltq_s8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQBC_CLTY) (Vqbc a, Vqbc b)
+{
+#if CHAR_MIN
+    return  VQBI_CLTY(a.V0, b.V0);
+#else
+    return  VQBU_CLTY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VQHU_CLTY) (Vqhu a, Vqhu b)
+{
+    uint16x8_t  u = vcltq_u16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQHI_CLTY) (Vqhi a, Vqhi b)
+{
+    uint16x8_t  u = vcltq_s16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQHF_CLTY) (Vqhf a, Vqhf b)
+{
+#if defined(SPC_ARM_FP16_SIMD)
+    uint16x8_t  u = vcltq_f16(a, b);
+#else
+    float32x4_t p, q;
+    uint32x4_t  m;
+    uint16x4_t  l, r;
+    p = vcvt_f32_f16(vget_low_f16(a));
+    q = vcvt_f32_f16(vget_low_f16(b));
+    m = vcltq_f32(p, q);
+    l = vmovn_u32(m);
+    p = vcvt_f32_f16(vget_high_f16(a));
+    q = vcvt_f32_f16(vget_high_f16(b));
+    m = vcltq_f32(p, q);
+    r = vmovn_u32(m);
+    uint16x8_t u = vcombine_u16(l, r);
+#endif
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQWU_CLTY) (Vqwu a, Vqwu b)
+{
+    uint32x4_t  u = vcltq_u32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQWI_CLTY) (Vqwi a, Vqwi b)
+{
+    uint32x4_t  u = vcltq_s32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQWF_CLTY) (Vqwf a, Vqwf b)
+{
+    uint32x4_t  u = vcltq_f32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQDU_CLTY) (Vqdu a, Vqdu b)
+{
+    uint64x2_t  c = vcltq_u64(a, b);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQDI_CLTY) (Vqdi a, Vqdi b)
+{
+    uint64x2_t  c = vcltq_s64(a, b);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQDF_CLTY) (Vqdf a, Vqdf b)
+{
+    uint64x2_t  c = vcltq_f64(a, b);
+    return  MY_CLTYZ(c);
+}
+
+INLINE(_Bool,VQQU_CLTY) (Vqqu a, Vqqu b)
+{
+    return  
+    (vgetq_lane_u64(a.V0,1)==vgetq_lane_u64(b.V0,1))
+    ?   (vgetq_lane_u64(a.V0,0)<vgetq_lane_u64(b.V0,0))
+    :   (vgetq_lane_u64(a.V0,1)<vgetq_lane_u64(b.V0,1));
+}
+
+INLINE(_Bool,VQQI_CLTY) (Vqqi a, Vqqi b)
+{
+    return  
+    (vgetq_lane_s64(a.V0,1)==vgetq_lane_s64(b.V0,1))
+    ?   (vgetq_lane_s64(a.V0,0)<vgetq_lane_s64(b.V0,0))
+    :   (vgetq_lane_s64(a.V0,1)<vgetq_lane_s64(b.V0,1));
+}
+
+INLINE(_Bool,VQQF_CLTY) (Vqqf a, Vqqf b) {return a.V0 < b.V0;}
 
 #if 0 // _LEAVE_ARM_CLTY
 }
 #endif
 
-
 #if 0 // _ENTER_ARM_CLES
 {
 #endif
-
-INLINE(ptrdiff_t, ADDR_CLES)
-(
-    void volatile const *a,
-    void volatile const *b
-)
-{
-    return (a != b) ? NULL-((void *) INTPTR_C(1)) : 0;
-}
-
-INLINE(  _Bool,   BOOL_CLES)   (_Bool a,   _Bool b) {return a<=b;}
-INLINE(  uchar,  UCHAR_CLES)   (uchar a,   uchar b)
-{
-    return  (a<=b) ? UCHAR_MAX : 0;
-}
-
-INLINE(  schar,  SCHAR_CLES)   (schar a,   schar b) {return  0-(a<=b);}
-INLINE(   char,   CHAR_CLES)    (char a,    char b)
-{
-    return  (a<=b) ? '\xff' : '\x00';
-}
-
-INLINE( ushort,  USHRT_CLES)  (ushort a,  ushort b)
-{
-    return  (a<=b) ? USHRT_MAX : 0;
-}
-
-INLINE(  short,   SHRT_CLES)   (short a,   short b) {return  0-(a<=b);}
-
-INLINE(   uint,   UINT_CLES)    (uint a,    uint b)
-{
-    return  (a<=b) ? UINT_MAX : 0u;
-}
-
-INLINE(    int,    INT_CLES)     (int a,     int b) {return  0-(a<=b);}
-
-// NOTE: vclth_f16 / vcltd_u64 / vcltd_s64 exist
-INLINE(  ulong,  ULONG_CLES)   (ulong a,   ulong b)
-{
-    return  (a<=b) ? ULONG_MAX : 0ul;
-}
-
-INLINE(   long,   LONG_CLES)    (long a,    long b) {return  0l-(a<=b);}
-
-INLINE( ullong, ULLONG_CLES)  (ullong a,  ullong b)
-{
-    return  (a<=b) ? ULLONG_MAX : 0ull;
-}
-
-INLINE(  llong,  LLONG_CLES)   (llong a,   llong b) {return  0ll-(a<=b);}
 
 INLINE(int16_t,  FLT16_CLES) (flt16_t a, flt16_t b)
 {
@@ -40802,24 +44093,11 @@ INLINE(int16_t,  FLT16_CLES) (flt16_t a, flt16_t b)
 INLINE(int32_t,    FLT_CLES)   (float a,   float b) {return  vcles_f32(a, b);}
 INLINE(int64_t,    DBL_CLES)  (double a,  double b) {return  vcled_f64(a, b);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,clesqu) (QUAD_UTYPE a, QUAD_UTYPE b)
-{
-    return  (QUAD_UTYPE) 0-(a<=b);
-}
-
-INLINE(QUAD_ITYPE,clesqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return  (QUAD_ITYPE) 0-(a<=b);
-}
-
 INLINE(QUAD_ITYPE,clesqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (QUAD_ITYPE) 0-(a<=b);
 }
 
-#endif
 
 #define     DBU_CLES                             vcle_u8
 #define     DBI_CLES(A, B)  vreinterpret_s16_u16(vcle_s8(A,B))
@@ -41048,35 +44326,22 @@ INLINE(Vqdi,VQDF_CLES) (Vqdf a, Vqdf b) {return QDF_CLES(a, b);}
 }
 #endif
 
-#if 0 // _ENTER_ARM_CLEY
+#if 0 // _ENTER_ARM_CLEL
 {
 #endif
 
-INLINE(int16_t, FLT16_CLEY) (flt16_t a, flt16_t b) {return a<=b;}
-INLINE(int32_t,   FLT_CLEY)   (float a,   float b) {return a<=b;}
-INLINE(int64_t,   DBL_CLEY)  (double a,  double b) {return a<=b;}
+INLINE(_Bool, FLT16_CLEL) (flt16_t a, flt16_t b) {return a<=b;}
+INLINE(_Bool,   FLT_CLEL)   (float a,   float b) {return a<=b;}
+INLINE(_Bool,   DBL_CLEL)  (double a,  double b) {return a<=b;}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cleyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(QUAD_ITYPE,clelqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (a<=b);
 }
 
-INLINE(QUAD_ITYPE,cleyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+INLINE( Wbu,WBU_CLEL) (Wbu a, Wbu b)
 {
-    return  (a<=b);
-}
-
-INLINE(QUAD_ITYPE,cleyqf) (QUAD_FTYPE a, QUAD_FTYPE b)
-{
-    return  (a<=b);
-}
-
-#endif
-INLINE( Wbu,WBU_CLEY) (Wbu a, Wbu b)
-{
-#define     WBU_CLEY    WBU_CLEY
+#define     WBU_CLEL    WBU_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     uint8x8_t   r = vcle_u8(
@@ -41089,9 +44354,9 @@ INLINE( Wbu,WBU_CLEY) (Wbu a, Wbu b)
     );
 }
 
-INLINE( Wbu,WBI_CLEY) (Wbi a, Wbi b)
+INLINE( Wbu,WBI_CLEL) (Wbi a, Wbi b)
 {
-#define     WBI_CLEY    WBI_CLEY
+#define     WBI_CLEL    WBI_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41109,14 +44374,14 @@ INLINE( Wbu,WBI_CLEY) (Wbi a, Wbi b)
 }
 
 #if CHAR_MIN
-#   define  WBC_CLEY    WBI_CLEY
+#   define  WBC_CLEL    WBI_CLEL
 #else
-#   define  WBC_CLEY    WBU_CLEY
+#   define  WBC_CLEL    WBU_CLEL
 #endif
 
-INLINE( Whu,WHU_CLEY) (Whu a, Whu b)
+INLINE( Whu,WHU_CLEL) (Whu a, Whu b)
 {
-#define     WHU_CLEY    WHU_CLEY
+#define     WHU_CLEL    WHU_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41133,9 +44398,9 @@ INLINE( Whu,WHU_CLEY) (Whu a, Whu b)
     );
 }
 
-INLINE( Whu,WHI_CLEY) (Whi a, Whi b)
+INLINE( Whu,WHI_CLEL) (Whi a, Whi b)
 {
-#define     WHI_CLEY    WHI_CLEY
+#define     WHI_CLEL    WHI_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41152,9 +44417,9 @@ INLINE( Whu,WHI_CLEY) (Whi a, Whi b)
     );
 }
 
-INLINE( Whu,WHF_CLEY) (Whf a, Whf b)
+INLINE( Whu,WHF_CLEL) (Whf a, Whf b)
 {
-#define     WHF_CLEY    WHF_CLEY
+#define     WHF_CLEL    WHF_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
 #if defined(SPC_ARM_FP16_SIMD)
@@ -41178,9 +44443,9 @@ INLINE( Whu,WHF_CLEY) (Whf a, Whf b)
 #endif
 }
 
-INLINE( Wwu,WWU_CLEY) (Wwu a, Wwu b)
+INLINE( Wwu,WWU_CLEL) (Wwu a, Wwu b)
 {
-#define     WWU_CLEY    WWU_CLEY
+#define     WWU_CLEL    WWU_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41197,9 +44462,9 @@ INLINE( Wwu,WWU_CLEY) (Wwu a, Wwu b)
     );
 }
 
-INLINE( Wwu,WWI_CLEY) (Wwi a, Wwi b)
+INLINE( Wwu,WWI_CLEL) (Wwi a, Wwi b)
 {
-#define     WWI_CLEY    WWI_CLEY
+#define     WWI_CLEL    WWI_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41216,9 +44481,9 @@ INLINE( Wwu,WWI_CLEY) (Wwi a, Wwi b)
     );
 }
 
-INLINE( Wwu,WWF_CLEY) (Wwf a, Wwf b)
+INLINE( Wwu,WWF_CLEL) (Wwf a, Wwf b)
 {
-#define     WWF_CLEY    WWF_CLEY
+#define     WWF_CLEL    WWF_CLEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41227,20 +44492,20 @@ INLINE( Wwu,WWF_CLEY) (Wwf a, Wwf b)
     );
 }
 
-#define     DBU_CLEY(A, B)            vshr_n_u8(vcle_u8(A,B),7)
-#define     DBI_CLEY(A, B)  VDBU_ASTI(vshr_n_u8(vcle_s8(A,B),7))
+#define     DBU_CLEL(A, B)            vshr_n_u8(vcle_u8(A,B),7)
+#define     DBI_CLEL(A, B)  VDBU_ASTI(vshr_n_u8(vcle_s8(A,B),7))
 #if CHAR_MIN
-#   define  DBC_CLEY        DBI_CLEY
+#   define  DBC_CLEL        DBI_CLEL
 #else
-#   define  DBC_CLEY        DBU_CLEY
+#   define  DBC_CLEL        DBU_CLEL
 #endif
 
-#define     DHU_CLEY(A, B)            vshr_n_u16(vcle_u16(A,B),15)
-#define     DHI_CLEY(A, B)  VDHU_ASTI(vshr_n_u16(vcle_s16(A,B),15))
+#define     DHU_CLEL(A, B)            vshr_n_u16(vcle_u16(A,B),15)
+#define     DHI_CLEL(A, B)  VDHU_ASTI(vshr_n_u16(vcle_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  DHF_CLEY(A, B)  VDHU_ASTI(vshr_n_u16(vcle_f16(A,B),15))
+#   define  DHF_CLEL(A, B)  VDHU_ASTI(vshr_n_u16(vcle_f16(A,B),15))
 #else
-#   define  DHF_CLEY(A, B)      \
+#   define  DHF_CLEL(A, B)      \
 VDHU_ASHI(                      \
     vshr_n_u16(                 \
         vmovn_u32(              \
@@ -41254,29 +44519,29 @@ VDHU_ASHI(                      \
 )
 #endif
 
-#define     DWU_CLEY(A, B)            vshr_n_u32(vcle_u32(A,B),31)
-#define     DWI_CLEY(A, B)  VDWU_ASTI(vshr_n_u32(vcle_s32(A,B),31))
-#define     DWF_CLEY(A, B)  VDWU_ASTI(vshr_n_u32(vcle_f32(A,B),31))
+#define     DWU_CLEL(A, B)            vshr_n_u32(vcle_u32(A,B),31)
+#define     DWI_CLEL(A, B)  VDWU_ASTI(vshr_n_u32(vcle_s32(A,B),31))
+#define     DWF_CLEL(A, B)  VDWU_ASTI(vshr_n_u32(vcle_f32(A,B),31))
 
-#define     DDU_CLEY(A, B)            vshr_n_u64(vcle_u64(A,B),63)
-#define     DDI_CLEY(A, B)  VDDU_ASTI(vshr_n_u64(vcle_s64(A,B),63))
-#define     DDF_CLEY(A, B)  VDDU_ASTI(vshr_n_u64(vcle_f64(A,B),63))
+#define     DDU_CLEL(A, B)            vshr_n_u64(vcle_u64(A,B),63)
+#define     DDI_CLEL(A, B)  VDDU_ASTI(vshr_n_u64(vcle_s64(A,B),63))
+#define     DDF_CLEL(A, B)  VDDU_ASTI(vshr_n_u64(vcle_f64(A,B),63))
 
 
-#define     QBU_CLEY(A, B)            vshrq_n_u8(vcleq_u8(A,B),7)
-#define     QBI_CLEY(A, B)  VQBU_ASTI(vshrq_n_u8(vcleq_s8(A,B),7))
+#define     QBU_CLEL(A, B)            vshrq_n_u8(vcleq_u8(A,B),7)
+#define     QBI_CLEL(A, B)  VQBU_ASTI(vshrq_n_u8(vcleq_s8(A,B),7))
 #if CHAR_MIN
-#   define  QBC_CLEY        QBI_CLEY
+#   define  QBC_CLEL        QBI_CLEL
 #else
-#   define  QBC_CLEY        QBU_CLEY
+#   define  QBC_CLEL        QBU_CLEL
 #endif
 
-#define     QHU_CLEY(A, B)            vshrq_n_u16(vcleq_u16(A,B),15)
-#define     QHI_CLEY(A, B)  VQHU_ASTI(vshrq_n_u16(vcleq_s16(A,B),15))
+#define     QHU_CLEL(A, B)            vshrq_n_u16(vcleq_u16(A,B),15)
+#define     QHI_CLEL(A, B)  VQHU_ASTI(vshrq_n_u16(vcleq_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  QHF_CLEY(A, B)  VQHU_ASTI(vshrq_n_u16(vcleq_f16(A,B),15))
+#   define  QHF_CLEL(A, B)  VQHU_ASTI(vshrq_n_u16(vcleq_f16(A,B),15))
 #else
-#   define  QHF_CLEY(A, B)                          \
+#   define  QHF_CLEL(A, B)                          \
 vreinterpretq_s16_u16(                              \
     vshrq_n_u16(                                    \
         vcombine_u16(                               \
@@ -41298,171 +44563,382 @@ vreinterpretq_s16_u16(                              \
 )
 #endif
 
-#define     QWU_CLEY(A, B)            vshrq_n_u32(vcleq_u32(A,B),31)
-#define     QWI_CLEY(A, B)  VQWU_ASTI(vshrq_n_u32(vcleq_s32(A,B),31))
-#define     QWF_CLEY(A, B)  VQWU_ASTI(vshrq_n_u32(vcleq_f32(A,B),31))
+#define     QWU_CLEL(A, B)            vshrq_n_u32(vcleq_u32(A,B),31)
+#define     QWI_CLEL(A, B)  VQWU_ASTI(vshrq_n_u32(vcleq_s32(A,B),31))
+#define     QWF_CLEL(A, B)  VQWU_ASTI(vshrq_n_u32(vcleq_f32(A,B),31))
 
-#define     QDU_CLEY(A, B)            vshrq_n_u64(vcleq_u64(A,B),63)
-#define     QDI_CLEY(A, B)  VQDU_ASTI(vshrq_n_u64(vcleq_s64(A,B),63))
-#define     QDF_CLEY(A, B)  VQDU_ASTI(vshrq_n_u64(vcleq_f64(A,B),63))
+#define     QDU_CLEL(A, B)            vshrq_n_u64(vcleq_u64(A,B),63)
+#define     QDI_CLEL(A, B)  VQDU_ASTI(vshrq_n_u64(vcleq_s64(A,B),63))
+#define     QDF_CLEL(A, B)  VQDU_ASTI(vshrq_n_u64(vcleq_f64(A,B),63))
 
 
-INLINE(Vwbu,VWBU_CLEY) (Vwbu a, Vwbu b)
+INLINE(Vwbu,VWBU_CLEL) (Vwbu a, Vwbu b)
 {
-#define     VWBU_CLEY(A, B) WBU_ASTV(WBU_CLEY(VWBU_ASTM(A),VWBU_ASTM(B)))
-    return  VWBU_CLEY(a, b);
+#define     VWBU_CLEL(A, B) WBU_ASTV(WBU_CLEL(VWBU_ASTM(A),VWBU_ASTM(B)))
+    return  VWBU_CLEL(a, b);
 }
 
-INLINE(Vwbi,VWBI_CLEY) (Vwbi a, Vwbi b)
+INLINE(Vwbi,VWBI_CLEL) (Vwbi a, Vwbi b)
 {
-#define     VWBI_CLEY(A, B) WBI_ASTV(WBI_CLEY(VWBI_ASTM(A),VWBI_ASTM(B)))
-    return  VWBI_CLEY(a, b);
+#define     VWBI_CLEL(A, B) WBI_ASTV(WBI_CLEL(VWBI_ASTM(A),VWBI_ASTM(B)))
+    return  VWBI_CLEL(a, b);
 }
 
-INLINE(Vwbc,VWBC_CLEY) (Vwbc a, Vwbc b)
+INLINE(Vwbc,VWBC_CLEL) (Vwbc a, Vwbc b)
 {
-#define     VWBC_CLEY(A, B) WBC_ASTV(WBC_CLEY(VWBC_ASTM(A),VWBC_ASTM(B)))
-    return  VWBC_CLEY(a, b);
-}
-
-
-INLINE(Vwhu,VWHU_CLEY) (Vwhu a, Vwhu b)
-{
-#define     VWHU_CLEY(A, B) WHU_ASTV(WHU_CLEY(VWHU_ASTM(A),VWHU_ASTM(B)))
-    return  VWHU_CLEY(a, b);
-}
-
-INLINE(Vwhi,VWHI_CLEY) (Vwhi a, Vwhi b)
-{
-#define     VWHI_CLEY(A, B) WHI_ASTV(WHI_CLEY(VWHI_ASTM(A),VWHI_ASTM(B)))
-    return  VWHI_CLEY(a, b);
-}
-
-INLINE(Vwhi,VWHF_CLEY) (Vwhf a, Vwhf b)
-{
-#define     VWHF_CLEY(A, B) WHI_ASTV(WHF_CLEY(VWHF_ASTM(A),VWHF_ASTM(B)))
-    return  VWHF_CLEY(a, b);
+#define     VWBC_CLEL(A, B) WBC_ASTV(WBC_CLEL(VWBC_ASTM(A),VWBC_ASTM(B)))
+    return  VWBC_CLEL(a, b);
 }
 
 
-INLINE(Vwwu,VWWU_CLEY) (Vwwu a, Vwwu b)
+INLINE(Vwhu,VWHU_CLEL) (Vwhu a, Vwhu b)
 {
-#define     VWWU_CLEY(A, B) WWU_ASTV(WWU_CLEY(VWWU_ASTM(A),VWWU_ASTM(B)))
-    return  VWWU_CLEY(a, b);
+#define     VWHU_CLEL(A, B) WHU_ASTV(WHU_CLEL(VWHU_ASTM(A),VWHU_ASTM(B)))
+    return  VWHU_CLEL(a, b);
 }
 
-INLINE(Vwwi,VWWI_CLEY) (Vwwi a, Vwwi b)
+INLINE(Vwhi,VWHI_CLEL) (Vwhi a, Vwhi b)
 {
-#define     VWWI_CLEY(A, B) WWI_ASTV(WWI_CLEY(VWWI_ASTM(A),VWWI_ASTM(B)))
-    return  VWWI_CLEY(a, b);
+#define     VWHI_CLEL(A, B) WHI_ASTV(WHI_CLEL(VWHI_ASTM(A),VWHI_ASTM(B)))
+    return  VWHI_CLEL(a, b);
 }
 
-INLINE(Vwwi,VWWF_CLEY) (Vwwf a, Vwwf b)
+INLINE(Vwhi,VWHF_CLEL) (Vwhf a, Vwhf b)
 {
-#define     VWWF_CLEY(A, B) WWI_ASTV(WWF_CLEY(VWWF_ASTM(A),VWWF_ASTM(B)))
-    return  VWWF_CLEY(a, b);
+#define     VWHF_CLEL(A, B) WHI_ASTV(WHF_CLEL(VWHF_ASTM(A),VWHF_ASTM(B)))
+    return  VWHF_CLEL(a, b);
 }
 
 
-INLINE(Vdbu,VDBU_CLEY) (Vdbu a, Vdbu b) {return DBU_CLEY(a, b);}
-INLINE(Vdbi,VDBI_CLEY) (Vdbi a, Vdbi b) {return DBI_CLEY(a, b);}
-INLINE(Vdbc,VDBC_CLEY) (Vdbc a, Vdbc b)
+INLINE(Vwwu,VWWU_CLEL) (Vwwu a, Vwwu b)
+{
+#define     VWWU_CLEL(A, B) WWU_ASTV(WWU_CLEL(VWWU_ASTM(A),VWWU_ASTM(B)))
+    return  VWWU_CLEL(a, b);
+}
+
+INLINE(Vwwi,VWWI_CLEL) (Vwwi a, Vwwi b)
+{
+#define     VWWI_CLEL(A, B) WWI_ASTV(WWI_CLEL(VWWI_ASTM(A),VWWI_ASTM(B)))
+    return  VWWI_CLEL(a, b);
+}
+
+INLINE(Vwwi,VWWF_CLEL) (Vwwf a, Vwwf b)
+{
+#define     VWWF_CLEL(A, B) WWI_ASTV(WWF_CLEL(VWWF_ASTM(A),VWWF_ASTM(B)))
+    return  VWWF_CLEL(a, b);
+}
+
+
+INLINE(Vdbu,VDBU_CLEL) (Vdbu a, Vdbu b) {return DBU_CLEL(a, b);}
+INLINE(Vdbi,VDBI_CLEL) (Vdbi a, Vdbi b) {return DBI_CLEL(a, b);}
+INLINE(Vdbc,VDBC_CLEL) (Vdbc a, Vdbc b)
 {
     return  DBC_ASTV(
-        DBC_CLEY(
+        DBC_CLEL(
             VDBC_ASTM(a),
             VDBC_ASTM(b)
         )
     );
 }
 
-INLINE(Vdhu,VDHU_CLEY) (Vdhu a, Vdhu b) {return DHU_CLEY(a, b);}
-INLINE(Vdhi,VDHI_CLEY) (Vdhi a, Vdhi b) {return DHI_CLEY(a, b);}
-INLINE(Vdhi,VDHF_CLEY) (Vdhf a, Vdhf b) {return DHF_CLEY(a, b);}
+INLINE(Vdhu,VDHU_CLEL) (Vdhu a, Vdhu b) {return DHU_CLEL(a, b);}
+INLINE(Vdhi,VDHI_CLEL) (Vdhi a, Vdhi b) {return DHI_CLEL(a, b);}
+INLINE(Vdhi,VDHF_CLEL) (Vdhf a, Vdhf b) {return DHF_CLEL(a, b);}
 
-INLINE(Vdwu,VDWU_CLEY) (Vdwu a, Vdwu b) {return DWU_CLEY(a, b);}
-INLINE(Vdwi,VDWI_CLEY) (Vdwi a, Vdwi b) {return DWI_CLEY(a, b);}
-INLINE(Vdwi,VDWF_CLEY) (Vdwf a, Vdwf b) {return DWF_CLEY(a, b);}
+INLINE(Vdwu,VDWU_CLEL) (Vdwu a, Vdwu b) {return DWU_CLEL(a, b);}
+INLINE(Vdwi,VDWI_CLEL) (Vdwi a, Vdwi b) {return DWI_CLEL(a, b);}
+INLINE(Vdwi,VDWF_CLEL) (Vdwf a, Vdwf b) {return DWF_CLEL(a, b);}
 
-INLINE(Vddu,VDDU_CLEY) (Vddu a, Vddu b) {return DDU_CLEY(a, b);}
-INLINE(Vddi,VDDI_CLEY) (Vddi a, Vddi b) {return DDI_CLEY(a, b);}
-INLINE(Vddi,VDDF_CLEY) (Vddf a, Vddf b) {return DDF_CLEY(a, b);}
+INLINE(Vddu,VDDU_CLEL) (Vddu a, Vddu b) {return DDU_CLEL(a, b);}
+INLINE(Vddi,VDDI_CLEL) (Vddi a, Vddi b) {return DDI_CLEL(a, b);}
+INLINE(Vddi,VDDF_CLEL) (Vddf a, Vddf b) {return DDF_CLEL(a, b);}
 
 
-INLINE(Vqbu,VQBU_CLEY) (Vqbu a, Vqbu b) {return QBU_CLEY(a,b);}
-INLINE(Vqbi,VQBI_CLEY) (Vqbi a, Vqbi b) {return QBI_CLEY(a,b);}
-INLINE(Vqbc,VQBC_CLEY) (Vqbc a, Vqbc b)
+INLINE(Vqbu,VQBU_CLEL) (Vqbu a, Vqbu b) {return QBU_CLEL(a,b);}
+INLINE(Vqbi,VQBI_CLEL) (Vqbi a, Vqbi b) {return QBI_CLEL(a,b);}
+INLINE(Vqbc,VQBC_CLEL) (Vqbc a, Vqbc b)
 {
-    return  QBC_ASTV(QBC_CLEY(VQBC_ASTM(a),VQBC_ASTM(b)));
+    return  QBC_ASTV(QBC_CLEL(VQBC_ASTM(a),VQBC_ASTM(b)));
 }
 
-INLINE(Vqhu,VQHU_CLEY) (Vqhu a, Vqhu b) {return QHU_CLEY(a,b);}
-INLINE(Vqhi,VQHI_CLEY) (Vqhi a, Vqhi b) {return QHI_CLEY(a,b);}
-INLINE(Vqhi,VQHF_CLEY) (Vqhf a, Vqhf b) {return QHF_CLEY(a,b);}
-INLINE(Vqwu,VQWU_CLEY) (Vqwu a, Vqwu b) {return QWU_CLEY(a,b);}
-INLINE(Vqwi,VQWI_CLEY) (Vqwi a, Vqwi b) {return QWI_CLEY(a,b);}
-INLINE(Vqwi,VQWF_CLEY) (Vqwf a, Vqwf b) {return QWF_CLEY(a,b);}
-INLINE(Vqdu,VQDU_CLEY) (Vqdu a, Vqdu b) {return QDU_CLEY(a,b);}
-INLINE(Vqdi,VQDI_CLEY) (Vqdi a, Vqdi b) {return QDI_CLEY(a,b);}
-INLINE(Vqdi,VQDF_CLEY) (Vqdf a, Vqdf b) {return QDF_CLEY(a,b);}
+INLINE(Vqhu,VQHU_CLEL) (Vqhu a, Vqhu b) {return QHU_CLEL(a,b);}
+INLINE(Vqhi,VQHI_CLEL) (Vqhi a, Vqhi b) {return QHI_CLEL(a,b);}
+INLINE(Vqhi,VQHF_CLEL) (Vqhf a, Vqhf b) {return QHF_CLEL(a,b);}
+INLINE(Vqwu,VQWU_CLEL) (Vqwu a, Vqwu b) {return QWU_CLEL(a,b);}
+INLINE(Vqwi,VQWI_CLEL) (Vqwi a, Vqwi b) {return QWI_CLEL(a,b);}
+INLINE(Vqwi,VQWF_CLEL) (Vqwf a, Vqwf b) {return QWF_CLEL(a,b);}
+INLINE(Vqdu,VQDU_CLEL) (Vqdu a, Vqdu b) {return QDU_CLEL(a,b);}
+INLINE(Vqdi,VQDI_CLEL) (Vqdi a, Vqdi b) {return QDI_CLEL(a,b);}
+INLINE(Vqdi,VQDF_CLEL) (Vqdf a, Vqdf b) {return QDF_CLEL(a,b);}
+
+#if 0 // _LEAVE_ARM_CLEL
+}
+#endif
+
+
+#if 0 // _ENTER_ARM_CLEY
+{
+#endif
+
+INLINE(_Bool,FLT16_CLEY) (flt16_t a, flt16_t b) {return a<=b;}
+INLINE(_Bool,  FLT_CLEY)   (float a,   float b) {return a<=b;}
+INLINE(_Bool,  DBL_CLEY)  (double a,  double b) {return a<=b;}
+
+INLINE(_Bool,WBU_CLEY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vcle_u8(x.B.U, y.B.U);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WBI_CLEY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vcle_s8(x.B.I, y.B.I);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+#if CHAR_MIN
+#   define  WBC_CLEY  WBI_CLEY
+#else
+#   define  WBC_CLEY  WBU_CLEY
+#endif
+
+INLINE(_Bool,WHU_CLEY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vcle_u16(x.H.U, y.H.U);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WHI_CLEY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vcle_s16(x.H.I, y.H.I);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WHF_CLEY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.I = VDHF_CLES(x.H.F, y.H.F);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WWU_CLEY) (float a, float b) 
+{
+    WORD_TYPE x={.F=a}, y={.F=b};
+    return  x.U<=y.U;
+}
+
+INLINE(_Bool,WWI_CLEY) (float a, float b) 
+{
+    WORD_TYPE x={.F=a}, y={.F=b};
+    return  x.I<=y.I;
+}
+
+INLINE(_Bool,VWBU_CLEY) (Vwbu a, Vwbu b) {return WBU_CLEY(a.V0, b.V0);}         
+INLINE(_Bool,VWBI_CLEY) (Vwbi a, Vwbi b) {return WBI_CLEY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_CLEY) (Vwbc a, Vwbc b) {return WBC_CLEY(a.V0, b.V0);}
+INLINE(_Bool,VWHU_CLEY) (Vwhu a, Vwhu b) {return WHU_CLEY(a.V0, b.V0);}
+INLINE(_Bool,VWHI_CLEY) (Vwhi a, Vwhi b) {return WHI_CLEY(a.V0, b.V0);}         
+INLINE(_Bool,VWHF_CLEY) (Vwhf a, Vwhf b) {return WHF_CLEY(a.V0, b.V0);}
+INLINE(_Bool,VWWU_CLEY) (Vwwu a, Vwwu b) {return WWU_CLEY(a.V0, b.V0);}         
+INLINE(_Bool,VWWI_CLEY) (Vwwi a, Vwwi b) {return WWI_CLEY(a.V0, b.V0);}         
+INLINE(_Bool,VWWF_CLEY) (Vwwf a, Vwwf b) {return a.V0<=b.V0;}
+
+INLINE(_Bool,VDBU_CLEY) (Vdbu a, Vdbu b)
+{
+    DWRD_VTYPE x={.B.U=a}, y={.B.U=b};
+    x.B.U = vcle_u8(x.B.U, y.B.U);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDBI_CLEY) (Vdbi a, Vdbi b)
+{
+    DWRD_VTYPE x={.B.I=a}, y={.B.I=b};
+    x.B.U = vcle_s8(x.B.I, y.B.I);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDBC_CLEY) (Vdbc a, Vdbc b)
+{
+#if CHAR_MIN
+    return  VDBI_CLEY(a.V0, b.V0);
+#else
+    return  VDBU_CLEY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VDHU_CLEY) (Vdhu a, Vdhu b)
+{
+    DWRD_VTYPE x={.H.U=a}, y={.H.U=b};
+    x.H.U = vcle_u16(x.H.U, y.H.U);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDHI_CLEY) (Vdhi a, Vdhi b)
+{
+    DWRD_VTYPE x={.H.I=a}, y={.H.I=b};
+    x.H.U = vcle_s16(x.H.I, y.H.I);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDHF_CLEY) (Vdhf a, Vdhf b)
+{
+    DWRD_VTYPE x={.H.F=a}, y={.H.F=b};
+    x.H.I = VDHF_CLES(a, b);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDWU_CLEY) (Vdwu a, Vdwu b)
+{
+    DWRD_VTYPE x={.W.U=a}, y={.W.U=b};
+    x.W.U = vcle_u32(x.W.U, y.W.U);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDWI_CLEY) (Vdwi a, Vdwi b)
+{
+    DWRD_VTYPE x={.W.I=a}, y={.W.I=b};
+    x.W.U = vcle_u32(x.W.I, y.W.I);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDWF_CLEY) (Vdwf a, Vdwf b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.W.U = vcle_f32(x.W.F, y.W.F);
+    return  -1==x.I;
+}
+
+INLINE(_Bool,VDDU_CLEY) (Vddu a, Vddu b)
+{
+    uint64x1_t  c = vcle_u64(a, b);
+    return  vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDDI_CLEY) (Vddi a, Vddi b)
+{
+    uint64x1_t  c = vcle_s64(a, b);
+    return  vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDDF_CLEY) (Vddf a, Vddf b)
+{
+    uint64x1_t  c = vcle_f64(a, b);
+    return  vget_lane_u64(c, 0);
+}
+
+#define     MY_CLEYZ(C) \
+(UINT64_MAX==(vgetq_lane_u64(C,0)&vgetq_lane_u64(C,1)))
+
+INLINE(_Bool,VQBU_CLEY) (Vqbu a, Vqbu b)
+{
+    uint8x16_t  u = vcleq_u8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQBI_CLEY) (Vqbi a, Vqbi b)
+{
+    uint8x16_t  u = vcleq_s8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQBC_CLEY) (Vqbc a, Vqbc b)
+{
+#if CHAR_MIN
+    return  VQBI_CLEY(a.V0, b.V0);
+#else
+    return  VQBU_CLEY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VQHU_CLEY) (Vqhu a, Vqhu b)
+{
+    uint16x8_t  u = vcleq_u16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQHI_CLEY) (Vqhi a, Vqhi b)
+{
+    uint16x8_t  u = vcleq_s16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQHF_CLEY) (Vqhf a, Vqhf b)
+{
+    QUAD_VTYPE c = {.H.I=VQHF_CLES(a, b)};
+    return  MY_CLEYZ(c.D.U);
+}
+
+INLINE(_Bool,VQWU_CLEY) (Vqwu a, Vqwu b)
+{
+    uint32x4_t  u = vcleq_u32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQWI_CLEY) (Vqwi a, Vqwi b)
+{
+    uint32x4_t  u = vcleq_s32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQWF_CLEY) (Vqwf a, Vqwf b)
+{
+    uint32x4_t  u = vcleq_f32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQDU_CLEY) (Vqdu a, Vqdu b)
+{
+    uint64x2_t  c = vcleq_u64(a, b);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQDI_CLEY) (Vqdi a, Vqdi b)
+{
+    uint64x2_t  c = vcleq_s64(a, b);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQDF_CLEY) (Vqdf a, Vqdf b)
+{
+    uint64x2_t  c = vcleq_f64(a, b);
+    return  MY_CLEYZ(c);
+}
+
+INLINE(_Bool,VQQU_CLEY) (Vqqu a, Vqqu b)
+{
+    return  
+    (vgetq_lane_u64(a.V0,1)==vgetq_lane_u64(b.V0,1))
+    ?   (vgetq_lane_u64(a.V0,0)<=vgetq_lane_u64(b.V0,0))
+    :   (vgetq_lane_u64(a.V0,1)<=vgetq_lane_u64(b.V0,1));
+}
+
+INLINE(_Bool,VQQI_CLEY) (Vqqi a, Vqqi b)
+{
+    return  
+    (vgetq_lane_s64(a.V0,1)==vgetq_lane_s64(b.V0,1))
+    ?   (vgetq_lane_s64(a.V0,0)<=vgetq_lane_s64(b.V0,0))
+    :   (vgetq_lane_s64(a.V0,1)<=vgetq_lane_s64(b.V0,1));
+}
+INLINE(_Bool,VQQF_CLEY) (Vqqf a, Vqqf b) {return a.V0 <= b.V0;}
 
 #if 0 // _LEAVE_ARM_CLEY
 }
 #endif
 
-
 #if 0 // _ENTER_ARM_CGTS
 {
 #endif
-
-INLINE(ptrdiff_t, ADDR_CGTS)
-(
-    void volatile const *a,
-    void volatile const *b
-)
-{
-    return (a > b) ? NULL-((void *) INTPTR_C(1)) : 0;
-}
-
-INLINE(  _Bool,   BOOL_CGTS)   (_Bool a,   _Bool b) {return a>b;}
-INLINE(  uchar,  UCHAR_CGTS)   (uchar a,   uchar b)
-{
-    return  (a>b) ? UCHAR_MAX : 0;
-}
-
-INLINE(  schar,  SCHAR_CGTS)   (schar a,   schar b) {return  0-(a>b);}
-INLINE(   char,   CHAR_CGTS)    (char a,    char b)
-{
-    return  (a>b) ? '\xff' : '\x00';
-}
-
-INLINE( ushort,  USHRT_CGTS)  (ushort a,  ushort b)
-{
-    return  (a>b) ? USHRT_MAX : 0;
-}
-
-INLINE(  short,   SHRT_CGTS)   (short a,   short b) {return  0-(a>b);}
-
-INLINE(   uint,   UINT_CGTS)    (uint a,    uint b)
-{
-    return  (a>b) ? UINT_MAX : 0u;
-}
-
-INLINE(    int,    INT_CGTS)     (int a,     int b) {return  0-(a>b);}
-
-INLINE(  ulong,  ULONG_CGTS)   (ulong a,   ulong b)
-{
-    return  (a>b) ? ULONG_MAX : 0ul;
-}
-
-INLINE(   long,   LONG_CGTS)    (long a,    long b) {return  0l-(a>b);}
-
-INLINE( ullong, ULLONG_CGTS)  (ullong a,  ullong b)
-{
-    return  (a>b) ? ULLONG_MAX : 0ull;
-}
-
-INLINE(  llong,  LLONG_CGTS)   (llong a,   llong b) {return  0ll-(a>b);}
 
 INLINE(int16_t,  FLT16_CGTS) (flt16_t a, flt16_t b)
 {
@@ -41476,24 +44952,11 @@ INLINE(int16_t,  FLT16_CGTS) (flt16_t a, flt16_t b)
 INLINE(int32_t,    FLT_CGTS)   (float a,   float b) {return  vcgts_f32(a, b);}
 INLINE(int64_t,    DBL_CGTS)  (double a,  double b) {return  vcgtd_f64(a, b);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cgtsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
-{
-    return  (QUAD_UTYPE) 0-(a>b);
-}
-
-INLINE(QUAD_ITYPE,cgtsqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return  (QUAD_ITYPE) 0-(a>b);
-}
-
 INLINE(QUAD_ITYPE,cgtsqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (QUAD_ITYPE) 0-(a>b);
 }
 
-#endif
 
 #define     DBU_CGTS                             vcgt_u8
 #define     DBI_CGTS(A, B)  vreinterpret_s16_u16(vcgt_s8(A,B))
@@ -41722,35 +45185,22 @@ INLINE(Vqdi,VQDF_CGTS) (Vqdf a, Vqdf b) {return QDF_CGTS(a, b);}
 }
 #endif
 
-#if 0 // _ENTER_ARM_CGTY
+#if 0 // _ENTER_ARM_CGTL
 {
 #endif
 
-INLINE(int16_t, FLT16_CGTY) (flt16_t a, flt16_t b) {return a>b;}
-INLINE(int32_t,   FLT_CGTY)   (float a,   float b) {return a>b;}
-INLINE(int64_t,   DBL_CGTY)  (double a,  double b) {return a>b;}
+INLINE(_Bool, FLT16_CGTL) (flt16_t a, flt16_t b) {return a>b;}
+INLINE(_Bool,   FLT_CGTL)   (float a,   float b) {return a>b;}
+INLINE(_Bool,   DBL_CGTL)  (double a,  double b) {return a>b;}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cgtyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(QUAD_ITYPE,cgtlqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (a>b);
 }
 
-INLINE(QUAD_ITYPE,cgtyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+INLINE( Wbu,WBU_CGTL) (Wbu a, Wbu b)
 {
-    return  (a>b);
-}
-
-INLINE(QUAD_ITYPE,cgtyqf) (QUAD_FTYPE a, QUAD_FTYPE b)
-{
-    return  (a>b);
-}
-
-#endif
-INLINE( Wbu,WBU_CGTY) (Wbu a, Wbu b)
-{
-#define     WBU_CGTY    WBU_CGTY
+#define     WBU_CGTL    WBU_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     uint8x8_t   r = vcgt_u8(
@@ -41763,9 +45213,9 @@ INLINE( Wbu,WBU_CGTY) (Wbu a, Wbu b)
     );
 }
 
-INLINE( Wbu,WBI_CGTY) (Wbi a, Wbi b)
+INLINE( Wbu,WBI_CGTL) (Wbi a, Wbi b)
 {
-#define     WBI_CGTY    WBI_CGTY
+#define     WBI_CGTL    WBI_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41783,14 +45233,14 @@ INLINE( Wbu,WBI_CGTY) (Wbi a, Wbi b)
 }
 
 #if CHAR_MIN
-#   define  WBC_CGTY    WBI_CGTY
+#   define  WBC_CGTL    WBI_CGTL
 #else
-#   define  WBC_CGTY    WBU_CGTY
+#   define  WBC_CGTL    WBU_CGTL
 #endif
 
-INLINE( Whu,WHU_CGTY) (Whu a, Whu b)
+INLINE( Whu,WHU_CGTL) (Whu a, Whu b)
 {
-#define     WHU_CGTY    WHU_CGTY
+#define     WHU_CGTL    WHU_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41807,9 +45257,9 @@ INLINE( Whu,WHU_CGTY) (Whu a, Whu b)
     );
 }
 
-INLINE( Whu,WHI_CGTY) (Whi a, Whi b)
+INLINE( Whu,WHI_CGTL) (Whi a, Whi b)
 {
-#define     WHI_CGTY    WHI_CGTY
+#define     WHI_CGTL    WHI_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41826,9 +45276,9 @@ INLINE( Whu,WHI_CGTY) (Whi a, Whi b)
     );
 }
 
-INLINE( Whu,WHF_CGTY) (Whf a, Whf b)
+INLINE( Whu,WHF_CGTL) (Whf a, Whf b)
 {
-#define     WHF_CGTY    WHF_CGTY
+#define     WHF_CGTL    WHF_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
 #if defined(SPC_ARM_FP16_SIMD)
@@ -41852,9 +45302,9 @@ INLINE( Whu,WHF_CGTY) (Whf a, Whf b)
 #endif
 }
 
-INLINE( Wwu,WWU_CGTY) (Wwu a, Wwu b)
+INLINE( Wwu,WWU_CGTL) (Wwu a, Wwu b)
 {
-#define     WWU_CGTY    WWU_CGTY
+#define     WWU_CGTL    WWU_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41871,9 +45321,9 @@ INLINE( Wwu,WWU_CGTY) (Wwu a, Wwu b)
     );
 }
 
-INLINE( Wwu,WWI_CGTY) (Wwi a, Wwi b)
+INLINE( Wwu,WWI_CGTL) (Wwi a, Wwi b)
 {
-#define     WWI_CGTY    WWI_CGTY
+#define     WWI_CGTL    WWI_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41890,9 +45340,9 @@ INLINE( Wwu,WWI_CGTY) (Wwi a, Wwi b)
     );
 }
 
-INLINE( Wwu,WWF_CGTY) (Wwf a, Wwf b)
+INLINE( Wwu,WWF_CGTL) (Wwf a, Wwf b)
 {
-#define     WWF_CGTY    WWF_CGTY
+#define     WWF_CGTL    WWF_CGTL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -41901,20 +45351,20 @@ INLINE( Wwu,WWF_CGTY) (Wwf a, Wwf b)
     );
 }
 
-#define     DBU_CGTY(A, B)            vshr_n_u8(vcgt_u8(A,B),7)
-#define     DBI_CGTY(A, B)  VDBU_ASTI(vshr_n_u8(vcgt_s8(A,B),7))
+#define     DBU_CGTL(A, B)            vshr_n_u8(vcgt_u8(A,B),7)
+#define     DBI_CGTL(A, B)  VDBU_ASTI(vshr_n_u8(vcgt_s8(A,B),7))
 #if CHAR_MIN
-#   define  DBC_CGTY        DBI_CGTY
+#   define  DBC_CGTL        DBI_CGTL
 #else
-#   define  DBC_CGTY        DBU_CGTY
+#   define  DBC_CGTL        DBU_CGTL
 #endif
 
-#define     DHU_CGTY(A, B)            vshr_n_u16(vcgt_u16(A,B),15)
-#define     DHI_CGTY(A, B)  VDHU_ASTI(vshr_n_u16(vcgt_s16(A,B),15))
+#define     DHU_CGTL(A, B)            vshr_n_u16(vcgt_u16(A,B),15)
+#define     DHI_CGTL(A, B)  VDHU_ASTI(vshr_n_u16(vcgt_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  DHF_CGTY(A, B)  VDHU_ASTI(vshr_n_u16(vcgt_f16(A,B),15))
+#   define  DHF_CGTL(A, B)  VDHU_ASTI(vshr_n_u16(vcgt_f16(A,B),15))
 #else
-#   define  DHF_CGTY(A, B)      \
+#   define  DHF_CGTL(A, B)      \
 VDHU_ASHI(                      \
     vshr_n_u16(                 \
         vmovn_u32(              \
@@ -41928,29 +45378,29 @@ VDHU_ASHI(                      \
 )
 #endif
 
-#define     DWU_CGTY(A, B)            vshr_n_u32(vcgt_u32(A,B),31)
-#define     DWI_CGTY(A, B)  VDWU_ASTI(vshr_n_u32(vcgt_s32(A,B),31))
-#define     DWF_CGTY(A, B)  VDWU_ASTI(vshr_n_u32(vcgt_f32(A,B),31))
+#define     DWU_CGTL(A, B)            vshr_n_u32(vcgt_u32(A,B),31)
+#define     DWI_CGTL(A, B)  VDWU_ASTI(vshr_n_u32(vcgt_s32(A,B),31))
+#define     DWF_CGTL(A, B)  VDWU_ASTI(vshr_n_u32(vcgt_f32(A,B),31))
 
-#define     DDU_CGTY(A, B)            vshr_n_u64(vcgt_u64(A,B),63)
-#define     DDI_CGTY(A, B)  VDDU_ASTI(vshr_n_u64(vcgt_s64(A,B),63))
-#define     DDF_CGTY(A, B)  VDDU_ASTI(vshr_n_u64(vcgt_f64(A,B),63))
+#define     DDU_CGTL(A, B)            vshr_n_u64(vcgt_u64(A,B),63)
+#define     DDI_CGTL(A, B)  VDDU_ASTI(vshr_n_u64(vcgt_s64(A,B),63))
+#define     DDF_CGTL(A, B)  VDDU_ASTI(vshr_n_u64(vcgt_f64(A,B),63))
 
 
-#define     QBU_CGTY(A, B)            vshrq_n_u8(vcgtq_u8(A,B),7)
-#define     QBI_CGTY(A, B)  VQBU_ASTI(vshrq_n_u8(vcgtq_s8(A,B),7))
+#define     QBU_CGTL(A, B)            vshrq_n_u8(vcgtq_u8(A,B),7)
+#define     QBI_CGTL(A, B)  VQBU_ASTI(vshrq_n_u8(vcgtq_s8(A,B),7))
 #if CHAR_MIN
-#   define  QBC_CGTY        QBI_CGTY
+#   define  QBC_CGTL        QBI_CGTL
 #else
-#   define  QBC_CGTY        QBU_CGTY
+#   define  QBC_CGTL        QBU_CGTL
 #endif
 
-#define     QHU_CGTY(A, B)            vshrq_n_u16(vcgtq_u16(A,B),15)
-#define     QHI_CGTY(A, B)  VQHU_ASTI(vshrq_n_u16(vcgtq_s16(A,B),15))
+#define     QHU_CGTL(A, B)            vshrq_n_u16(vcgtq_u16(A,B),15)
+#define     QHI_CGTL(A, B)  VQHU_ASTI(vshrq_n_u16(vcgtq_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  QHF_CGTY(A, B)  VQHU_ASTI(vshrq_n_u16(vcgtq_f16(A,B),15))
+#   define  QHF_CGTL(A, B)  VQHU_ASTI(vshrq_n_u16(vcgtq_f16(A,B),15))
 #else
-#   define  QHF_CGTY(A, B)                          \
+#   define  QHF_CGTL(A, B)                          \
 vreinterpretq_s16_u16(                              \
     vshrq_n_u16(                                    \
         vcombine_u16(                               \
@@ -41972,79 +45422,79 @@ vreinterpretq_s16_u16(                              \
 )
 #endif
 
-#define     QWU_CGTY(A, B)            vshrq_n_u32(vcgtq_u32(A,B),31)
-#define     QWI_CGTY(A, B)  VQWU_ASTI(vshrq_n_u32(vcgtq_s32(A,B),31))
-#define     QWF_CGTY(A, B)  VQWU_ASTI(vshrq_n_u32(vcgtq_f32(A,B),31))
+#define     QWU_CGTL(A, B)            vshrq_n_u32(vcgtq_u32(A,B),31)
+#define     QWI_CGTL(A, B)  VQWU_ASTI(vshrq_n_u32(vcgtq_s32(A,B),31))
+#define     QWF_CGTL(A, B)  VQWU_ASTI(vshrq_n_u32(vcgtq_f32(A,B),31))
 
-#define     QDU_CGTY(A, B)            vshrq_n_u64(vcgtq_u64(A,B),63)
-#define     QDI_CGTY(A, B)  VQDU_ASTI(vshrq_n_u64(vcgtq_s64(A,B),63))
-#define     QDF_CGTY(A, B)  VQDU_ASTI(vshrq_n_u64(vcgtq_f64(A,B),63))
+#define     QDU_CGTL(A, B)            vshrq_n_u64(vcgtq_u64(A,B),63)
+#define     QDI_CGTL(A, B)  VQDU_ASTI(vshrq_n_u64(vcgtq_s64(A,B),63))
+#define     QDF_CGTL(A, B)  VQDU_ASTI(vshrq_n_u64(vcgtq_f64(A,B),63))
 
 
-INLINE(Vwyu,VWYU_CGTY) (Vwyu a, Vwyu b)
+INLINE(Vwyu,VWYU_CGTL) (Vwyu a, Vwyu b)
 {
     uint32_t p = VWWU_ASTV(VWYU_ASWU(a));
     uint32_t q = VWWU_ASTV(VWYU_ASWU(b));
     return  VWWU_ASYU(UINT_ASTV((~q&p)));
 }
 
-INLINE(Vwbu,VWBU_CGTY) (Vwbu a, Vwbu b)
+INLINE(Vwbu,VWBU_CGTL) (Vwbu a, Vwbu b)
 {
-#define     VWBU_CGTY(A, B) WBU_ASTV(WBU_CGTY(VWBU_ASTM(A),VWBU_ASTM(B)))
-    return  VWBU_CGTY(a, b);
+#define     VWBU_CGTL(A, B) WBU_ASTV(WBU_CGTL(VWBU_ASTM(A),VWBU_ASTM(B)))
+    return  VWBU_CGTL(a, b);
 }
 
-INLINE(Vwbi,VWBI_CGTY) (Vwbi a, Vwbi b)
+INLINE(Vwbi,VWBI_CGTL) (Vwbi a, Vwbi b)
 {
-#define     VWBI_CGTY(A, B) WBI_ASTV(WBI_CGTY(VWBI_ASTM(A),VWBI_ASTM(B)))
-    return  VWBI_CGTY(a, b);
+#define     VWBI_CGTL(A, B) WBI_ASTV(WBI_CGTL(VWBI_ASTM(A),VWBI_ASTM(B)))
+    return  VWBI_CGTL(a, b);
 }
 
-INLINE(Vwbc,VWBC_CGTY) (Vwbc a, Vwbc b)
+INLINE(Vwbc,VWBC_CGTL) (Vwbc a, Vwbc b)
 {
-#define     VWBC_CGTY(A, B) WBC_ASTV(WBC_CGTY(VWBC_ASTM(A),VWBC_ASTM(B)))
-    return  VWBC_CGTY(a, b);
-}
-
-
-INLINE(Vwhu,VWHU_CGTY) (Vwhu a, Vwhu b)
-{
-#define     VWHU_CGTY(A, B) WHU_ASTV(WHU_CGTY(VWHU_ASTM(A),VWHU_ASTM(B)))
-    return  VWHU_CGTY(a, b);
-}
-
-INLINE(Vwhi,VWHI_CGTY) (Vwhi a, Vwhi b)
-{
-#define     VWHI_CGTY(A, B) WHI_ASTV(WHI_CGTY(VWHI_ASTM(A),VWHI_ASTM(B)))
-    return  VWHI_CGTY(a, b);
-}
-
-INLINE(Vwhi,VWHF_CGTY) (Vwhf a, Vwhf b)
-{
-#define     VWHF_CGTY(A, B) WHI_ASTV(WHF_CGTY(VWHF_ASTM(A),VWHF_ASTM(B)))
-    return  VWHF_CGTY(a, b);
+#define     VWBC_CGTL(A, B) WBC_ASTV(WBC_CGTL(VWBC_ASTM(A),VWBC_ASTM(B)))
+    return  VWBC_CGTL(a, b);
 }
 
 
-INLINE(Vwwu,VWWU_CGTY) (Vwwu a, Vwwu b)
+INLINE(Vwhu,VWHU_CGTL) (Vwhu a, Vwhu b)
 {
-#define     VWWU_CGTY(A, B) WWU_ASTV(WWU_CGTY(VWWU_ASTM(A),VWWU_ASTM(B)))
-    return  VWWU_CGTY(a, b);
+#define     VWHU_CGTL(A, B) WHU_ASTV(WHU_CGTL(VWHU_ASTM(A),VWHU_ASTM(B)))
+    return  VWHU_CGTL(a, b);
 }
 
-INLINE(Vwwi,VWWI_CGTY) (Vwwi a, Vwwi b)
+INLINE(Vwhi,VWHI_CGTL) (Vwhi a, Vwhi b)
 {
-#define     VWWI_CGTY(A, B) WWI_ASTV(WWI_CGTY(VWWI_ASTM(A),VWWI_ASTM(B)))
-    return  VWWI_CGTY(a, b);
+#define     VWHI_CGTL(A, B) WHI_ASTV(WHI_CGTL(VWHI_ASTM(A),VWHI_ASTM(B)))
+    return  VWHI_CGTL(a, b);
 }
 
-INLINE(Vwwi,VWWF_CGTY) (Vwwf a, Vwwf b)
+INLINE(Vwhi,VWHF_CGTL) (Vwhf a, Vwhf b)
 {
-#define     VWWF_CGTY(A, B) WWI_ASTV(WWF_CGTY(VWWF_ASTM(A),VWWF_ASTM(B)))
-    return  VWWF_CGTY(a, b);
+#define     VWHF_CGTL(A, B) WHI_ASTV(WHF_CGTL(VWHF_ASTM(A),VWHF_ASTM(B)))
+    return  VWHF_CGTL(a, b);
 }
 
-INLINE(Vdyu,VDYU_CGTY) (Vdyu a, Vdyu b)
+
+INLINE(Vwwu,VWWU_CGTL) (Vwwu a, Vwwu b)
+{
+#define     VWWU_CGTL(A, B) WWU_ASTV(WWU_CGTL(VWWU_ASTM(A),VWWU_ASTM(B)))
+    return  VWWU_CGTL(a, b);
+}
+
+INLINE(Vwwi,VWWI_CGTL) (Vwwi a, Vwwi b)
+{
+#define     VWWI_CGTL(A, B) WWI_ASTV(WWI_CGTL(VWWI_ASTM(A),VWWI_ASTM(B)))
+    return  VWWI_CGTL(a, b);
+}
+
+INLINE(Vwwi,VWWF_CGTL) (Vwwf a, Vwwf b)
+{
+#define     VWWF_CGTL(A, B) WWI_ASTV(WWF_CGTL(VWWF_ASTM(A),VWWF_ASTM(B)))
+    return  VWWF_CGTL(a, b);
+}
+
+INLINE(Vdyu,VDYU_CGTL) (Vdyu a, Vdyu b)
 {
     uint64x1_t p = VDYU_ASDU(a);
     uint64x1_t q = VDYU_ASDU(b);
@@ -42053,31 +45503,31 @@ INLINE(Vdyu,VDYU_CGTY) (Vdyu a, Vdyu b)
 }
 
 
-INLINE(Vdbu,VDBU_CGTY) (Vdbu a, Vdbu b) {return DBU_CGTY(a, b);}
-INLINE(Vdbi,VDBI_CGTY) (Vdbi a, Vdbi b) {return DBI_CGTY(a, b);}
-INLINE(Vdbc,VDBC_CGTY) (Vdbc a, Vdbc b)
+INLINE(Vdbu,VDBU_CGTL) (Vdbu a, Vdbu b) {return DBU_CGTL(a, b);}
+INLINE(Vdbi,VDBI_CGTL) (Vdbi a, Vdbi b) {return DBI_CGTL(a, b);}
+INLINE(Vdbc,VDBC_CGTL) (Vdbc a, Vdbc b)
 {
     return  DBC_ASTV(
-        DBC_CGTY(
+        DBC_CGTL(
             VDBC_ASTM(a),
             VDBC_ASTM(b)
         )
     );
 }
 
-INLINE(Vdhu,VDHU_CGTY) (Vdhu a, Vdhu b) {return DHU_CGTY(a, b);}
-INLINE(Vdhi,VDHI_CGTY) (Vdhi a, Vdhi b) {return DHI_CGTY(a, b);}
-INLINE(Vdhi,VDHF_CGTY) (Vdhf a, Vdhf b) {return DHF_CGTY(a, b);}
+INLINE(Vdhu,VDHU_CGTL) (Vdhu a, Vdhu b) {return DHU_CGTL(a, b);}
+INLINE(Vdhi,VDHI_CGTL) (Vdhi a, Vdhi b) {return DHI_CGTL(a, b);}
+INLINE(Vdhi,VDHF_CGTL) (Vdhf a, Vdhf b) {return DHF_CGTL(a, b);}
 
-INLINE(Vdwu,VDWU_CGTY) (Vdwu a, Vdwu b) {return DWU_CGTY(a, b);}
-INLINE(Vdwi,VDWI_CGTY) (Vdwi a, Vdwi b) {return DWI_CGTY(a, b);}
-INLINE(Vdwi,VDWF_CGTY) (Vdwf a, Vdwf b) {return DWF_CGTY(a, b);}
+INLINE(Vdwu,VDWU_CGTL) (Vdwu a, Vdwu b) {return DWU_CGTL(a, b);}
+INLINE(Vdwi,VDWI_CGTL) (Vdwi a, Vdwi b) {return DWI_CGTL(a, b);}
+INLINE(Vdwi,VDWF_CGTL) (Vdwf a, Vdwf b) {return DWF_CGTL(a, b);}
 
-INLINE(Vddu,VDDU_CGTY) (Vddu a, Vddu b) {return DDU_CGTY(a, b);}
-INLINE(Vddi,VDDI_CGTY) (Vddi a, Vddi b) {return DDI_CGTY(a, b);}
-INLINE(Vddi,VDDF_CGTY) (Vddf a, Vddf b) {return DDF_CGTY(a, b);}
+INLINE(Vddu,VDDU_CGTL) (Vddu a, Vddu b) {return DDU_CGTL(a, b);}
+INLINE(Vddi,VDDI_CGTL) (Vddi a, Vddi b) {return DDI_CGTL(a, b);}
+INLINE(Vddi,VDDF_CGTL) (Vddf a, Vddf b) {return DDF_CGTL(a, b);}
 
-INLINE(Vqyu,VQYU_CGTY) (Vqyu a, Vqyu b)
+INLINE(Vqyu,VQYU_CGTL) (Vqyu a, Vqyu b)
 {
     uint64x2_t p = VQYU_ASDU(a);
     uint64x2_t q = VQYU_ASDU(b);
@@ -42085,80 +45535,314 @@ INLINE(Vqyu,VQYU_CGTY) (Vqyu a, Vqyu b)
     return  VQDU_ASYU(p);
 }
 
-INLINE(Vqbu,VQBU_CGTY) (Vqbu a, Vqbu b) {return QBU_CGTY(a,b);}
-INLINE(Vqbi,VQBI_CGTY) (Vqbi a, Vqbi b) {return QBI_CGTY(a,b);}
-INLINE(Vqbc,VQBC_CGTY) (Vqbc a, Vqbc b)
+INLINE(Vqbu,VQBU_CGTL) (Vqbu a, Vqbu b) {return QBU_CGTL(a,b);}
+INLINE(Vqbi,VQBI_CGTL) (Vqbi a, Vqbi b) {return QBI_CGTL(a,b);}
+INLINE(Vqbc,VQBC_CGTL) (Vqbc a, Vqbc b)
 {
-    return  QBC_ASTV(QBC_CGTY(VQBC_ASTM(a),VQBC_ASTM(b)));
+    return  QBC_ASTV(QBC_CGTL(VQBC_ASTM(a),VQBC_ASTM(b)));
 }
 
-INLINE(Vqhu,VQHU_CGTY) (Vqhu a, Vqhu b) {return QHU_CGTY(a,b);}
-INLINE(Vqhi,VQHI_CGTY) (Vqhi a, Vqhi b) {return QHI_CGTY(a,b);}
-INLINE(Vqhi,VQHF_CGTY) (Vqhf a, Vqhf b) {return QHF_CGTY(a,b);}
-INLINE(Vqwu,VQWU_CGTY) (Vqwu a, Vqwu b) {return QWU_CGTY(a,b);}
-INLINE(Vqwi,VQWI_CGTY) (Vqwi a, Vqwi b) {return QWI_CGTY(a,b);}
-INLINE(Vqwi,VQWF_CGTY) (Vqwf a, Vqwf b) {return QWF_CGTY(a,b);}
-INLINE(Vqdu,VQDU_CGTY) (Vqdu a, Vqdu b) {return QDU_CGTY(a,b);}
-INLINE(Vqdi,VQDI_CGTY) (Vqdi a, Vqdi b) {return QDI_CGTY(a,b);}
-INLINE(Vqdi,VQDF_CGTY) (Vqdf a, Vqdf b) {return QDF_CGTY(a,b);}
+INLINE(Vqhu,VQHU_CGTL) (Vqhu a, Vqhu b) {return QHU_CGTL(a,b);}
+INLINE(Vqhi,VQHI_CGTL) (Vqhi a, Vqhi b) {return QHI_CGTL(a,b);}
+INLINE(Vqhi,VQHF_CGTL) (Vqhf a, Vqhf b) {return QHF_CGTL(a,b);}
+INLINE(Vqwu,VQWU_CGTL) (Vqwu a, Vqwu b) {return QWU_CGTL(a,b);}
+INLINE(Vqwi,VQWI_CGTL) (Vqwi a, Vqwi b) {return QWI_CGTL(a,b);}
+INLINE(Vqwi,VQWF_CGTL) (Vqwf a, Vqwf b) {return QWF_CGTL(a,b);}
+INLINE(Vqdu,VQDU_CGTL) (Vqdu a, Vqdu b) {return QDU_CGTL(a,b);}
+INLINE(Vqdi,VQDI_CGTL) (Vqdi a, Vqdi b) {return QDI_CGTL(a,b);}
+INLINE(Vqdi,VQDF_CGTL) (Vqdf a, Vqdf b) {return QDF_CGTL(a,b);}
+
+#if 0 // _LEAVE_ARM_CGTL
+}
+#endif
+
+#if 0 // _ENTER_ARM_CGTY
+{
+#endif
+
+INLINE(_Bool,FLT16_CGTY) (flt16_t a, flt16_t b) {return a>b;}
+INLINE(_Bool,  FLT_CGTY)   (float a,   float b) {return a>b;}
+INLINE(_Bool,  DBL_CGTY)  (double a,  double b) {return a>b;}
+
+INLINE(_Bool,WYU_CGTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    return !vget_lane_u32(y.W.U,0) && (-1==vget_lane_s32(x.W.I,0));
+}
+
+INLINE(_Bool,WBU_CGTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vcgt_u8(x.B.U, y.B.U);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WBI_CGTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.B.U = vcgt_s8(x.B.I, y.B.I);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+#if CHAR_MIN
+#   define  WBC_CGTY  WBI_CGTY
+#else
+#   define  WBC_CGTY  WBU_CGTY
+#endif
+
+INLINE(_Bool,WHU_CGTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vcgt_u16(x.H.U, y.H.U);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WHI_CGTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.U = vcgt_s16(x.H.I, y.H.I);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WHF_CGTY) (float a, float b) 
+{
+    DWRD_VTYPE x={.W.F={a}}, y={.W.F={b}};
+    x.H.I = VDHF_CGTS(x.H.F, y.H.F);
+    return  -1==vget_lane_s32(x.W.I, 0);
+}
+
+INLINE(_Bool,WWU_CGTY) (float a, float b) 
+{
+    WORD_TYPE x={.F=a}, y={.F=b};
+    return  x.U<=y.U;
+}
+
+INLINE(_Bool,WWI_CGTY) (float a, float b) 
+{
+    WORD_TYPE x={.F=a}, y={.F=b};
+    return  x.I<=y.I;
+}
+
+INLINE(_Bool,VWYU_CGTY) (Vwyu a, Vwyu b) {return WYU_CGTY(a.V0, b.V0);}         
+INLINE(_Bool,VWBU_CGTY) (Vwbu a, Vwbu b) {return WBU_CGTY(a.V0, b.V0);}         
+INLINE(_Bool,VWBI_CGTY) (Vwbi a, Vwbi b) {return WBI_CGTY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_CGTY) (Vwbc a, Vwbc b) {return WBC_CGTY(a.V0, b.V0);}
+INLINE(_Bool,VWHU_CGTY) (Vwhu a, Vwhu b) {return WHU_CGTY(a.V0, b.V0);}
+INLINE(_Bool,VWHI_CGTY) (Vwhi a, Vwhi b) {return WHI_CGTY(a.V0, b.V0);}         
+INLINE(_Bool,VWHF_CGTY) (Vwhf a, Vwhf b) {return WHF_CGTY(a.V0, b.V0);}
+INLINE(_Bool,VWWU_CGTY) (Vwwu a, Vwwu b) {return WWU_CGTY(a.V0, b.V0);}         
+INLINE(_Bool,VWWI_CGTY) (Vwwi a, Vwwi b) {return WWI_CGTY(a.V0, b.V0);}         
+INLINE(_Bool,VWWF_CGTY) (Vwwf a, Vwwf b) {return a.V0>b.V0;}
+
+INLINE(_Bool,VDYU_CGTY) (Vdyu a, Vdyu b)
+{
+    return (UINT64_MAX==vget_lane_u64(a.V0, 0)) && !vget_lane_u64(b.V0, 0);
+}
+
+INLINE(_Bool,VDBU_CGTY) (Vdbu a, Vdbu b)
+{
+    uint8x8_t   u = vcgt_u8(a, b);
+    uint64x1_t  c = vreinterpret_u64_u8(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDBI_CGTY) (Vdbi a, Vdbi b)
+{
+    uint8x8_t   u = vcgt_s8(a, b);
+    uint64x1_t  c = vreinterpret_u64_u8(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDBC_CGTY) (Vdbc a, Vdbc b)
+{
+#if CHAR_MIN
+    return VDBI_CGTY(a.V0, b.V0);
+#else
+    return VDBU_CGTY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VDHU_CGTY) (Vdhu a, Vdhu b)
+{
+    uint16x4_t  u = vcgt_u16(a, b);
+    uint64x1_t  c = vreinterpret_u64_u16(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDHI_CGTY) (Vdhi a, Vdhi b)
+{
+    uint16x4_t  u = vcgt_s16(a, b);
+    uint64x1_t  c = vreinterpret_u64_u16(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDHF_CGTY) (Vdhf a, Vdhf b)
+{
+    int16x4_t   u = VDHF_CGTS(a, b);
+    uint64x1_t  c = vreinterpret_u64_u16(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDWU_CGTY) (Vdwu a, Vdwu b)
+{
+    uint32x2_t  u = vcgt_u32(a, b);
+    uint64x1_t  c = vreinterpret_u64_u32(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDWI_CGTY) (Vdwi a, Vdwi b)
+{
+    uint32x2_t  u = vcgt_s32(a, b);
+    uint64x1_t  c = vreinterpret_u64_u32(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDWF_CGTY) (Vdwf a, Vdwf b)
+{
+    uint32x2_t  u = vcgt_f32(a, b);
+    uint64x1_t  c = vreinterpret_u64_u32(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDDU_CGTY) (Vddu a, Vddu b)
+{
+    uint64x1_t  u = vcgt_u64(a, b);
+    return  vget_lane_u64(u, 0);
+}
+
+INLINE(_Bool,VDDI_CGTY) (Vddi a, Vddi b)
+{
+    uint64x1_t  u = vcgt_s64(a, b);
+    return  vget_lane_u64(u, 0);
+}
+
+INLINE(_Bool,VDDF_CGTY) (Vddf a, Vddf b)
+{
+    uint64x1_t  u = vcgt_f64(a, b);
+    return  vget_lane_u64(u, 0);
+}
+
+
+INLINE(_Bool,VQYU_CGTY) (Vqyu a, Vqyu b)
+{
+    uint64_t x0 = vgetq_lane_u64(a.V0, 0);
+    uint64_t x1 = vgetq_lane_u64(a.V0, 1);
+
+    uint64_t x2 = vgetq_lane_u64(b.V0, 0);
+    uint64_t x3 = vgetq_lane_u64(b.V0, 1);
+    return  (!(x0|x1)) && (UINT64_MAX==(x2&x3));
+}
+
+#define     MY_CGTYZ(C) \
+(UINT64_MAX==vget_lane_u64(vand_u64(vget_low_u64(C),vget_high_u64(C)),0))
+
+INLINE(_Bool,VQBU_CGTY) (Vqbu a, Vqbu b)
+{
+    uint8x16_t  u = vcgtq_u8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQBI_CGTY) (Vqbi a, Vqbi b)
+{
+    uint8x16_t  u = vcgtq_s8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQBC_CGTY) (Vqbc a, Vqbc b)
+{
+#if CHAR_MIN
+    return  VQBI_CGTY(a.V0, b.V0);
+#else
+    return  VQBU_CGTY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VQHU_CGTY) (Vqhu a, Vqhu b)
+{
+    uint16x8_t  u = vcgtq_u16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQHI_CGTY) (Vqhi a, Vqhi b)
+{
+    uint16x8_t  u = vcgtq_s16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQHF_CGTY) (Vqhf a, Vqhf b)
+{
+    int16x8_t   u = VQHF_CGTS(a, b);
+    uint64x2_t  c = vreinterpretq_u64_s16(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQWU_CGTY) (Vqwu a, Vqwu b)
+{
+    uint32x4_t  u = vcgtq_u32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQWI_CGTY) (Vqwi a, Vqwi b)
+{
+    uint32x4_t  u = vcgtq_s32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQWF_CGTY) (Vqwf a, Vqwf b)
+{
+    uint32x4_t  u = vcgtq_f32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQDU_CGTY) (Vqdu a, Vqdu b)
+{
+    uint64x2_t  c = vcgtq_u64(a, b);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQDI_CGTY) (Vqdi a, Vqdi b)
+{
+    uint64x2_t  c = vcgtq_s64(a, b);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQDF_CGTY) (Vqdf a, Vqdf b)
+{
+    uint64x2_t  c = vcgtq_f64(a, b);
+    return  MY_CGTYZ(c);
+}
+
+INLINE(_Bool,VQQU_CGTY) (Vqqu a, Vqqu b)
+{
+    return  
+    (vgetq_lane_u64(a.V0,1)==vgetq_lane_u64(b.V0,1))
+    ?   (vgetq_lane_u64(a.V0,0)>vgetq_lane_u64(b.V0,0))
+    :   (vgetq_lane_u64(a.V0,1)>vgetq_lane_u64(b.V0,1));
+}
+
+INLINE(_Bool,VQQI_CGTY) (Vqqi a, Vqqi b)
+{
+    return  
+    (vgetq_lane_s64(a.V0,1)==vgetq_lane_s64(b.V0,1))
+    ?   (vgetq_lane_s64(a.V0,0)>vgetq_lane_s64(b.V0,0))
+    :   (vgetq_lane_s64(a.V0,1)>vgetq_lane_s64(b.V0,1));
+}
+INLINE(_Bool,VQQF_CGTY) (Vqqf a, Vqqf b) {return a.V0 > b.V0;}
 
 #if 0 // _LEAVE_ARM_CGTY
 }
 #endif
 
-
 #if 0 // _ENTER_ARM_CGES
 {
 #endif
-
-INLINE(ptrdiff_t, ADDR_CGES)
-(
-    void volatile const *a,
-    void volatile const *b
-)
-{
-    return (a >= b) ? NULL-((void *) INTPTR_C(1)) : 0;
-}
-
-INLINE(  _Bool,   BOOL_CGES)   (_Bool a,   _Bool b) {return a>=b;}
-INLINE(  uchar,  UCHAR_CGES)   (uchar a,   uchar b)
-{
-    return  (a>=b) ? UCHAR_MAX : 0;
-}
-
-INLINE(  schar,  SCHAR_CGES)   (schar a,   schar b) {return  0-(a>=b);}
-INLINE(   char,   CHAR_CGES)    (char a,    char b)
-{
-    return  (a>=b) ? '\xff' : '\x00';
-}
-
-INLINE( ushort,  USHRT_CGES)  (ushort a,  ushort b)
-{
-    return  (a>=b) ? USHRT_MAX : 0;
-}
-
-INLINE(  short,   SHRT_CGES)   (short a,   short b) {return  0-(a>=b);}
-
-INLINE(   uint,   UINT_CGES)    (uint a,    uint b)
-{
-    return  (a>=b) ? UINT_MAX : 0u;
-}
-
-INLINE(    int,    INT_CGES)     (int a,     int b) {return  0-(a>=b);}
-
-INLINE(  ulong,  ULONG_CGES)   (ulong a,   ulong b)
-{
-    return  (a>=b) ? ULONG_MAX : 0ul;
-}
-
-INLINE(   long,   LONG_CGES)    (long a,    long b) {return  0l-(a>=b);}
-
-INLINE( ullong, ULLONG_CGES)  (ullong a,  ullong b)
-{
-    return  (a>=b) ? ULLONG_MAX : 0ull;
-}
-
-INLINE(  llong,  LLONG_CGES)   (llong a,   llong b) {return  0ll-(a>=b);}
 
 INLINE(int16_t,  FLT16_CGES) (flt16_t a, flt16_t b)
 {
@@ -42172,24 +45856,12 @@ INLINE(int16_t,  FLT16_CGES) (flt16_t a, flt16_t b)
 INLINE(int32_t,    FLT_CGES)   (float a,   float b) {return  vcges_f32(a, b);}
 INLINE(int64_t,    DBL_CGES)  (double a,  double b) {return  vcged_f64(a, b);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cgesqu) (QUAD_UTYPE a, QUAD_UTYPE b)
-{
-    return  (QUAD_UTYPE) 0-(a>=b);
-}
-
-INLINE(QUAD_ITYPE,cgesqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return  (QUAD_ITYPE) 0-(a>=b);
-}
 
 INLINE(QUAD_ITYPE,cgesqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (QUAD_ITYPE) 0-(a>=b);
 }
 
-#endif
 
 #define     DBU_CGES                             vcge_u8
 #define     DBI_CGES(A, B)  vreinterpret_s16_u16(vcge_s8(A,B))
@@ -42418,36 +46090,23 @@ INLINE(Vqdi,VQDF_CGES) (Vqdf a, Vqdf b) {return QDF_CGES(a, b);}
 }
 #endif
 
-#if 0 // _ENTER_ARM_CGEY
+#if 0 // _ENTER_ARM_CGEL
 {
 #endif
 
-INLINE(int16_t, FLT16_CGEY) (flt16_t a, flt16_t b) {return a>=b;}
-INLINE(int32_t,   FLT_CGEY)   (float a,   float b) {return a>=b;}
-INLINE(int64_t,   DBL_CGEY)  (double a,  double b) {return a>=b;}
+INLINE(_Bool, FLT16_CGEL) (flt16_t a, flt16_t b) {return a>=b;}
+INLINE(_Bool,   FLT_CGEL)   (float a,   float b) {return a>=b;}
+INLINE(_Bool,   DBL_CGEL)  (double a,  double b) {return a>=b;}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,cgeyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+INLINE(QUAD_ITYPE,cgelqf) (QUAD_FTYPE a, QUAD_FTYPE b)
 {
     return  (a>=b);
 }
 
-INLINE(QUAD_ITYPE,cgeyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return  (a>=b);
-}
 
-INLINE(QUAD_ITYPE,cgeyqf) (QUAD_FTYPE a, QUAD_FTYPE b)
+INLINE( Wbu,WBU_CGEL) (Wbu a, Wbu b)
 {
-    return  (a>=b);
-}
-
-#endif
-
-INLINE( Wbu,WBU_CGEY) (Wbu a, Wbu b)
-{
-#define     WBU_CGEY    WBU_CGEY
+#define     WBU_CGEL    WBU_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     uint8x8_t   r = vcge_u8(
@@ -42460,9 +46119,9 @@ INLINE( Wbu,WBU_CGEY) (Wbu a, Wbu b)
     );
 }
 
-INLINE( Wbu,WBI_CGEY) (Wbi a, Wbi b)
+INLINE( Wbu,WBI_CGEL) (Wbi a, Wbi b)
 {
-#define     WBI_CGEY    WBI_CGEY
+#define     WBI_CGEL    WBI_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -42480,14 +46139,14 @@ INLINE( Wbu,WBI_CGEY) (Wbi a, Wbi b)
 }
 
 #if CHAR_MIN
-#   define  WBC_CGEY    WBI_CGEY
+#   define  WBC_CGEL    WBI_CGEL
 #else
-#   define  WBC_CGEY    WBU_CGEY
+#   define  WBC_CGEL    WBU_CGEL
 #endif
 
-INLINE( Whu,WHU_CGEY) (Whu a, Whu b)
+INLINE( Whu,WHU_CGEL) (Whu a, Whu b)
 {
-#define     WHU_CGEY    WHU_CGEY
+#define     WHU_CGEL    WHU_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -42504,9 +46163,9 @@ INLINE( Whu,WHU_CGEY) (Whu a, Whu b)
     );
 }
 
-INLINE( Whu,WHI_CGEY) (Whi a, Whi b)
+INLINE( Whu,WHI_CGEL) (Whi a, Whi b)
 {
-#define     WHI_CGEY    WHI_CGEY
+#define     WHI_CGEL    WHI_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -42523,9 +46182,9 @@ INLINE( Whu,WHI_CGEY) (Whi a, Whi b)
     );
 }
 
-INLINE( Whu,WHF_CGEY) (Whf a, Whf b)
+INLINE( Whu,WHF_CGEL) (Whf a, Whf b)
 {
-#define     WHF_CGEY    WHF_CGEY
+#define     WHF_CGEL    WHF_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
 #if defined(SPC_ARM_FP16_SIMD)
@@ -42549,9 +46208,9 @@ INLINE( Whu,WHF_CGEY) (Whf a, Whf b)
 #endif
 }
 
-INLINE( Wwu,WWU_CGEY) (Wwu a, Wwu b)
+INLINE( Wwu,WWU_CGEL) (Wwu a, Wwu b)
 {
-#define     WWU_CGEY    WWU_CGEY
+#define     WWU_CGEL    WWU_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -42568,9 +46227,9 @@ INLINE( Wwu,WWU_CGEY) (Wwu a, Wwu b)
     );
 }
 
-INLINE( Wwu,WWI_CGEY) (Wwi a, Wwi b)
+INLINE( Wwu,WWI_CGEL) (Wwi a, Wwi b)
 {
-#define     WWI_CGEY    WWI_CGEY
+#define     WWI_CGEL    WWI_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -42587,9 +46246,9 @@ INLINE( Wwu,WWI_CGEY) (Wwi a, Wwi b)
     );
 }
 
-INLINE( Wwu,WWF_CGEY) (Wwf a, Wwf b)
+INLINE( Wwu,WWF_CGEL) (Wwf a, Wwf b)
 {
-#define     WWF_CGEY    WWF_CGEY
+#define     WWF_CGEL    WWF_CGEL
     float32x2_t p = vset_lane_f32(a, p, 0);
     float32x2_t q = vset_lane_f32(b, q, 0);
     return  vget_lane_f32(
@@ -42598,20 +46257,20 @@ INLINE( Wwu,WWF_CGEY) (Wwf a, Wwf b)
     );
 }
 
-#define     DBU_CGEY(A, B)            vshr_n_u8(vcge_u8(A,B),7)
-#define     DBI_CGEY(A, B)  VDBU_ASTI(vshr_n_u8(vcge_s8(A,B),7))
+#define     DBU_CGEL(A, B)            vshr_n_u8(vcge_u8(A,B),7)
+#define     DBI_CGEL(A, B)  VDBU_ASTI(vshr_n_u8(vcge_s8(A,B),7))
 #if CHAR_MIN
-#   define  DBC_CGEY        DBI_CGEY
+#   define  DBC_CGEL        DBI_CGEL
 #else
-#   define  DBC_CGEY        DBU_CGEY
+#   define  DBC_CGEL        DBU_CGEL
 #endif
 
-#define     DHU_CGEY(A, B)            vshr_n_u16(vcge_u16(A,B),15)
-#define     DHI_CGEY(A, B)  VDHU_ASTI(vshr_n_u16(vcge_s16(A,B),15))
+#define     DHU_CGEL(A, B)            vshr_n_u16(vcge_u16(A,B),15)
+#define     DHI_CGEL(A, B)  VDHU_ASTI(vshr_n_u16(vcge_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  DHF_CGEY(A, B)  VDHU_ASTI(vshr_n_u16(vcge_f16(A,B),15))
+#   define  DHF_CGEL(A, B)  VDHU_ASTI(vshr_n_u16(vcge_f16(A,B),15))
 #else
-#   define  DHF_CGEY(A, B)      \
+#   define  DHF_CGEL(A, B)      \
 VDHU_ASHI(                      \
     vshr_n_u16(                 \
         vmovn_u32(              \
@@ -42625,29 +46284,29 @@ VDHU_ASHI(                      \
 )
 #endif
 
-#define     DWU_CGEY(A, B)            vshr_n_u32(vcge_u32(A,B),31)
-#define     DWI_CGEY(A, B)  VDWU_ASTI(vshr_n_u32(vcge_s32(A,B),31))
-#define     DWF_CGEY(A, B)  VDWU_ASTI(vshr_n_u32(vcge_f32(A,B),31))
+#define     DWU_CGEL(A, B)            vshr_n_u32(vcge_u32(A,B),31)
+#define     DWI_CGEL(A, B)  VDWU_ASTI(vshr_n_u32(vcge_s32(A,B),31))
+#define     DWF_CGEL(A, B)  VDWU_ASTI(vshr_n_u32(vcge_f32(A,B),31))
 
-#define     DDU_CGEY(A, B)            vshr_n_u64(vcge_u64(A,B),63)
-#define     DDI_CGEY(A, B)  VDDU_ASTI(vshr_n_u64(vcge_s64(A,B),63))
-#define     DDF_CGEY(A, B)  VDDU_ASTI(vshr_n_u64(vcge_f64(A,B),63))
+#define     DDU_CGEL(A, B)            vshr_n_u64(vcge_u64(A,B),63)
+#define     DDI_CGEL(A, B)  VDDU_ASTI(vshr_n_u64(vcge_s64(A,B),63))
+#define     DDF_CGEL(A, B)  VDDU_ASTI(vshr_n_u64(vcge_f64(A,B),63))
 
 
-#define     QBU_CGEY(A, B)            vshrq_n_u8(vcgeq_u8(A,B),7)
-#define     QBI_CGEY(A, B)  VQBU_ASTI(vshrq_n_u8(vcgeq_s8(A,B),7))
+#define     QBU_CGEL(A, B)            vshrq_n_u8(vcgeq_u8(A,B),7)
+#define     QBI_CGEL(A, B)  VQBU_ASTI(vshrq_n_u8(vcgeq_s8(A,B),7))
 #if CHAR_MIN
-#   define  QBC_CGEY        QBI_CGEY
+#   define  QBC_CGEL        QBI_CGEL
 #else
-#   define  QBC_CGEY        QBU_CGEY
+#   define  QBC_CGEL        QBU_CGEL
 #endif
 
-#define     QHU_CGEY(A, B)            vshrq_n_u16(vcgeq_u16(A,B),15)
-#define     QHI_CGEY(A, B)  VQHU_ASTI(vshrq_n_u16(vcgeq_s16(A,B),15))
+#define     QHU_CGEL(A, B)            vshrq_n_u16(vcgeq_u16(A,B),15)
+#define     QHI_CGEL(A, B)  VQHU_ASTI(vshrq_n_u16(vcgeq_s16(A,B),15))
 #if defined(SPC_ARM_FP16_SIMD)
-#   define  QHF_CGEY(A, B)  VQHU_ASTI(vshrq_n_u16(vcgeq_f16(A,B),15))
+#   define  QHF_CGEL(A, B)  VQHU_ASTI(vshrq_n_u16(vcgeq_f16(A,B),15))
 #else
-#   define  QHF_CGEY(A, B)                          \
+#   define  QHF_CGEL(A, B)                          \
 vreinterpretq_s16_u16(                              \
     vshrq_n_u16(                                    \
         vcombine_u16(                               \
@@ -42669,162 +46328,428 @@ vreinterpretq_s16_u16(                              \
 )
 #endif
 
-#define     QWU_CGEY(A, B)            vshrq_n_u32(vcgeq_u32(A,B),31)
-#define     QWI_CGEY(A, B)  VQWU_ASTI(vshrq_n_u32(vcgeq_s32(A,B),31))
-#define     QWF_CGEY(A, B)  VQWU_ASTI(vshrq_n_u32(vcgeq_f32(A,B),31))
+#define     QWU_CGEL(A, B)            vshrq_n_u32(vcgeq_u32(A,B),31)
+#define     QWI_CGEL(A, B)  VQWU_ASTI(vshrq_n_u32(vcgeq_s32(A,B),31))
+#define     QWF_CGEL(A, B)  VQWU_ASTI(vshrq_n_u32(vcgeq_f32(A,B),31))
 
-#define     QDU_CGEY(A, B)            vshrq_n_u64(vcgeq_u64(A,B),63)
-#define     QDI_CGEY(A, B)  VQDU_ASTI(vshrq_n_u64(vcgeq_s64(A,B),63))
-#define     QDF_CGEY(A, B)  VQDU_ASTI(vshrq_n_u64(vcgeq_f64(A,B),63))
+#define     QDU_CGEL(A, B)            vshrq_n_u64(vcgeq_u64(A,B),63)
+#define     QDI_CGEL(A, B)  VQDU_ASTI(vshrq_n_u64(vcgeq_s64(A,B),63))
+#define     QDF_CGEL(A, B)  VQDU_ASTI(vshrq_n_u64(vcgeq_f64(A,B),63))
 
 
-INLINE(Vwbu,VWBU_CGEY) (Vwbu a, Vwbu b)
+INLINE(Vwbu,VWBU_CGEL) (Vwbu a, Vwbu b)
 {
-#define     VWBU_CGEY(A, B) WBU_ASTV(WBU_CGEY(VWBU_ASTM(A),VWBU_ASTM(B)))
-    return  VWBU_CGEY(a, b);
+#define     VWBU_CGEL(A, B) WBU_ASTV(WBU_CGEL(VWBU_ASTM(A),VWBU_ASTM(B)))
+    return  VWBU_CGEL(a, b);
 }
 
-INLINE(Vwbi,VWBI_CGEY) (Vwbi a, Vwbi b)
+INLINE(Vwbi,VWBI_CGEL) (Vwbi a, Vwbi b)
 {
-#define     VWBI_CGEY(A, B) WBI_ASTV(WBI_CGEY(VWBI_ASTM(A),VWBI_ASTM(B)))
-    return  VWBI_CGEY(a, b);
+#define     VWBI_CGEL(A, B) WBI_ASTV(WBI_CGEL(VWBI_ASTM(A),VWBI_ASTM(B)))
+    return  VWBI_CGEL(a, b);
 }
 
-INLINE(Vwbc,VWBC_CGEY) (Vwbc a, Vwbc b)
+INLINE(Vwbc,VWBC_CGEL) (Vwbc a, Vwbc b)
 {
-#define     VWBC_CGEY(A, B) WBC_ASTV(WBC_CGEY(VWBC_ASTM(A),VWBC_ASTM(B)))
-    return  VWBC_CGEY(a, b);
-}
-
-
-INLINE(Vwhu,VWHU_CGEY) (Vwhu a, Vwhu b)
-{
-#define     VWHU_CGEY(A, B) WHU_ASTV(WHU_CGEY(VWHU_ASTM(A),VWHU_ASTM(B)))
-    return  VWHU_CGEY(a, b);
-}
-
-INLINE(Vwhi,VWHI_CGEY) (Vwhi a, Vwhi b)
-{
-#define     VWHI_CGEY(A, B) WHI_ASTV(WHI_CGEY(VWHI_ASTM(A),VWHI_ASTM(B)))
-    return  VWHI_CGEY(a, b);
-}
-
-INLINE(Vwhi,VWHF_CGEY) (Vwhf a, Vwhf b)
-{
-#define     VWHF_CGEY(A, B) WHI_ASTV(WHF_CGEY(VWHF_ASTM(A),VWHF_ASTM(B)))
-    return  VWHF_CGEY(a, b);
+#define     VWBC_CGEL(A, B) WBC_ASTV(WBC_CGEL(VWBC_ASTM(A),VWBC_ASTM(B)))
+    return  VWBC_CGEL(a, b);
 }
 
 
-INLINE(Vwwu,VWWU_CGEY) (Vwwu a, Vwwu b)
+INLINE(Vwhu,VWHU_CGEL) (Vwhu a, Vwhu b)
 {
-#define     VWWU_CGEY(A, B) WWU_ASTV(WWU_CGEY(VWWU_ASTM(A),VWWU_ASTM(B)))
-    return  VWWU_CGEY(a, b);
+#define     VWHU_CGEL(A, B) WHU_ASTV(WHU_CGEL(VWHU_ASTM(A),VWHU_ASTM(B)))
+    return  VWHU_CGEL(a, b);
 }
 
-INLINE(Vwwi,VWWI_CGEY) (Vwwi a, Vwwi b)
+INLINE(Vwhi,VWHI_CGEL) (Vwhi a, Vwhi b)
 {
-#define     VWWI_CGEY(A, B) WWI_ASTV(WWI_CGEY(VWWI_ASTM(A),VWWI_ASTM(B)))
-    return  VWWI_CGEY(a, b);
+#define     VWHI_CGEL(A, B) WHI_ASTV(WHI_CGEL(VWHI_ASTM(A),VWHI_ASTM(B)))
+    return  VWHI_CGEL(a, b);
 }
 
-INLINE(Vwwi,VWWF_CGEY) (Vwwf a, Vwwf b)
+INLINE(Vwhi,VWHF_CGEL) (Vwhf a, Vwhf b)
 {
-#define     VWWF_CGEY(A, B) WWI_ASTV(WWF_CGEY(VWWF_ASTM(A),VWWF_ASTM(B)))
-    return  VWWF_CGEY(a, b);
+#define     VWHF_CGEL(A, B) WHI_ASTV(WHF_CGEL(VWHF_ASTM(A),VWHF_ASTM(B)))
+    return  VWHF_CGEL(a, b);
 }
 
 
-INLINE(Vdbu,VDBU_CGEY) (Vdbu a, Vdbu b) {return DBU_CGEY(a, b);}
-INLINE(Vdbi,VDBI_CGEY) (Vdbi a, Vdbi b) {return DBI_CGEY(a, b);}
-INLINE(Vdbc,VDBC_CGEY) (Vdbc a, Vdbc b)
+INLINE(Vwwu,VWWU_CGEL) (Vwwu a, Vwwu b)
+{
+#define     VWWU_CGEL(A, B) WWU_ASTV(WWU_CGEL(VWWU_ASTM(A),VWWU_ASTM(B)))
+    return  VWWU_CGEL(a, b);
+}
+
+INLINE(Vwwi,VWWI_CGEL) (Vwwi a, Vwwi b)
+{
+#define     VWWI_CGEL(A, B) WWI_ASTV(WWI_CGEL(VWWI_ASTM(A),VWWI_ASTM(B)))
+    return  VWWI_CGEL(a, b);
+}
+
+INLINE(Vwwi,VWWF_CGEL) (Vwwf a, Vwwf b)
+{
+#define     VWWF_CGEL(A, B) WWI_ASTV(WWF_CGEL(VWWF_ASTM(A),VWWF_ASTM(B)))
+    return  VWWF_CGEL(a, b);
+}
+
+
+INLINE(Vdbu,VDBU_CGEL) (Vdbu a, Vdbu b) {return DBU_CGEL(a, b);}
+INLINE(Vdbi,VDBI_CGEL) (Vdbi a, Vdbi b) {return DBI_CGEL(a, b);}
+INLINE(Vdbc,VDBC_CGEL) (Vdbc a, Vdbc b)
 {
     return  DBC_ASTV(
-        DBC_CGEY(
+        DBC_CGEL(
             VDBC_ASTM(a),
             VDBC_ASTM(b)
         )
     );
 }
 
-INLINE(Vdhu,VDHU_CGEY) (Vdhu a, Vdhu b) {return DHU_CGEY(a, b);}
-INLINE(Vdhi,VDHI_CGEY) (Vdhi a, Vdhi b) {return DHI_CGEY(a, b);}
-INLINE(Vdhi,VDHF_CGEY) (Vdhf a, Vdhf b) {return DHF_CGEY(a, b);}
+INLINE(Vdhu,VDHU_CGEL) (Vdhu a, Vdhu b) {return DHU_CGEL(a, b);}
+INLINE(Vdhi,VDHI_CGEL) (Vdhi a, Vdhi b) {return DHI_CGEL(a, b);}
+INLINE(Vdhi,VDHF_CGEL) (Vdhf a, Vdhf b) {return DHF_CGEL(a, b);}
 
-INLINE(Vdwu,VDWU_CGEY) (Vdwu a, Vdwu b) {return DWU_CGEY(a, b);}
-INLINE(Vdwi,VDWI_CGEY) (Vdwi a, Vdwi b) {return DWI_CGEY(a, b);}
-INLINE(Vdwi,VDWF_CGEY) (Vdwf a, Vdwf b) {return DWF_CGEY(a, b);}
+INLINE(Vdwu,VDWU_CGEL) (Vdwu a, Vdwu b) {return DWU_CGEL(a, b);}
+INLINE(Vdwi,VDWI_CGEL) (Vdwi a, Vdwi b) {return DWI_CGEL(a, b);}
+INLINE(Vdwi,VDWF_CGEL) (Vdwf a, Vdwf b) {return DWF_CGEL(a, b);}
 
-INLINE(Vddu,VDDU_CGEY) (Vddu a, Vddu b) {return DDU_CGEY(a, b);}
-INLINE(Vddi,VDDI_CGEY) (Vddi a, Vddi b) {return DDI_CGEY(a, b);}
-INLINE(Vddi,VDDF_CGEY) (Vddf a, Vddf b) {return DDF_CGEY(a, b);}
+INLINE(Vddu,VDDU_CGEL) (Vddu a, Vddu b) {return DDU_CGEL(a, b);}
+INLINE(Vddi,VDDI_CGEL) (Vddi a, Vddi b) {return DDI_CGEL(a, b);}
+INLINE(Vddi,VDDF_CGEL) (Vddf a, Vddf b) {return DDF_CGEL(a, b);}
 
 
-INLINE(Vqbu,VQBU_CGEY) (Vqbu a, Vqbu b) {return QBU_CGEY(a,b);}
-INLINE(Vqbi,VQBI_CGEY) (Vqbi a, Vqbi b) {return QBI_CGEY(a,b);}
-INLINE(Vqbc,VQBC_CGEY) (Vqbc a, Vqbc b)
+INLINE(Vqbu,VQBU_CGEL) (Vqbu a, Vqbu b) {return QBU_CGEL(a,b);}
+INLINE(Vqbi,VQBI_CGEL) (Vqbi a, Vqbi b) {return QBI_CGEL(a,b);}
+INLINE(Vqbc,VQBC_CGEL) (Vqbc a, Vqbc b)
 {
-    return  QBC_ASTV(QBC_CGEY(VQBC_ASTM(a),VQBC_ASTM(b)));
+    return  QBC_ASTV(QBC_CGEL(VQBC_ASTM(a),VQBC_ASTM(b)));
 }
 
-INLINE(Vqhu,VQHU_CGEY) (Vqhu a, Vqhu b) {return QHU_CGEY(a,b);}
-INLINE(Vqhi,VQHI_CGEY) (Vqhi a, Vqhi b) {return QHI_CGEY(a,b);}
-INLINE(Vqhi,VQHF_CGEY) (Vqhf a, Vqhf b) {return QHF_CGEY(a,b);}
-INLINE(Vqwu,VQWU_CGEY) (Vqwu a, Vqwu b) {return QWU_CGEY(a,b);}
-INLINE(Vqwi,VQWI_CGEY) (Vqwi a, Vqwi b) {return QWI_CGEY(a,b);}
-INLINE(Vqwi,VQWF_CGEY) (Vqwf a, Vqwf b) {return QWF_CGEY(a,b);}
-INLINE(Vqdu,VQDU_CGEY) (Vqdu a, Vqdu b) {return QDU_CGEY(a,b);}
-INLINE(Vqdi,VQDI_CGEY) (Vqdi a, Vqdi b) {return QDI_CGEY(a,b);}
-INLINE(Vqdi,VQDF_CGEY) (Vqdf a, Vqdf b) {return QDF_CGEY(a,b);}
+INLINE(Vqhu,VQHU_CGEL) (Vqhu a, Vqhu b) {return QHU_CGEL(a,b);}
+INLINE(Vqhi,VQHI_CGEL) (Vqhi a, Vqhi b) {return QHI_CGEL(a,b);}
+INLINE(Vqhi,VQHF_CGEL) (Vqhf a, Vqhf b) {return QHF_CGEL(a,b);}
+INLINE(Vqwu,VQWU_CGEL) (Vqwu a, Vqwu b) {return QWU_CGEL(a,b);}
+INLINE(Vqwi,VQWI_CGEL) (Vqwi a, Vqwi b) {return QWI_CGEL(a,b);}
+INLINE(Vqwi,VQWF_CGEL) (Vqwf a, Vqwf b) {return QWF_CGEL(a,b);}
+INLINE(Vqdu,VQDU_CGEL) (Vqdu a, Vqdu b) {return QDU_CGEL(a,b);}
+INLINE(Vqdi,VQDI_CGEL) (Vqdi a, Vqdi b) {return QDI_CGEL(a,b);}
+INLINE(Vqdi,VQDF_CGEL) (Vqdf a, Vqdf b) {return QDF_CGEL(a,b);}
+
+#if 0 // _LEAVE_ARM_CGEL
+}
+#endif
+
+
+#if 0 // _ENTER_ARM_CGEY
+{
+#endif
+
+INLINE(_Bool,FLT16_CGEY) (flt16_t a, flt16_t b)
+{
+    return a>=b;
+}
+
+INLINE(_Bool,FLT_CGEY) (float a, float b)
+{
+    return a>=b;
+}
+
+INLINE(_Bool,DBL_CGEY) (double a, double b)
+{
+    return a>=b;
+}
+
+INLINE(_Bool,WBU_CGEY) (float a, float b) 
+{
+    float32x2_t p={a}, q={b};
+    uint8x8_t   l = vreinterpret_u8_f32(p);
+    uint8x8_t   r = vreinterpret_u8_f32(q);
+    uint8x8_t   m = vcge_u8(l, r);
+    uint32x2_t  c = vreinterpret_u32_u8(m);
+    return  UINT32_MAX==vget_lane_u32(c, 0);
+}
+
+INLINE(_Bool,WBI_CGEY) (float a, float b) 
+{
+    float32x2_t p={a}, q={b};
+    int8x8_t    l = vreinterpret_s8_f32(p);
+    int8x8_t    r = vreinterpret_s8_f32(q);
+    uint8x8_t   m = vcge_s8(l, r);
+    uint32x2_t  c = vreinterpret_u32_u8(m);
+    return  UINT32_MAX==vget_lane_u32(c, 0);
+}
+
+INLINE(_Bool,WHU_CGEY) (float a, float b) 
+{
+    float32x2_t p={a}, q={b};
+    uint16x4_t  l = vreinterpret_u16_f32(p);
+    uint16x4_t  r = vreinterpret_u16_f32(q);
+    uint16x4_t  m = vcge_u16(l, r);
+    uint32x2_t  c = vreinterpret_u32_u16(m);
+    return  UINT32_MAX==vget_lane_u32(c, 0);
+}
+
+INLINE(_Bool,WHI_CGEY) (float a, float b) 
+{
+    float32x2_t p={a}, q={b};
+    int16x4_t   l = vreinterpret_s16_f32(p);
+    int16x4_t   r = vreinterpret_s16_f32(q);
+    uint16x4_t  m = vcge_s16(l, r);
+    uint32x2_t  c = vreinterpret_u32_u16(m);
+    return  UINT32_MAX==vget_lane_u32(c, 0);
+}
+
+INLINE(_Bool,WHF_CGEY) (float a, float b) 
+{
+    float32x2_t p={a}, q={b};
+    float16x4_t l = vreinterpret_f16_f32(p);
+    float16x4_t r = vreinterpret_f16_f32(q);
+    Vdhi        m = VDHF_CGES(l, r);
+    uint32x2_t  c = vreinterpret_u32_s16(m);
+    return  UINT32_MAX==vget_lane_u32(c, 0);
+}
+
+INLINE(_Bool,WWU_CGEY) (float a, float b) 
+{
+    WORD_TYPE p={.F=a}, q={.F=b};
+    return  p.U >= q.U;
+}
+
+INLINE(_Bool,WWI_CGEY) (float a, float b) 
+{
+    WORD_TYPE p={.F=a}, q={.F=b};
+    return  p.I >= q.I;
+}
+
+INLINE(_Bool,VWBU_CGEY) (Vwbu a, Vwbu b) {return WBU_CGEY(a.V0, b.V0);}         
+INLINE(_Bool,VWBI_CGEY) (Vwbi a, Vwbi b) {return WBI_CGEY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_CGEY) (Vwbc a, Vwbc b) 
+{
+#if CHAR_MIN
+    return  WBI_CGEY(a.V0, b.V0);
+#else
+    return  WBU_CGEY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VWHU_CGEY) (Vwhu a, Vwhu b) {return WHU_CGEY(a.V0, b.V0);}
+INLINE(_Bool,VWHI_CGEY) (Vwhi a, Vwhi b) {return WHI_CGEY(a.V0, b.V0);}         
+INLINE(_Bool,VWHF_CGEY) (Vwhf a, Vwhf b) {return WHF_CGEY(a.V0, b.V0);}
+INLINE(_Bool,VWWU_CGEY) (Vwwu a, Vwwu b) {return WWU_CGEY(a.V0, b.V0);}         
+INLINE(_Bool,VWWI_CGEY) (Vwwi a, Vwwi b) {return WWI_CGEY(a.V0, b.V0);}         
+INLINE(_Bool,VWWF_CGEY) (Vwwf a, Vwwf b) {return a.V0>=b.V0;}
+
+INLINE(_Bool,VDBU_CGEY) (Vdbu a, Vdbu b)
+{
+    uint8x8_t   u = vcge_u8(a, b);
+    uint64x1_t  c = vreinterpret_u64_u8(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDBI_CGEY) (Vdbi a, Vdbi b)
+{
+    uint8x8_t   u = vcge_s8(a, b);
+    uint64x1_t  c = vreinterpret_u64_u8(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDBC_CGEY) (Vdbc a, Vdbc b)
+{
+#if CHAR_MIN
+    return VDBI_CGEY(a.V0, b.V0);
+#else
+    return VDBU_CGEY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VDHU_CGEY) (Vdhu a, Vdhu b)
+{
+    uint16x4_t  u = vcge_u16(a, b);
+    uint64x1_t  c = vreinterpret_u64_u16(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDHI_CGEY) (Vdhi a, Vdhi b)
+{
+    uint16x4_t  u = vcge_s16(a, b);
+    uint64x1_t  c = vreinterpret_u64_u16(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDHF_CGEY) (Vdhf a, Vdhf b)
+{
+    int16x4_t   u = VDHF_CGES(a, b);
+    uint64x1_t  c = vreinterpret_u64_u16(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDWU_CGEY) (Vdwu a, Vdwu b)
+{
+    uint32x2_t  u = vcge_u32(a, b);
+    uint64x1_t  c = vreinterpret_u64_u32(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDWI_CGEY) (Vdwi a, Vdwi b)
+{
+    uint32x2_t  u = vcge_s32(a, b);
+    uint64x1_t  c = vreinterpret_u64_u32(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDWF_CGEY) (Vdwf a, Vdwf b)
+{
+    uint32x2_t  u = vcge_f32(a, b);
+    uint64x1_t  c = vreinterpret_u64_u32(u);
+    return  UINT64_MAX==vget_lane_u64(c, 0);
+}
+
+INLINE(_Bool,VDDU_CGEY) (Vddu a, Vddu b)
+{
+    return vget_lane_u64(a,0) >= vget_lane_u64(b,0);
+}
+
+INLINE(_Bool,VDDI_CGEY) (Vddi a, Vddi b)
+{
+    return vget_lane_s64(a,0) >= vget_lane_s64(b,0);
+}
+
+INLINE(_Bool,VDDF_CGEY) (Vddf a, Vddf b)
+{
+    return vget_lane_f64(a,0) >= vget_lane_f64(b,0);
+}
+
+#define     MY_CGEYZ(C) \
+(UINT64_MAX==vget_lane_u64(vand_u64(vget_low_u64(C),vget_high_u64(C)),0))
+
+INLINE(_Bool,VQBU_CGEY) (Vqbu a, Vqbu b)
+{
+    uint8x16_t  u = vcgeq_u8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQBI_CGEY) (Vqbi a, Vqbi b)
+{
+    uint8x16_t  u = vcgeq_s8(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u8(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQBC_CGEY) (Vqbc a, Vqbc b)
+{
+#if CHAR_MIN
+    return  VQBI_CGEY(a.V0, b.V0);
+#else
+    return  VQBU_CGEY(a.V0, b.V0);
+#endif
+}
+
+INLINE(_Bool,VQHU_CGEY) (Vqhu a, Vqhu b)
+{
+    uint16x8_t  u = vcgeq_u16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQHI_CGEY) (Vqhi a, Vqhi b)
+{
+    uint16x8_t  u = vcgeq_s16(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQHF_CGEY) (Vqhf a, Vqhf b)
+{
+#if defined(SPC_ARM_FP16_SIMD)
+    uint16x8_t  u = vcgeq_f16(a, b);
+#else
+    float32x4_t p, q;
+    uint32x4_t  m;
+    uint16x4_t  l, r;
+    p = vcvt_f32_f16(vget_low_f16(a));
+    q = vcvt_f32_f16(vget_low_f16(b));
+    m = vcgeq_f32(p, q);
+    l = vmovn_u32(m);
+    p = vcvt_f32_f16(vget_high_f16(a));
+    q = vcvt_f32_f16(vget_high_f16(b));
+    m = vcgeq_f32(p, q);
+    r = vmovn_u32(m);
+    uint16x8_t u = vcombine_u16(l, r);
+#endif
+    uint64x2_t  c = vreinterpretq_u64_u16(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQWU_CGEY) (Vqwu a, Vqwu b)
+{
+    uint32x4_t  u = vcgeq_u32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQWI_CGEY) (Vqwi a, Vqwi b)
+{
+    uint32x4_t  u = vcgeq_s32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQWF_CGEY) (Vqwf a, Vqwf b)
+{
+    uint32x4_t  u = vcgeq_f32(a, b);
+    uint64x2_t  c = vreinterpretq_u64_u32(u);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQDU_CGEY) (Vqdu a, Vqdu b)
+{
+    uint64x2_t  c = vcgeq_u64(a, b);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQDI_CGEY) (Vqdi a, Vqdi b)
+{
+    uint64x2_t  c = vcgeq_s64(a, b);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQDF_CGEY) (Vqdf a, Vqdf b)
+{
+    uint64x2_t  c = vcgeq_f64(a, b);
+    return  MY_CGEYZ(c);
+}
+
+INLINE(_Bool,VQQU_CGEY) (Vqqu a, Vqqu b)
+{
+    return  
+    (vgetq_lane_u64(a.V0,1)==vgetq_lane_u64(b.V0,1))
+    ?   (vgetq_lane_u64(a.V0,0)>=vgetq_lane_u64(b.V0,0))
+    :   (vgetq_lane_u64(a.V0,1)>=vgetq_lane_u64(b.V0,1));
+}
+
+INLINE(_Bool,VQQI_CGEY) (Vqqi a, Vqqi b)
+{
+    return  
+    (vgetq_lane_s64(a.V0,1)==vgetq_lane_s64(b.V0,1))
+    ?   (vgetq_lane_s64(a.V0,0)>=vgetq_lane_s64(b.V0,0))
+    :   (vgetq_lane_s64(a.V0,1)>=vgetq_lane_s64(b.V0,1));
+}
+INLINE(_Bool,VQQF_CGEY) (Vqqf a, Vqqf b) {return a.V0 >= b.V0;}
 
 #if 0 // _LEAVE_ARM_CGEY
 }
 #endif
 
-
 #if 0 // _ENTER_ARM_ZEQY
 {
 #endif
 
-INLINE(ptrdiff_t,ADDR_ZEQY) (void volatile const *a)
-{
-    return  (NULL==a);
-}
-
-INLINE(  _Bool,  BOOL_ZEQY)   (_Bool a) {return !a;}
-INLINE(  uchar, UCHAR_ZEQY)   (uchar a) {return !a;}
-INLINE(  schar, SCHAR_ZEQY)   (schar a) {return !a;}
-INLINE(   char,  CHAR_ZEQY)    (char a) {return !a;}
-INLINE( ushort, USHRT_ZEQY)  (ushort a) {return !a;}
-INLINE(  short,  SHRT_ZEQY)   (short a) {return !a;}
-INLINE(   uint,  UINT_ZEQY)    (uint a) {return !a;}
-INLINE(    int,   INT_ZEQY)     (int a) {return !a;}
-INLINE(  ulong, ULONG_ZEQY)   (ulong a) {return !a;}
-INLINE(   long,  LONG_ZEQY)    (long a) {return !a;}
-INLINE( ullong,ULLONG_ZEQY)  (ullong a) {return !a;}
-INLINE(  llong, LLONG_ZEQY)   (llong a) {return !a;}
-INLINE(int16_t, FLT16_ZEQY) (flt16_t a) {return !a;}
-INLINE(int32_t,   FLT_ZEQY)   (float a) {return !a;}
-INLINE(int64_t,   DBL_ZEQY)  (double a) {return !a;}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,zeqyqu) (QUAD_UTYPE a)
-{
-    return  (QUAD_UTYPE) (!a);
-}
-
-INLINE(QUAD_ITYPE,zeqyqi) (QUAD_ITYPE a)
-{
-    return  (QUAD_ITYPE) (!a);
-}
-
-INLINE(QUAD_UTYPE,zeqyqf) (QUAD_FTYPE a)
-{
-    return  (QUAD_ITYPE) (!a);
-}
-
-#endif
+INLINE(_Bool,FLT16_ZEQY)    (flt16_t a) {return a == 0.0F16;}
+INLINE(_Bool,  FLT_ZEQY)      (float a) {return a == 0.0F;}
+INLINE(_Bool,  DBL_ZEQY)     (double a) {return a == 0.0;}
+INLINE(_Bool,    zeqyqf) (QUAD_FTYPE a) {return a == 0.0L;}
 
 #define     DYU_ZEQY(A) vreinterpret_u64_u8(vmvn_u8(vreinterpret_u8_u64(A)))
   
@@ -43079,44 +47004,18 @@ INLINE(Vqdi,VQDF_ZEQY) (Vqdf a) {return QDF_ZEQY(a);}
 {
 #endif
 
-INLINE(ptrdiff_t,ADDR_ZEQS) (void volatile const *a)
-{
-    return  PTRDIFF_C(0)-(NULL==a);
-}
-
-INLINE(  uchar, UCHAR_ZEQS)   (uchar a) {return -(!a);}
-INLINE(  schar, SCHAR_ZEQS)   (schar a) {return -(!a);}
-INLINE(   char,  CHAR_ZEQS)    (char a) {return -(!a);}
-INLINE( ushort, USHRT_ZEQS)  (ushort a) {return -(!a);}
-INLINE(  short,  SHRT_ZEQS)   (short a) {return -(!a);}
-INLINE(   uint,  UINT_ZEQS)    (uint a) {return -(!a);}
-INLINE(    int,   INT_ZEQS)     (int a) {return -(!a);}
-INLINE(  ulong, ULONG_ZEQS)   (ulong a) {return -(!a);}
-INLINE(   long,  LONG_ZEQS)    (long a) {return -(!a);}
-INLINE( ullong,ULLONG_ZEQS)  (ullong a) {return -(!a);}
-INLINE(  llong, LLONG_ZEQS)   (llong a) {return -(!a);}
 INLINE(int16_t, FLT16_ZEQS) (flt16_t a) {return -(!a);}
 INLINE(int32_t,   FLT_ZEQS)   (float a) {return -(!a);}
 INLINE(int64_t,   DBL_ZEQS)  (double a) {return -(!a);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,zeqsqu) (QUAD_UTYPE a)
+INLINE(QUAD_ITYPE,zeqsqf) (QUAD_FTYPE a) 
 {
-    return  (QUAD_UTYPE) 0-(a==0);
+    QUAD_TYPE c;
+    c.Lo.I = -(!a);
+    c.Hi.I = c.Lo.I;
+    return c.I;
 }
 
-INLINE(QUAD_ITYPE,zeqsqi) (QUAD_ITYPE a)
-{
-    return  (QUAD_ITYPE) 0-(a==0);
-}
-
-INLINE(QUAD_ITYPE,zeqsqf) (QUAD_FTYPE a)
-{
-    return  (QUAD_ITYPE) 0-(a==0);
-}
-
-#endif
 
 #define     DBU_ZEQS            vceqz_u8
 #define     DBI_ZEQS(A)         vreinterpret_s8_u8(vceqz_s8(A))
@@ -43319,53 +47218,10 @@ INLINE(Vqdi,VQDF_ZEQS) (Vqdf a) {return QDF_ZEQS(a);}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_ZNEY) (void volatile const *a)
-{
-    return a!=NULL;
-}
-
-INLINE(  _Bool,  BOOL_ZNEY)   (_Bool a) {return a;}
-INLINE(  uchar, UCHAR_ZNEY)   (uchar a) {return a!=0;}
-INLINE(  schar, SCHAR_ZNEY)   (schar a) {return a!=0;}
-INLINE(   char,  CHAR_ZNEY)    (char a) {return a!=0;}
-INLINE( ushort, USHRT_ZNEY)  (ushort a) {return a!=0;}
-INLINE(  short,  SHRT_ZNEY)   (short a) {return a!=0;}
-INLINE(   uint,  UINT_ZNEY)    (uint a) {return a!=0u;}
-INLINE(    int,   INT_ZNEY)     (int a) {return a!=0;}
-INLINE(  ulong, ULONG_ZNEY)   (ulong a) {return a!=0ul;}
-INLINE(   long,  LONG_ZNEY)    (long a) {return a!=0l;}
-INLINE( ullong,ULLONG_ZNEY)  (ullong a) {return a!=0ull;}
-INLINE(  llong, LLONG_ZNEY)   (llong a) {return a!=0ll;}
-INLINE(int16_t, FLT16_ZNEY) (flt16_t a)
-{
-#if defined(SPC_ARM_FP16_SIMD)
-    return  1&vceqzh_f16(a);
-#else
-    return  (a!=0.0f16);
-#endif
-}
-
-INLINE(int32_t,   FLT_ZNEY)   (float a) {return a!=0.0f;}
-INLINE(int64_t,   DBL_ZNEY)  (double a) {return a!=0.0;}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,zneyqu) (QUAD_UTYPE a)
-{
-    return  (QUAD_UTYPE) (a!=0);
-}
-
-INLINE(QUAD_ITYPE,zneyqi) (QUAD_ITYPE a)
-{
-    return  (QUAD_ITYPE) (a!=0);
-}
-
-INLINE(QUAD_ITYPE,zneyqf) (QUAD_FTYPE a)
-{
-    return  (QUAD_ITYPE) (a!=0);
-}
-
-#endif
+INLINE(_Bool,FLT16_ZNEY)    (flt16_t a) {return a != 0.0F16;}
+INLINE(_Bool,  FLT_ZNEY)      (float a) {return a != 0.0F;}
+INLINE(_Bool,  DBL_ZNEY)     (double a) {return a != 0.0;}
+INLINE(_Bool,    zneyqf) (QUAD_FTYPE a) {return a != 0.0L;}
 
 #define     DBU_ZNEY(A) vshr_n_u8(vtst_u8(A,vdup_n_u8(UINT8_MAX)),7)
 #define     DBI_ZNEY(A) \
@@ -43614,22 +47470,6 @@ INLINE(Vqdi,VQDF_ZNEY) (Vqdf a) {return QDF_ZNEY(a);}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_ZNES) (void volatile const *a)
-{
-    return  PTRDIFF_C(0)-(a!=NULL);
-}
-
-INLINE(  uchar, UCHAR_ZNES)   (uchar a) {return -(a!=0);}
-INLINE(  schar, SCHAR_ZNES)   (schar a) {return -(a!=0);}
-INLINE(   char,  CHAR_ZNES)    (char a) {return -(a!=0);}
-INLINE( ushort, USHRT_ZNES)  (ushort a) {return -(a!=0);}
-INLINE(  short,  SHRT_ZNES)   (short a) {return -(a!=0);}
-INLINE(   uint,  UINT_ZNES)    (uint a) {return -(a!=0u);}
-INLINE(    int,   INT_ZNES)     (int a) {return -(a!=0);}
-INLINE(  ulong, ULONG_ZNES)   (ulong a) {return -(a!=0ul);}
-INLINE(   long,  LONG_ZNES)    (long a) {return -(a!=0l);}
-INLINE( ullong,ULLONG_ZNES)  (ullong a) {return -(a!=0ull);}
-INLINE(  llong, LLONG_ZNES)   (llong a) {return -(a!=0ll);}
 INLINE(int16_t, FLT16_ZNES) (flt16_t a)
 {
 #if defined(SPC_ARM_FP16_SIMD)
@@ -43642,24 +47482,14 @@ INLINE(int16_t, FLT16_ZNES) (flt16_t a)
 INLINE(int32_t,   FLT_ZNES)   (float a) {return -(a!=0.0f);}
 INLINE(int64_t,   DBL_ZNES)  (double a) {return -(a!=0.0);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,znesqu) (QUAD_UTYPE a)
-{
-    return  (QUAD_UTYPE) 0-(a!=0);
-}
-
-INLINE(QUAD_ITYPE,znesqi) (QUAD_ITYPE a)
-{
-    return  (QUAD_ITYPE) 0-(a!=0);
-}
-
 INLINE(QUAD_ITYPE,znesqf) (QUAD_FTYPE a)
 {
-    return  (QUAD_ITYPE) 0-(a!=0);
+    QUAD_TYPE c;
+    c.Lo.I = -(0.0L != a);
+    c.Hi.I = c.Lo.I;
+    return c.I;
 }
 
-#endif
 
 
 INLINE(Vwbu,VWBU_ZNES) (Vwbu a)
@@ -43854,41 +47684,14 @@ INLINE(Vqdi,VQDF_ZNES) (Vqdf a) {return QDF_ZNES(a);}
 }
 #endif
 
-
 #if 0 // _ENTER_ARM_ZLTY
 {
 #endif
 
-INLINE(  _Bool,  BOOL_ZLTY)   (_Bool a) {return 0 < a;}
-INLINE(  uchar, UCHAR_ZLTY)   (uchar a) {return 0 < a;}
-INLINE(  schar, SCHAR_ZLTY)   (schar a) {return 0 < a;}
-INLINE(   char,  CHAR_ZLTY)    (char a) {return 0 < a;}
-INLINE( ushort, USHRT_ZLTY)  (ushort a) {return 0 < a;}
-INLINE(  short,  SHRT_ZLTY)   (short a) {return 0 < a;}
-INLINE(   uint,  UINT_ZLTY)    (uint a) {return 0 < a;}
-INLINE(    int,   INT_ZLTY)     (int a) {return 0 < a;}
-INLINE(  ulong, ULONG_ZLTY)   (ulong a) {return 0 < a;}
-INLINE(   long,  LONG_ZLTY)    (long a) {return 0 < a;}
-INLINE( ullong,ULLONG_ZLTY)  (ullong a) {return 0 < a;}
-INLINE(  llong, LLONG_ZLTY)   (llong a) {return 0 < a;}
-INLINE(int16_t, FLT16_ZLTY) (flt16_t a) 
-{
-#if defined(SPC_ARM_FP16)
-    return  1&vcgtzh_f16(a);
-#else
-    return  0.0f16 < a;
-#endif
-}
-
-INLINE(int32_t,   FLT_ZLTY)   (float a) {return vcgtzs_f32(a)&1;}
-INLINE(int64_t,   DBL_ZLTY)  (double a) {return vcgtzd_f64(a)&1;}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zltyqi) (QUAD_ITYPE a) {return 0 < a;}
-INLINE(QUAD_ITYPE,zltyqf) (QUAD_FTYPE a) {return 0 < a;}
-
-#endif
+INLINE(_Bool,FLT16_ZLTY)    (flt16_t a) {return 0.0F16< a;}
+INLINE(_Bool,  FLT_ZLTY)      (float a) {return 0.0F  < a;}
+INLINE(_Bool,  DBL_ZLTY)     (double a) {return 0.0   < a;}
+INLINE(_Bool,    zltyqf) (QUAD_FTYPE a) {return 0.0L  < a;}
 
 INLINE(Vwbu,VWBU_ZLTY) (Vwbu a)
 {
@@ -44185,19 +47988,6 @@ INLINE(Vqdi,VQDF_ZLTY) (Vqdf a)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_ZLTS)   (_Bool a) {return 0 < a ? -1 : 0;}
-INLINE(  uchar, UCHAR_ZLTS)   (schar a) {return 0 < a ? -1 : 0;}
-INLINE(  schar, SCHAR_ZLTS)   (schar a) {return 0 < a ? -1 : 0;}
-INLINE(   char,  CHAR_ZLTS)    (char a) {return 0 < a ? -1 : 0;}
-INLINE( ushort, USHRT_ZLTS)  (ushort a) {return 0 < a ? -1 : 0;}
-INLINE(  short,  SHRT_ZLTS)   (short a) {return 0 < a ? -1 : 0;}
-INLINE(   uint,  UINT_ZLTS)    (uint a) {return 0 < a ? -1 : 0;}
-INLINE(    int,   INT_ZLTS)     (int a) {return 0 < a ? -1 : 0;}
-INLINE(  ulong, ULONG_ZLTS)   (ulong a) {return 0 < a ? -1 : 0;}
-INLINE(   long,  LONG_ZLTS)    (long a) {return 0 < a ? -1 : 0;}
-INLINE( ullong,ULLONG_ZLTS)  (ullong a) {return 0 < a ? -1 : 0;}
-INLINE(  llong, LLONG_ZLTS)   (llong a) {return 0 < a ? -1 : 0;}
-
 INLINE(int16_t, FLT16_ZLTS) (flt16_t a) 
 {
 #if defined(SPC_ARM_FP16)
@@ -44210,12 +48000,13 @@ INLINE(int16_t, FLT16_ZLTS) (flt16_t a)
 INLINE(int32_t,   FLT_ZLTS)   (float a) {return vcgtzs_f32(a);}
 INLINE(int64_t,   DBL_ZLTS)  (double a) {return vcgtzd_f64(a);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zltsqi) (QUAD_ITYPE a) {return 0 < a ? -1 : 0;}
-INLINE(QUAD_ITYPE,zltsqf) (QUAD_FTYPE a) {return 0 < a ? -1 : 0;}
-
-#endif
+INLINE(QUAD_ITYPE,zltsqf) (QUAD_FTYPE a) 
+{
+    QUAD_TYPE c;
+    c.Lo.I = -(0 < a);
+    c.Hi.I = c.Lo.I;
+    return c.I;
+}
 
 INLINE(Vwbu,VWBU_ZLTS) (Vwbu a)
 {
@@ -44392,44 +48183,14 @@ INLINE(Vqdi,VQDF_ZLTS) (Vqdf a) {return vreinterpretq_s64_u64(vcgtzq_f64(a));}
 }
 #endif
 
-
 #if 0 // _ENTER_ARM_ZLEY
 {
 #endif
 
-INLINE(  schar, SCHAR_ZLEY)   (schar a) {return 0 <= a;}
-INLINE(   char,  CHAR_ZLEY)    (char a)
-{
-#if CHAR_MIN
-    return 0 <= a;
-#else
-    return 1;
-#endif
-}
-
-INLINE(  short,  SHRT_ZLEY)   (short a) {return 0 <= a;}
-INLINE(    int,   INT_ZLEY)     (int a) {return 0 <= a;}
-INLINE(   long,  LONG_ZLEY)    (long a) {return 0 <= a;}
-INLINE(  llong, LLONG_ZLEY)   (llong a) {return 0 <= a;}
-
-INLINE(int16_t, FLT16_ZLEY) (flt16_t a) 
-{
-#if defined(SPC_ARM_FP16)
-    return  1&vcgezh_f16(a);
-#else
-    return  0.0f16 <= a;
-#endif
-}
-
-INLINE(int32_t,   FLT_ZLEY)   (float a) {return 1&vcgezs_f32(a);}
-INLINE(int64_t,   DBL_ZLEY)  (double a) {return 1&vcgezd_f64(a);}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zleyqi) (QUAD_ITYPE a) {return 0 <= a;}
-INLINE(QUAD_ITYPE,zleyqf) (QUAD_FTYPE a) {return 0 <= a;}
-
-#endif
+INLINE(_Bool,FLT16_ZLEY)    (flt16_t a) {return 0.0F16 <= a;}
+INLINE(_Bool,  FLT_ZLEY)      (float a) {return 0.0F   <= a;}
+INLINE(_Bool,  DBL_ZLEY)     (double a) {return 0.0    <= a;}
+INLINE(_Bool,    zleyqf) (QUAD_FTYPE a) {return 0.0L   <= a;}
 
 INLINE(Vwbi,VWBI_ZLEY) (Vwbi a)
 {
@@ -44634,21 +48395,6 @@ INLINE(Vqdi,VQDF_ZLEY) (Vqdf a)
 {
 #endif
 
-INLINE(  schar, SCHAR_ZLES)   (schar a) {return 0 <= a ? -1 : 0;}
-INLINE(   char,  CHAR_ZLES)    (char a)
-{
-#if CHAR_MIN
-    return 0 < a ? -1 : 0;
-#else
-    return -1;
-#endif
-}
-
-INLINE(  short,  SHRT_ZLES)   (short a) {return 0 <= a ? -1 : 0;}
-INLINE(    int,   INT_ZLES)     (int a) {return 0 <= a ? -1 : 0;}
-INLINE(   long,  LONG_ZLES)    (long a) {return 0 <= a ? -1 : 0;}
-INLINE(  llong, LLONG_ZLES)   (llong a) {return 0 <= a ? -1 : 0;}
-
 INLINE(int16_t, FLT16_ZLES) (flt16_t a) 
 {
 #if defined(SPC_ARM_FP16)
@@ -44661,12 +48407,7 @@ INLINE(int16_t, FLT16_ZLES) (flt16_t a)
 INLINE(int32_t,   FLT_ZLES)   (float a) {return vcgezs_f32(a);}
 INLINE(int64_t,   DBL_ZLES)  (double a) {return vcgezd_f64(a);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zlesqi) (QUAD_ITYPE a) {return 0 <= a ? -1 : 0;}
 INLINE(QUAD_ITYPE,zlesqf) (QUAD_FTYPE a) {return 0 <= a ? -1 : 0;}
-
-#endif
 
 INLINE(Vwbi,VWBI_ZLES) (Vwbi a)
 {
@@ -44813,39 +48554,11 @@ INLINE(Vqdi,VQDF_ZLES) (Vqdf a) {return vreinterpretq_s64_u64(vcgezq_f64(a));}
 {
 #endif
 
-INLINE(  schar, SCHAR_ZGTY)   (schar a) {return 0 > a;}
-INLINE(   char,  CHAR_ZGTY)    (char a)
-{
-#if CHAR_MIN
-    return 0 > a;
-#else
-    return 0;
-#endif
-}
+INLINE(_Bool,FLT16_ZGTY)    (flt16_t a) {return 0.0F16> a;}
+INLINE(_Bool,  FLT_ZGTY)      (float a) {return 0.0F  > a;}
+INLINE(_Bool,  DBL_ZGTY)     (double a) {return 0.0   > a;}
+INLINE(_Bool,    zgtyqf) (QUAD_FTYPE a) {return 0.0L  > a;}
 
-INLINE(  short,  SHRT_ZGTY)   (short a) {return 0 > a;}
-INLINE(    int,   INT_ZGTY)     (int a) {return 0 > a;}
-INLINE(   long,  LONG_ZGTY)    (long a) {return 0 > a;}
-INLINE(  llong, LLONG_ZGTY)   (llong a) {return 0 > a;}
-
-INLINE(int16_t, FLT16_ZGTY) (flt16_t a) 
-{
-#if defined(SPC_ARM_FP16)
-    return  1&vcltzh_f16(a);
-#else
-    return  -0.0f16 >= a;
-#endif
-}
-
-INLINE(int32_t,   FLT_ZGTY)   (float a) {return 1&vcltzs_f32(a);}
-INLINE(int64_t,   DBL_ZGTY)  (double a) {return 1&vcltzd_f64(a);}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zgtyqi) (QUAD_ITYPE a) {return 0 > a;}
-INLINE(QUAD_ITYPE,zgtyqf) (QUAD_FTYPE a) {return 0 > a;}
-
-#endif
 
 INLINE(Vwbi,VWBI_ZGTY) (Vwbi a)
 {
@@ -45047,21 +48760,6 @@ INLINE(Vqdi,VQDF_ZGTY) (Vqdf a)
 {
 #endif
 
-INLINE(  schar, SCHAR_ZGTS)   (schar a) {return 0 > a ? -1 : 0;}
-INLINE(   char,  CHAR_ZGTS)    (char a)
-{
-#if CHAR_MIN
-    return 0 < a ? -1 : 0;
-#else
-    return 0;
-#endif
-}
-
-INLINE(  short,  SHRT_ZGTS)   (short a) {return 0 > a ? -1 : 0;}
-INLINE(    int,   INT_ZGTS)     (int a) {return 0 > a ? -1 : 0;}
-INLINE(   long,  LONG_ZGTS)    (long a) {return 0 > a ? -1 : 0;}
-INLINE(  llong, LLONG_ZGTS)   (llong a) {return 0 > a ? -1 : 0;}
-
 INLINE(int16_t, FLT16_ZGTS) (flt16_t a) 
 {
 #if defined(SPC_ARM_FP16)
@@ -45074,12 +48772,7 @@ INLINE(int16_t, FLT16_ZGTS) (flt16_t a)
 INLINE(int32_t,   FLT_ZGTS)   (float a) {return vcltzs_f32(a);}
 INLINE(int64_t,   DBL_ZGTS)  (double a) {return vcltzd_f64(a);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zgtsqi) (QUAD_ITYPE a) {return 0 > a ? -1 : 0;}
 INLINE(QUAD_ITYPE,zgtsqf) (QUAD_FTYPE a) {return 0 > a ? -1 : 0;}
-
-#endif
 
 INLINE(Vwbi,VWBI_ZGTS) (Vwbi a)
 {
@@ -45223,39 +48916,10 @@ INLINE(Vqdi,VQDF_ZGTS) (Vqdf a) {return vreinterpretq_s64_u64(vcltzq_f64(a));}
 {
 #endif
 
-INLINE(  schar, SCHAR_ZGEY)   (schar a) {return 0 >= a;}
-INLINE(   char,  CHAR_ZGEY)    (char a)
-{
-#if CHAR_MIN
-    return 0 >= a;
-#else
-    return 0 == a;
-#endif
-}
-
-INLINE(  short,  SHRT_ZGEY)   (short a) {return 0 >= a;}
-INLINE(    int,   INT_ZGEY)     (int a) {return 0 >= a;}
-INLINE(   long,  LONG_ZGEY)    (long a) {return 0 >= a;}
-INLINE(  llong, LLONG_ZGEY)   (llong a) {return 0 >= a;}
-
-INLINE(int16_t, FLT16_ZGEY) (flt16_t a) 
-{
-#if defined(SPC_ARM_FP16)
-    return  1&vclezh_f16(a);
-#else
-    return  -0.0f16 >= a;
-#endif
-}
-
-INLINE(int32_t,   FLT_ZGEY)   (float a) {return 1&vclezs_f32(a);}
-INLINE(int64_t,   DBL_ZGEY)  (double a) {return 1&vclezd_f64(a);}
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zgeyqi) (QUAD_ITYPE a) {return 0 >= a;}
-INLINE(QUAD_ITYPE,zgeyqf) (QUAD_FTYPE a) {return 0 >= a;}
-
-#endif
+INLINE(_Bool,FLT16_ZGEY)    (flt16_t a) {return 0.0F16>= a;}
+INLINE(_Bool,  FLT_ZGEY)      (float a) {return 0.0F  >= a;}
+INLINE(_Bool,  DBL_ZGEY)     (double a) {return 0.0   >= a;}
+INLINE(_Bool,    zgeyqf) (QUAD_FTYPE a) {return 0.0L  >= a;}
 
 INLINE(Vwbi,VWBI_ZGEY) (Vwbi a)
 {
@@ -45472,21 +49136,6 @@ INLINE(Vqdi,VQDF_ZGEY) (Vqdf a)
 {
 #endif
 
-INLINE(  schar, SCHAR_ZGES)   (schar a) {return 0 >= a ? -1 : 0;}
-INLINE(   char,  CHAR_ZGES)    (char a)
-{
-#if CHAR_MIN
-    return 0 >= a ? -1 : 0;
-#else
-    return 0 == a;
-#endif
-}
-
-INLINE(  short,  SHRT_ZGES)   (short a) {return 0 >= a ? -1 : 0;}
-INLINE(    int,   INT_ZGES)     (int a) {return 0 >= a ? -1 : 0;}
-INLINE(   long,  LONG_ZGES)    (long a) {return 0 >= a ? -1 : 0;}
-INLINE(  llong, LLONG_ZGES)   (llong a) {return 0 >= a ? -1 : 0;}
-
 INLINE(int16_t, FLT16_ZGES) (flt16_t a) 
 {
 #if defined(SPC_ARM_FP16)
@@ -45499,12 +49148,7 @@ INLINE(int16_t, FLT16_ZGES) (flt16_t a)
 INLINE(int32_t,   FLT_ZGES)   (float a) {return vclezs_f32(a);}
 INLINE(int64_t,   DBL_ZGES)  (double a) {return vclezd_f64(a);}
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_ITYPE,zgesqi) (QUAD_ITYPE a) {return 0 >= a ? -1 : 0;}
 INLINE(QUAD_ITYPE,zgesqf) (QUAD_FTYPE a) {return 0 >= a ? -1 : 0;}
-
-#endif
 
 INLINE(Vwbi,VWBI_ZGES) (Vwbi a)
 {
@@ -45654,678 +49298,2349 @@ INLINE(Vqdi,VQDF_ZGES) (Vqdf a) {return vreinterpretq_s64_u64(vclezq_f64(a));}
 }
 #endif
 
-#if 0 // _ENTER_ARM_VEQY
-{
-#endif
-
-INLINE(_Bool,VWYU_VEQY) (Vwyu a, _Bool b)
-{
-    uint64_t    c = VWWU_ASTV(VWYU_ASWU(a));
-    uint64x1_t  l = vdup_n_u64(c);
-    int64x1_t   m = vdup_n_s64(b);
-    m = vneg_s64(m);
-    uint64x1_t  r = vreinterpret_u64_s64(m);
-    r = vtst_u64(l, r);
-    return  vget_lane_u64(r, 0);
-}
-
-INLINE(_Bool,VWBU_VEQY) (Vwbu a, uint8_t b)
-{
-    float32x2_t v = vdup_n_f32(VWBU_ASTM(a));
-    uint8x8_t   z = vreinterpret_u8_f32(v);
-    z = vceq_u8(z, vdup_n_u8(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    return  vget_lane_u32(r, 0);
-}
-
-INLINE(_Bool,VWBI_VEQY) (Vwbi a, int8_t b)
-{
-    float32x2_t v = vdup_n_f32(VWBI_ASTM(a));
-    uint8x8_t   z = vreinterpret_u8_f32(v);
-    z = vceq_u8(z, vdup_n_u8(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    return  vget_lane_u32(r, 0);
-}
-
-INLINE(_Bool,VWBC_VEQY) (Vwbc a, char b)
-{
-    float32x2_t v = vdup_n_f32(VWBC_ASTM(a));
-    uint8x8_t   z = vreinterpret_u8_f32(v);
-    z = vceq_u8(z, vdup_n_u8(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    return  vget_lane_u32(r, 0);
-}
-
-
-INLINE(_Bool,VWHU_VEQY) (Vwhu a, uint16_t b)
-{
-    float32x2_t v = vdup_n_f32(VWHU_ASTM(a));
-    uint16x4_t  z = vreinterpret_u16_f32(v);
-    z = vceq_u16(z, vdup_n_u16(b));
-    uint32x2_t  r = vreinterpret_u32_u16(z);
-    return  vget_lane_u32(r, 0);
-}
-
-INLINE(_Bool,VWHI_VEQY) (Vwhi a, int16_t b)
-{
-    float32x2_t v = vdup_n_f32(VWHI_ASTM(a));
-    uint16x4_t  z = vreinterpret_u16_f32(v);
-    z = vceq_u16(z, vdup_n_u16(b));
-    uint32x2_t  r = vreinterpret_u32_u16(z);
-    return  vget_lane_u32(r, 0);
-}
-
-INLINE(_Bool,VWHF_VEQY) (Vwhf a, flt16_t b)
-{
-    float32x2_t v = vdup_n_f32(VWHF_ASTM(a));
-    float16x4_t f = vreinterpret_f16_f32(v);
-#if defined(SPC_ARM_FP16_SIMD)
-    uint16x4_t  z = vceq_f16(f, vdup_n_f16(b));
-    uint32x2_t  r = vreinterpret_u32_u16(z);
-    return  vget_lane_u32(r, 0);
-#else
-    float32x4_t q = vcvt_f32_f16(f);
-    uint32x4_t  r = vceqq_f32(q, vdupq_n_f32(b));
-    return  vgetq_lane_u32(r, 0);
-#endif
-}
-
-
-INLINE(_Bool,VWWU_VEQY) (Vwwu a, uint32_t b)
-{
-    return  ((WORD_TYPE){.F=a.V0}).U==b;
-}
-
-INLINE(_Bool,VWWI_VEQY) (Vwwi a,  int32_t b)
-{
-    return  ((WORD_TYPE){.F=a.V0}).I==b;
-}
-
-INLINE(_Bool,VWWF_VEQY) (Vwwf a,  float b) {return a.V0==b;}
-
-
-INLINE(_Bool,VDYU_VEQY) (Vdyu a, _Bool b)
-{
-    uint64x1_t  l = VDYU_ASDU(a);
-    int64x1_t   m = vdup_n_s64(b);
-    m = vneg_s64(m);
-    uint64x1_t  r = vreinterpret_u64_s64(m);
-    r = vtst_u64(l, r);
-    return vget_lane_u64(r, 0);
-}
-
-INLINE(_Bool,VDBU_VEQY) (Vdbu a, uint8_t b)
-{
-    uint8x8_t   r = vceq_u8(a, vdup_n_u8(b));
-    uint64x1_t  v = vreinterpret_u64_u8(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-INLINE(_Bool,VDBI_VEQY) (Vdbi a, int8_t b)
-{
-    uint8x8_t   r = vceq_s8(a, vdup_n_s8(b));
-    uint64x1_t  v = vreinterpret_u64_u8(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-INLINE(_Bool,VDBC_VEQY) (Vdbc a, char b)
-{
-#if CHAR_MIN
-    return  VDBI_VEQY(VDBC_ASBI(a), b);
-#else
-    return  VDBU_VEQY(VDBC_ASBU(a), b);
-#endif
-}
-
-
-INLINE(_Bool,VDHU_VEQY) (Vdhu a, uint16_t b)
-{
-    uint16x4_t  r = vceq_u16(a, vdup_n_u16(b));
-    uint64x1_t  v = vreinterpret_u64_u16(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-INLINE(_Bool,VDHI_VEQY) (Vdhi a, int16_t b)
-{
-    uint16x4_t  r = vceq_s16(a, vdup_n_s16(b));
-    uint64x1_t  v = vreinterpret_u64_u16(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-INLINE(_Bool,VDHF_VEQY) (Vdhf a, flt16_t b)
-{
-#if defined(SPC_ARM_FP16)
-    uint16x4_t  r = vceq_f16(a, vdup_n_f16(b));
-    uint64x1_t  v = vreinterpret_u64_u16(r);
-#else
-    float32x4_t t = vcvt_f32_f16(a);
-    uint32x4_t  r = vceqq_f32(t, vdupq_n_f32(b));
-    uint64x1_t  v = vreinterpret_u64_u16(vmovn_u32(r));
-#endif
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-
-INLINE(_Bool,VDWU_VEQY) (Vdwu a, uint32_t b)
-{
-    uint32x2_t  r = vceq_u32(a, vdup_n_u32(b));
-    uint64x1_t  v = vreinterpret_u64_u32(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-INLINE(_Bool,VDWI_VEQY) (Vdwi a, int32_t b)
-{
-    uint32x2_t  r = vceq_s32(a, vdup_n_s32(b));
-    uint64x1_t  v = vreinterpret_u64_u32(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-INLINE(_Bool,VDWF_VEQY) (Vdwf a, float b)
-{
-    uint32x2_t  r = vceq_f32(a, vdup_n_f32(b));
-    uint64x1_t  v = vreinterpret_u64_u32(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vget_lane_u64(v, 0);
-}
-
-INLINE(_Bool,VDDU_VEQY) (Vddu a, uint64_t b)
-{
-    return  vceqd_u64(vget_lane_u64(a, 0), b);
-}
-
-INLINE(_Bool,VDDI_VEQY) (Vddi a,  int64_t b)
-{
-    return  vceqd_s64(vget_lane_s64(a, 0), b);
-}
-
-INLINE(_Bool,VDDF_VEQY) (Vddf a,  double b)
-{
-    return  vceqd_f64(vget_lane_f64(a, 0), b);
-}
-
-INLINE(uint64_t, QYU_VEQYQ) (uint64x2_t q)
-{
-    uint64x1_t  d = vorr_u64(
-        vget_low_u64(q),
-        vget_high_u64(q)
-    );
-    uint64_t v = vget_lane_u64(d, 0);
-    return  vtstd_u64(v, UINT64_MAX);
-}
-
-
-INLINE(_Bool,VQYU_VEQY) (Vqyu a,    _Bool b)
-{
-    int64x1_t   i = vdup_n_s64(b);
-    uint64x1_t  m = vreinterpret_u64_s64(vneg_s64(i));
-    uint64x2_t  q = VQYU_ASDU(a);
-    uint64x1_t  d = vorr_u64(
-        vget_low_u64(q),
-        vget_high_u64(q)
-    );
-    d = vtst_u64(d, m);
-    return  vget_lane_u64(d, 0);
-}
-
-
-INLINE(_Bool,VQBU_VEQY) (Vqbu a,  uint8_t b)
-{
-    uint8x16_t  r = vceqq_u8(a, vdupq_n_u8(b));
-    uint64x2_t  v = vreinterpretq_u64_u8(r);
-    return  QYU_VEQYQ(v);
-}
-
-INLINE(_Bool,VQBI_VEQY) (Vqbi a,   int8_t b)
-{
-    uint8x16_t  r = vceqq_s8(a, vdupq_n_s8(b));
-    uint64x2_t  v = vreinterpretq_u64_s8(r);
-    return  QYU_VEQYQ(v);
-}
-
-INLINE(_Bool,VQBC_VEQY) (Vqbc a,     char b)
-{
-#if CHAR_MIN
-    return  VQBI_VEQY(VQBC_ASBI(a), b);
-#else
-    return  VQBU_VEQY(VQBC_ASBU(a), b);
-#endif
-}
-
-
-INLINE(_Bool,VQHU_VEQY) (Vqhu a, uint16_t b)
-{
-    uint16x8_t  r = vceqq_u16(a, vdupq_n_u16(b));
-    uint64x2_t  v = vreinterpretq_u64_u16(r);
-    return  QYU_VEQYQ(v);
-}
-
-INLINE(_Bool,VQHI_VEQY) (Vqhi a,  int16_t b)
-{
-    uint16x8_t  r = vceqq_s16(a, vdupq_n_s16(b));
-    uint64x2_t  v = vreinterpretq_u64_u16(r);
-    return  QYU_VEQYQ(v);
-}
-
-INLINE(_Bool,VQHF_VEQY) (Vqhf a,  flt16_t b)
-{
-#if defined(SPC_ARM_FP16)
-    uint16x8_t  r = vceqq_f16(a, vdupq_n_f16(b));
-#else
-    float16x4_t f;
-    uint16x4_t  u;
-    uint32x4_t  q;
-    float32x4_t t;
-    float32x4_t c = vdupq_n_f32(b);
-
-    f = vget_low_f16(a);
-    t = vcvt_f32_f16(f);
-    q = vceqq_f32(t, c);
-
-    u = vmovn_u32(q);
-
-    f = vget_high_f16(a);
-    t = vcvt_f32_f16(f);
-    q = vceqq_f32(t, c);
-    uint16x8_t r = vcombine_u16(u, vmovn_u32(q));
-#endif
-
-    uint64x2_t  v = vreinterpretq_u64_u16(r);
-    return  QYU_VEQYQ(v);
-}
-
-
-INLINE(_Bool,VQWU_VEQY) (Vqwu a, uint32_t b)
-{
-    uint32x4_t  r = vceqq_u32(a, vdupq_n_u32(b));
-    uint64x2_t  v = vreinterpretq_u64_u32(r);
-    return  QYU_VEQYQ(v);
-}
-
-INLINE(_Bool,VQWI_VEQY) (Vqwi a,  int32_t b)
-{
-    uint32x4_t  r = vceqq_s32(a, vdupq_n_s32(b));
-    uint64x2_t  v = vreinterpretq_u64_u32(r);
-    return  QYU_VEQYQ(v);
-}
-
-INLINE(_Bool,VQWF_VEQY) (Vqwf a,    float b)
-{
-    uint32x4_t  r = vceqq_s32(a, vdupq_n_f32(b));
-    uint64x2_t  v = vreinterpretq_u64_u32(r);
-    return  QYU_VEQYQ(v);
-}
-
-
-INLINE(_Bool,VQDU_VEQY) (Vqdu a, uint64_t b)
-{
-    uint64x2_t  r = vceqq_u64(a, vdupq_n_u64(b));
-    return  QYU_VEQYQ(r);
-}
-
-INLINE(_Bool,VQDI_VEQY) (Vqdi a,  int64_t b)
-{
-    uint64x2_t  r = vceqq_s64(a, vdupq_n_s64(b));
-    return  QYU_VEQYQ(r);
-}
-
-INLINE(_Bool,VQDF_VEQY) (Vqdf a,   double b)
-{
-    uint64x2_t  r = vceqq_f64(a, vdupq_n_f64(b));
-    return  QYU_VEQYQ(r);
-}
-
-#if 0 // _LEAVE_ARM_VEQY
-}
-#endif
 
 #if 0 // _ENTER_ARM_VEQS
 {
 #endif
-
-INLINE(Vwyu,VWYU_VEQS) (Vwyu a, _Bool b)
-{
-    float32x2_t f = vdup_n_f32(VWYU_ASTM(a));
-    uint32x2_t  l = vreinterpret_u32_f32(f);
-    int32x2_t   r = vdup_n_s32(b);
-    r = vneg_s32(r);
-    l = vtst_u32(l, vdup_n_u32(UINT32_MAX));
-    l = vceq_u32(l, vreinterpret_u32_s32(r));
-    f = vreinterpret_f32_u32(l);
-    return  WYU_ASTV(vget_lane_f32(f, 0));
-}
-
-INLINE(Vwbu,VWBU_VEQS) (Vwbu a, uint8_t b)
-{
-    float32x2_t v = vdup_n_f32(VWBU_ASTM(a));
-    uint8x8_t   z = vreinterpret_u8_f32(v);
-    z = vceq_u8(z, vdup_n_u8(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    r = vtst_u32(r, vdup_n_u32(UINT32_MAX));
-    v = vreinterpret_f32_u32(r);
-    return  WBU_ASTV(vget_lane_u32(r, 0));
-}
-
-INLINE(Vwbi,VWBI_VEQS) (Vwbi a, int8_t b)
-{
-    float32x2_t v = vdup_n_f32(VWBI_ASTM(a));
-    uint8x8_t   z = vreinterpret_u8_f32(v);
-    z = vceq_u8(z, vdup_n_u8(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    r = vtst_u32(r, vdup_n_u32(UINT32_MAX));
-    v = vreinterpret_f32_u32(r);
-    return  WBI_ASTV(vget_lane_u32(r, 0));
-}
-
-INLINE(Vwbc,VWBC_VEQS) (Vwbc a, char b)
-{
-    float32x2_t v = vdup_n_f32(VWBC_ASTM(a));
-    uint8x8_t   z = vreinterpret_u8_f32(v);
-    z = vceq_u8(z, vdup_n_u8(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    r = vtst_u32(r, vdup_n_u32(UINT32_MAX));
-    v = vreinterpret_f32_u32(r);
-    return  WBC_ASTV(vget_lane_u32(r, 0));
-}
-
-
-INLINE(Vwhu,VWHU_VEQS) (Vwhu a, uint16_t b)
-{
-    float32x2_t v = vdup_n_f32(VWHU_ASTM(a));
-    uint16x4_t  z = vreinterpret_u16_f32(v);
-    z = vceq_u16(z, vdup_n_u16(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    r = vtst_u32(r, vdup_n_u32(UINT32_MAX));
-    v = vreinterpret_f32_u32(r);
-    return  WHU_ASTV(vget_lane_u32(r, 0));
-}
-
-INLINE(Vwhi,VWHI_VEQS) (Vwhi a, int16_t b)
-{
-    float32x2_t v = vdup_n_f32(VWHI_ASTM(a));
-    uint16x4_t  z = vreinterpret_u16_f32(v);
-    z = vceq_u16(z, vdup_n_u16(b));
-    uint32x2_t  r = vreinterpret_u32_u8(z);
-    r = vtst_u32(r, vdup_n_u32(UINT32_MAX));
-    v = vreinterpret_f32_u32(r);
-    return  WHI_ASTV(vget_lane_u32(r, 0));
-}
-
-INLINE(Vwhi,VWHF_VEQS) (Vwhf a, flt16_t b)
-{
-    float32x2_t v = vdup_n_f32(VWHF_ASTM(a));
-    float16x4_t f = vreinterpret_f16_f32(v);
-#if defined(SPC_ARM_FP16_SIMD)
-    uint16x4_t  z = vceq_f16(f, vdup_n_f16(b));
-#else
-    float32x4_t q = vcvt_f32_f16(f);
-    uint32x4_t  t = vceqq_f32(q, vdupq_n_f32(b));
-    uint16x4_t  z = vmovn_u32(t);
-#endif
-
-    uint32x2_t  r = vreinterpret_u32_u16(z);
-    r = vtst_u32(r, vdup_n_u32(UINT32_MAX));
-    v = vreinterpret_f32_u32(r);
-    return  WHI_ASTV(vget_lane_u32(v, 0));
-}
-
-
-INLINE(Vdyu,VDYU_VEQS) (Vdyu a, _Bool b)
-{
-    uint64x1_t l = VDYU_ASDU(a);
-    l = vtst_u64(l, vdup_n_u64(UINT64_MAX));
-    uint64x1_t  r = vsub_u64(vdup_n_u64(0), vdup_n_u64(b));
-    r = vand_u64(r, l);
-    return  VDDU_ASYU(r);
-}
-
-INLINE(Vdbu,VDBU_VEQS) (Vdbu a, uint8_t b)
-{
-    uint8x8_t   r = vceq_u8(a, vdup_n_u8(b));
-    uint64x1_t  v = vreinterpret_u64_u8(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_u8_u64(v);
-}
-
-INLINE(Vdbi,VDBI_VEQS) (Vdbi a, int8_t b)
-{
-    uint8x8_t   r = vceq_s8(a, vdup_n_s8(b));
-    uint64x1_t  v = vreinterpret_u64_u8(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_s8_u64(v);
-}
-
-INLINE(Vdbc,VDBC_VEQS) (Vdbc a, char b)
-{
 #if CHAR_MIN
-    return  VDBI_ASBC(VDBI_VEQS(VDBC_ASBI(a), b));
+#   define DBC_VEQS DBI_VEQS
+#   define QBC_VEQS QBI_VEQS
 #else
-    return  VDBU_ASBC(VDBU_VEQS(VDBC_ASBU(a), b));
-#endif
-}
-
-
-INLINE(Vdhu,VDHU_VEQS) (Vdhu a, uint16_t b)
-{
-    uint16x4_t  r = vceq_u16(a, vdup_n_u16(b));
-    uint64x1_t  v = vreinterpret_u64_u16(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_u16_u64(v);
-}
-
-INLINE(Vdhi,VDHI_VEQS) (Vdhi a, int16_t b)
-{
-    uint16x4_t  r = vceq_s16(a, vdup_n_s16(b));
-    uint64x1_t  v = vreinterpret_u64_u16(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_s16_u64(v);
-}
-
-INLINE(Vdhi,VDHF_VEQS) (Vdhf a, flt16_t b)
-{
-#if defined(SPC_ARM_FP16)
-    uint16x4_t  r = vceq_f16(a, vdup_n_f16(b));
-    uint64x1_t  v = vreinterpret_u64_u16(r);
-#else
-    float32x4_t t = vcvt_f32_f16(a);
-    uint32x4_t  r = vceqq_f32(t, vdupq_n_f32(b));
-    uint64x1_t  v = vreinterpret_u64_u16(vmovn_u32(r));
-#endif
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_s16_u64(v);
-}
-
-
-
-INLINE(Vdwu,VDWU_VEQS) (Vdwu a, uint32_t b)
-{
-    uint32x2_t  r = vceq_u32(a, vdup_n_u32(b));
-    uint64x1_t  v = vreinterpret_u64_u32(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_u32_u64(v);
-}
-
-INLINE(Vdwi,VDWI_VEQS) (Vdwi a, int32_t b)
-{
-    uint32x2_t  r = vceq_s32(a, vdup_n_s32(b));
-    uint64x1_t  v = vreinterpret_u64_u32(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_s32_u64(v);
-}
-
-INLINE(Vdwi,VDWF_VEQS) (Vdwf a, float b)
-{
-    uint32x2_t  r = vceq_f32(a, vdup_n_f32(b));
-    uint64x1_t  v = vreinterpret_u64_u32(r);
-    v = vtst_u64(v, vdup_n_u64(UINT64_MAX));
-    return  vreinterpret_s32_u64(v);
-}
-
-
-INLINE(uint64x2_t, QYU_VEQSQ) (uint64x2_t q)
-{
-    uint64x1_t  d = vorr_u64(
-        vget_low_u64(q),
-        vget_high_u64(q)
-    );
-    d = vtst_u64(d, vdup_n_u64(UINT64_MAX));
-    return  vcombine_u64(d, d);
-}
-
-
-INLINE(Vqyu,VQYU_VEQS) (Vqyu a,    _Bool b)
-{
-    int64x1_t   i = vdup_n_s64(b);
-    uint64x1_t  m = vreinterpret_u64_s64(vneg_s64(i));
-    uint64x2_t  q = VQYU_ASDU(a);
-    uint64x1_t  d = vorr_u64(
-        vget_low_u64(q),
-        vget_high_u64(q)
-    );
-    d = vtst_u64(d, m);
-    q = vcombine_u64(d, d);
-    return  VQDU_ASYU(q);
-}
-
-
-INLINE(Vqbu,VQBU_VEQS) (Vqbu a,  uint8_t b)
-{
-    uint8x16_t  r = vceqq_u8(a, vdupq_n_u8(b));
-    uint64x2_t  v = vreinterpretq_u64_u8(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_u8_u64(v);
-}
-
-INLINE(Vqbi,VQBI_VEQS) (Vqbi a,   int8_t b)
-{
-    uint8x16_t  r = vceqq_s8(a, vdupq_n_s8(b));
-    uint64x2_t  v = vreinterpretq_u64_s8(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_s8_u64(v);
-}
-
-INLINE(Vqbc,VQBC_VEQS) (Vqbc a,     char b)
-{
-#if CHAR_MIN
-    return  VQBI_ASBC(VQBI_VEQS(VQBC_ASBI(a), b));
-#else
-    return  VQBU_ASBC(VQBU_VEQS(VQBC_ASBU(a), b));
-#endif
-}
-
-
-INLINE(Vqhu,VQHU_VEQS) (Vqhu a, uint16_t b)
-{
-    uint16x8_t  r = vceqq_u16(a, vdupq_n_u16(b));
-    uint64x2_t  v = vreinterpretq_u64_u16(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_u16_u64(v);
-}
-
-INLINE(Vqhi,VQHI_VEQS) (Vqhi a,  int16_t b)
-{
-    uint16x8_t  r = vceqq_s16(a, vdupq_n_s16(b));
-    uint64x2_t  v = vreinterpretq_u64_u16(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_s16_u64(v);
-}
-
-INLINE(Vqhi,VQHF_VEQS) (Vqhf a,  flt16_t b)
-{
-#if defined(SPC_ARM_FP16)
-    uint16x8_t  r = vceqq_f16(a, vdupq_n_f16(b));
-#else
-    float16x4_t f;
-    uint16x4_t  u;
-    uint32x4_t  q;
-    float32x4_t t;
-    float32x4_t c = vdupq_n_f32(b);
-
-    f = vget_low_f16(a);
-    t = vcvt_f32_f16(f);
-    q = vceqq_f32(t, c);
-
-    u = vmovn_u32(q);
-
-    f = vget_high_f16(a);
-    t = vcvt_f32_f16(f);
-    q = vceqq_f32(t, c);
-    uint16x8_t r = vcombine_u16(u, vmovn_u32(q));
+#   define DBC_VEQS DBU_VEQS
+#   define QBC_VEQS QBU_VEQS
 #endif
 
-    uint64x2_t  v = vreinterpretq_u64_u16(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_s16_u64(v);
-}
-
-
-INLINE(Vqwu,VQWU_VEQS) (Vqwu a, uint32_t b)
+INLINE(float,WYU_VEQS) (float a, float b)
 {
-    uint32x4_t  r = vceqq_u32(a, vdupq_n_u32(b));
-    uint64x2_t  v = vreinterpretq_u64_u32(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_u32_u64(v);
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.B.U = vmvn_u8(x.B.U);
+    z.W.U = vceq_u32(y.W.U, z.W.U);
+    z.B.U = vmvn_u8(z.B.U);
+    return  vget_lane_f32(x.W.F, 0);
 }
 
-INLINE(Vqwi,VQWI_VEQS) (Vqwi a,  int32_t b)
+INLINE(float,WBZ_VEQS) (float a, float b)
 {
-    uint32x4_t  r = vceqq_s32(a, vdupq_n_s32(b));
-    uint64x2_t  v = vreinterpretq_u64_u32(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_s32_u64(v);
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.B.U = vceq_u8(x.B.U, y.B.U);
+    x.W.U = vtst_u32(x.W.U, vcreate_u32(UINT32_MAX));
+    return  vget_lane_f32(x.W.F, 0);
 }
 
-INLINE(Vqwi,VQWF_VEQS) (Vqwf a,    float b)
+INLINE(float,WHZ_VEQS) (float a, float b)
 {
-    uint32x4_t  r = vceqq_s32(a, vdupq_n_f32(b));
-    uint64x2_t  v = vreinterpretq_u64_u32(r);
-    v = QYU_VEQSQ(v);
-    return  vreinterpretq_s32_u64(v);
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.U = vceq_u16(x.H.U, y.H.U);
+    x.W.U = vtst_u32(x.W.U, vcreate_u32(UINT32_MAX));
+    return  vget_lane_f32(x.W.F, 0);
 }
 
-
-INLINE(Vqdu,VQDU_VEQS) (Vqdu a, uint64_t b)
+INLINE(float,WHF_VEQS) (float a, float b)
 {
-    uint64x2_t  r = vceqq_u64(a, vdupq_n_u64(b));
-    uint64x1_t  d = vorr_u64(
-        vget_low_u64(r),
-        vget_high_u64(r)
-    );
-    return  vcombine_u64(d, d);
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.I = DHF_CEQS(x.H.F, y.H.F);
+    x.W.U = vtst_u32(x.W.U, vcreate_u32(UINT32_MAX));
+    return  vget_lane_f32(x.W.F, 0);
 }
 
-INLINE(Vqdi,VQDI_VEQS) (Vqdi a,  int64_t b)
+
+INLINE(uint64x1_t,DYU_VEQS)  (uint64x1_t a,  uint64x1_t b)
 {
-    uint64x2_t  r = vceqq_s64(a, vdupq_n_s64(b));
-    uint64x1_t  d = vorr_u64(
-        vget_low_u64(r),
-        vget_high_u64(r)
-    );
-    r = vcombine_u64(d, d);
-    return  vreinterpretq_s64_u64(r);
+    DWRD_VTYPE x={.D.U=a}, y={.D.U=b}, z;
+    z.B.U = vmvn_u8(x.B.U);
+    z.D.U = vceq_u64(y.W.U, z.W.U);
+    z.B.U = vmvn_u8(z.B.U);
+    return  z.D.U;
 }
 
-INLINE(Vqdi,VQDF_VEQS) (Vqdf a,   double b)
+INLINE( uint8x8_t,DBU_VEQS)   (uint8x8_t a,   uint8x8_t b)
 {
-    uint64x2_t  r = vceqq_f64(a, vdupq_n_f64(b));
-    uint64x1_t  d = vorr_u64(
-        vget_low_u64(r),
-        vget_high_u64(r)
-    );
-    r = vcombine_u64(d, d);
-    return  vreinterpretq_s64_u64(r);
+    DWRD_VTYPE c = {.B.U=vceq_u8(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.B.U;
 }
+
+INLINE(  int8x8_t,DBI_VEQS)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE c = {.B.U=vceq_s8(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.B.I;
+}
+
+INLINE(uint16x4_t,DHU_VEQS)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE c = {.H.U=vceq_u16(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.H.U;
+}
+
+INLINE( int16x4_t,DHI_VEQS)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE c = {.H.U=vceq_s16(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.H.I;
+}
+
+INLINE( int16x4_t,DHF_VEQS) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE c = {.H.I=DHF_CEQS(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.H.I;
+}
+
+INLINE(uint32x2_t,DWU_VEQS)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_u32(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.W.U;
+}
+
+INLINE( int32x2_t,DWI_VEQS)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_s32(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.W.I;
+}
+
+INLINE( int32x2_t,DWF_VEQS) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_f32(a, b)};
+    c.D.U = vtst_u64(c.D.U, vdup_n_u64(-1));
+    return  c.W.F;
+}
+
+INLINE(uint64x2_t,QYU_VEQS)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE x={.D.U=a}, y={.D.U=b}, z;
+    z.B.U = vmvnq_u8(x.B.U);
+    z.D.U = vceqq_u64(y.W.U, z.W.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(z.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(z.D.U)};
+    l.B.U = vand_u8(l.B.U, r.B.U);
+    l.B.U = vmvn_u8(l.B.U);
+    return  vdupq_lane_u64(l.D.U, 0);
+}
+
+INLINE(uint8x16_t,QBU_VEQS)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE c = {.B.U=vceqq_u8(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.B.U;
+}
+
+INLINE( int8x16_t,QBI_VEQS)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE c = {.B.U=vceqq_s8(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.B.I;
+}
+
+INLINE(uint16x8_t,QHU_VEQS)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE c = {.H.U=vceqq_u16(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.H.U;
+}
+
+INLINE( int16x8_t,QHI_VEQS)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE c = {.H.U=vceqq_s16(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.H.I;
+}
+
+
+INLINE( int16x8_t,QHF_VEQS) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE c = {.H.I=QHF_CEQS(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.H.I;
+}
+
+INLINE(uint32x4_t,QWU_VEQS)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_u32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.W.U;
+}
+
+INLINE( int32x4_t,QWI_VEQS)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_s32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.W.I;
+}
+
+INLINE( int32x4_t,QWF_VEQS) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_f32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    l.D.U = vtst_u64(l.D.U, vdup_n_u64(-1));
+    c.D.U = vdupq_lane_u64(l.D.U, 0);
+    return  c.W.F;
+}
+
+
+INLINE(uint64x2_t,QDU_VEQS)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a,b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    return  vdupq_lane_u64(l.D.U, 0);
+}
+
+INLINE( int64x2_t,QDI_VEQS)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_s64(a,b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    return  vdupq_lane_s64(l.D.I, 0);
+}
+
+INLINE( int64x2_t,QDF_VEQS) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_f64(a,b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vorr_u8(l.B.U, r.B.U);
+    return  vdupq_lane_s64(l.D.I, 0);
+}
+
+INLINE(Vwyu,VWYU_VEQS) (Vwyu a, Vwyu b) {a.V0=WYU_VEQS(a.V0,b.V0); return a;}
+INLINE(Vwbu,VWBU_VEQS) (Vwbu a, Vwbu b) {a.V0=WBZ_VEQS(a.V0,b.V0); return a;}
+INLINE(Vwbi,VWBI_VEQS) (Vwbi a, Vwbi b) {a.V0=WBZ_VEQS(a.V0,b.V0); return a;}
+INLINE(Vwbc,VWBC_VEQS) (Vwbc a, Vwbc b) {a.V0=WBZ_VEQS(a.V0,b.V0); return a;}
+INLINE(Vwhu,VWHU_VEQS) (Vwhu a, Vwhu b) {a.V0=WHZ_VEQS(a.V0,b.V0); return a;}
+INLINE(Vwhi,VWHI_VEQS) (Vwhi a, Vwhi b) {a.V0=WHZ_VEQS(a.V0,b.V0); return a;}
+INLINE(Vwhi,VWHF_VEQS) (Vwhi a, Vwhi b) {return ((Vwhi){WHZ_VEQS(a.V0,b.V0)});}
+
+INLINE(Vdyu,VDYU_VEQS) (Vdyu a, Vdyu b) {a.V0=DYU_VEQS(a.V0,b.V0); return a;}
+INLINE(Vdbu,VDBU_VEQS) (Vdbu a, Vdbu b) {return DBU_VEQS(a, b);}
+INLINE(Vdbi,VDBI_VEQS) (Vdbi a, Vdbi b) {return DBI_VEQS(a, b);}
+INLINE(Vdbc,VDBC_VEQS) (Vdbc a, Vdbc b) {a.V0=DBC_VEQS(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_VEQS) (Vdhu a, Vdhu b) {return DHU_VEQS(a, b);}
+INLINE(Vdhi,VDHI_VEQS) (Vdhi a, Vdhi b) {return DHI_VEQS(a, b);}
+INLINE(Vdhi,VDHF_VEQS) (Vdhf a, Vdhf b) {return ((Vdhi){DHF_VEQS(a, b)});}
+INLINE(Vdwu,VDWU_VEQS) (Vdwu a, Vdwu b) {return DWU_VEQS(a, b);}
+INLINE(Vdwi,VDWI_VEQS) (Vdwi a, Vdwi b) {return DWI_VEQS(a, b);}
+INLINE(Vdwi,VDWF_VEQS) (Vdwf a, Vdwf b) {return DWF_VEQS(a, b);}
+
+INLINE(Vqyu,VQYU_VEQS) (Vqyu a, Vqyu b) {a.V0=QYU_VEQS(a.V0,b.V0); return a;}
+INLINE(Vqbu,VQBU_VEQS) (Vqbu a, Vqbu b) {return QBU_VEQS(a, b);}
+INLINE(Vqbi,VQBI_VEQS) (Vqbi a, Vqbi b) {return QBI_VEQS(a, b);}
+INLINE(Vqbc,VQBC_VEQS) (Vqbc a, Vqbc b) {a.V0=QBC_VEQS(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_VEQS) (Vqhu a, Vqhu b) {return QHU_VEQS(a, b);}
+INLINE(Vqhi,VQHI_VEQS) (Vqhi a, Vqhi b) {return QHI_VEQS(a, b);}
+INLINE(Vqhi,VQHF_VEQS) (Vqhf a, Vqhf b) {return ((Vqhi){QHF_VEQS(a, b)});}
+INLINE(Vqwu,VQWU_VEQS) (Vqwu a, Vqwu b) {return QWU_VEQS(a, b);}
+INLINE(Vqwi,VQWI_VEQS) (Vqwi a, Vqwi b) {return QWI_VEQS(a, b);}
+INLINE(Vqwi,VQWF_VEQS) (Vqwf a, Vqwf b) {return QWF_VEQS(a, b);}
+INLINE(Vqdu,VQDU_VEQS) (Vqdu a, Vqdu b) {return QDU_VEQS(a, b);}
+INLINE(Vqdi,VQDI_VEQS) (Vqdi a, Vqdi b) {return QDI_VEQS(a, b);}
+INLINE(Vqdi,VQDF_VEQS) (Vqdf a, Vqdf b) {return QDF_VEQS(a, b);}
 
 #if 0 // _LEAVE_ARM_VEQS
 }
 #endif
 
+#if 0 // _ENTER_ARM_VEQY
+{
+#endif
+
+#if CHAR_MIN
+#   define  DBC_VEQY DBI_VEQY
+#   define  QBC_VEQY QBI_VEQY
+#else
+#   define  DBC_VEQY DBU_VEQY
+#   define  QBC_VEQY QBU_VEQY
+#endif
+
+INLINE(uint32_t,WYU_VEQY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z;
+    z.B.U = vmvn_u8(x.B.U);
+    z.W.U = vceq_u32(y.W.U, z.W.U);
+    return  !vget_lane_u32(x.W.U, 0);
+}
+
+INLINE(uint32_t,WBZ_VEQY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.B.U = vceq_u8(x.B.U, y.B.U);
+    return  vget_lane_u32(x.W.U, 0);
+}
+
+INLINE(uint32_t,WHZ_VEQY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.U = vceq_u16(x.H.U, y.H.U);
+    return  vget_lane_u32(x.W.U, 0);
+}
+
+INLINE(uint32_t,WHF_VEQY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.I = DHF_CEQS(x.H.F, y.H.F);
+    return  vget_lane_u32(x.W.U, 0);
+}
+
+
+INLINE(uint64_t,DYU_VEQY)  (uint64x1_t a,  uint64x1_t b)
+{
+    DWRD_VTYPE x={.D.U=a}, y={.D.U=b}, z;
+    return x.U^~y.U;
+}
+
+INLINE(uint64_t,DBU_VEQY)   (uint8x8_t a,   uint8x8_t b)
+{
+    return  ((DWRD_VTYPE){.B.U=vceq_u8(a,b)}).U;
+}
+
+INLINE(uint64_t,DBI_VEQY)    (int8x8_t a,    int8x8_t b)
+{
+    return  ((DWRD_VTYPE){.B.U=vceq_s8(a,b)}).U;
+}
+
+INLINE(uint64_t,DHU_VEQY)  (uint16x4_t a,  uint16x4_t b)
+{
+    return  ((DWRD_VTYPE){.H.U=vceq_u16(a,b)}).U;
+}
+
+INLINE(uint64_t,DHI_VEQY)   (int16x4_t a,   int16x4_t b)
+{
+    return  ((DWRD_VTYPE){.H.U=vceq_s16(a,b)}).U;
+}
+
+INLINE(uint64_t,DHF_VEQY) (float16x4_t a, float16x4_t b)
+{
+    return  ((DWRD_VTYPE){.H.I=DHF_CEQS(a,b)}).U;
+}
+
+INLINE(uint64_t,DWU_VEQY)  (uint32x2_t a,  uint32x2_t b)
+{
+    return  ((DWRD_VTYPE){.W.U=vceq_u32(a,b)}).U;
+}
+
+INLINE(uint64_t,DWI_VEQY)   (int32x2_t a,   int32x2_t b)
+{
+    return  ((DWRD_VTYPE){.W.U=vceq_s32(a,b)}).U;
+}
+
+INLINE(uint64_t,DWF_VEQY) (float32x2_t a, float32x2_t b)
+{
+    return  ((DWRD_VTYPE){.W.U=vceq_f32(a,b)}).U;
+}
+
+INLINE(uint64_t,QYU_VEQY)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE x={.D.U=a}, y={.D.U=b};
+    y.B.U = vmvnq_u8(y.B.U);
+    x.B.U = veorq_u8(x.B.U, y.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(x.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(x.D.U)};
+    return  l.U|r.U;
+}
+
+INLINE(uint64_t,QBU_VEQY)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE c = {.B.U=vceqq_u8(a, b)};
+    return  vgetq_lane_u64(c.D.U, 0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QBI_VEQY)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE c = {.B.U=vceqq_s8(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QHU_VEQY)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE c = {.H.U=vceqq_u16(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QHI_VEQY)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE c = {.H.U=vceqq_s16(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QHF_VEQY) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE c = {.H.I=QHF_CEQS(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QWU_VEQY)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_u32(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QWI_VEQY)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_s32(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QWF_VEQY) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE c = {.W.U=vceqq_f32(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QDU_VEQY)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QDI_VEQY)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_s64(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(uint64_t,QDF_VEQY) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_f64(a, b)};
+    return  vgetq_lane_u64(c.D.U,0)|vgetq_lane_u64(c.D.U,1);
+}
+
+INLINE(_Bool,VWYU_VEQY) (Vwyu a, Vwyu b) {return WYU_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VWBU_VEQY) (Vwbu a, Vwbu b) {return WBZ_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VWBI_VEQY) (Vwbi a, Vwbi b) {return WBZ_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_VEQY) (Vwbc a, Vwbc b) {return WBZ_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VWHU_VEQY) (Vwhu a, Vwhu b) {return WHZ_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VWHI_VEQY) (Vwhi a, Vwhi b) {return WHZ_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VWHF_VEQY) (Vwhf a, Vwhf b) {return WHF_VEQY(a.V0, b.V0);}
+
+INLINE(_Bool,VDYU_VEQY) (Vdyu a, Vdyu b) {return DYU_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VDBU_VEQY) (Vdbu a, Vdbu b) {return DBU_VEQY(a, b);}
+INLINE(_Bool,VDBI_VEQY) (Vdbi a, Vdbi b) {return DBI_VEQY(a, b);}
+INLINE(_Bool,VDBC_VEQY) (Vdbc a, Vdbc b) {return DBC_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VDHU_VEQY) (Vdhu a, Vdhu b) {return DHU_VEQY(a, b);}
+INLINE(_Bool,VDHI_VEQY) (Vdhi a, Vdhi b) {return DHI_VEQY(a, b);}
+INLINE(_Bool,VDHF_VEQY) (Vdhf a, Vdhf b) {return DHF_VEQY(a, b);}
+INLINE(_Bool,VDWU_VEQY) (Vdwu a, Vdwu b) {return DWU_VEQY(a, b);}
+INLINE(_Bool,VDWI_VEQY) (Vdwi a, Vdwi b) {return DWI_VEQY(a, b);}
+INLINE(_Bool,VDWF_VEQY) (Vdwf a, Vdwf b) {return DWF_VEQY(a, b);}
+
+INLINE(_Bool,VQYU_VEQY) (Vqyu a, Vqyu b) {return QYU_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VQBU_VEQY) (Vqbu a, Vqbu b) {return QBU_VEQY(a, b);}
+INLINE(_Bool,VQBI_VEQY) (Vqbi a, Vqbi b) {return QBI_VEQY(a, b);}
+INLINE(_Bool,VQBC_VEQY) (Vqbc a, Vqbc b) {return QBC_VEQY(a.V0, b.V0);}
+INLINE(_Bool,VQHU_VEQY) (Vqhu a, Vqhu b) {return QHU_VEQY(a, b);}
+INLINE(_Bool,VQHI_VEQY) (Vqhi a, Vqhi b) {return QHI_VEQY(a, b);}
+INLINE(_Bool,VQHF_VEQY) (Vqhf a, Vqhf b) {return QHF_VEQY(a, b);}
+INLINE(_Bool,VQWU_VEQY) (Vqwu a, Vqwu b) {return QWU_VEQY(a, b);}
+INLINE(_Bool,VQWI_VEQY) (Vqwi a, Vqwi b) {return QWI_VEQY(a, b);}
+INLINE(_Bool,VQWF_VEQY) (Vqwf a, Vqwf b) {return QWF_VEQY(a, b);}
+INLINE(_Bool,VQDU_VEQY) (Vqdu a, Vqdu b) {return QDU_VEQY(a, b);}
+INLINE(_Bool,VQDI_VEQY) (Vqdi a, Vqdi b) {return QDI_VEQY(a, b);}
+INLINE(_Bool,VQDF_VEQY) (Vqdf a, Vqdf b) {return QDF_VEQY(a, b);}
+
+#if 0 // _LEAVE_ARM_VEQY
+}
+#endif
+
+#if 0 // _ENTER_ARM_VEQN
+{
+#endif
+
+#if CHAR_MIN
+#   define DBC_VEQN DBI_VEQN
+#   define QBC_VEQN QBI_VEQN
+#else
+#   define DBC_VEQN DBU_VEQN
+#   define QBC_VEQN QBU_VEQN
+#endif
+
+INLINE( uint8x8_t,DBU_VEQN)   (uint8x8_t a,   uint8x8_t b)
+{
+    DWRD_VTYPE  c;
+    c.B.U   = vceq_u8(a, b);
+    c.B.U   = vshr_n_u8(c.B.U, 7);
+    return  ((uint8x8_t){vaddv_u8(c.B.U)});
+}
+
+INLINE(  int8x8_t,DBI_VEQN)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE  c;
+    c.B.U   = vceq_s8(a, b);
+    c.B.U   = vshr_n_u8(c.B.U, 7);
+    return  ((int8x8_t){vaddv_s8(c.B.I)});
+}
+
+INLINE(uint16x4_t,DHU_VEQN)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE  c;
+    c.H.U   = vceq_u16(a, b);
+    c.H.U   = vshr_n_u16(c.H.U, 15);
+    return  ((uint16x4_t){vaddv_u16(c.H.U)});
+}
+
+INLINE( int16x4_t,DHI_VEQN)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE  c;
+    c.H.U   = vceq_s16(a, b);
+    c.H.U   = vshr_n_u16(c.H.U, 15);
+    return  ((int16x4_t){vaddv_s16(c.H.I)});
+}
+
+INLINE( int16x4_t,DHF_VEQN) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE  c;
+    c.H.I   = DHF_CEQS(a,b);
+    c.H.U   = vshr_n_u16(c.H.U, 15);
+    return  ((int16x4_t){vaddv_s16(c.H.I)});
+}
+
+INLINE(uint32x2_t,DWU_VEQN)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE  c;
+    c.W.U   = vceq_u32(a, b);
+    c.W.U   = vshr_n_u32(c.W.U, 31);
+    return  ((uint32x2_t){vaddv_u32(c.W.U)});
+}
+
+INLINE( int32x2_t,DWI_VEQN)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE  c;
+    c.W.U   = vceq_s32(a, b);
+    c.W.U   = vshr_n_u32(c.W.U, 31);
+    return  ((int32x2_t){vaddv_s32(c.W.I)});
+}
+
+INLINE( int32x2_t,DWF_VEQN) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE  c;
+    c.W.U   = vceq_f32(a, b);
+    c.W.U   = vshr_n_u32(c.W.U, 31);
+    return  ((int32x2_t){vaddv_s32(c.W.I)});
+}
+
+
+INLINE(uint8x16_t,QBU_VEQN)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE  c;
+    c.B.U   = vceqq_u8(a, b);
+    c.B.U   = vshrq_n_u8(c.B.U, 7);
+    return  ((uint8x16_t){vaddvq_u8(c.B.U)});
+}
+
+INLINE( int8x16_t,QBI_VEQN)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE  c;
+    c.B.U   = vceqq_s8(a, b);
+    c.B.U   = vshrq_n_u8(c.B.U, 7);
+    return  ((int8x16_t){vaddvq_s8(c.B.I)});
+}
+
+
+INLINE(uint16x8_t,QHU_VEQN)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE  c;
+    c.H.U   = vceqq_u16(a, b);
+    c.H.U   = vshrq_n_u16(c.H.U, 15);
+    return  ((uint16x8_t){vaddvq_u16(c.H.U)});
+}
+
+INLINE( int16x8_t,QHI_VEQN)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE  c;
+    c.H.U   = vceqq_s16(a, b);
+    c.H.U   = vshrq_n_u16(c.H.U, 15);
+    return  ((int16x8_t){vaddvq_s16(c.H.I)});
+}
+
+INLINE( int16x8_t,QHF_VEQN) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE  c;
+    c.H.I   = QHF_CEQS(a,b);
+    c.H.U   = vshrq_n_u16(c.H.U, 15);
+    return  ((int16x8_t){vaddvq_s16(c.H.I)});
+}
+
+
+INLINE(uint32x4_t,QWU_VEQN)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE  c;
+    c.W.U   = vceqq_u32(a, b);
+    c.W.U   = vshrq_n_u32(c.W.U, 31);
+    return  ((uint32x4_t){vaddvq_u32(c.W.U)});
+}
+
+INLINE( int32x4_t,QWI_VEQN)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE  c;
+    c.W.U   = vceqq_s32(a, b);
+    c.W.U   = vshrq_n_u32(c.W.U, 31);
+    return  ((int32x4_t){vaddvq_s32(c.W.I)});
+}
+
+INLINE( int32x4_t,QWF_VEQN) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE  c;
+    c.W.U   = vceqq_f32(a, b);
+    c.W.U   = vshrq_n_u32(c.W.U, 31);
+    return  ((int32x4_t){vaddvq_s32(c.W.I)});
+}
+
+
+INLINE(uint64x2_t,QDU_VEQN)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE  c;
+    c.D.U   = vceqq_u64(a, b);
+    c.D.U   = vshrq_n_u64(c.D.U, 63);
+    return  ((uint64x2_t){vaddvq_u64(c.D.U)});
+}
+
+INLINE( int64x2_t,QDI_VEQN)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE  c;
+    c.D.U   = vceqq_s64(a, b);
+    c.D.U   = vshrq_n_u64(c.D.U, 63);
+    return  ((int64x2_t){vaddvq_s64(c.D.I)});
+}
+
+INLINE( int64x2_t,QDF_VEQN) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE  c;
+    c.W.U   = vceqq_f64(a, b);
+    c.W.U   = vshrq_n_u64(c.D.U, 63);
+    return  ((int64x2_t){vaddvq_s64(c.D.I)});
+}
+
+
+INLINE(Vwbu,VWBU_VEQN) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_VEQN(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_VEQN) (Vwbi a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.I = DBI_VEQN(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_VEQN) (Vwbc a, Vwbc b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_VEQN(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vwhu,VWHU_VEQN) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.U = DHU_VEQN(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_VEQN) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHI_VEQN(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHF_VEQN) (Vwhf a, Vwhf b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHF_VEQN(x.H.F, y.H.F);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return ((Vwhi){a.V0});
+}
+
+INLINE(Vdbu,VDBU_VEQN) (Vdbu a, Vdbu b) {return DBU_VEQN(a,b);}
+INLINE(Vdbi,VDBI_VEQN) (Vdbi a, Vdbi b) {return DBI_VEQN(a,b);}
+INLINE(Vdbc,VDBC_VEQN) (Vdbc a, Vdbc b) {a.V0 = DBC_VEQN(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_VEQN) (Vdhu a, Vdhu b) {return DHU_VEQN(a,b);}
+INLINE(Vdhi,VDHI_VEQN) (Vdhi a, Vdhi b) {return DHI_VEQN(a,b);}
+INLINE(Vdhi,VDHF_VEQN) (Vdhf a, Vdhf b) {return DHF_VEQN(a,b);}
+INLINE(Vdwu,VDWU_VEQN) (Vdwu a, Vdwu b) {return DWU_VEQN(a,b);}
+INLINE(Vdwi,VDWI_VEQN) (Vdwi a, Vdwi b) {return DWI_VEQN(a,b);}
+INLINE(Vdwi,VDWF_VEQN) (Vdwf a, Vdwf b) {return DWF_VEQN(a,b);}
+
+INLINE(Vqbu,VQBU_VEQN) (Vqbu a, Vqbu b) {return QBU_VEQN(a,b);}
+INLINE(Vqbi,VQBI_VEQN) (Vqbi a, Vqbi b) {return QBI_VEQN(a,b);}
+INLINE(Vqbc,VQBC_VEQN) (Vqbc a, Vqbc b) {a.V0 = QBC_VEQN(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_VEQN) (Vqhu a, Vqhu b) {return QHU_VEQN(a,b);}
+INLINE(Vqhi,VQHI_VEQN) (Vqhi a, Vqhi b) {return QHI_VEQN(a,b);}
+INLINE(Vqhi,VQHF_VEQN) (Vqhf a, Vqhf b) {return QHF_VEQN(a,b);}
+INLINE(Vqwu,VQWU_VEQN) (Vqwu a, Vqwu b) {return QWU_VEQN(a,b);}
+INLINE(Vqwi,VQWI_VEQN) (Vqwi a, Vqwi b) {return QWI_VEQN(a,b);}
+INLINE(Vqwi,VQWF_VEQN) (Vqwf a, Vqwf b) {return QWF_VEQN(a,b);}
+INLINE(Vqdu,VQDU_VEQN) (Vqdu a, Vqdu b) {return QDU_VEQN(a,b);}
+INLINE(Vqdi,VQDI_VEQN) (Vqdi a, Vqdi b) {return QDI_VEQN(a,b);}
+INLINE(Vqdi,VQDF_VEQN) (Vqdf a, Vqdf b) {return QDF_VEQN(a,b);}
+
+#if 0 // _LEAVE_ARM_VEQN
+}
+#endif
+
+#if 0 // _ENTER_ARM_VEQL
+{
+#endif
+
+#if CHAR_MIN
+#   define DBC_VEQL DBI_VEQL
+#   define QBC_VEQL QBI_VEQL
+#else
+#   define DBC_VEQL DBU_VEQL
+#   define QBC_VEQL QBU_VEQL
+#endif
+/*
+
+    [0] cmeq    v0.8b, v0.8b, v1.8b
+    [1] fmov    x8, d0
+    [2] rev     x8, x8
+    [3] clz     x8, x8
+    [4] lsl     x8, x8, #3
+    [5] fmov    d0, x8
+    
+The difference between vrev64_u8+__builtin_clzll and just
+__builtin_ctzll is [2] is replaced with rbit x8, x8 for 
+the latter. Not sure which is better 
+
+*/
+INLINE( uint8x8_t,DBU_VEQL)   (uint8x8_t a,   uint8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_u8(a, b)};
+    c.B.U = vrev64_u8(c.B.U);
+    c.U = __builtin_clzll(c.U)/8;
+    return  c.B.U;
+}
+
+INLINE(  int8x8_t,DBI_VEQL)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_s8(a, b)};
+    c.B.U = vrev64_u8(c.B.U);
+    c.U = __builtin_clzll(c.U)/8;
+    //c.U = __builtin_ctzll(c.U)/8;
+    return  c.B.I;
+}
+
+INLINE(uint16x4_t,DHU_VEQL)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_u16(a, b)};
+    c.U = __builtin_ctzll(c.U)/16;
+    return  c.H.U;
+}
+
+INLINE( int16x4_t,DHI_VEQL)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_s16(a, b)};
+    c.U = __builtin_ctzll(c.U)/16;
+    return  c.H.I;
+}
+
+INLINE( int16x4_t,DHF_VEQL) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.I=DHF_CEQS(a, b)};
+    c.U = __builtin_ctzll(c.U)/16;
+    return  c.H.I;
+}
+
+INLINE(uint32x2_t,DWU_VEQL)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_u32(a, b)};
+    c.U = __builtin_ctzll(c.U)/32;
+    return  c.W.U;
+}
+
+INLINE( int32x2_t,DWI_VEQL)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.I=vceq_s32(a, b)};
+    c.U = __builtin_ctzll(c.U)/32;
+    return  c.W.I;
+}
+
+INLINE( int32x2_t,DWF_VEQL) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_f32(a, b)};
+    c.U = __builtin_ctzll(c.U)/32;
+    return  c.W.I;
+}
+
+
+INLINE(uint64_t,MY_VEQLQ_CSZL) (QUAD_UTYPE x)
+{
+    QUAD_TYPE   c = {.U=x};
+    c.Lo.U = __builtin_ctzll(c.Lo.U);
+    if (c.Lo.U == 64)
+        c.Lo.U += __builtin_ctzll(c.Hi.U);
+    return  c.Lo.U;
+}
+
+/*  Without the inline MY_VEQLQ_CSZL, clang will use a 
+    branch for the 128 bit veql ops.
+    TODO: optimize 
+*/
+INLINE(uint8x16_t,QBU_VEQL)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_u8(a, b)};
+    return  ((uint8x16_t){MY_VEQLQ_CSZL(q.U)/8});
+}
+
+
+INLINE( int8x16_t,QBI_VEQL)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_s8(a, b)};
+    return  ((int8x16_t){MY_VEQLQ_CSZL(q.U)/8});
+}
+
+
+INLINE(uint16x8_t,QHU_VEQL)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_u16(a, b)};
+    return  ((uint16x8_t){MY_VEQLQ_CSZL(q.U)/16});
+}
+
+INLINE( int16x8_t,QHI_VEQL)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_s16(a, b)};
+    return  ((int16x8_t){MY_VEQLQ_CSZL(q.U)/16});
+}
+
+INLINE( int16x8_t,QHF_VEQL) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE q = {.H.I=QHF_CEQS(a, b)};
+    return  ((int16x8_t){MY_VEQLQ_CSZL(q.U)/16});
+}
+
+INLINE(uint32x4_t,QWU_VEQL)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_s32(a, b)};
+    return  ((uint32x4_t){MY_VEQLQ_CSZL(q.U)/32});
+}
+
+INLINE( int32x4_t,QWI_VEQL)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_s32(a, b)};
+    return  ((int32x4_t){MY_VEQLQ_CSZL(q.U)/32});
+}
+
+INLINE( int32x4_t,QWF_VEQL) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_f32(a, b)};
+    return  ((int32x4_t){MY_VEQLQ_CSZL(q.U)/32});
+}
+
+INLINE(uint64x2_t,QDU_VEQL)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE q = {.D.U=vceqq_u64(a, b)};
+    return  ((uint64x2_t){MY_VEQLQ_CSZL(q.U)/64});
+}
+
+INLINE( int64x2_t,QDI_VEQL)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE q = {.D.U=vceqq_s64(a, b)};
+    return  ((uint64x2_t){MY_VEQLQ_CSZL(q.U)/64});
+}
+
+INLINE( int64x2_t,QDF_VEQL) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE q = {.D.U=vceqq_f64(a, b)};
+    return  ((uint64x2_t){MY_VEQLQ_CSZL(q.U)/64});
+}
+
+
+INLINE(Vwbu,VWBU_VEQL) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_VEQL(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_VEQL) (Vwbi a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.I = DBI_VEQL(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_VEQL) (Vwbc a, Vwbc b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+#if CHAR_MIN
+    x.B.I = DBI_VEQL(x.B.I, y.B.I);
+#else
+    x.B.U = DBU_VEQL(x.B.U, y.B.U);
+#endif
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vwhu,VWHU_VEQL) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.U = DHU_VEQL(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_VEQL) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHI_VEQL(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHF_VEQL) (Vwhf a, Vwhf b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHF_VEQL(x.H.F, y.H.F);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return ((Vwhi){a.V0});
+}
+
+INLINE(Vdbu,VDBU_VEQL) (Vdbu a, Vdbu b) {return DBU_VEQL(a,b);}
+INLINE(Vdbi,VDBI_VEQL) (Vdbi a, Vdbi b) {return DBI_VEQL(a,b);}
+INLINE(Vdbc,VDBC_VEQL) (Vdbc a, Vdbc b) {a.V0 = DBC_VEQL(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_VEQL) (Vdhu a, Vdhu b) {return DHU_VEQL(a,b);}
+INLINE(Vdhi,VDHI_VEQL) (Vdhi a, Vdhi b) {return DHI_VEQL(a,b);}
+INLINE(Vdhi,VDHF_VEQL) (Vdhf a, Vdhf b) {return DHF_VEQL(a,b);}
+INLINE(Vdwu,VDWU_VEQL) (Vdwu a, Vdwu b) {return DWU_VEQL(a,b);}
+INLINE(Vdwi,VDWI_VEQL) (Vdwi a, Vdwi b) {return DWI_VEQL(a,b);}
+INLINE(Vdwi,VDWF_VEQL) (Vdwf a, Vdwf b) {return DWF_VEQL(a,b);}
+
+INLINE(Vqbu,VQBU_VEQL) (Vqbu a, Vqbu b) {return QBU_VEQL(a,b);}
+INLINE(Vqbi,VQBI_VEQL) (Vqbi a, Vqbi b) {return QBI_VEQL(a,b);}
+INLINE(Vqbc,VQBC_VEQL) (Vqbc a, Vqbc b) {a.V0 = QBC_VEQL(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_VEQL) (Vqhu a, Vqhu b) {return QHU_VEQL(a,b);}
+INLINE(Vqhi,VQHI_VEQL) (Vqhi a, Vqhi b) {return QHI_VEQL(a,b);}
+INLINE(Vqhi,VQHF_VEQL) (Vqhf a, Vqhf b) {return QHF_VEQL(a,b);}
+INLINE(Vqwu,VQWU_VEQL) (Vqwu a, Vqwu b) {return QWU_VEQL(a,b);}
+INLINE(Vqwi,VQWI_VEQL) (Vqwi a, Vqwi b) {return QWI_VEQL(a,b);}
+INLINE(Vqwi,VQWF_VEQL) (Vqwf a, Vqwf b) {return QWF_VEQL(a,b);}
+INLINE(Vqdu,VQDU_VEQL) (Vqdu a, Vqdu b) {return QDU_VEQL(a,b);}
+INLINE(Vqdi,VQDI_VEQL) (Vqdi a, Vqdi b) {return QDI_VEQL(a,b);}
+INLINE(Vqdi,VQDF_VEQL) (Vqdf a, Vqdf b) {return QDF_VEQL(a,b);}
+
+#if 0 // _LEAVE_ARM_VEQL
+}
+#endif
+
+#if 0 // _ENTER_ARM_VEQR
+{
+#endif
+/*
+DHU_VEQR:
+    cmeq        v0.4h,  v0.4h, v1.4h
+    mov         w8,     #48
+    mov         w10,    #128
+    fmov        x9,     d0
+    movi        d0,     #0
+    cmp         x9,     #0
+    clz         x9,     x9
+    csel        w8,     w10,    w8,     eq
+    sub         w8,     w8,     w9
+    lsr         w8,     w8,     #4
+    mov         v0.4[0],w8
+    ret
+
+11 instructions to find the rightmost matching vector lane
+seems way too steep a cos but w/e.
+    
+*/
+#if CHAR_MIN
+#   define DBC_VEQR DBI_VEQR
+#   define QBC_VEQR QBI_VEQR
+#else
+#   define DBC_VEQR DBU_VEQR
+#   define QBC_VEQR QBU_VEQR
+#endif
+
+INLINE( uint8x8_t,DBU_VEQR)   (uint8x8_t a,   uint8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_u8(a, b)};
+    uint64_t n = 128-(c.U ? (64+8) : 0);
+    return  ((uint8x8_t){(n-__builtin_clzll(c.U))/8});
+}
+
+INLINE(  int8x8_t,DBI_VEQR)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_s8(a, b)};
+    uint64_t    n = c.U ? 56 : 128;
+    return  ((int8x8_t){(n-__builtin_clzll(c.U))/8});
+}
+
+
+INLINE(uint16x4_t,DHU_VEQR)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_u16(a, b)};
+    uint64_t n = 128-(c.U ? (64+16) : 0);
+    return  ((uint16x4_t){(n-__builtin_clzll(c.U))/16});
+}
+
+INLINE( int16x4_t,DHI_VEQR)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_s16(a, b)};
+    uint64_t n = 128-(c.U ? (64+16) : 0);
+    return  ((int16x4_t){(n-__builtin_clzll(c.U))/16});
+}
+
+INLINE( int16x4_t,DHF_VEQR) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.I=DHF_CEQS(a, b)};
+    uint64_t n = 128-(c.U ? (64+16) : 0);
+    return  ((int16x4_t){(n-__builtin_clzll(c.U))/16});
+}
+
+INLINE(uint32x2_t,DWU_VEQR)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_u32(a, b)};
+    uint64_t n = 128-(c.U ? (64+32) : 0);
+    return  ((uint32x2_t){(n-__builtin_clzll(c.U))/32});
+}
+
+INLINE( int32x2_t,DWI_VEQR)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_s32(a, b)};
+    uint64_t n = 128-(c.U ? (64+32) : 0);
+    return  ((int32x2_t){(n-__builtin_clzll(c.U))/32});
+}
+
+INLINE( int32x2_t,DWF_VEQR) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_f32(a, b)};
+    uint64_t n = 128-(c.U ? (64+32) : 0);
+    return  ((int32x2_t){(n-__builtin_clzll(c.U))/32});
+}
+
+
+INLINE(uint8x16_t,QBU_VEQR)  (uint8x16_t a,  uint8x16_t b)
+{
+/*
+Compare 16 corresponding bytes of two 128 bit vectors for
+equality and set the lowest 4 bits of the result vector to 
+the rightmost lane that was equal, or 16 if no comparison
+was true. All other bits in the result are set to zero.
+
+    cmeq        v0.16b,  v0.16b, v1.16b
+    mov         w8,     #56
+    mov         w11,    #192
+    mov         x9,     v0.d[1]
+    fmov        x10,    d0
+
+    movi        v0.2d,  #0
+    cmp         x10,    #0
+    csel        w8,     w11,    w8,     eq
+    cmp         x9,     #0
+    mov         w11,    #120
+
+    csel        x9,     x10,    x9,     eq
+    csel        w8,     w8,    w11,     eq
+    clz         x9,     x9
+    sub         w8,     w8,     w9
+    lsr         w8,     w8,     #3
+
+    mov         v0.b[0],w8
+    ret
+    
+*/
+    QUAD_VTYPE  c = {.B.U=vceqq_u8(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-8);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-8) : 192;
+    }
+    return  ((uint8x16_t){(r-__builtin_clzll(l))/8});
+}
+
+
+INLINE( int8x16_t,QBI_VEQR)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE  c = {.B.U=vceqq_s8(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-8);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-8) : 192;
+    }
+    return  ((int8x16_t){(r-__builtin_clzll(l))/8});
+}
+
+INLINE(uint16x8_t,QHU_VEQR)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE  c = {.H.U=vceqq_u16(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-16);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-16) : 192;
+    }
+    return  ((uint16x8_t){(r-__builtin_clzll(l))/16});
+}
+
+INLINE( int16x8_t,QHI_VEQR)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE  c = {.H.U=vceqq_s16(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-16);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-16) : 192;
+    }
+    return  ((int16x8_t){(r-__builtin_clzll(l))/16});
+}
+
+INLINE( int16x8_t,QHF_VEQR) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE  c = {.H.I=QHF_CEQS(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-16);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-16) : 192;
+    }
+    return  ((uint16x8_t){(r-__builtin_clzll(l))/16});
+}
+
+INLINE(uint32x4_t,QWU_VEQR)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE  c = {.W.U=vceqq_u32(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-32);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-32) : 192;
+    }
+    return  ((uint32x4_t){(r-__builtin_clzll(l))/32});
+}
+
+INLINE( int32x4_t,QWI_VEQR)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE  c = {.W.U=vceqq_s32(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-32);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-32) : 192;
+    }
+    return  ((int32x4_t){(r-__builtin_clzll(l))/32});
+}
+
+INLINE( int32x4_t,QWF_VEQR) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE  c = {.W.U=vceqq_f32(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r;
+    if (l)
+        r = (128-32);
+    else 
+    {
+        l = vgetq_lane_u64(c.D.U, 0);
+        r = l ? (64-32) : 192;
+    }
+    return  ((uint32x4_t){(r-__builtin_clzll(l))/32});
+}
+
+INLINE(uint64x2_t,QDU_VEQR)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_u64(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r = vgetq_lane_u64(c.D.U, 0);
+    r = l ? 1 : r ? 0 : 2;
+    return  ((uint64x2_t){r});
+}
+
+INLINE( int64x2_t,QDI_VEQR)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_s64(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r = vgetq_lane_u64(c.D.U, 0);
+    r = l ? 1 : r ? 0 : 2;
+    return  ((int64x2_t){r});
+}
+
+INLINE( int64x2_t,QDF_VEQR) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_f64(a, b)};
+    uint64_t l = vgetq_lane_u64(c.D.U, 1);
+    uint64_t r = vgetq_lane_u64(c.D.U, 0);
+    r = l ? 1 : r ? 0 : 2;
+    return  ((int64x2_t){r});
+}
+
+
+INLINE(Vwbu,VWBU_VEQR) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_VEQR(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_VEQR) (Vwbi a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.I = DBI_VEQR(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_VEQR) (Vwbc a, Vwbc b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+#if CHAR_MIN
+    x.B.I = DBI_VEQR(x.B.I, y.B.I);
+#else
+    x.B.U = DBU_VEQR(x.B.U, y.B.U);
+#endif
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vwhu,VWHU_VEQR) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.U = DHU_VEQR(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_VEQR) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHI_VEQR(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHF_VEQR) (Vwhf a, Vwhf b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHF_VEQR(x.H.F, y.H.F);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return ((Vwhi){a.V0});
+}
+
+INLINE(Vdbu,VDBU_VEQR) (Vdbu a, Vdbu b) {return DBU_VEQR(a,b);}
+INLINE(Vdbi,VDBI_VEQR) (Vdbi a, Vdbi b) {return DBI_VEQR(a,b);}
+INLINE(Vdbc,VDBC_VEQR) (Vdbc a, Vdbc b) {a.V0 = DBC_VEQR(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_VEQR) (Vdhu a, Vdhu b) {return DHU_VEQR(a,b);}
+INLINE(Vdhi,VDHI_VEQR) (Vdhi a, Vdhi b) {return DHI_VEQR(a,b);}
+INLINE(Vdhi,VDHF_VEQR) (Vdhf a, Vdhf b) {return DHF_VEQR(a,b);}
+INLINE(Vdwu,VDWU_VEQR) (Vdwu a, Vdwu b) {return DWU_VEQR(a,b);}
+INLINE(Vdwi,VDWI_VEQR) (Vdwi a, Vdwi b) {return DWI_VEQR(a,b);}
+INLINE(Vdwi,VDWF_VEQR) (Vdwf a, Vdwf b) {return DWF_VEQR(a,b);}
+
+INLINE(Vqbu,VQBU_VEQR) (Vqbu a, Vqbu b) {return QBU_VEQR(a,b);}
+INLINE(Vqbi,VQBI_VEQR) (Vqbi a, Vqbi b) {return QBI_VEQR(a,b);}
+INLINE(Vqbc,VQBC_VEQR) (Vqbc a, Vqbc b) {a.V0 = QBC_VEQR(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_VEQR) (Vqhu a, Vqhu b) {return QHU_VEQR(a,b);}
+INLINE(Vqhi,VQHI_VEQR) (Vqhi a, Vqhi b) {return QHI_VEQR(a,b);}
+INLINE(Vqhi,VQHF_VEQR) (Vqhf a, Vqhf b) {return QHF_VEQR(a,b);}
+INLINE(Vqwu,VQWU_VEQR) (Vqwu a, Vqwu b) {return QWU_VEQR(a,b);}
+INLINE(Vqwi,VQWI_VEQR) (Vqwi a, Vqwi b) {return QWI_VEQR(a,b);}
+INLINE(Vqwi,VQWF_VEQR) (Vqwf a, Vqwf b) {return QWF_VEQR(a,b);}
+INLINE(Vqdu,VQDU_VEQR) (Vqdu a, Vqdu b) {return QDU_VEQR(a,b);}
+INLINE(Vqdi,VQDI_VEQR) (Vqdi a, Vqdi b) {return QDI_VEQR(a,b);}
+INLINE(Vqdi,VQDF_VEQR) (Vqdf a, Vqdf b) {return QDF_VEQR(a,b);}
+
+#if 0 // _LEAVE_ARM_VEQR
+}
+#endif
+
+
+#if 0 // _ENTER_ARM_VNES
+{
+#endif
+
+#if CHAR_MIN
+#   define DBC_VNES DBI_VNES
+#   define QBC_VNES QBI_VNES
+#else
+#   define DBC_VNES DBU_VNES
+#   define QBC_VNES QBU_VNES
+#endif
+
+INLINE(float,WYU_VNES) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.W.U = vceq_u32(x.W.U, y.W.U);
+    x.W.U = vmvn_u32(x.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WBZ_VNES) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z={0};
+    x.B.U = vceq_u8(x.B.U, y.B.U);
+    x.B.U = vmvn_u8(x.B.U);
+    x.B.U = vcgt_u8(x.B.U, z.B.U);
+    x.W.U = vcgt_u32(x.W.U, z.W.U);
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WHZ_VNES) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.U = vceq_u16(x.H.U, y.H.U);
+    x.W.U = vtst_u32(x.W.U, vcreate_u32(UINT32_MAX));
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+INLINE(float,WHF_VNES) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.I = DHF_CEQS(x.H.F, y.H.F);
+    x.W.U = vtst_u32(x.W.U, vcreate_u32(UINT32_MAX));
+    return  vget_lane_f32(x.W.F, 0);
+}
+
+
+INLINE(uint64x1_t,DYU_VNES)  (uint64x1_t a,  uint64x1_t b)
+{
+    DWRD_VTYPE x={.D.U=a}, y={.D.U=b}, z;
+    z.D.U = vceq_u64(y.W.U, z.W.U);
+    z.B.U = vmvn_u8(z.B.U);
+    return  z.D.U;
+}
+
+INLINE( uint8x8_t,DBU_VNES)   (uint8x8_t a,   uint8x8_t b)
+{
+/*
+	cmeq	v0.8b, v0.8b, v1.8b
+	    // v0 = {a[i]==b[i] for i in [0..a.nel-1]}
+
+	fmov	x8, d0
+	cmn	    x8, #1
+	    // set pstate.NZCV = 
+	        mi|ne if x8 < -1 else 
+	        gt|ne if x8 > -1 else
+	        eq
+	csetm	x8, ne
+	    x8 = -1 if eq in pstate.NZCV else 0
+	    
+	fmov	d0, x8
+	ret
+*/
+    DWRD_VTYPE c = {.B.U=vceq_u8(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.B.U;
+}
+
+INLINE(  int8x8_t,DBI_VNES)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE c = {.B.U=vceq_s8(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.B.I;
+}
+
+INLINE(uint16x4_t,DHU_VNES)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE c = {.H.U=vceq_u16(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.H.U;
+}
+
+INLINE( int16x4_t,DHI_VNES)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE c = {.H.U=vceq_s16(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.H.I;
+}
+
+INLINE( int16x4_t,DHF_VNES) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE c = {.H.I=DHF_CEQS(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.H.U;
+}
+
+INLINE(uint32x2_t,DWU_VNES)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_u32(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.W.U;
+}
+
+INLINE( int32x2_t,DWI_VNES)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_s32(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.W.I;
+}
+
+INLINE( int32x2_t,DWF_VNES) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_f32(a, b)};
+    c.U = -(c.U != UINT64_MAX);
+    return  c.W.I;
+}
+
+INLINE(uint64x2_t,QYU_VNES)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vand_u64(l.B.U, r.B.U);
+    l.B.U = vmvn_u8(l.B.U);
+    return  vdupq_lane_u64(l.D.U, 0);
+}
+
+INLINE(uint8x16_t,QBU_VNES)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_u8(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.B.U;
+}
+
+INLINE( int8x16_t,QBI_VNES)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_s8(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.B.I;
+}
+
+INLINE(uint16x8_t,QHU_VNES)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_u16(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.H.U;
+}
+
+INLINE( int16x8_t,QHI_VNES)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_s16(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.H.I;
+}
+
+INLINE( int16x8_t,QHF_VNES) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE q = {.H.I=QHF_CEQS(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.H.I;
+}
+
+INLINE(uint32x4_t,QWU_VNES)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_u32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.W.U;
+}
+
+INLINE( int32x4_t,QWI_VNES)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_s32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.W.I;
+}
+
+INLINE( int32x4_t,QWF_VNES) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_f32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    r.U = -(r.U != UINT64_MAX);
+    q.D.U = vdupq_lane_u64(r.D.U, 0);
+    return  q.W.I;
+}
+
+
+INLINE(uint64x2_t,QDU_VNES)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a,b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vand_u8(l.B.U, r.B.U);
+    return  vdupq_lane_u64(l.D.U, 0);
+}
+
+INLINE( int64x2_t,QDI_VNES)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_s64(a,b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vand_u8(l.B.U, r.B.U);
+    return  vdupq_lane_s64(l.D.U, 0);
+}
+
+INLINE( int64x2_t,QDF_VNES) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_f64(a,b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vand_u8(l.B.U, r.B.U);
+    return  vdupq_lane_s64(l.D.I, 0);
+}
+
+INLINE(Vwyu,VWYU_VNES) (Vwyu a, Vwyu b) {a.V0=WYU_VNES(a.V0,b.V0); return a;}
+INLINE(Vwbu,VWBU_VNES) (Vwbu a, Vwbu b) {a.V0=WBZ_VNES(a.V0,b.V0); return a;}
+INLINE(Vwbi,VWBI_VNES) (Vwbi a, Vwbi b) {a.V0=WBZ_VNES(a.V0,b.V0); return a;}
+INLINE(Vwbc,VWBC_VNES) (Vwbc a, Vwbc b) {a.V0=WBZ_VNES(a.V0,b.V0); return a;}
+INLINE(Vwhu,VWHU_VNES) (Vwhu a, Vwhu b) {a.V0=WHZ_VNES(a.V0,b.V0); return a;}
+INLINE(Vwhi,VWHI_VNES) (Vwhi a, Vwhi b) {a.V0=WHZ_VNES(a.V0,b.V0); return a;}
+INLINE(Vwhi,VWHF_VNES) (Vwhi a, Vwhi b) {return ((Vwhi){WHZ_VNES(a.V0,b.V0)});}
+
+INLINE(Vdyu,VDYU_VNES) (Vdyu a, Vdyu b) {a.V0=DYU_VNES(a.V0,b.V0); return a;}
+INLINE(Vdbu,VDBU_VNES) (Vdbu a, Vdbu b) {return DBU_VNES(a, b);}
+INLINE(Vdbi,VDBI_VNES) (Vdbi a, Vdbi b) {return DBI_VNES(a, b);}
+INLINE(Vdbc,VDBC_VNES) (Vdbc a, Vdbc b) {a.V0=DBC_VNES(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_VNES) (Vdhu a, Vdhu b) {return DHU_VNES(a, b);}
+INLINE(Vdhi,VDHI_VNES) (Vdhi a, Vdhi b) {return DHI_VNES(a, b);}
+INLINE(Vdhi,VDHF_VNES) (Vdhf a, Vdhf b) {return ((Vdhi){DHF_VNES(a, b)});}
+INLINE(Vdwu,VDWU_VNES) (Vdwu a, Vdwu b) {return DWU_VNES(a, b);}
+INLINE(Vdwi,VDWI_VNES) (Vdwi a, Vdwi b) {return DWI_VNES(a, b);}
+INLINE(Vdwi,VDWF_VNES) (Vdwf a, Vdwf b) {return DWF_VNES(a, b);}
+
+INLINE(Vqyu,VQYU_VNES) (Vqyu a, Vqyu b) {a.V0=QYU_VNES(a.V0,b.V0); return a;}
+INLINE(Vqbu,VQBU_VNES) (Vqbu a, Vqbu b) {return QBU_VNES(a, b);}
+INLINE(Vqbi,VQBI_VNES) (Vqbi a, Vqbi b) {return QBI_VNES(a, b);}
+INLINE(Vqbc,VQBC_VNES) (Vqbc a, Vqbc b) {a.V0=QBC_VNES(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_VNES) (Vqhu a, Vqhu b) {return QHU_VNES(a, b);}
+INLINE(Vqhi,VQHI_VNES) (Vqhi a, Vqhi b) {return QHI_VNES(a, b);}
+INLINE(Vqhi,VQHF_VNES) (Vqhf a, Vqhf b) {return ((Vqhi){QHF_VNES(a, b)});}
+INLINE(Vqwu,VQWU_VNES) (Vqwu a, Vqwu b) {return QWU_VNES(a, b);}
+INLINE(Vqwi,VQWI_VNES) (Vqwi a, Vqwi b) {return QWI_VNES(a, b);}
+INLINE(Vqwi,VQWF_VNES) (Vqwf a, Vqwf b) {return QWF_VNES(a, b);}
+INLINE(Vqdu,VQDU_VNES) (Vqdu a, Vqdu b) {return QDU_VNES(a, b);}
+INLINE(Vqdi,VQDI_VNES) (Vqdi a, Vqdi b) {return QDI_VNES(a, b);}
+INLINE(Vqdi,VQDF_VNES) (Vqdf a, Vqdf b) {return QDF_VNES(a, b);}
+
+#if 0 // _LEAVE_ARM_VNES
+}
+#endif
+
+#if 0 // _ENTER_ARM_VNEY
+{
+#endif
+
+#if CHAR_MIN
+#   define DBC_VNEY DBI_VNEY
+#   define QBC_VNEY QBI_VNEY
+#else
+#   define DBC_VNEY DBU_VNEY
+#   define QBC_VNEY QBU_VNEY
+#endif
+
+INLINE(uint32_t,WYU_VNEY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.W.U = vceq_u32(x.W.U, y.W.U);
+    return  UINT32_MAX != vget_lane_u32(x.W.U, 0);
+}
+
+INLINE(uint32_t,WBZ_VNEY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b}, z={0};
+    x.B.U = vceq_u8(x.B.U, y.B.U);
+    return  UINT32_MAX != vget_lane_u32(x.W.U, 0);
+}
+
+INLINE(uint32_t,WHZ_VNEY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.B.U = vceq_u16(x.H.U, y.H.U);
+    return  UINT32_MAX != vget_lane_u32(x.W.U, 0);
+}
+
+INLINE(uint32_t,WHF_VNEY) (float a, float b)
+{
+    DWRD_VTYPE x={.W.F=a}, y={.W.F=b};
+    x.H.I = DHF_CEQS(x.H.F, y.H.F);
+    return  UINT32_MAX != vget_lane_u32(x.W.U, 0);
+}
+
+
+INLINE(uint64_t,DYU_VNEY)  (uint64x1_t a,  uint64x1_t b)
+{
+    DWRD_VTYPE c = {.D.U=vceq_u64(a, b)};
+    return  UINT64_MAX != vget_lane_u64(c.D.U, 0);
+}
+
+INLINE(uint64_t,DBU_VNEY)   (uint8x8_t a,   uint8x8_t b)
+{
+    DWRD_VTYPE c = {.B.U=vceq_u8(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,DBI_VNEY)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE c = {.B.U=vceq_s8(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,DHU_VNEY)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE c = {.H.U=vceq_u16(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,DHI_VNEY)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE c = {.H.U=vceq_s16(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,DHF_VNEY) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE c = {.H.I=DHF_CEQS(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,DWU_VNEY)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_u32(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,DWI_VNEY)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_s32(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,DWF_VNEY) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE c = {.W.U=vceq_f32(a, b)};
+    return  UINT64_MAX != c.U;
+}
+
+INLINE(uint64_t,QYU_VNEY)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.B.U = vand_u64(l.B.U, r.B.U);
+    return  UINT64_MAX != l.U;
+}
+
+INLINE(uint64_t,QBU_VNEY)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_u8(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+INLINE(uint64_t,QBI_VNEY)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_s8(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+INLINE(uint64_t,QHU_VNEY)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_u16(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+INLINE(uint64_t,QHI_VNEY)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_s16(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+INLINE(uint64_t,QHF_VNEY) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE q = {.H.I=QHF_CEQS(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+INLINE(uint64_t,QWU_VNEY)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_u32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+INLINE(uint64_t,QWI_VNEY)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_s32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+INLINE(uint64_t,QWF_VNEY) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_f32(a, b)};
+    DWRD_VTYPE l = {.D.U=vget_low_u64(q.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(q.D.U)};
+    r.B.U = vand_u8(l.B.U, r.B.U);
+    return  UINT64_MAX != r.U;
+}
+
+
+INLINE(uint64_t,QDU_VNEY)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_u64(a,b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    return !(l.U&r.U);
+}
+
+INLINE(uint64_t,QDI_VNEY)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_s64(a,b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    return !(l.U&r.U);
+}
+
+INLINE(uint64_t,QDF_VNEY) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE c = {.D.U=vceqq_f64(a,b)};
+    c.B.U = vmvnq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    return !(l.U&r.U);
+}
+
+INLINE(_Bool,VWYU_VNEY) (Vwyu a, Vwyu b) {return WYU_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VWBU_VNEY) (Vwbu a, Vwbu b) {return WBZ_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VWBI_VNEY) (Vwbi a, Vwbi b) {return WBZ_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VWBC_VNEY) (Vwbc a, Vwbc b) {return WBZ_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VWHU_VNEY) (Vwhu a, Vwhu b) {return WHZ_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VWHI_VNEY) (Vwhi a, Vwhi b) {return WHZ_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VWHF_VNEY) (Vwhf a, Vwhf b) {return WHF_VNEY(a.V0, b.V0);}
+
+INLINE(_Bool,VDYU_VNEY) (Vdyu a, Vdyu b) {return DYU_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VDBU_VNEY) (Vdbu a, Vdbu b) {return DBU_VNEY(a, b);}
+INLINE(_Bool,VDBI_VNEY) (Vdbi a, Vdbi b) {return DBI_VNEY(a, b);}
+INLINE(_Bool,VDBC_VNEY) (Vdbc a, Vdbc b) {return DBC_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VDHU_VNEY) (Vdhu a, Vdhu b) {return DHU_VNEY(a, b);}
+INLINE(_Bool,VDHI_VNEY) (Vdhi a, Vdhi b) {return DHI_VNEY(a, b);}
+INLINE(_Bool,VDHF_VNEY) (Vdhf a, Vdhf b) {return DHF_VNEY(a, b);}
+INLINE(_Bool,VDWU_VNEY) (Vdwu a, Vdwu b) {return DWU_VNEY(a, b);}
+INLINE(_Bool,VDWI_VNEY) (Vdwi a, Vdwi b) {return DWI_VNEY(a, b);}
+INLINE(_Bool,VDWF_VNEY) (Vdwf a, Vdwf b) {return DWF_VNEY(a, b);}
+
+INLINE(_Bool,VQYU_VNEY) (Vqyu a, Vqyu b) {return QYU_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VQBU_VNEY) (Vqbu a, Vqbu b) {return QBU_VNEY(a, b);}
+INLINE(_Bool,VQBI_VNEY) (Vqbi a, Vqbi b) {return QBI_VNEY(a, b);}
+INLINE(_Bool,VQBC_VNEY) (Vqbc a, Vqbc b) {return QBC_VNEY(a.V0, b.V0);}
+INLINE(_Bool,VQHU_VNEY) (Vqhu a, Vqhu b) {return QHU_VNEY(a, b);}
+INLINE(_Bool,VQHI_VNEY) (Vqhi a, Vqhi b) {return QHI_VNEY(a, b);}
+INLINE(_Bool,VQHF_VNEY) (Vqhf a, Vqhf b) {return QHF_VNEY(a, b);}
+INLINE(_Bool,VQWU_VNEY) (Vqwu a, Vqwu b) {return QWU_VNEY(a, b);}
+INLINE(_Bool,VQWI_VNEY) (Vqwi a, Vqwi b) {return QWI_VNEY(a, b);}
+INLINE(_Bool,VQWF_VNEY) (Vqwf a, Vqwf b) {return QWF_VNEY(a, b);}
+INLINE(_Bool,VQDU_VNEY) (Vqdu a, Vqdu b) {return QDU_VNEY(a, b);}
+INLINE(_Bool,VQDI_VNEY) (Vqdi a, Vqdi b) {return QDI_VNEY(a, b);}
+INLINE(_Bool,VQDF_VNEY) (Vqdf a, Vqdf b) {return QDF_VNEY(a, b);}
+
+#if 0 // _LEAVE_ARM_VNEY
+}
+#endif
+
+#if 0 // _ENTER_ARM_VNEN
+{
+#endif
+
+#if CHAR_MIN
+#   define DBC_VNEN DBI_VNEN
+#   define QBC_VNEN QBI_VNEN
+#else
+#   define DBC_VNEN DBU_VNEN
+#   define QBC_VNEN QBU_VNEN
+#endif
+
+INLINE( uint8x8_t,DBU_VNEN)   (uint8x8_t a,   uint8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_u8(a, b)};
+    c.B.U   = vmvn_u8(c.B.U);
+    c.B.U   = vshr_n_u8(c.B.U, 7);
+    return  ((uint8x8_t){vaddv_u8(c.B.U)});
+}
+
+INLINE(  int8x8_t,DBI_VNEN)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_s8(a, b)};
+    c.B.U   = vmvn_u8(c.B.U);
+    c.B.U   = vshr_n_u8(c.B.U, 7);
+    return  ((int8x8_t){vaddv_s8(c.B.I)});
+}
+
+INLINE(uint16x4_t,DHU_VNEN)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_u16(a, b)};
+    c.B.U   = vmvn_u8(c.B.U);
+    c.H.U   = vshr_n_u16(c.H.U, 15);
+    return  ((uint16x4_t){vaddv_u16(c.H.U)});
+}
+
+INLINE( int16x4_t,DHI_VNEN)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_s16(a, b)};
+    c.B.U   = vmvn_u8(c.B.U);
+    c.H.U   = vshr_n_u16(c.H.U, 15);
+    return  ((int16x4_t){vaddv_s16(c.H.I)});
+}
+
+INLINE( int16x4_t,DHF_VNEN) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.I=DHF_CEQS(a,b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.H.U = vshr_n_u16(c.H.U, 15);
+    return  ((int16x4_t){vaddv_s16(c.H.I)});
+}
+
+INLINE(uint32x2_t,DWU_VNEN)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_u32(a, b)};
+    c.B.U   = vmvn_u8(c.B.U);
+    c.W.U   = vshr_n_u32(c.W.U, 31);
+    return  ((uint32x2_t){vaddv_u32(c.W.U)});
+}
+
+INLINE( int32x2_t,DWI_VNEN)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_s32(a, b)};
+    c.B.U   = vmvn_u8(c.B.U);
+    c.W.U   = vshr_n_u32(c.W.U, 31);
+    return  ((int32x2_t){vaddv_s32(c.W.I)});
+}
+
+INLINE( int32x2_t,DWF_VNEN) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_f32(a, b)};
+    c.B.U   = vmvn_u8(c.B.U);
+    c.W.U   = vshr_n_u32(c.W.U, 31);
+    return  ((int32x2_t){vaddv_s32(c.W.I)});
+}
+
+
+INLINE(uint8x16_t,QBU_VNEN)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE  c = {.B.U=vceqq_u8(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.B.U   = vshrq_n_u8(c.B.U, 7);
+    return  ((uint8x16_t){vaddvq_u8(c.B.U)});
+}
+
+INLINE( int8x16_t,QBI_VNEN)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE  c = {.B.U=vceqq_s8(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.B.U   = vshrq_n_u8(c.B.U, 7);
+    return  ((int8x16_t){vaddvq_s8(c.B.I)});
+}
+
+
+INLINE(uint16x8_t,QHU_VNEN)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE  c = {.H.U=vceqq_u16(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.H.U   = vshrq_n_u16(c.H.U, 15);
+    return  ((uint16x8_t){vaddvq_u16(c.H.U)});
+}
+
+INLINE( int16x8_t,QHI_VNEN)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE  c = {.H.U=vceqq_s16(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.H.U   = vshrq_n_u16(c.H.U, 15);
+    return  ((int16x8_t){vaddvq_s16(c.H.I)});
+}
+
+INLINE( int16x8_t,QHF_VNEN) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE  c = {.H.U=QHF_CEQS(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.H.U   = vshrq_n_u16(c.H.U, 15);
+    return  ((int16x8_t){vaddvq_s16(c.H.I)});
+}
+
+
+INLINE(uint32x4_t,QWU_VNEN)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE  c = {.W.U=vceqq_u32(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.W.U   = vshrq_n_u32(c.W.U, 31);
+    return  ((uint32x4_t){vaddvq_u32(c.W.U)});
+}
+
+INLINE( int32x4_t,QWI_VNEN)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE  c = {.W.U=vceqq_s32(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.W.U   = vshrq_n_u32(c.W.U, 31);
+    return  ((int32x4_t){vaddvq_s32(c.W.I)});
+}
+
+INLINE( int32x4_t,QWF_VNEN) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE  c = {.W.U=vceqq_f32(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.W.U   = vshrq_n_u32(c.W.U, 31);
+    return  ((int32x4_t){vaddvq_s32(c.W.I)});
+}
+
+
+INLINE(uint64x2_t,QDU_VNEN)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_u64(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.D.U   = vshrq_n_u64(c.D.U, 63);
+    return  ((uint64x2_t){vaddvq_u64(c.D.U)});
+}
+
+INLINE( int64x2_t,QDI_VNEN)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_s64(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.D.U   = vshrq_n_u64(c.D.U, 63);
+    return  ((int64x2_t){vaddvq_s64(c.D.I)});
+}
+
+INLINE( int64x2_t,QDF_VNEN) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE  c = {.D.U=vceqq_f64(a, b)};
+    c.B.U   = vmvnq_u8(c.B.U);
+    c.D.U   = vshrq_n_u64(c.D.U, 63);
+    return  ((int64x2_t){vaddvq_s64(c.D.I)});
+}
+
+
+INLINE(Vwbu,VWBU_VNEN) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_VNEN(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_VNEN) (Vwbi a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.I = DBI_VNEN(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_VNEN) (Vwbc a, Vwbc b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_VNEN(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vwhu,VWHU_VNEN) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.U = DHU_VNEN(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_VNEN) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHI_VNEN(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHF_VNEN) (Vwhf a, Vwhf b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHF_VNEN(x.H.F, y.H.F);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return ((Vwhi){a.V0});
+}
+
+INLINE(Vdbu,VDBU_VNEN) (Vdbu a, Vdbu b) {return DBU_VNEN(a,b);}
+INLINE(Vdbi,VDBI_VNEN) (Vdbi a, Vdbi b) {return DBI_VNEN(a,b);}
+INLINE(Vdbc,VDBC_VNEN) (Vdbc a, Vdbc b) {a.V0 = DBC_VNEN(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_VNEN) (Vdhu a, Vdhu b) {return DHU_VNEN(a,b);}
+INLINE(Vdhi,VDHI_VNEN) (Vdhi a, Vdhi b) {return DHI_VNEN(a,b);}
+INLINE(Vdhi,VDHF_VNEN) (Vdhf a, Vdhf b) {return DHF_VNEN(a,b);}
+INLINE(Vdwu,VDWU_VNEN) (Vdwu a, Vdwu b) {return DWU_VNEN(a,b);}
+INLINE(Vdwi,VDWI_VNEN) (Vdwi a, Vdwi b) {return DWI_VNEN(a,b);}
+INLINE(Vdwi,VDWF_VNEN) (Vdwf a, Vdwf b) {return DWF_VNEN(a,b);}
+
+INLINE(Vqbu,VQBU_VNEN) (Vqbu a, Vqbu b) {return QBU_VNEN(a,b);}
+INLINE(Vqbi,VQBI_VNEN) (Vqbi a, Vqbi b) {return QBI_VNEN(a,b);}
+INLINE(Vqbc,VQBC_VNEN) (Vqbc a, Vqbc b) {a.V0 = QBC_VNEN(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_VNEN) (Vqhu a, Vqhu b) {return QHU_VNEN(a,b);}
+INLINE(Vqhi,VQHI_VNEN) (Vqhi a, Vqhi b) {return QHI_VNEN(a,b);}
+INLINE(Vqhi,VQHF_VNEN) (Vqhf a, Vqhf b) {return QHF_VNEN(a,b);}
+INLINE(Vqwu,VQWU_VNEN) (Vqwu a, Vqwu b) {return QWU_VNEN(a,b);}
+INLINE(Vqwi,VQWI_VNEN) (Vqwi a, Vqwi b) {return QWI_VNEN(a,b);}
+INLINE(Vqwi,VQWF_VNEN) (Vqwf a, Vqwf b) {return QWF_VNEN(a,b);}
+INLINE(Vqdu,VQDU_VNEN) (Vqdu a, Vqdu b) {return QDU_VNEN(a,b);}
+INLINE(Vqdi,VQDI_VNEN) (Vqdi a, Vqdi b) {return QDI_VNEN(a,b);}
+INLINE(Vqdi,VQDF_VNEN) (Vqdf a, Vqdf b) {return QDF_VNEN(a,b);}
+
+#if 0 // _LEAVE_ARM_VNEN
+}
+#endif
+
+
+#if 0 // _ENTER_ARM_VNEL
+{
+#endif
+
+#if CHAR_MIN
+#   define DBC_VNEL DBI_VNEL
+#   define QBC_VNEL QBI_VNEL
+#else
+#   define DBC_VNEL DBU_VNEL
+#   define QBC_VNEL QBU_VNEL
+#endif
+
+INLINE( uint8x8_t,DBU_VNEL)   (uint8x8_t a,   uint8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_u8(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.B.U = vrev64_u8(c.B.U);
+    c.U = __builtin_clzll(c.U)/8;
+    return  c.B.U;
+}
+
+INLINE(  int8x8_t,DBI_VNEL)    (int8x8_t a,    int8x8_t b)
+{
+    DWRD_VTYPE  c = {.B.U=vceq_s8(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.B.U = vrev64_u8(c.B.U);
+    c.U = __builtin_clzll(c.U)/8;
+    return  c.B.I;
+}
+
+INLINE(uint16x4_t,DHU_VNEL)  (uint16x4_t a,  uint16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_u16(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.U = __builtin_ctzll(c.U)/16;
+    return  c.H.U;
+}
+
+INLINE( int16x4_t,DHI_VNEL)   (int16x4_t a,   int16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.U=vceq_s16(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.U = __builtin_ctzll(c.U)/16;
+    return  c.H.I;
+}
+
+INLINE( int16x4_t,DHF_VNEL) (float16x4_t a, float16x4_t b)
+{
+    DWRD_VTYPE  c = {.H.I=DHF_CEQS(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.U = __builtin_ctzll(c.U)/16;
+    return  c.H.I;
+}
+
+INLINE(uint32x2_t,DWU_VNEL)  (uint32x2_t a,  uint32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_u32(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.U = __builtin_ctzll(c.U)/32;
+    return  c.W.U;
+}
+
+INLINE( int32x2_t,DWI_VNEL)   (int32x2_t a,   int32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.I=vceq_s32(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.U = __builtin_ctzll(c.U)/32;
+    return  c.W.I;
+}
+
+INLINE( int32x2_t,DWF_VNEL) (float32x2_t a, float32x2_t b)
+{
+    DWRD_VTYPE  c = {.W.U=vceq_f32(a, b)};
+    c.B.U = vmvn_u8(c.B.U);
+    c.U = __builtin_ctzll(c.U)/32;
+    return  c.W.I;
+}
+
+
+INLINE(uint64_t,MY_VNELQ_CSZL) (QUAD_UTYPE x)
+{
+    QUAD_TYPE   c = {.U=x};
+    c.Lo.U = __builtin_ctzll(c.Lo.U);
+    if (c.Lo.U == 64)
+        c.Lo.U += __builtin_ctzll(c.Hi.U);
+    return  c.Lo.U;
+}
+
+INLINE(uint8x16_t,QBU_VNEL)  (uint8x16_t a,  uint8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_u8(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((uint8x16_t){MY_VNELQ_CSZL(q.U)/8});
+}
+
+
+INLINE( int8x16_t,QBI_VNEL)   (int8x16_t a,   int8x16_t b)
+{
+    QUAD_VTYPE q = {.B.U=vceqq_s8(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((int8x16_t){MY_VNELQ_CSZL(q.U)/8});
+}
+
+
+INLINE(uint16x8_t,QHU_VNEL)  (uint16x8_t a,  uint16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_u16(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((uint16x8_t){MY_VNELQ_CSZL(q.U)/16});
+}
+
+INLINE( int16x8_t,QHI_VNEL)   (int16x8_t a,   int16x8_t b)
+{
+    QUAD_VTYPE q = {.H.U=vceqq_s16(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((int16x8_t){MY_VNELQ_CSZL(q.U)/16});
+}
+
+INLINE( int16x8_t,QHF_VNEL) (float16x8_t a, float16x8_t b)
+{
+    QUAD_VTYPE q = {.H.I=QHF_CEQS(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((int16x8_t){MY_VNELQ_CSZL(q.U)/16});
+}
+
+INLINE(uint32x4_t,QWU_VNEL)  (uint32x4_t a,  uint32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_s32(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((uint32x4_t){MY_VNELQ_CSZL(q.U)/32});
+}
+
+INLINE( int32x4_t,QWI_VNEL)   (int32x4_t a,   int32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_s32(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((int32x4_t){MY_VNELQ_CSZL(q.U)/32});
+}
+
+INLINE( int32x4_t,QWF_VNEL) (float32x4_t a, float32x4_t b)
+{
+    QUAD_VTYPE q = {.W.U=vceqq_f32(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((int32x4_t){MY_VNELQ_CSZL(q.U)/32});
+}
+
+INLINE(uint64x2_t,QDU_VNEL)  (uint64x2_t a,  uint64x2_t b)
+{
+    QUAD_VTYPE q = {.D.U=vceqq_u64(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((uint64x2_t){MY_VNELQ_CSZL(q.U)/64});
+}
+
+INLINE( int64x2_t,QDI_VNEL)   (int64x2_t a,   int64x2_t b)
+{
+    QUAD_VTYPE q = {.D.U=vceqq_s64(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((uint64x2_t){MY_VNELQ_CSZL(q.U)/64});
+}
+
+INLINE( int64x2_t,QDF_VNEL) (float64x2_t a, float64x2_t b)
+{
+    QUAD_VTYPE q = {.D.U=vceqq_f64(a, b)};
+    q.B.U = vmvnq_u8(q.B.U);
+    return  ((uint64x2_t){MY_VNELQ_CSZL(q.U)/64});
+}
+
+
+INLINE(Vwbu,VWBU_VNEL) (Vwbu a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.U = DBU_VNEL(x.B.U, y.B.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbi,VWBI_VNEL) (Vwbi a, Vwbu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.B.I = DBI_VNEL(x.B.I, y.B.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwbc,VWBC_VNEL) (Vwbc a, Vwbc b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+#if CHAR_MIN
+    x.B.I = DBI_VNEL(x.B.I, y.B.I);
+#else
+    x.B.U = DBU_VNEL(x.B.U, y.B.U);
+#endif
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return  a;
+}
+
+
+INLINE(Vwhu,VWHU_VNEL) (Vwhu a, Vwhu b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.U = DHU_VNEL(x.H.U, y.H.U);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHI_VNEL) (Vwhi a, Vwhi b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHI_VNEL(x.H.I, y.H.I);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return a;
+}
+
+INLINE(Vwhi,VWHF_VNEL) (Vwhf a, Vwhf b)
+{
+    DWRD_VTYPE x={.W.F=a.V0}, y={.W.F=b.V0};
+    x.H.I = DHF_VNEL(x.H.F, y.H.F);
+    a.V0 = vget_lane_f32(x.W.F, 0);
+    return ((Vwhi){a.V0});
+}
+
+INLINE(Vdbu,VDBU_VNEL) (Vdbu a, Vdbu b) {return DBU_VNEL(a,b);}
+INLINE(Vdbi,VDBI_VNEL) (Vdbi a, Vdbi b) {return DBI_VNEL(a,b);}
+INLINE(Vdbc,VDBC_VNEL) (Vdbc a, Vdbc b) {a.V0 = DBC_VNEL(a.V0,b.V0); return a;}
+INLINE(Vdhu,VDHU_VNEL) (Vdhu a, Vdhu b) {return DHU_VNEL(a,b);}
+INLINE(Vdhi,VDHI_VNEL) (Vdhi a, Vdhi b) {return DHI_VNEL(a,b);}
+INLINE(Vdhi,VDHF_VNEL) (Vdhf a, Vdhf b) {return DHF_VNEL(a,b);}
+INLINE(Vdwu,VDWU_VNEL) (Vdwu a, Vdwu b) {return DWU_VNEL(a,b);}
+INLINE(Vdwi,VDWI_VNEL) (Vdwi a, Vdwi b) {return DWI_VNEL(a,b);}
+INLINE(Vdwi,VDWF_VNEL) (Vdwf a, Vdwf b) {return DWF_VNEL(a,b);}
+
+INLINE(Vqbu,VQBU_VNEL) (Vqbu a, Vqbu b) {return QBU_VNEL(a,b);}
+INLINE(Vqbi,VQBI_VNEL) (Vqbi a, Vqbi b) {return QBI_VNEL(a,b);}
+INLINE(Vqbc,VQBC_VNEL) (Vqbc a, Vqbc b) {a.V0 = QBC_VNEL(a.V0,b.V0); return a;}
+INLINE(Vqhu,VQHU_VNEL) (Vqhu a, Vqhu b) {return QHU_VNEL(a,b);}
+INLINE(Vqhi,VQHI_VNEL) (Vqhi a, Vqhi b) {return QHI_VNEL(a,b);}
+INLINE(Vqhi,VQHF_VNEL) (Vqhf a, Vqhf b) {return QHF_VNEL(a,b);}
+INLINE(Vqwu,VQWU_VNEL) (Vqwu a, Vqwu b) {return QWU_VNEL(a,b);}
+INLINE(Vqwi,VQWI_VNEL) (Vqwi a, Vqwi b) {return QWI_VNEL(a,b);}
+INLINE(Vqwi,VQWF_VNEL) (Vqwf a, Vqwf b) {return QWF_VNEL(a,b);}
+INLINE(Vqdu,VQDU_VNEL) (Vqdu a, Vqdu b) {return QDU_VNEL(a,b);}
+INLINE(Vqdi,VQDI_VNEL) (Vqdi a, Vqdi b) {return QDI_VNEL(a,b);}
+INLINE(Vqdi,VQDF_VNEL) (Vqdf a, Vqdf b) {return QDF_VNEL(a,b);}
+
+#if 0 // _LEAVE_ARM_VNEL
+}
+#endif
 
 #if 0 // _ENTER_ARM_CBNS
 {
@@ -49384,30 +54699,11 @@ INLINE(Vqdf,VQDF_RTPF) (Vqdf x)
 #endif
 
 
-#if 0 // _ENTER_ARM_MAXL
+#if 0 // _ENTER_ARM_CLTR
 {
 #endif
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,maxlqu) (QUAD_UTYPE a, QUAD_UTYPE b)
-{
-    return (a <= b ? b : a);
-}
-
-INLINE(QUAD_ITYPE,maxlqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return (a <= b ? b : a);
-}
-
-INLINE(QUAD_FTYPE,maxlqf) (QUAD_FTYPE a, QUAD_FTYPE b)
-{
-    return (a <= b ? b : a);
-}
-
-#endif
-
-INLINE(flt16_t, FLT16_MAXL) (flt16_t a, flt16_t b) 
+INLINE(flt16_t, FLT16_CLTR) (flt16_t a, flt16_t b) 
 {
 #if defined(SPC_ARM_FP16_SIMD)
     return  vmaxh_f16(a, b);
@@ -49416,17 +54712,17 @@ INLINE(flt16_t, FLT16_MAXL) (flt16_t a, flt16_t b)
 #endif
 }
 
-INLINE(  float,   FLT_MAXL)   (float a,   float b) {return a < b ? b : a;}
-INLINE( double,   DBL_MAXL)  (double a,  double b) {return a < b ? b : a;}
+INLINE(  float,   FLT_CLTR)   (float a,   float b) {return a < b ? b : a;}
+INLINE( double,   DBL_CLTR)  (double a,  double b) {return a < b ? b : a;}
 
-INLINE(Vwyu,VWYU_MAXL) (Vwyu a, Vwyu b)
+INLINE(Vwyu,VWYU_CLTR) (Vwyu a, Vwyu b)
 {
-#define     VWYU_MAXL(A, B) \
+#define     VWYU_CLTR(A, B) \
 WYU_ASTV(((VWWU_ASTV(VWYU_ASWU(A)))|(VWWU_ASTV(VWYU_ASWU(B)))))
-    return  VWYU_MAXL(a, b);
+    return  VWYU_CLTR(a, b);
 }
 
-INLINE(Vwbu,VWBU_MAXL) (Vwbu a, Vwbu b) 
+INLINE(Vwbu,VWBU_CLTR) (Vwbu a, Vwbu b) 
 {
     float       am = VWBU_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49440,7 +54736,7 @@ INLINE(Vwbu,VWBU_MAXL) (Vwbu a, Vwbu b)
     return  WBU_ASTV(am);
 }
 
-INLINE(Vwbi,VWBI_MAXL) (Vwbi a, Vwbi b) 
+INLINE(Vwbi,VWBI_CLTR) (Vwbi a, Vwbi b) 
 {
     float       am = VWBI_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49454,17 +54750,17 @@ INLINE(Vwbi,VWBI_MAXL) (Vwbi a, Vwbi b)
     return  WBI_ASTV(am);
 }
 
-INLINE(Vwbc,VWBC_MAXL) (Vwbc a, Vwbc b) 
+INLINE(Vwbc,VWBC_CLTR) (Vwbc a, Vwbc b) 
 {
 #if CHAR_MIN
-    return  VWBI_ASBC(VWBI_MAXL(VWBC_ASBI(a), VWBC_ASBI(b)));
+    return  VWBI_ASBC(VWBI_CLTR(VWBC_ASBI(a), VWBC_ASBI(b)));
 #else
-    return  VWBU_ASBC(VWBU_MAXL(VWBC_ASBU(a), VWBC_ASBU(b)));
+    return  VWBU_ASBC(VWBU_CLTR(VWBC_ASBU(a), VWBC_ASBU(b)));
 #endif
 }
 
 
-INLINE(Vwhu,VWHU_MAXL) (Vwhu a, Vwhu b) 
+INLINE(Vwhu,VWHU_CLTR) (Vwhu a, Vwhu b) 
 {
     float       am = VWHU_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49478,7 +54774,7 @@ INLINE(Vwhu,VWHU_MAXL) (Vwhu a, Vwhu b)
     return  WHU_ASTV(am);
 }
 
-INLINE(Vwhi,VWHI_MAXL) (Vwhi a, Vwhi b) 
+INLINE(Vwhi,VWHI_CLTR) (Vwhi a, Vwhi b) 
 {
     float       am = VWHI_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49492,7 +54788,7 @@ INLINE(Vwhi,VWHI_MAXL) (Vwhi a, Vwhi b)
     return  WHI_ASTV(am);
 }
 
-INLINE(Vwhf,VWHF_MAXL) (Vwhf a, Vwhf b) 
+INLINE(Vwhf,VWHF_CLTR) (Vwhf a, Vwhf b) 
 {
     float       am = VWHF_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49514,7 +54810,7 @@ INLINE(Vwhf,VWHF_MAXL) (Vwhf a, Vwhf b)
 }
 
 
-INLINE(Vwwu,VWWU_MAXL) (Vwwu a, Vwwu b) 
+INLINE(Vwwu,VWWU_CLTR) (Vwwu a, Vwwu b) 
 {
     float       am = VWWU_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49528,7 +54824,7 @@ INLINE(Vwwu,VWWU_MAXL) (Vwwu a, Vwwu b)
     return  WWU_ASTV(am);
 }
 
-INLINE(Vwwi,VWWI_MAXL) (Vwwi a, Vwwi b) 
+INLINE(Vwwi,VWWI_CLTR) (Vwwi a, Vwwi b) 
 {
     float       am = VWWI_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49542,7 +54838,7 @@ INLINE(Vwwi,VWWI_MAXL) (Vwwi a, Vwwi b)
     return  WWI_ASTV(am);
 }
 
-INLINE(Vwwf,VWWF_MAXL) (Vwwf a, Vwwf b) 
+INLINE(Vwwf,VWWF_CLTR) (Vwwf a, Vwwf b) 
 {
     float p = VWWF_ASTM(a);
     float q = VWWF_ASTM(a);
@@ -49551,27 +54847,27 @@ INLINE(Vwwf,VWWF_MAXL) (Vwwf a, Vwwf b)
 }
 
 
-INLINE(Vdyu,VDYU_MAXL) (Vdyu a, Vdyu b)
+INLINE(Vdyu,VDYU_CLTR) (Vdyu a, Vdyu b)
 {
-#define     VDYU_MAXL(A, B) DYU_ASTV(vorr_u64(VDYU_ASTM(A), VDYU_ASTM(B)))
-    return  VDYU_MAXL(a, b);
+#define     VDYU_CLTR(A, B) DYU_ASTV(vorr_u64(VDYU_ASTM(A), VDYU_ASTM(B)))
+    return  VDYU_CLTR(a, b);
 }
 
-INLINE(Vdbu,VDBU_MAXL) (Vdbu a, Vdbu b) {return vmax_u8(a, b);}
-INLINE(Vdbi,VDBI_MAXL) (Vdbi a, Vdbi b) {return vmax_s8(a, b);}
-INLINE(Vdbc,VDBC_MAXL) (Vdbc a, Vdbc b)
+INLINE(Vdbu,VDBU_CLTR) (Vdbu a, Vdbu b) {return vmax_u8(a, b);}
+INLINE(Vdbi,VDBI_CLTR) (Vdbi a, Vdbi b) {return vmax_s8(a, b);}
+INLINE(Vdbc,VDBC_CLTR) (Vdbc a, Vdbc b)
 {
 #if CHAR_MIN
-#   define  VDBC_MAXL(A, B) VDBI_ASBC(vmax_s8(VDBC_ASBI(A),VDBC_ASBI(B)))
+#   define  VDBC_CLTR(A, B) VDBI_ASBC(vmax_s8(VDBC_ASBI(A),VDBC_ASBI(B)))
 #else
-#   define  VDBC_MAXL(A, B) VDBU_ASBC(vmax_u8(VDBC_ASBU(A),VDBC_ASBU(B)))
+#   define  VDBC_CLTR(A, B) VDBU_ASBC(vmax_u8(VDBC_ASBU(A),VDBC_ASBU(B)))
 #endif
-    return  VDBC_MAXL(a, b);
+    return  VDBC_CLTR(a, b);
 }
 
-INLINE(Vdhu,VDHU_MAXL) (Vdhu a, Vdhu b) {return vmax_u16(a, b);}
-INLINE(Vdhi,VDHI_MAXL) (Vdhi a, Vdhi b) {return vmax_s16(a, b);}
-INLINE(Vdhf,VDHF_MAXL) (Vdhf a, Vdhf b)
+INLINE(Vdhu,VDHU_CLTR) (Vdhu a, Vdhu b) {return vmax_u16(a, b);}
+INLINE(Vdhi,VDHI_CLTR) (Vdhi a, Vdhi b) {return vmax_s16(a, b);}
+INLINE(Vdhf,VDHF_CLTR) (Vdhf a, Vdhf b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     return vmax_f16(a, b);
@@ -49585,11 +54881,11 @@ INLINE(Vdhf,VDHF_MAXL) (Vdhf a, Vdhf b)
 #endif
 }
 
-INLINE(Vdwu,VDWU_MAXL) (Vdwu a, Vdwu b) {return vmax_u32(a, b);}
-INLINE(Vdwi,VDWI_MAXL) (Vdwi a, Vdwi b) {return vmax_s32(a, b);}
-INLINE(Vdwf,VDWF_MAXL) (Vdwf a, Vdwf b) {return vmax_f32(a, b);}
+INLINE(Vdwu,VDWU_CLTR) (Vdwu a, Vdwu b) {return vmax_u32(a, b);}
+INLINE(Vdwi,VDWI_CLTR) (Vdwi a, Vdwi b) {return vmax_s32(a, b);}
+INLINE(Vdwf,VDWF_CLTR) (Vdwf a, Vdwf b) {return vmax_f32(a, b);}
 
-INLINE(Vddu,VDDU_MAXL) (Vddu a, Vddu b)
+INLINE(Vddu,VDDU_CLTR) (Vddu a, Vddu b)
 {
     b = vand_u64(
         veor_u64(a, b),
@@ -49598,7 +54894,7 @@ INLINE(Vddu,VDDU_MAXL) (Vddu a, Vddu b)
     return  veor_u64(a, b);
 }
 
-INLINE(Vddi,VDDI_MAXL) (Vddi a, Vddi b)
+INLINE(Vddi,VDDI_CLTR) (Vddi a, Vddi b)
 {
     b = vand_s64(
         veor_s64(a, b),
@@ -49607,29 +54903,29 @@ INLINE(Vddi,VDDI_MAXL) (Vddi a, Vddi b)
     return  veor_s64(a, b);
 }
 
-INLINE(Vddf,VDDF_MAXL) (Vddf a, Vddf b) {return vmax_f64(a, b);}
+INLINE(Vddf,VDDF_CLTR) (Vddf a, Vddf b) {return vmax_f64(a, b);}
 
 
-INLINE(Vqyu,VQYU_MAXL) (Vqyu a, Vqyu b)
+INLINE(Vqyu,VQYU_CLTR) (Vqyu a, Vqyu b)
 {
-#define     VQYU_MAXL(A, B) QYU_ASTV(vandq_u64(VQYU_ASTM(A),VQYU_ASTM(B)))
-    return  VQYU_MAXL(a, b);
+#define     VQYU_CLTR(A, B) QYU_ASTV(vandq_u64(VQYU_ASTM(A),VQYU_ASTM(B)))
+    return  VQYU_CLTR(a, b);
 }
-INLINE(Vqbu,VQBU_MAXL) (Vqbu a, Vqbu b) {return vmaxq_u8(a, b);}
-INLINE(Vqbi,VQBI_MAXL) (Vqbi a, Vqbi b) {return vmaxq_s8(a, b);}
-INLINE(Vqbc,VQBC_MAXL) (Vqbc a, Vqbc b)
+INLINE(Vqbu,VQBU_CLTR) (Vqbu a, Vqbu b) {return vmaxq_u8(a, b);}
+INLINE(Vqbi,VQBI_CLTR) (Vqbi a, Vqbi b) {return vmaxq_s8(a, b);}
+INLINE(Vqbc,VQBC_CLTR) (Vqbc a, Vqbc b)
 {
 #if CHAR_MIN
-#   define  VQBC_MAXL(A, B) VQBI_ASBC(vmaxq_s8(VQBC_ASBI(A),VQBC_ASBI(B)))
+#   define  VQBC_CLTR(A, B) VQBI_ASBC(vmaxq_s8(VQBC_ASBI(A),VQBC_ASBI(B)))
 #else
-#   define  VQBC_MAXL(A, B) VQBU_ASBC(vmaxq_u8(VQBC_ASBU(A),VQBC_ASBU(B)))
+#   define  VQBC_CLTR(A, B) VQBU_ASBC(vmaxq_u8(VQBC_ASBU(A),VQBC_ASBU(B)))
 #endif
-    return  VQBC_MAXL(a, b);
+    return  VQBC_CLTR(a, b);
 }
 
-INLINE(Vqhu,VQHU_MAXL) (Vqhu a, Vqhu b) {return vmaxq_u16(a, b);}
-INLINE(Vqhi,VQHI_MAXL) (Vqhi a, Vqhi b) {return vmaxq_s16(a, b);}
-INLINE(Vqhf,VQHF_MAXL) (Vqhf a, Vqhf b)
+INLINE(Vqhu,VQHU_CLTR) (Vqhu a, Vqhu b) {return vmaxq_u16(a, b);}
+INLINE(Vqhi,VQHI_CLTR) (Vqhi a, Vqhi b) {return vmaxq_s16(a, b);}
+INLINE(Vqhf,VQHF_CLTR) (Vqhf a, Vqhf b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     return  vmaxq_f16(a, b);
@@ -49645,14 +54941,14 @@ INLINE(Vqhf,VQHF_MAXL) (Vqhf a, Vqhf b)
 #endif
 }
 
-INLINE(Vqwu,VQWU_MAXL) (Vqwu a, Vqwu b) {return vmaxq_u32(a, b);}
-INLINE(Vqwi,VQWI_MAXL) (Vqwi a, Vqwi b) {return vmaxq_s32(a, b);}
-INLINE(Vqwf,VQWF_MAXL) (Vqwf a, Vqwf b) {return vmaxq_f32(a, b);}
+INLINE(Vqwu,VQWU_CLTR) (Vqwu a, Vqwu b) {return vmaxq_u32(a, b);}
+INLINE(Vqwi,VQWI_CLTR) (Vqwi a, Vqwi b) {return vmaxq_s32(a, b);}
+INLINE(Vqwf,VQWF_CLTR) (Vqwf a, Vqwf b) {return vmaxq_f32(a, b);}
 
-INLINE(Vqdu,VQDU_MAXL) (Vqdu a, Vqdu b)
+INLINE(Vqdu,VQDU_CLTR) (Vqdu a, Vqdu b)
 {
 /*  TODO: verify that this is superior to simply performing
-    two VDDU_MAXL ops
+    two VDDU_CLTR ops
 */
     b = vandq_u64(
         veorq_u64(a, b),
@@ -49661,9 +54957,9 @@ INLINE(Vqdu,VQDU_MAXL) (Vqdu a, Vqdu b)
     return veorq_u64(a, b);
 }
 
-INLINE(Vqdi,VQDI_MAXL) (Vqdi a, Vqdi b)
+INLINE(Vqdi,VQDI_CLTR) (Vqdi a, Vqdi b)
 {
-// use a = vandq_s64.. for MINL
+// use a = vandq_s64.. for CGTR
     b = vandq_s64(
         veorq_s64(a, b),
         vcltq_s64(a, b)
@@ -49671,35 +54967,17 @@ INLINE(Vqdi,VQDI_MAXL) (Vqdi a, Vqdi b)
     return  veorq_s64(a, b);
 }
 
-INLINE(Vqdf,VQDF_MAXL) (Vqdf a, Vqdf b) {return vmaxq_f64(a, b);}
+INLINE(Vqdf,VQDF_CLTR) (Vqdf a, Vqdf b) {return vmaxq_f64(a, b);}
 
-#if 0 // _LEAVE_ARM_MAXL
+#if 0 // _LEAVE_ARM_CLTR
 }
 #endif
 
-#if 0 // _ENTER_ARM_MINL
+#if 0 // _ENTER_ARM_CGTR
 {
 #endif
 
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,minlqu) (QUAD_UTYPE a, QUAD_UTYPE b)
-{
-    return (a > b) ? b : a;
-}
-
-INLINE(QUAD_ITYPE,minlqi) (QUAD_ITYPE a, QUAD_ITYPE b)
-{
-    return (a > b ? b : a);
-}
-
-INLINE(QUAD_FTYPE,minlqf) (QUAD_FTYPE a, QUAD_FTYPE b)
-{
-    return (a > b ? b : a);
-}
-
-#endif
-INLINE(flt16_t, FLT16_MINL) (flt16_t a, flt16_t b) 
+INLINE(flt16_t, FLT16_CGTR) (flt16_t a, flt16_t b) 
 {
 #if defined(SPC_ARM_FP16_SIMD)
     return  vminh_f16(a, b);
@@ -49708,16 +54986,16 @@ INLINE(flt16_t, FLT16_MINL) (flt16_t a, flt16_t b)
 #endif
 }
 
-INLINE(  float,   FLT_MINL)   (float a,   float b) {return a > b ? b : a;}
-INLINE( double,   DBL_MINL)  (double a,  double b) {return a > b ? b : a;}
-INLINE(Vwyu,VWYU_MINL) (Vwyu a, Vwyu b)
+INLINE(  float,   FLT_CGTR)   (float a,   float b) {return a > b ? b : a;}
+INLINE( double,   DBL_CGTR)  (double a,  double b) {return a > b ? b : a;}
+INLINE(Vwyu,VWYU_CGTR) (Vwyu a, Vwyu b)
 {
-#define     VWYU_MINL(A, B) \
+#define     VWYU_CGTR(A, B) \
 WYU_ASTV(((VWWU_ASTV(VWYU_ASWU(A)))&(VWWU_ASTV(VWYU_ASWU(B)))))
-    return  VWYU_MINL(a, b);
+    return  VWYU_CGTR(a, b);
 }
 
-INLINE(Vwbu,VWBU_MINL) (Vwbu a, Vwbu b) 
+INLINE(Vwbu,VWBU_CGTR) (Vwbu a, Vwbu b) 
 {
     float       am = VWBU_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49731,7 +55009,7 @@ INLINE(Vwbu,VWBU_MINL) (Vwbu a, Vwbu b)
     return  WBU_ASTV(am);
 }
 
-INLINE(Vwbi,VWBI_MINL) (Vwbi a, Vwbi b) 
+INLINE(Vwbi,VWBI_CGTR) (Vwbi a, Vwbi b) 
 {
     float       am = VWBI_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49745,17 +55023,17 @@ INLINE(Vwbi,VWBI_MINL) (Vwbi a, Vwbi b)
     return  WBI_ASTV(am);
 }
 
-INLINE(Vwbc,VWBC_MINL) (Vwbc a, Vwbc b) 
+INLINE(Vwbc,VWBC_CGTR) (Vwbc a, Vwbc b) 
 {
 #if CHAR_MIN
-    return  VWBI_ASBC(VWBI_MINL(VWBC_ASBI(a), VWBC_ASBI(b)));
+    return  VWBI_ASBC(VWBI_CGTR(VWBC_ASBI(a), VWBC_ASBI(b)));
 #else
-    return  VWBU_ASBC(VWBU_MINL(VWBC_ASBU(a), VWBC_ASBU(b)));
+    return  VWBU_ASBC(VWBU_CGTR(VWBC_ASBU(a), VWBC_ASBU(b)));
 #endif
 }
 
 
-INLINE(Vwhu,VWHU_MINL) (Vwhu a, Vwhu b) 
+INLINE(Vwhu,VWHU_CGTR) (Vwhu a, Vwhu b) 
 {
     float       am = VWHU_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49769,7 +55047,7 @@ INLINE(Vwhu,VWHU_MINL) (Vwhu a, Vwhu b)
     return  WHU_ASTV(am);
 }
 
-INLINE(Vwhi,VWHI_MINL) (Vwhi a, Vwhi b) 
+INLINE(Vwhi,VWHI_CGTR) (Vwhi a, Vwhi b) 
 {
     float       am = VWHI_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49783,7 +55061,7 @@ INLINE(Vwhi,VWHI_MINL) (Vwhi a, Vwhi b)
     return  WHI_ASTV(am);
 }
 
-INLINE(Vwhf,VWHF_MINL) (Vwhf a, Vwhf b) 
+INLINE(Vwhf,VWHF_CGTR) (Vwhf a, Vwhf b) 
 {
     float       am = VWHF_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49805,7 +55083,7 @@ INLINE(Vwhf,VWHF_MINL) (Vwhf a, Vwhf b)
 }
 
 
-INLINE(Vwwu,VWWU_MINL) (Vwwu a, Vwwu b) 
+INLINE(Vwwu,VWWU_CGTR) (Vwwu a, Vwwu b) 
 {
     float       am = VWWU_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49819,7 +55097,7 @@ INLINE(Vwwu,VWWU_MINL) (Vwwu a, Vwwu b)
     return  WWU_ASTV(am);
 }
 
-INLINE(Vwwi,VWWI_MINL) (Vwwi a, Vwwi b) 
+INLINE(Vwwi,VWWI_CGTR) (Vwwi a, Vwwi b) 
 {
     float       am = VWWI_ASTM(a);
     float32x2_t af = vdup_n_f32(am);
@@ -49833,32 +55111,32 @@ INLINE(Vwwi,VWWI_MINL) (Vwwi a, Vwwi b)
     return  WWI_ASTV(am);
 }
 
-INLINE(Vwwf,VWWF_MINL) (Vwwf a, Vwwf b) 
+INLINE(Vwwf,VWWF_CGTR) (Vwwf a, Vwwf b) 
 {
-    return  WWF_ASTV(FLT_MINL(VWWF_ASTM(a), VWWF_ASTM(b)));
+    return  WWF_ASTV(FLT_CGTR(VWWF_ASTM(a), VWWF_ASTM(b)));
 }
 
-INLINE(Vdyu,VDYU_MINL) (Vdyu a, Vdyu b)
+INLINE(Vdyu,VDYU_CGTR) (Vdyu a, Vdyu b)
 {
-#define     VDYU_MINL(A, B) DYU_ASTV(vand_u64(VDYU_ASTM(A), VDYU_ASTM(B)))
-    return  VDYU_MINL(a, b);
+#define     VDYU_CGTR(A, B) DYU_ASTV(vand_u64(VDYU_ASTM(A), VDYU_ASTM(B)))
+    return  VDYU_CGTR(a, b);
 }
 
-INLINE(Vdbu,VDBU_MINL) (Vdbu a, Vdbu b) {return vmin_u8(a, b);}
-INLINE(Vdbi,VDBI_MINL) (Vdbi a, Vdbi b) {return vmin_s8(a, b);}
-INLINE(Vdbc,VDBC_MINL) (Vdbc a, Vdbc b)
+INLINE(Vdbu,VDBU_CGTR) (Vdbu a, Vdbu b) {return vmin_u8(a, b);}
+INLINE(Vdbi,VDBI_CGTR) (Vdbi a, Vdbi b) {return vmin_s8(a, b);}
+INLINE(Vdbc,VDBC_CGTR) (Vdbc a, Vdbc b)
 {
 #if CHAR_MIN
-#   define  VDBC_MINL(A, B) VDBI_ASBC(vmin_s8(VDBC_ASBI(A),VDBC_ASBI(B)))
+#   define  VDBC_CGTR(A, B) VDBI_ASBC(vmin_s8(VDBC_ASBI(A),VDBC_ASBI(B)))
 #else
-#   define  VDBC_MINL(A, B) VDBU_ASBC(vmin_u8(VDBC_ASBU(A),VDBC_ASBU(B)))
+#   define  VDBC_CGTR(A, B) VDBU_ASBC(vmin_u8(VDBC_ASBU(A),VDBC_ASBU(B)))
 #endif
-    return  VDBC_MINL(a, b);
+    return  VDBC_CGTR(a, b);
 }
 
-INLINE(Vdhu,VDHU_MINL) (Vdhu a, Vdhu b) {return vmin_u16(a, b);}
-INLINE(Vdhi,VDHI_MINL) (Vdhi a, Vdhi b) {return vmin_s16(a, b);}
-INLINE(Vdhf,VDHF_MINL) (Vdhf a, Vdhf b)
+INLINE(Vdhu,VDHU_CGTR) (Vdhu a, Vdhu b) {return vmin_u16(a, b);}
+INLINE(Vdhi,VDHI_CGTR) (Vdhi a, Vdhi b) {return vmin_s16(a, b);}
+INLINE(Vdhf,VDHF_CGTR) (Vdhf a, Vdhf b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     return vmin_f16(a, b);
@@ -49872,11 +55150,11 @@ INLINE(Vdhf,VDHF_MINL) (Vdhf a, Vdhf b)
 #endif
 }
 
-INLINE(Vdwu,VDWU_MINL) (Vdwu a, Vdwu b) {return vmin_u32(a, b);}
-INLINE(Vdwi,VDWI_MINL) (Vdwi a, Vdwi b) {return vmin_s32(a, b);}
-INLINE(Vdwf,VDWF_MINL) (Vdwf a, Vdwf b) {return vmin_f32(a, b);}
+INLINE(Vdwu,VDWU_CGTR) (Vdwu a, Vdwu b) {return vmin_u32(a, b);}
+INLINE(Vdwi,VDWI_CGTR) (Vdwi a, Vdwi b) {return vmin_s32(a, b);}
+INLINE(Vdwf,VDWF_CGTR) (Vdwf a, Vdwf b) {return vmin_f32(a, b);}
 
-INLINE(Vddu,VDDU_MINL) (Vddu a, Vddu b)
+INLINE(Vddu,VDDU_CGTR) (Vddu a, Vddu b)
 {
     a = vand_u64(
         veor_u64(a, b),
@@ -49885,7 +55163,7 @@ INLINE(Vddu,VDDU_MINL) (Vddu a, Vddu b)
     return  veor_u64(a, b);
 }
 
-INLINE(Vddi,VDDI_MINL) (Vddi a, Vddi b)
+INLINE(Vddi,VDDI_CGTR) (Vddi a, Vddi b)
 {
     a = vand_s64(
         veor_s64(a, b),
@@ -49894,29 +55172,29 @@ INLINE(Vddi,VDDI_MINL) (Vddi a, Vddi b)
     return  veor_s64(a, b);
 }
 
-INLINE(Vddf,VDDF_MINL) (Vddf a, Vddf b) {return vmin_f64(a, b);}
+INLINE(Vddf,VDDF_CGTR) (Vddf a, Vddf b) {return vmin_f64(a, b);}
 
 
-INLINE(Vqyu,VQYU_MINL) (Vqyu a, Vqyu b)
+INLINE(Vqyu,VQYU_CGTR) (Vqyu a, Vqyu b)
 {
-#define     VQYU_MINL(A, B) QYU_ASTV(vandq_u64(VQYU_ASTM(A),VQYU_ASTM(B)))
-    return  VQYU_MINL(a, b);
+#define     VQYU_CGTR(A, B) QYU_ASTV(vandq_u64(VQYU_ASTM(A),VQYU_ASTM(B)))
+    return  VQYU_CGTR(a, b);
 }
-INLINE(Vqbu,VQBU_MINL) (Vqbu a, Vqbu b) {return vminq_u8(a, b);}
-INLINE(Vqbi,VQBI_MINL) (Vqbi a, Vqbi b) {return vminq_s8(a, b);}
-INLINE(Vqbc,VQBC_MINL) (Vqbc a, Vqbc b)
+INLINE(Vqbu,VQBU_CGTR) (Vqbu a, Vqbu b) {return vminq_u8(a, b);}
+INLINE(Vqbi,VQBI_CGTR) (Vqbi a, Vqbi b) {return vminq_s8(a, b);}
+INLINE(Vqbc,VQBC_CGTR) (Vqbc a, Vqbc b)
 {
 #if CHAR_MIN
-#   define  VQBC_MINL(A, B) VQBI_ASBC(vminq_s8(VQBC_ASBI(A),VQBC_ASBI(B)))
+#   define  VQBC_CGTR(A, B) VQBI_ASBC(vminq_s8(VQBC_ASBI(A),VQBC_ASBI(B)))
 #else
-#   define  VQBC_MINL(A, B) VQBU_ASBC(vminq_u8(VQBC_ASBU(A),VQBC_ASBU(B)))
+#   define  VQBC_CGTR(A, B) VQBU_ASBC(vminq_u8(VQBC_ASBU(A),VQBC_ASBU(B)))
 #endif
-    return  VQBC_MINL(a, b);
+    return  VQBC_CGTR(a, b);
 }
 
-INLINE(Vqhu,VQHU_MINL) (Vqhu a, Vqhu b) {return vminq_u16(a, b);}
-INLINE(Vqhi,VQHI_MINL) (Vqhi a, Vqhi b) {return vminq_s16(a, b);}
-INLINE(Vqhf,VQHF_MINL) (Vqhf a, Vqhf b)
+INLINE(Vqhu,VQHU_CGTR) (Vqhu a, Vqhu b) {return vminq_u16(a, b);}
+INLINE(Vqhi,VQHI_CGTR) (Vqhi a, Vqhi b) {return vminq_s16(a, b);}
+INLINE(Vqhf,VQHF_CGTR) (Vqhf a, Vqhf b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     return  vminq_f16(a, b);
@@ -49932,14 +55210,14 @@ INLINE(Vqhf,VQHF_MINL) (Vqhf a, Vqhf b)
 #endif
 }
 
-INLINE(Vqwu,VQWU_MINL) (Vqwu a, Vqwu b) {return vminq_u32(a, b);}
-INLINE(Vqwi,VQWI_MINL) (Vqwi a, Vqwi b) {return vminq_s32(a, b);}
-INLINE(Vqwf,VQWF_MINL) (Vqwf a, Vqwf b) {return vminq_f32(a, b);}
+INLINE(Vqwu,VQWU_CGTR) (Vqwu a, Vqwu b) {return vminq_u32(a, b);}
+INLINE(Vqwi,VQWI_CGTR) (Vqwi a, Vqwi b) {return vminq_s32(a, b);}
+INLINE(Vqwf,VQWF_CGTR) (Vqwf a, Vqwf b) {return vminq_f32(a, b);}
 
-INLINE(Vqdu,VQDU_MINL) (Vqdu a, Vqdu b)
+INLINE(Vqdu,VQDU_CGTR) (Vqdu a, Vqdu b)
 {
 /*  TODO: verify that this is superior to simply performing
-    two VDDU_MINL ops
+    two VDDU_CGTR ops
 */
     a = vandq_u64(
         veorq_u64(a, b),
@@ -49948,9 +55226,9 @@ INLINE(Vqdu,VQDU_MINL) (Vqdu a, Vqdu b)
     return veorq_u64(a, b);
 }
 
-INLINE(Vqdi,VQDI_MINL) (Vqdi a, Vqdi b)
+INLINE(Vqdi,VQDI_CGTR) (Vqdi a, Vqdi b)
 {
-// use b = vandq_s64.. for MAXL
+// use b = vandq_s64.. for CLTR
     a = vandq_s64(
         veorq_s64(a, b),
         vcltq_s64(a, b)
@@ -49958,9 +55236,9 @@ INLINE(Vqdi,VQDI_MINL) (Vqdi a, Vqdi b)
     return  veorq_s64(a, b);
 }
 
-INLINE(Vqdf,VQDF_MINL) (Vqdf a, Vqdf b) {return vminq_f64(a, b);}
+INLINE(Vqdf,VQDF_CGTR) (Vqdf a, Vqdf b) {return vminq_f64(a, b);}
 
-#if 0 // _LEAVE_ARM_MINL
+#if 0 // _LEAVE_ARM_CGTR
 }
 #endif
 
@@ -50109,7 +55387,7 @@ INLINE(   float,VQWF_MAXV) (Vqwf a) {return vmaxvq_f32(a);}
 INLINE(uint64_t,VQDU_MAXV) (Vqdu a)
 {
     return  vget_lane_u64(
-        VDDU_MAXL(
+        VDDU_CLTR(
             vget_low_u64(a),
             vget_high_u64(a)
         ),
@@ -50120,7 +55398,7 @@ INLINE(uint64_t,VQDU_MAXV) (Vqdu a)
 INLINE( int64_t,VQDI_MAXV) (Vqdi a)
 {
     return  vget_lane_s64(
-        VDDI_MAXL(
+        VDDI_CLTR(
             vget_low_s64(a),
             vget_high_s64(a)
         ),
@@ -50272,7 +55550,7 @@ INLINE(   float,VQWF_MINV) (Vqwf a) {return vminvq_f32(a);}
 INLINE(uint64_t,VQDU_MINV) (Vqdu a)
 {
     return  vget_lane_u64(
-        VDDU_MINL(
+        VDDU_CGTR(
             vget_low_u64(a),
             vget_high_u64(a)
         ),
@@ -50283,7 +55561,7 @@ INLINE(uint64_t,VQDU_MINV) (Vqdu a)
 INLINE( int64_t,VQDI_MINV) (Vqdi a)
 {
     return  vget_lane_s64(
-        VDDI_MINL(
+        VDDI_CGTR(
             vget_low_s64(a),
             vget_high_s64(a)
         ),
@@ -50301,164 +55579,358 @@ INLINE(  double,VQDF_MINV) (Vqdf a) {return vminvq_f64(a);}
 {
 #endif
 
-INLINE( UCHAR_STG(UTYPE), UCHAR_CNT1)  (uchar x) {return __builtin_popcount(x);}
-INLINE( SCHAR_STG(ITYPE), SCHAR_CNT1)  (schar x) {return __builtin_popcount(x);}
-INLINE(             char,  CHAR_CNT1)   (char x) {return __builtin_popcount(x);}
-INLINE( USHRT_STG(UTYPE), USHRT_CNT1) (ushort x) {return __builtin_popcount(x);}
-INLINE(  SHRT_STG(ITYPE),  SHRT_CNT1)  (short x) {return __builtin_popcount(x);}
-INLINE(  UINT_STG(UTYPE),  UINT_CNT1)   (uint x) {return __builtin_popcount(x);}
-INLINE(   INT_STG(ITYPE),   INT_CNT1)    (int x) {return __builtin_popcount(x);}
-INLINE( ULONG_STG(UTYPE), ULONG_CNT1)  (ulong x) {return __builtin_popcountl(x);}
-INLINE(  LONG_STG(UTYPE),  LONG_CNT1)   (long x) {return __builtin_popcountl(x);}
-INLINE(ULLONG_STG(UTYPE),ULLONG_CNT1) (ullong x) {return __builtin_popcountll(x);}
-INLINE( LLONG_STG(UTYPE), LLONG_CNT1)  (llong x) {return __builtin_popcountll(x);}
+INLINE(ptrdiff_t,ADDR_CNT1) (void const *x)
+{
+    uintptr_t p = (uintptr_t) p;
+    return  __builtin_popcountll((UINTPTR_MAX&p));
+}
+
+INLINE( uchar, UCHAR_CNT1) (unsigned x) 
+{
+    return  __builtin_popcount((UCHAR_MAX&x));
+}
+
+INLINE( schar, SCHAR_CNT1)   (signed x) 
+{
+    return  __builtin_popcount((UCHAR_MAX&x));
+}
+
+INLINE(  char,  CHAR_CNT1)      (int x) 
+{
+    return  __builtin_popcount((UCHAR_MAX&x));
+}
+
+INLINE(ushort, USHRT_CNT1) (unsigned x) 
+{
+    return __builtin_popcount((USHRT_MAX&x));
+}
+
+INLINE( short,  SHRT_CNT1)   (signed x) 
+{
+    return __builtin_popcount((USHRT_MAX&x));
+}
+
+INLINE(  uint,  UINT_CNT1)     (uint x) {return __builtin_popcount(x);}
+INLINE(   int,   INT_CNT1)      (int x) {return __builtin_popcount(x);}
+INLINE( ulong, ULONG_CNT1)    (ulong x) {return __builtin_popcountl(x);}
+INLINE(  long,  LONG_CNT1)     (long x) {return __builtin_popcountl(x);}
+INLINE(ullong,ULLONG_CNT1)   (ullong x) {return __builtin_popcountll(x);}
+INLINE( llong, LLONG_CNT1)    (llong x) {return __builtin_popcountll(x);}
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,cnt1qu) (QUAD_UTYPE x) 
+{
+    QUAD_TYPE   c, z={.U=x};
+    c.Lo.U=__builtin_popcountll(z.Lo.U)+__builtin_popcountll(z.Hi.U);
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,cnt1qi) (QUAD_ITYPE x) 
+{
+    QUAD_TYPE   c, z={.I=x};
+    c.Lo.U=__builtin_popcountll(z.Lo.U)+__builtin_popcountll(z.Hi.U);
+    return  c.I;
+}
+
+#endif
+
+#define     DBU_CNT1 vcnt_u8
+#define     DBI_CNT1 vcnt_s8
+#if CHAR_MIN 
+#   define  DBC_CNT1 DBI_CNT1
+#else
+#   define  DBC_CNT1 DBI_CNT1
+#endif
+
+INLINE(uint16x4_t,DHU_CNT1) (uint16x4_t x)
+{
+    DWRD_VTYPE c = {.H.U=x};
+    c.B.U = vcnt_u8(c.B.U);
+    return  vpaddl_u8(c.B.U);
+}
+
+INLINE(int16x4_t,DHI_CNT1) (int16x4_t x)
+{
+    DWRD_VTYPE c = {.H.I=x};
+    c.H.U = DHU_CNT1(c.H.U);
+    return  c.H.I;
+}
+
+INLINE(int16x4_t,DHF_CNT1) (float16x4_t x)
+{
+    DWRD_VTYPE c = {.H.F=x};
+    c.H.U = DHU_CNT1(c.H.U);
+    return  c.H.I;
+}
+
+INLINE(uint32x2_t, DWU_CNT1) (uint32x2_t x)
+{
+    DWRD_VTYPE c = {.W.U=x};
+    c.B.U = vcnt_u8(c.B.U);
+    c.H.U = vpaddl_u8(c.B.U);
+    return  vpaddl_u16(c.H.U);
+}
+
+INLINE(int32x2_t, DWI_CNT1) (int32x2_t x)
+{
+    DWRD_VTYPE c = {.W.I=x};
+    c.W.U = DWU_CNT1(c.W.U);
+    return  c.W.I;
+}
+
+INLINE(int32x2_t, DWF_CNT1) (float32x2_t x)
+{
+    DWRD_VTYPE c = {.W.F=x};
+    c.W.U = DWU_CNT1(c.W.U);
+    return  c.W.I;
+}
+
+INLINE(uint64x1_t, DDU_CNT1) (uint64x1_t x)
+{
+    DWRD_VTYPE c = {.D.U=x};
+    c.U = vaddv_u8(c.B.U);
+    return  c.D.U;
+}
+
+INLINE(int64x1_t, DDI_CNT1) (int64x1_t x)
+{
+    DWRD_VTYPE c = {.D.I=x};
+    c.D.U = DDU_CNT1(c.D.U);
+    return  c.D.I;
+}
+
+INLINE(float64x1_t, DDF_CNT1) (float64x1_t x)
+{
+    DWRD_VTYPE c = {.D.F=x};
+    c.D.U = DDU_CNT1(c.D.U);
+    return  c.D.I;
+}
+
+#define     QBU_CNT1 vcntq_u8
+#define     QBI_CNT1 vcntq_s8
+#if CHAR_MIN 
+#   define  QBC_CNT1 QBI_CNT1
+#else
+#   define  QBC_CNT1 QBI_CNT1
+#endif
+
+INLINE(uint16x8_t,QHU_CNT1)  (uint16x8_t x)
+{
+    QUAD_VTYPE c = {.H.U=x};
+    c.B.U = vcntq_u8(c.B.U);
+    return  vpaddlq_u8(c.B.U);
+}
+
+INLINE( int16x8_t,QHI_CNT1)   (int16x8_t x)
+{
+    QUAD_VTYPE c = {.H.I=x};
+    c.H.U = QHU_CNT1(c.H.U);
+    return  c.H.I;
+}
+
+INLINE( int16x8_t,QHF_CNT1) (float16x8_t x)
+{
+    QUAD_VTYPE c = {.H.F=x};
+    c.H.U = QHU_CNT1(c.H.U);
+    return  c.H.I;
+}
+
+INLINE(uint32x4_t,QWU_CNT1)  (uint32x4_t x)
+{
+    QUAD_VTYPE c = {.W.U=x};
+    c.B.U = vcntq_u8(c.B.U);
+    c.H.U = vpaddlq_u8(c.B.U);
+    return  vpaddlq_u16(c.H.U);
+}
+
+INLINE( int32x4_t,QWI_CNT1)   (int32x4_t x)
+{
+    QUAD_VTYPE c = {.W.I=x};
+    c.W.U = QWU_CNT1(c.W.U);
+    return  c.W.I;
+}
+
+INLINE( int32x4_t,QWF_CNT1) (float32x4_t x)
+{
+    QUAD_VTYPE c = {.W.F=x};
+    c.W.U = QWU_CNT1(c.W.U);
+    return  c.W.I;
+}
+
+INLINE(uint64x2_t,QDU_CNT1)  (uint64x2_t x)
+{
+    QUAD_VTYPE c = {.D.U=x};
+    c.B.U = vcntq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    l.U = vaddv_u8(l.D.U);
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    r.U = vaddv_u8(r.D.U);
+    return  vcombine_u64(l.D.U, r.D.U);
+}
+
+INLINE( int64x2_t,QDI_CNT1)   (int64x2_t x)
+{
+    QUAD_VTYPE c = {.D.I=x};
+    c.D.U = QDU_CNT1(c.D.U);
+    return  c.D.I;
+}
+
+INLINE( int64x2_t,QDF_CNT1) (float64x2_t x)
+{
+    QUAD_VTYPE c = {.D.F=x};
+    c.D.U = QDU_CNT1(c.D.U);
+    return  c.D.I;
+}
+
+INLINE(uint64x2_t,QQU_CNT1)  (uint64x2_t x)
+{
+    QUAD_VTYPE c = {.D.U=x};
+    c.B.U = vcntq_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    l.U = vaddv_u8(l.D.U);
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    r.U = vaddv_u8(r.D.U);
+    l.D.U = vadd_u64(l.D.U, r.D.U);
+    return vcombine_u64(l.D.U, vdup_n_u64(0));
+}
+
+INLINE( int64x2_t,QQI_CNT1)   (int64x2_t x)
+{
+    QUAD_VTYPE c = {.D.I=x};
+    c.D.U = QQU_CNT1(c.D.U);
+    return  c.D.I;
+}
+
+INLINE( int64x2_t,QQF_CNT1) (QUAD_FTYPE x)
+{
+    QUAD_VTYPE c = {.F=x};
+    c.D.U = QQU_CNT1(c.D.U);
+    return  c.D.I;
+}
+
+INLINE(int16_t,FLT16_CNT1) (flt16_t x)
+{
+    DWRD_VTYPE c = {.H.F={x}};
+    c.H.U = DHU_CNT1(c.H.U);
+    return  vget_lane_s16(c.H.I, 0);
+}
+
+INLINE(int32_t, FLT_CNT1) (float x)
+{
+    DWRD_VTYPE c = {.W.F={x}};
+    c.W.U = DWU_CNT1(c.W.U);
+    return  vget_lane_s32(c.W.I, 0);
+}
+
+INLINE(int64_t, DBL_CNT1) (double x)
+{
+    DWRD_VTYPE c = {.F=x};
+    c.D.U = DDU_CNT1(c.D.U);
+    return  c.I;
+}
 
 INLINE(Vwbu,VWBU_CNT1) (Vwbu x)
 {
-    float       m = VWBU_ASTM(x);
-    float32x2_t v = vdup_n_f32(m);
-    uint8x8_t   n = vreinterpret_u8_f32(v);
-    n = vcnt_u8(n);
-    v = vreinterpret_f32_u8(n);
-    m = vget_lane_f32(v, 0);
-    return  WBU_ASTV(m);
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.B.U = DBU_CNT1(c.B.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwbi,VWBI_CNT1) (Vwbi x)
 {
-    float       m = VWBI_ASTM(x);
-    float32x2_t v = vdup_n_f32(m);
-    uint8x8_t   n = vreinterpret_u8_f32(v);
-    n = vcnt_u8(n);
-    v = vreinterpret_f32_u8(n);
-    m = vget_lane_f32(v, 0);
-    return  WBI_ASTV(m);
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.B.U = DBU_CNT1(c.B.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwbc,VWBC_CNT1) (Vwbc x)
 {
-    return  VWBU_ASBC(VWBU_CNT1(VWBC_ASBU(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.B.U = DBU_CNT1(c.B.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwhu,VWHU_CNT1) (Vwhu x)
 {
-    float32x2_t m = vdup_n_f32(VWHU_ASTM(x));
-    uint8x8_t   v = vreinterpret_u8_f32(m);
-    v = vcnt_u8(v);
-    uint16x4_t  c = vpaddl_u8(v);
-    m = vreinterpret_f32_u16(c);
-    return  WHU_ASTV(vget_lane_f32(m, 0));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.H.U = DHU_CNT1(c.H.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwhi,VWHI_CNT1) (Vwhi x)
 {
-    float32x2_t m = vdup_n_f32(VWHI_ASTM(x));
-    uint8x8_t   v = vreinterpret_u8_f32(m);
-    v = vcnt_u8(v);
-    uint16x4_t  c = vpaddl_u8(v);
-    m = vreinterpret_f32_u16(c);
-    return  WHI_ASTV(vget_lane_f32(m, 0));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.H.U = DHU_CNT1(c.H.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
+}
+
+INLINE(Vwhi,VWHF_CNT1) (Vwhf x)
+{
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    Vwhi n;
+    c.H.U = DHU_CNT1(c.H.U);
+    n.V0 = vget_lane_f32(c.W.F, 0);
+    return  n;
 }
 
 INLINE(Vwwu,VWWU_CNT1) (Vwwu x)
 {
-    return UINT_ASTV(
-        __builtin_popcount(FLT_ASWU(VWWU_ASTM(x)))
-    );
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.W.U = DWU_CNT1(c.W.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwwi,VWWI_CNT1) (Vwwi x)
 {
-    return INT_ASTV(
-        __builtin_popcount(FLT_ASWU(VWWI_ASTM(x)))
-    );
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.W.U = DWU_CNT1(c.W.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
-INLINE(Vdbu,VDBU_CNT1) (Vdbu x) {return vcnt_u8(x);}
-INLINE(Vdbi,VDBI_CNT1) (Vdbi x) {return vcnt_s8(x);}
-INLINE(Vdbc,VDBC_CNT1) (Vdbc x) {return VDBU_ASBC(vcnt_u8(VDBC_ASBU(x)));}
-
-INLINE(Vdhu,VDHU_CNT1) (Vdhu x)
+INLINE(Vwwi,VWWF_CNT1) (Vwwf x)
 {
-    return  vpaddl_u8(vcnt_u8(vreinterpret_u8_u16(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    Vwwi n;
+    c.H.U = DWU_CNT1(c.W.U);
+    n.V0 = vget_lane_f32(c.W.F, 0);
+    return  n;
 }
 
-INLINE(Vdhi,VDHI_CNT1) (Vdhi x)
-{
-    return  vpaddl_s8(vcnt_s8(vreinterpret_s8_s16(x)));
-}
+INLINE(Vdbu,VDBU_CNT1) (Vdbu x) {return DBU_CNT1(x);}
+INLINE(Vdbi,VDBI_CNT1) (Vdbi x) {return DBI_CNT1(x);}
+INLINE(Vdbc,VDBC_CNT1) (Vdbc x) {x.V0 = DBC_CNT1(x.V0); return x;}
+INLINE(Vdhu,VDHU_CNT1) (Vdhu x) {return DHU_CNT1(x);}
+INLINE(Vdhi,VDHI_CNT1) (Vdhi x) {return DHI_CNT1(x);}
+INLINE(Vdhi,VDHF_CNT1) (Vdhf x) {return DHF_CNT1(x);}
+INLINE(Vdwu,VDWU_CNT1) (Vdwu x) {return DWU_CNT1(x);}
+INLINE(Vdwi,VDWI_CNT1) (Vdwi x) {return DWI_CNT1(x);}
+INLINE(Vdwi,VDWF_CNT1) (Vdwf x) {return DWF_CNT1(x);}
+INLINE(Vddu,VDDU_CNT1) (Vddu x) {return DDU_CNT1(x);}
+INLINE(Vddi,VDDI_CNT1) (Vddi x) {return DDI_CNT1(x);}
+INLINE(Vddi,VDDF_CNT1) (Vddf x) {return DDF_CNT1(x);}
 
-
-INLINE(Vdwu,VDWU_CNT1) (Vdwu x)
-{
-    return  vpaddl_u16(vpaddl_u8(vcnt_u8(x)));
-}
-
-INLINE(Vdwi,VDWI_CNT1) (Vdwi x)
-{
-    return  vpaddl_s16(vpaddl_s8(vcnt_s8(x)));
-}
-
-
-INLINE(Vddu,VDDU_CNT1) (Vddu x)
-{
-    return  vdup_n_u64(vaddv_u8(vcnt_u8(vreinterpret_u8_u64(x))));
-}
-
-INLINE(Vddi,VDDI_CNT1) (Vddi x)
-{
-    return  vdup_n_u64(vaddv_u8(vcnt_u8(vreinterpret_u8_u64(x))));
-}
-
-INLINE(Vqbu,VQBU_CNT1) (Vqbu x) {return vcntq_u8(x);}
-INLINE(Vqbi,VQBI_CNT1) (Vqbi x) {return vcntq_s8(x);}
-INLINE(Vqbc,VQBC_CNT1) (Vqbc x) {return VQBU_ASBC(vcntq_u8(VQBC_ASBU(x)));}
-
-INLINE(Vqhu,VQHU_CNT1) (Vqhu x)
-{
-    return vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u16(x)));
-}
-
-INLINE(Vqhi,VQHI_CNT1) (Vqhi x)
-{
-    return vpaddlq_s8(vcntq_s8(vreinterpretq_s8_s16(x)));
-}
-
-
-INLINE(Vqwu,VQWU_CNT1) (Vqwu x)
-{
-    return vpaddlq_u16(vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u32(x))));
-}
-
-INLINE(Vqwi,VQWI_CNT1) (Vqwi x)
-{
-    return vpaddlq_s16(vpaddlq_s8(vcntq_s8(vreinterpretq_s8_u32(x))));
-}
-
-/*  TODO: check if arm's cnt1qdu/cnt1qdi actually use
-    different sequences and if so, make both use the more
-    efficient method.
-*/
-
-INLINE(Vqdu,VQDU_CNT1) (Vqdu x)
-{
-    return vpaddlq_u32(
-        vpaddlq_u16(
-            vpaddlq_u8(
-                vcntq_u8(vreinterpretq_u8_u32(x))
-            )
-        )
-    );
-}
-
-INLINE(Vqdi,VQDI_CNT1) (Vqdi x)
-{
-    int8x16_t n = vcntq_s8(vreinterpretq_s8_s64(x));
-    return vcombine_s64(
-        vdup_n_s64(vaddv_s8(vget_low_s8(n))),
-        vdup_n_s64(vaddv_s8(vget_high_s8(n)))
-    );
-}
+INLINE(Vqbu,VQBU_CNT1) (Vqbu x) {return QBU_CNT1(x);}
+INLINE(Vqbi,VQBI_CNT1) (Vqbi x) {return QBI_CNT1(x);}
+INLINE(Vqbc,VQBC_CNT1) (Vqbc x) {x.V0 = QBC_CNT1(x.V0); return x;}
+INLINE(Vqhu,VQHU_CNT1) (Vqhu x) {return QHU_CNT1(x);}
+INLINE(Vqhi,VQHI_CNT1) (Vqhi x) {return QHI_CNT1(x);}
+INLINE(Vqhi,VQHF_CNT1) (Vqhf x) {return QHF_CNT1(x);}
+INLINE(Vqwu,VQWU_CNT1) (Vqwu x) {return QWU_CNT1(x);}
+INLINE(Vqwi,VQWI_CNT1) (Vqwi x) {return QWI_CNT1(x);}
+INLINE(Vqwi,VQWF_CNT1) (Vqwf x) {return QWF_CNT1(x);}
+INLINE(Vqdu,VQDU_CNT1) (Vqdu x) {return QDU_CNT1(x);}
+INLINE(Vqdi,VQDI_CNT1) (Vqdi x) {return QDI_CNT1(x);}
+INLINE(Vqdi,VQDF_CNT1) (Vqdf x) {return QDF_CNT1(x);}
+INLINE(Vqqu,VQQU_CNT1) (Vqqu x) {x.V0 = QQU_CNT1(x.V0); return x;}
+INLINE(Vqqi,VQQI_CNT1) (Vqqi x) {x.V0 = QQI_CNT1(x.V0); return x;}
+INLINE(Vqqi,VQQF_CNT1) (Vqqf x) {return ((Vqqi){QQF_CNT1(x.V0)});}
 
 #if 0 // _LEAVE_ARM_CNT1
 }
@@ -50687,143 +56159,381 @@ INLINE(Vqdi,VQDI_CNTS) (Vqdi x)
 {
 #endif
 
-INLINE( UCHAR_STG(UTYPE), UCHAR_CSZL)  (uchar x) {return __builtin_ctz(x)-24;}
-INLINE( SCHAR_STG(ITYPE), SCHAR_CSZL)  (schar x) {return UCHAR_CSZL(x&0xff);}
-INLINE(             char,  CHAR_CSZL)   (char x) {return UCHAR_CSZL(x);}
-INLINE( USHRT_STG(UTYPE), USHRT_CSZL) (ushort x) {return __builtin_ctz(x)-16;}
-INLINE(  SHRT_STG(ITYPE),  SHRT_CSZL)  (short x) {return USHRT_CSZL(x&0xffff);}
-INLINE(  UINT_STG(UTYPE),  UINT_CSZL)   (uint x) {return __builtin_ctz(x);}
-INLINE(   INT_STG(ITYPE),   INT_CSZL)    (int x) {return __builtin_ctz(x);}
-INLINE( ULONG_STG(UTYPE), ULONG_CSZL)  (ulong x) {return __builtin_ctzl(x);}
-INLINE(  LONG_STG(ITYPE),  LONG_CSZL)   (long x) {return __builtin_ctzl(x);}
-INLINE(ULLONG_STG(UTYPE),ULLONG_CSZL) (ullong x) {return __builtin_ctzll(x);}
-INLINE( LLONG_STG(UTYPE), LLONG_CSZL)  (llong x) {return __builtin_ctzll(x);}
-
-#if QUAD_NLLONG == 1
-#   define  UINT128_CSZL    ULLONG_CSZL
-#   define  INT128_CSZL     LLONG_CSZL
-#else
-
-INLINE(unsigned __int128,UINT128_CSZL) (unsigned __int128 x)
+INLINE( uchar, UCHAR_CSZL) (unsigned x) 
 {
-    Quad r;
-    Quad v = {.U=x};
-    if (v.Hi.U)
-        r.Lo.U = __builtin_ctzll(v.Lo.U);
-    else
-        r.Lo.U = __builtin_ctzll(v.Hi.U)+64;
-    return r.U;
+    return  __builtin_ctz(((UINT_MAX&~UCHAR_MAX)|x));
 }
 
-INLINE(  signed __int128, INT128_CSZL)   (signed __int128 x)
+INLINE( schar, SCHAR_CSZL)   (signed x) {return UCHAR_CSZL(x);}
+INLINE(  char,  CHAR_CSZL)      (int x) {return UCHAR_CSZL(x);}
+
+INLINE(ushort, USHRT_CSZL) (unsigned x)
 {
-    return  UINT128_CSZL(x);
+    return  __builtin_ctz(((UINT_MAX&~USHRT_MAX)|x));
 }
+
+INLINE( short,  SHRT_CSZL)   (signed x) {return USHRT_CSZL(x);}
+INLINE(  uint,  UINT_CSZL)     (uint x) {return __builtin_ctz(x);}
+INLINE(   int,   INT_CSZL)      (int x) {return UINT_CSZL(x);}
+INLINE( ulong, ULONG_CSZL)    (ulong x) {return __builtin_ctz(x);}
+INLINE(  long,  LONG_CSZL)     (long x) {return ULONG_CSZL(x);}
+INLINE(ullong,ULLONG_CSZL)   (ullong x) {return __builtin_ctzll(x);}
+INLINE( llong, LLONG_CSZL)    (llong x) {return ULLONG_CSZL(x);}
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,cszlqu) (QUAD_UTYPE x) 
+{
+    QUAD_TYPE   c, z={.U=x};
+    c.Lo.U = UINT64_CSZL(z.Lo.U);
+    if (c.Lo.U == 64)
+        c.Lo.U += UINT64_CSZL(c.Hi.U);
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,cszlqi) (QUAD_ITYPE x) 
+{
+    QUAD_TYPE c = {.I=x};
+    c.U = cszlqu(c.U);
+    return  c.I;
+}
+
 #endif
 
-INLINE(float,WBU_CSZL) (float x)
+INLINE(ptrdiff_t,ADDR_CSZL) (void const *x)
 {
-    uint8x8_t m = vreinterpret_u8_f32(vdup_n_f32(x));
-    m = VDBU_REVY(m);
-    m = vclz_u8(m);
-    return vget_lane_f32(vreinterpret_f32_u8(m), 0);
+    return  ADDR_U(CSZL)(((uintptr_t) x));
 }
 
-INLINE(float,WHU_CSZL) (float x)
+INLINE(int16_t,FLT16_CSZL) (flt16_t x)
 {
-    uint16x4_t m = vreinterpret_u16_f32(vdup_n_f32(x));
-    m = VDHU_REVY(m);
-    m = vclz_u16(m);
-    return vget_lane_f32(vreinterpret_f32_u16(m), 0);
+    DWRD_VTYPE c = {.H.F={x}};
+    c.B.U = vrbit_u8(c.B.U);
+    c.B.U = vrev16_u8(c.B.U);
+    c.H.U = vclz_u16(c.H.U);
+    return  vget_lane_s16(c.H.I, 0);
 }
 
-INLINE(float,WWU_CSZL) (float x)
+int32_t FLT_CSZL(float x)
 {
-    uint32x2_t m = vreinterpret_u32_f32(vdup_n_f32(x));
-    m = VDWU_REVY(m);
-    m = vclz_u32(m);
-    return vget_lane_f32(vreinterpret_f32_u32(m), 0);
+    DWRD_VTYPE c = {.W.F={x}};
+    c.B.U = vrbit_u8(c.B.U);
+    c.B.U = vrev32_u8(c.B.U);
+    return  __builtin_clz(c.U);
+}
+
+int64_t DBL_CSZL(double x)
+{
+    DWRD_VTYPE c = {.F=x};
+    c.B.U = vrbit_u8(c.B.U);
+    c.B.U = vrev64_u8(c.B.U);
+    return  __builtin_clzll(c.U);
+}
+
+INLINE( uint8x8_t,DBU_CSZL)   (uint8x8_t x)
+{
+    x = vrbit_u8(x);
+    return  vclz_u8(x);
+}
+
+INLINE(  int8x8_t,DBI_CSZL)    (int8x8_t x)
+{
+    x = vrbit_s8(x);
+    return  vclz_s8(x);
+}
+
+#if CHAR_MIN 
+#   define  DBC_CSZL DBI_CSZL
+#else
+#   define  DBC_CSZL DBI_CSZL
+#endif
+
+
+INLINE(uint16x4_t,DHU_CSZL)  (uint16x4_t x)
+{
+    DWRD_VTYPE c = {.H.U=x};
+    c.B.U = vrbit_u8(c.B.U);
+    c.B.U = vrev16_u8(c.B.U);
+    return  vclz_u16(c.H.U);
+}
+
+INLINE( int16x4_t,DHI_CSZL)   (int16x4_t x)
+{
+    DWRD_VTYPE c = {.H.I=x};
+    c.H.U = DHU_CSZL(c.H.U);
+    return  c.H.I;
+}
+
+INLINE( int16x4_t,DHF_CSZL) (float16x4_t x)
+{
+    DWRD_VTYPE c = {.H.F=x};
+    c.H.U = DHU_CSZL(c.H.U);
+    return  c.H.I;
+}
+
+INLINE(uint32x2_t,DWU_CSZL)  (uint32x2_t x)
+{
+    DWRD_VTYPE c = {.W.U=x};
+    c.B.U = vrbit_u8(c.B.U);
+    c.B.U = vrev32_u8(c.W.U);
+    return  vclz_u32(c.W.U);
+}
+
+INLINE( int32x2_t,DWI_CSZL)   (int32x2_t x)
+{
+    DWRD_VTYPE c = {.W.I=x};
+    c.W.U = DWU_CSZL(c.W.U);
+    return  c.W.I;
+}
+
+INLINE( int32x2_t,DWF_CSZL) (float32x2_t x)
+{
+    DWRD_VTYPE c = {.W.F=x};
+    c.W.U = DWU_CSZL(c.W.U);
+    return  c.W.I;
+}
+
+INLINE(uint64x1_t,DDU_CSZL)  (uint64x1_t x)
+{
+    DWRD_VTYPE v = {.D.U=x};
+    v.B.U = vrbit_u8(v.B.U);
+    v.B.U = vrev64_u8(v.B.U);
+    v.U = UINT64_CSZL(v.U);
+    return  v.D.U;
+}
+
+INLINE( int64x1_t,DDI_CSZL)   (int64x1_t x)
+{
+    DWRD_VTYPE c = {.D.I=x};
+    c.D.U = DDU_CSZL(c.D.I);
+    return  c.D.I;
+}
+
+INLINE( int64x1_t,DDF_CSZL) (float64x1_t x)
+{
+    DWRD_VTYPE c = {.D.F=x};
+    c.D.U = DDU_CSZL(c.D.I);
+    return  c.D.I;
+}
+
+
+INLINE(uint8x16_t,QBU_CSZL)   (uint8x16_t x)
+{
+    x = vrbitq_u8(x);
+    return  vclzq_u8(x);
+}
+
+INLINE( int8x16_t,QBI_CSZL)    (int8x16_t x)
+{
+    x = vrbitq_s8(x);
+    return  vclzq_s8(x);
+}
+
+#if CHAR_MIN 
+#   define  QBC_CSZL QBI_CSZL
+#else
+#   define  QBC_CSZL QBI_CSZL
+#endif
+
+
+INLINE(uint16x8_t,QHU_CSZL)  (uint16x8_t x)
+{
+    QUAD_VTYPE c = {.H.U=x};
+    c.B.U = vrbitq_u8(c.B.U);
+    c.B.U = vrev16q_u8(c.B.U);
+    return  vclzq_u16(c.H.U);
+}
+
+INLINE( int16x8_t,QHI_CSZL)   (int16x8_t x)
+{
+    QUAD_VTYPE c = {.H.I=x};
+    c.H.U = QHU_CSZL(c.H.U);
+    return  c.H.I;
+}
+
+INLINE( int16x8_t,QHF_CSZL) (float16x8_t x)
+{
+    QUAD_VTYPE c = {.H.F=x};
+    c.H.U = QHU_CSZL(c.H.U);
+    return  c.H.I;
+}
+
+INLINE(uint32x4_t,QWU_CSZL)  (uint32x4_t x)
+{
+    QUAD_VTYPE c = {.W.U=x};
+    c.B.U = vrbitq_u8(c.B.U);
+    c.B.U = vrev32q_u8(c.B.U);
+    return  vclzq_u32(c.W.U);
+}
+
+INLINE( int32x4_t,QWI_CSZL)   (int32x4_t x)
+{
+    QUAD_VTYPE c = {.W.I=x};
+    c.W.U = QWU_CSZL(c.W.U);
+    return  c.W.I;
+}
+
+INLINE( int32x4_t,QWF_CSZL) (float32x4_t x)
+{
+    QUAD_VTYPE c = {.W.F=x};
+    c.W.U = QWU_CSZL(c.W.U);
+    return  c.W.I;
+}
+
+INLINE(uint64x2_t,QDU_CSZL)  (uint64x2_t x)
+{
+    QUAD_VTYPE c = {.D.U=x};
+    c.B.U = vrbitq_u8(c.B.U);
+    c.B.U = vrev64q_u8(c.B.U);
+    DWRD_VTYPE l = {.D.U=vget_low_u64(c.D.U)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(c.D.U)};
+    l.U = UINT64_CSZL(l.U);
+    r.U = UINT64_CSZL(r.U);
+    return  vcombine_u64(l.D.U, r.D.U);
+}
+
+INLINE( int64x2_t,QDI_CSZL)   (int64x2_t x)
+{
+    QUAD_VTYPE c = {.D.I=x};
+    c.D.U = QDU_CSZL(c.D.I);
+    return  c.D.I;
+}
+
+INLINE( int64x2_t,QDF_CSZL) (float64x2_t x)
+{
+    QUAD_VTYPE c = {.D.F=x};
+    c.D.U = QDU_CSZL(c.D.I);
+    return  c.D.I;
+}
+
+
+INLINE(uint64x2_t,QQU_CSZL)  (uint64x2_t x)
+{
+    QUAD_VTYPE c = {.D.U=x};
+    c.B.U = vrbitq_u8(c.B.U);
+    c.B.U = vrev64q_u8(c.B.U);
+    DWRD_VTYPE n = {.D.U=vget_high_u64(c.D.U)};
+    n.U = n.U
+    ?   UINT64_CSZL(n.U)
+    :   (64+UINT64_CSZL(vgetq_lane_u64(c.D.U, 0)));
+    return  vcombine_u64(n.D.U, vdup_n_u64(0));
+}
+
+INLINE( int64x2_t,QQI_CSZL)   (int64x2_t x)
+{
+    QUAD_VTYPE c = {.D.I=x};
+    c.D.U = QQU_CSZL(c.D.U);
+    return  c.D.I;
+}
+
+INLINE( int64x2_t,QQF_CSZL)   (QUAD_FTYPE x)
+{
+    QUAD_VTYPE c = {.F=x};
+    c.D.U = QQU_CSZL(c.D.U);
+    return  c.D.I;
 }
 
 INLINE(Vwbu,VWBU_CSZL) (Vwbu x)
 {
-    return WBU_ASTV(WBU_CSZL(VWBU_ASTM(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.B.U = DBU_CSZL(c.B.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwbi,VWBI_CSZL) (Vwbi x)
 {
-    return WBI_ASTV(WBU_CSZL(VWBI_ASTM(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.B.U = DBU_CSZL(c.B.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwbc,VWBC_CSZL) (Vwbc x)
 {
-    return WBC_ASTV(WBU_CSZL(VWBC_ASTM(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.B.U = DBU_CSZL(c.B.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwhu,VWHU_CSZL) (Vwhu x)
 {
-    return WHU_ASTV(WHU_CSZL(VWHU_ASTM(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.H.U = DHU_CSZL(c.H.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwhi,VWHI_CSZL) (Vwhi x)
 {
-    return WHI_ASTV(WHU_CSZL(VWHI_ASTM(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.H.U = DHU_CSZL(c.H.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
+INLINE(Vwhi,VWHF_CSZL) (Vwhf x)
+{
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    Vwhi n;
+    c.H.U = DHU_CSZL(c.H.U);
+    n.V0 = vget_lane_f32(c.W.F, 0);
+    return  n;
+}
 
 INLINE(Vwwu,VWWU_CSZL) (Vwwu x)
 {
-    return WWU_ASTV(WWU_CSZL(VWWU_ASTM(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.W.U = DWU_CSZL(c.W.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
 INLINE(Vwwi,VWWI_CSZL) (Vwwi x)
 {
-    return WWI_ASTV(WWU_CSZL(VWWI_ASTM(x)));
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    c.W.U = DWU_CSZL(c.W.U);
+    x.V0 = vget_lane_f32(c.W.F, 0);
+    return  x;
 }
 
-INLINE(Vdbu,VDBU_CSZL) (Vdbu x) {return vclz_u8(VDBU_REVY(x));}
-INLINE(Vdbi,VDBI_CSZL) (Vdbu x) {return vclz_s8(VDBI_REVY(x));}
-INLINE(Vdbc,VDBC_CSZL) (Vdbc x)
+INLINE(Vwwi,VWWF_CSZL) (Vwwf x)
 {
-    return VDBU_ASBC(vclz_u8(VDBU_REVY(VDBC_ASBU(x))));
-}
-INLINE(Vdhu,VDHU_CSZL) (Vdhu x) {return vclz_u16(VDHU_REVY(x));}
-INLINE(Vdhi,VDHI_CSZL) (Vdhi x) {return vclz_s16(VDHI_REVY(x));}
-INLINE(Vdwu,VDWU_CSZL) (Vdwu x) {return vclz_u32(VDWU_REVY(x));}
-INLINE(Vdwi,VDWI_CSZL) (Vdwi x) {return vclz_s32(VDWI_REVY(x));}
-INLINE(Vddu,VDDU_CSZL) (Vddu x)
-{
-    return  vdup_n_u64(__builtin_ctzll(vget_lane_u64(x, 0)));
-}
-INLINE(Vddi,VDDI_CSZL) (Vddi x)
-{
-    return  vdup_n_s64(__builtin_ctzll(vget_lane_s64(x, 0)));
-}
-INLINE(Vqbu,VQBU_CSZL) (Vqbu x) {return vclzq_u8(VQBU_REVY(x));}
-INLINE(Vqbi,VQBI_CSZL) (Vqbu x) {return vclzq_s8(VQBI_REVY(x));}
-INLINE(Vqbc,VQBC_CSZL) (Vqbc x)
-{
-    return VQBU_ASBC(VQBU_CSZL(VQBC_ASBU(x)));
-}
-INLINE(Vqhu,VQHU_CSZL) (Vqhu x) {return vclzq_u16(VQHU_REVY(x));}
-INLINE(Vqhi,VQHI_CSZL) (Vqhi x) {return vclzq_s16(VQHI_REVY(x));}
-INLINE(Vqwu,VQWU_CSZL) (Vqwu x) {return vclzq_u32(VQWU_REVY(x));}
-INLINE(Vqwi,VQWI_CSZL) (Vqwi x) {return vclzq_s32(VQWI_REVY(x));}
-INLINE(Vqdu,VQDU_CSZL) (Vqdu x)
-{
-    return vcombine_u64(
-        VDDU_CSZL(vget_low_u64(x)),
-        VDDU_CSZL(vget_high_u64(x))
-    );
+    DWRD_VTYPE c = {.W.F={x.V0}};
+    Vwwi n;
+    c.H.U = DWU_CSZL(c.W.U);
+    n.V0 = vget_lane_f32(c.W.F, 0);
+    return  n;
 }
 
-INLINE(Vqdi,VQDI_CSZL) (Vqdi x)
-{
-    return vcombine_s64(
-        VDDI_CSZL(vget_low_s64(x)),
-        VDDI_CSZL(vget_high_s64(x))
-    );
-}
+INLINE(Vdbu,VDBU_CSZL) (Vdbu x) {return DBU_CSZL(x);}
+INLINE(Vdbi,VDBI_CSZL) (Vdbi x) {return DBI_CSZL(x);}
+INLINE(Vdbc,VDBC_CSZL) (Vdbc x) {x.V0 = DBC_CSZL(x.V0); return x;}
+INLINE(Vdhu,VDHU_CSZL) (Vdhu x) {return DHU_CSZL(x);}
+INLINE(Vdhi,VDHI_CSZL) (Vdhi x) {return DHI_CSZL(x);}
+INLINE(Vdhi,VDHF_CSZL) (Vdhf x) {return DHF_CSZL(x);}
+INLINE(Vdwu,VDWU_CSZL) (Vdwu x) {return DWU_CSZL(x);}
+INLINE(Vdwi,VDWI_CSZL) (Vdwi x) {return DWI_CSZL(x);}
+INLINE(Vdwi,VDWF_CSZL) (Vdwf x) {return DWF_CSZL(x);}
+INLINE(Vddu,VDDU_CSZL) (Vddu x) {return DDU_CSZL(x);}
+INLINE(Vddi,VDDI_CSZL) (Vddi x) {return DDI_CSZL(x);}
+INLINE(Vddi,VDDF_CSZL) (Vddf x) {return DDF_CSZL(x);}
+
+INLINE(Vqbu,VQBU_CSZL) (Vqbu x) {return QBU_CSZL(x);}
+INLINE(Vqbi,VQBI_CSZL) (Vqbi x) {return QBI_CSZL(x);}
+INLINE(Vqbc,VQBC_CSZL) (Vqbc x) {x.V0 = QBC_CSZL(x.V0); return x;}
+INLINE(Vqhu,VQHU_CSZL) (Vqhu x) {return QHU_CSZL(x);}
+INLINE(Vqhi,VQHI_CSZL) (Vqhi x) {return QHI_CSZL(x);}
+INLINE(Vqhi,VQHF_CSZL) (Vqhf x) {return QHF_CSZL(x);}
+INLINE(Vqwu,VQWU_CSZL) (Vqwu x) {return QWU_CSZL(x);}
+INLINE(Vqwi,VQWI_CSZL) (Vqwi x) {return QWI_CSZL(x);}
+INLINE(Vqwi,VQWF_CSZL) (Vqwf x) {return QWF_CSZL(x);}
+INLINE(Vqdu,VQDU_CSZL) (Vqdu x) {return QDU_CSZL(x);}
+INLINE(Vqdi,VQDI_CSZL) (Vqdi x) {return QDI_CSZL(x);}
+INLINE(Vqdi,VQDF_CSZL) (Vqdf x) {return QDF_CSZL(x);}
+INLINE(Vqqu,VQQU_CSZL) (Vqqu x) {x.V0 = QQU_CSZL(x.V0); return x;}
+INLINE(Vqqi,VQQI_CSZL) (Vqqi x) {x.V0 = QQI_CSZL(x.V0); return x;}
+INLINE(Vqqi,VQQF_CSZL) (Vqqf x) {return ((Vqqi){QQF_CSZL(x.V0)});}
 
 #if 0 // _LEAVE_ARM_CSZL
 }
@@ -50833,157 +56543,264 @@ INLINE(Vqdi,VQDI_CSZL) (Vqdi x)
 {
 #endif
 
-INLINE( UCHAR_STG(UTYPE), UCHAR_CSZR)  (uchar x) {return __builtin_clz(x)-24;}
-INLINE( SCHAR_STG(ITYPE), SCHAR_CSZR)  (schar x) {return UCHAR_CSZR(x&0xff);}
-INLINE(             char,  CHAR_CSZR)   (char x) {return UCHAR_CSZR(x);}
-INLINE( USHRT_STG(UTYPE), USHRT_CSZR) (ushort x) {return __builtin_clz(x)-16;}
-INLINE(  SHRT_STG(ITYPE),  SHRT_CSZR)  (short x) {return USHRT_CSZR(x&0xffff);}
-INLINE(  UINT_STG(UTYPE),  UINT_CSZR)   (uint x) {return __builtin_clz(x);}
-INLINE(   INT_STG(ITYPE),   INT_CSZR)    (int x) {return __builtin_clz(x);}
-INLINE( ULONG_STG(UTYPE), ULONG_CSZR)  (ulong x) {return __builtin_clzl(x);}
-INLINE(  LONG_STG(ITYPE),  LONG_CSZR)   (long x) {return __builtin_clzl(x);}
-INLINE(ULLONG_STG(UTYPE),ULLONG_CSZR) (ullong x) {return __builtin_clzll(x);}
-INLINE( LLONG_STG(UTYPE), LLONG_CSZR)  (llong x) {return __builtin_clzll(x);}
+INLINE( uchar, UCHAR_CSZR) (unsigned x) 
+{
+    x &= UCHAR_MAX;
+    return  __builtin_clz(x)-(UINT_WIDTH-UCHAR_WIDTH);
+}
+
+INLINE( schar, SCHAR_CSZR)   (signed x) {return UCHAR_CSZR(x);}
+INLINE(  char,  CHAR_CSZR)      (int x) {return UCHAR_CSZR(x);}
+
+
+INLINE(ushort, USHRT_CSZR) (unsigned x) 
+{
+    x &= USHRT_MAX;
+    return  __builtin_clz(x)-(UINT_WIDTH-USHRT_WIDTH);
+}
+
+INLINE( short,  SHRT_CSZR)   (signed x) {return USHRT_CSZR(x);}
+INLINE(  uint,  UINT_CSZR)     (uint x) {return __builtin_clz(x);}
+INLINE(   int,   INT_CSZR)      (int x) {return __builtin_clz(x);}
+INLINE( ulong, ULONG_CSZR)    (ulong x) {return __builtin_clzl(x);}
+INLINE(  long,  LONG_CSZR)     (long x) {return __builtin_clzl(x);}
+INLINE(ullong,ULLONG_CSZR)   (ullong x) {return __builtin_clzll(x);}
+INLINE( llong, LLONG_CSZR)    (llong x) {return __builtin_clzll(x);}
 
 #if QUAD_NLLONG == 2
 
 INLINE(QUAD_UTYPE,cszrqu) (QUAD_UTYPE x)
 {
-    QUAD_TYPE v = {.U=x};
-    return
-        v.Hi.U
-        ?   __builtin_clzll(v.Hi.U)
-        :   __builtin_clzll(v.Lo.U)+64;
+    QUAD_TYPE v={.U=x}, z;
+    z.Hi.U = 0;
+    if (v.Hi.U)
+        z.Lo.U = __builtin_clzll(v.Hi.U);
+    else 
+        z.Lo.U = __builtin_clzll(v.Lo.U)+64;
+    return  z.U;
 }
 
 INLINE(QUAD_ITYPE,cszrqi) (QUAD_ITYPE x)
 {
-    QUAD_TYPE r;
-    QUAD_TYPE v = {.I=x};
-    if (v.Hi.I)
-        r.Lo.I = __builtin_clzll(v.Lo.I);
-    else
-        r.Lo.I = __builtin_clzll(v.Hi.I)+64;
-    return r.I;
+    QUAD_TYPE c = {.I=x};
+    c.U = cszrqu(c.U);
+    return  c.I;
 }
 
 #endif
 
-INLINE(float,WBU_CSZR) (float x)
+#define     DBU_CSZR vclz_u8
+#define     DBI_CSZR vclz_s8
+#if CHAR_MIN
+#   define  DBC_CSZR vclz_s8
+#else
+#   define  DBC_CSZR vclz_u8
+#endif
+#define     DHU_CSZR vclz_u16
+#define     DHI_CSZR vclz_s16
+
+INLINE( int16x4_t,DHF_CSZR) (float16x4_t x)
 {
-    uint8x8_t m = vreinterpret_u8_f32(vdup_n_f32(x));
-    m = vclz_u8(m);
-    return vget_lane_f32(vreinterpret_f32_u8(m), 0);
+    DWRD_VTYPE c = {.H.F=x};
+    c.H.U = DHU_CSZR(c.H.U);
+    return  c.H.I;
 }
 
-INLINE(float,WHU_CSZR) (float x)
+#define     DWU_CSZR vclz_u32
+#define     DWI_CSZR vclz_s32
+
+INLINE( int32x2_t,DWF_CSZR) (float32x2_t x)
 {
-    uint16x4_t m = vreinterpret_u16_f32(vdup_n_f32(x));
-    m = vclz_u16(m);
-    return vget_lane_f32(vreinterpret_f32_u16(m), 0);
+    DWRD_VTYPE c = {.W.F=x};
+    c.W.U = DWU_CSZR(c.W.U);
+    return  c.W.I;
 }
 
-INLINE(float,WWU_CSZR) (float x)
+INLINE(uint64x1_t,DDU_CSZR)  (uint64x1_t x)
 {
-    uint32x2_t m = vreinterpret_u32_f32(vdup_n_f32(x));
-    m = vclz_u32(m);
-    return vget_lane_f32(vreinterpret_f32_u32(m), 0);
+    DWRD_VTYPE c = {.D.U=x};
+#if QUAD_NLLONG == 2
+    c.U = __builtin_clzll(c.U);
+#else
+    c.U = __builtin_clzl(c.U);
+#endif
+    return  c.D.U;
 }
 
-INLINE(Vwbu,VWBU_CSZR) (Vwbu x)
+INLINE( int64x1_t,DDI_CSZR)   (int64x1_t x)
 {
-    return WBU_ASTV(WBU_CSZR(VWBU_ASTM(x)));
+    DWRD_VTYPE c = {.D.I=x};
+    c.D.U = DDU_CSZR(c.D.U);
+    return  c.D.I;
 }
 
-INLINE(Vwbi,VWBI_CSZR) (Vwbi x)
+INLINE( int64x1_t,DDF_CSZR) (float64x1_t x)
 {
-    return WBI_ASTV(WBU_CSZR(VWBI_ASTM(x)));
+    DWRD_VTYPE c = {.D.F=x};
+    c.D.U = DDU_CSZR(c.D.U);
+    return  c.D.I;
 }
 
-INLINE(Vwbc,VWBC_CSZR) (Vwbc x)
+#define     QBU_CSZR vclzq_u8
+#define     QBI_CSZR vclzq_s8
+#if CHAR_MIN
+#   define  QBC_CSZR vclzq_s8
+#else
+#   define  QBC_CSZR vclzq_u8
+#endif
+#define     QHU_CSZR vclzq_u16
+#define     QHI_CSZR vclzq_s16
+
+INLINE(int16x8_t,QHF_CSZR) (float16x8_t x)
 {
-    return WBC_ASTV(WBU_CSZR(VWBC_ASTM(x)));
+    QUAD_VTYPE c = {.H.F=x};
+    c.H.U = QHU_CSZR(c.H.U);
+    return  c.H.I;
 }
 
-INLINE(Vwhu,VWHU_CSZR) (Vwhu x)
+#define     QWU_CSZR vclzq_u32
+#define     QWI_CSZR vclzq_s32
+
+INLINE(int32x4_t,QWF_CSZR) (float32x4_t x)
 {
-    return WHU_ASTV(WHU_CSZR(VWHU_ASTM(x)));
+    QUAD_VTYPE c = {.W.F=x};
+    c.W.U = QWU_CSZR(c.W.U);
+    return  c.W.I;
 }
 
-INLINE(Vwhi,VWHI_CSZR) (Vwhi x)
+INLINE(uint64x2_t,QDU_CSZR) (uint64x2_t x)
 {
-    return WHI_ASTV(WHU_CSZR(VWHI_ASTM(x)));
+    DWRD_VTYPE l = {.D.U=vget_low_u64(x)};
+    DWRD_VTYPE r = {.D.U=vget_high_u64(x)};
+#if QUAD_NLLONG == 2
+    l.U = __builtin_clzll(l.U);
+    r.U = __builtin_clzll(r.U);
+#else
+    l.U = __builtin_clzl(l.U);
+    r.U = __builtin_clzl(r.U);
+#endif
+    return  vcombine_u64(l.D.U, r.D.U);
 }
 
-
-INLINE(Vwwu,VWWU_CSZR) (Vwwu x)
+INLINE(int64x2_t,QDI_CSZR)   (int64x2_t x)
 {
-    return WWU_ASTV(WWU_CSZR(VWWU_ASTM(x)));
+    QUAD_VTYPE c = {.D.I=x};
+    c.D.U = QDU_CSZR(c.D.U);
+    return  c.D.I;
 }
 
-INLINE(Vwwi,VWWI_CSZR) (Vwwi x)
+INLINE(int64x2_t,QDF_CSZR)   (float64x2_t x)
 {
-    return WWI_ASTV(WWU_CSZR(VWWI_ASTM(x)));
+    QUAD_VTYPE c = {.D.F=x};
+    c.D.U = QDU_CSZR(c.D.U);
+    return  c.D.I;
 }
 
-INLINE(Vdbu,VDBU_CSZR) (Vdbu x) {return vclz_u8(x);}
-INLINE(Vdbi,VDBI_CSZR) (Vdbu x) {return vclz_s8(x);}
-INLINE(Vdbc,VDBC_CSZR) (Vdbc x)
+INLINE(uint64x2_t,QQU_CSZR)  (uint64x2_t x)
 {
-    return VDBU_ASBC(vclz_u8(VDBC_ASBU(x)));
-}
-INLINE(Vdhu,VDHU_CSZR) (Vdhu x) {return vclz_u16(x);}
-INLINE(Vdhi,VDHI_CSZR) (Vdhi x) {return vclz_s16(x);}
-INLINE(Vdwu,VDWU_CSZR) (Vdwu x) {return vclz_u32(x);}
-INLINE(Vdwi,VDWI_CSZR) (Vdwi x) {return vclz_s32(x);}
-INLINE(Vddu,VDDU_CSZR) (Vddu x)
-{
-    return  vdup_n_u64(__builtin_clzll(vget_lane_u64(x, 0)));
-}
-INLINE(Vddi,VDDI_CSZR) (Vddi x)
-{
-    return  vdup_n_s64(__builtin_clzll(vget_lane_s64(x, 0)));
-}
-INLINE(Vqbu,VQBU_CSZR) (Vqbu x) {return vclzq_u8(x);}
-INLINE(Vqbi,VQBI_CSZR) (Vqbu x) {return vclzq_s8(x);}
-INLINE(Vqbc,VQBC_CSZR) (Vqbc x)
-{
-    return VQBU_ASBC(vclzq_u8(VQBC_ASBU(x)));
-}
-INLINE(Vqhu,VQHU_CSZR) (Vqhu x) {return vclzq_u16(x);}
-INLINE(Vqhi,VQHI_CSZR) (Vqhi x) {return vclzq_s16(x);}
-INLINE(Vqwu,VQWU_CSZR) (Vqwu x) {return vclzq_u32(x);}
-INLINE(Vqwi,VQWI_CSZR) (Vqwi x) {return vclzq_s32(x);}
-INLINE(Vqdu,VQDU_CSZR) (Vqdu x)
-{
-    return vcombine_u64(
-        VDDU_CSZR(vget_low_u64(x)),
-        VDDU_CSZR(vget_high_u64(x))
-    );
+    DWRD_VTYPE l, r={.D.U=vget_high_u64(x)};
+#if DWRD_NLONG == 2
+    r.U = __builtin_clzll(r.U);
+#else
+    r.U = __builtin_clzl(r.U);
+#endif
+    if (r.U == 64)
+    {
+        l.U = vgetq_lane_u64(x, 0);
+#if DWRD_NLONG == 2
+        r.U += __builtin_clzll(l.U);
+#else
+        r.U += __builtin_clzl(l.U);
+#endif
+    }
+    return  vcombine_u64(l.D.U, vdup_n_u64(0));
 }
 
-INLINE(Vqdi,VQDI_CSZR) (Vqdi x)
+INLINE( int64x2_t,QQI_CSZR)   (int64x2_t x)
 {
-    return vcombine_s64(
-        VDDI_CSZR(vget_low_s64(x)),
-        VDDI_CSZR(vget_high_s64(x))
-    );
+    QUAD_VTYPE c = {.D.I=x};
+    c.D.U = QQU_CSZR(c.D.U);
+    return  c.D.I;
 }
+
+INLINE( int64x2_t,QQF_CSZR)  (QUAD_FTYPE x)
+{
+    QUAD_VTYPE c = {.F=x};
+    c.D.U = QQU_CSZR(c.D.U);
+    return  c.D.I;
+}
+
+INLINE(     float,WBU_CSZR)       (float x)
+{
+    DWRD_VTYPE c = {.W.F={x}};
+    c.B.U = DBU_CSZR(c.B.U);
+    return  vget_lane_f32(c.W.F, 0);
+}
+
+INLINE(     float,WHU_CSZR)       (float x)
+{
+    DWRD_VTYPE c = {.W.F={x}};
+    c.H.U = DHU_CSZR(c.H.U);
+    return  vget_lane_f32(c.W.F, 0);
+}
+
+INLINE(     float,WWU_CSZR) (float x)
+{
+    DWRD_VTYPE c = {.W.F={x}};
+    c.W.U = DWU_CSZR(c.W.U);
+    return  vget_lane_f32(c.W.F, 0);
+}
+
+INLINE(Vwbu,VWBU_CSZR) (Vwbu x) {return ((x.V0=WBU_CSZR(x.V0)), x);}
+INLINE(Vwbi,VWBI_CSZR) (Vwbi x) {return ((x.V0=WBU_CSZR(x.V0)), x);}
+INLINE(Vwbc,VWBC_CSZR) (Vwbc x) {return ((x.V0=WBU_CSZR(x.V0)), x);}
+
+INLINE(Vwhu,VWHU_CSZR) (Vwhu x) {return ((x.V0=WHU_CSZR(x.V0)), x);}
+INLINE(Vwhi,VWHI_CSZR) (Vwhi x) {return ((x.V0=WHU_CSZR(x.V0)), x);}
+INLINE(Vwhi,VWHF_CSZR) (Vwhf x) {return ((Vwhi){WHU_CSZR(x.V0)});}
+
+INLINE(Vwwu,VWWU_CSZR) (Vwwu x) {return ((x.V0=WWU_CSZR(x.V0)), x);}
+INLINE(Vwwi,VWWI_CSZR) (Vwwi x) {return ((x.V0=WWU_CSZR(x.V0)), x);}
+INLINE(Vwwi,VWWF_CSZR) (Vwwf x) {return ((Vwwi){WWU_CSZR(x.V0)});}
+
+INLINE(Vdbu,VDBU_CSZR) (Vdbu x) {return DBU_CSZR(x);}
+INLINE(Vdbi,VDBI_CSZR) (Vdbu x) {return DBI_CSZR(x);}
+INLINE(Vdbc,VDBC_CSZR) (Vdbc x) {x.V0 = DBC_CSZR(x.V0); return x;}
+INLINE(Vdhu,VDHU_CSZR) (Vdhu x) {return DHU_CSZR(x);}
+INLINE(Vdhi,VDHI_CSZR) (Vdhi x) {return DHI_CSZR(x);}
+INLINE(Vdhi,VDHF_CSZR) (Vdhf x) {return DHF_CSZR(x);}
+INLINE(Vdwu,VDWU_CSZR) (Vdwu x) {return DWU_CSZR(x);}
+INLINE(Vdwi,VDWI_CSZR) (Vdwi x) {return DWI_CSZR(x);}
+INLINE(Vdwi,VDWF_CSZR) (Vdwf x) {return DWF_CSZR(x);}
+INLINE(Vddu,VDDU_CSZR) (Vddu x) {return DDU_CSZR(x);}
+INLINE(Vddi,VDDI_CSZR) (Vddi x) {return DDI_CSZR(x);}
+INLINE(Vddi,VDDF_CSZR) (Vddf x) {return DDF_CSZR(x);}
+
+INLINE(Vqbu,VQBU_CSZR) (Vqbu x) {return QBU_CSZR(x);}
+INLINE(Vqbi,VQBI_CSZR) (Vqbu x) {return QBI_CSZR(x);}
+INLINE(Vqbc,VQBC_CSZR) (Vqbc x) {x.V0 = QBC_CSZR(x.V0); return x;}
+INLINE(Vqhu,VQHU_CSZR) (Vqhu x) {return QHU_CSZR(x);}
+INLINE(Vqhi,VQHI_CSZR) (Vqhi x) {return QHI_CSZR(x);}
+INLINE(Vqhi,VQHF_CSZR) (Vqhf x) {return QHF_CSZR(x);}
+INLINE(Vqwu,VQWU_CSZR) (Vqwu x) {return QWU_CSZR(x);}
+INLINE(Vqwi,VQWI_CSZR) (Vqwi x) {return QWI_CSZR(x);}
+INLINE(Vqwi,VQWF_CSZR) (Vqwf x) {return QWF_CSZR(x);}
+INLINE(Vqdu,VQDU_CSZR) (Vqdu x) {return QDU_CSZR(x);}
+INLINE(Vqdi,VQDI_CSZR) (Vqdi x) {return QDI_CSZR(x);}
+INLINE(Vqdi,VQDF_CSZR) (Vqdf x) {return QDF_CSZR(x);}
+INLINE(Vqqu,VQQU_CSZR) (Vqqu x) {x.V0 = QQU_CSZR(x.V0); return x;}
+INLINE(Vqqi,VQQI_CSZR) (Vqqi x) {x.V0 = QQI_CSZR(x.V0); return x;}
+INLINE(Vqqi,VQQF_CSZR) (Vqqf x) {return ((Vqqi){QQF_CSZR(x.V0)});}
 
 #if 0 // _LEAVE_ARM_CSZR
 }
 #endif
 
-#if 0 // _ENTER_ARM_DIVL
+#if 0 // _ENTER_ARM_DIVN
 {
 #endif
 
-#if QUAD_NLLONG == 2
-INLINE(QUAD_UTYPE,divloqu) (QUAD_UTYPE a, QUAD_UTYPE b) {return a/b;}
-INLINE(QUAD_ITYPE,divloqi) (QUAD_ITYPE a, QUAD_UTYPE b) {return a/b;}
-#endif
-
-INLINE(Vwyu,VWYU_DIVL) (Vwyu a, Vwyu b)
+INLINE(Vwyu,VWYU_DIVN) (Vwyu a, Vwyu b)
 {
     float p = VWYU_ASTM(a);
     float q = VWYU_ASTM(b);
@@ -50998,7 +56815,7 @@ INLINE(Vwyu,VWYU_DIVL) (Vwyu a, Vwyu b)
 }
 
 
-INLINE(Vwbu,VWBU_DIVL) (Vwbu a, Vwbu b)
+INLINE(Vwbu,VWBU_DIVN) (Vwbu a, Vwbu b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     float16x4_t l = VWBU_CVHF(a);
@@ -51013,7 +56830,7 @@ INLINE(Vwbu,VWBU_DIVL) (Vwbu a, Vwbu b)
 #endif
 }
 
-INLINE(Vwbi,VWBI_DIVL) (Vwbi a, Vwbi b)
+INLINE(Vwbi,VWBI_DIVN) (Vwbi a, Vwbi b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     float16x4_t l = VWBI_CVHF(a);
@@ -51028,7 +56845,7 @@ INLINE(Vwbi,VWBI_DIVL) (Vwbi a, Vwbi b)
 #endif
 }
 
-INLINE(Vwbc,VWBC_DIVL) (Vwbc a, Vwbc b)
+INLINE(Vwbc,VWBC_DIVN) (Vwbc a, Vwbc b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     float16x4_t l = VWBC_CVHF(a);
@@ -51044,7 +56861,7 @@ INLINE(Vwbc,VWBC_DIVL) (Vwbc a, Vwbc b)
 }
 
 
-INLINE(Vwhu,VWHU_DIVL) (Vwhu a, Vwhu b)
+INLINE(Vwhu,VWHU_DIVN) (Vwhu a, Vwhu b)
 {
     float32x2_t l = VWHU_CVWF(a);
     float32x2_t r = VWHU_CVWF(b);
@@ -51052,7 +56869,7 @@ INLINE(Vwhu,VWHU_DIVL) (Vwhu a, Vwhu b)
     return  VDWF_CVHU(l);
 }
 
-INLINE(Vwhi,VWHI_DIVL) (Vwhi a, Vwhi b)
+INLINE(Vwhi,VWHI_DIVN) (Vwhi a, Vwhi b)
 {
     float32x2_t l = VWHI_CVWF(a);
     float32x2_t r = VWHI_CVWF(b);
@@ -51061,24 +56878,24 @@ INLINE(Vwhi,VWHI_DIVL) (Vwhi a, Vwhi b)
 }
 
     
-INLINE(Vwwu,VWWU_DIVL) (Vwwu a, Vwwu b)
+INLINE(Vwwu,VWWU_DIVN) (Vwwu a, Vwwu b)
 {
     return  UINT_ASTV( (VWWU_ASTV(a)/VWWU_ASTV(b)) );
 }
 
-INLINE(Vwwi,VWWI_DIVL) (Vwwi a, Vwwi b)
+INLINE(Vwwi,VWWI_DIVN) (Vwwi a, Vwwi b)
 {
     return  INT_ASTV( (VWWI_ASTV(a)/VWWI_ASTV(b)) );
 }
 
 
-INLINE(Vdyu,VDYU_DIVL) (Vdyu a, Vdyu b)
+INLINE(Vdyu,VDYU_DIVN) (Vdyu a, Vdyu b)
 {
     return  VDDU_ASYU(vand_u64(VDYU_ASDU(a), VDYU_ASDU(b)));
 }
 
 
-INLINE(Vdbu,VDBU_DIVL) (Vdbu a, Vdbu b)
+INLINE(Vdbu,VDBU_DIVN) (Vdbu a, Vdbu b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     float16x8_t l = VDBU_CVHF(a);
@@ -51099,7 +56916,7 @@ INLINE(Vdbu,VDBU_DIVL) (Vdbu a, Vdbu b)
 #endif
 }
 
-INLINE(Vdbi,VDBI_DIVL) (Vdbi a, Vdbi b)
+INLINE(Vdbi,VDBI_DIVN) (Vdbi a, Vdbi b)
 {
 #if defined(SPC_ARM_FP16_SIMD)
     float16x8_t l = VDBI_CVHF(a);
@@ -51120,17 +56937,17 @@ INLINE(Vdbi,VDBI_DIVL) (Vdbi a, Vdbi b)
 #endif
 }
 
-INLINE(Vdbc,VDBC_DIVL) (Vdbc a, Vdbc b)
+INLINE(Vdbc,VDBC_DIVN) (Vdbc a, Vdbc b)
 {
 #if CHAR_MIN
-    return  VDBI_ASBC(VDBI_DIVL(VDBC_ASBI(a), VDBC_ASBI(b)));
+    return  VDBI_ASBC(VDBI_DIVN(VDBC_ASBI(a), VDBC_ASBI(b)));
 #else
-    return  VDBU_ASBC(VDBU_DIVL(VDBC_ASBU(a), VDBC_ASBU(b)));
+    return  VDBU_ASBC(VDBU_DIVN(VDBC_ASBU(a), VDBC_ASBU(b)));
 #endif
 }
 
 
-INLINE(Vdhu,VDHU_DIVL) (Vdhu a, Vdhu b)
+INLINE(Vdhu,VDHU_DIVN) (Vdhu a, Vdhu b)
 {
 #if 0
     float32x4_t l = vcvtq_f32_u32(vmovl_u16(a));
@@ -51151,7 +56968,7 @@ adding an and #0xffff to each operand?
 #endif
 }
 
-INLINE(Vdhi,VDHI_DIVL) (Vdhi a, Vdhi b)
+INLINE(Vdhi,VDHI_DIVN) (Vdhi a, Vdhi b)
 {
 #if 0
     float32x4_t l = vcvtq_f32_s32(vmovl_s16(a));
@@ -51169,7 +56986,7 @@ INLINE(Vdhi,VDHI_DIVL) (Vdhi a, Vdhi b)
 }
 
 
-INLINE(Vdwu,VDWU_DIVL) (Vdwu a, Vdwu b)
+INLINE(Vdwu,VDWU_DIVN) (Vdwu a, Vdwu b)
 {
     uint32x2_t c = {0};
     c = vset_lane_u32(vget_lane_u32(a, 0)/vget_lane_u32(b, 0), c, 0);
@@ -51177,7 +56994,7 @@ INLINE(Vdwu,VDWU_DIVL) (Vdwu a, Vdwu b)
     return  c;
 }
 
-INLINE(Vdwi,VDWI_DIVL) (Vdwi a, Vdwi b)
+INLINE(Vdwi,VDWI_DIVN) (Vdwi a, Vdwi b)
 {
     int32x2_t c = {0};
     c = vset_lane_s32(vget_lane_s32(a, 0)/vget_lane_s32(b, 0), c, 0);
@@ -51186,84 +57003,84 @@ INLINE(Vdwi,VDWI_DIVL) (Vdwi a, Vdwi b)
 }
 
 
-INLINE(Vddu,VDDU_DIVL) (Vddu a, Vddu b)
+INLINE(Vddu,VDDU_DIVN) (Vddu a, Vddu b)
 {
     return  vdup_n_u64(vget_lane_u64(a, 0)/vget_lane_u64(b, 0));
 }
 
-INLINE(Vddi,VDDI_DIVL) (Vddi a, Vddi b)
+INLINE(Vddi,VDDI_DIVN) (Vddi a, Vddi b)
 {
     return  vdup_n_s64(vget_lane_s64(a, 0)/vget_lane_s64(b, 0));
 }
 
 
-INLINE(Vqyu,VQYU_DIVL) (Vqyu a, Vqyu b)
+INLINE(Vqyu,VQYU_DIVN) (Vqyu a, Vqyu b)
 {
     return  VQDU_ASYU(vandq_u64(VQYU_ASDU(a), VQYU_ASDU(b)));
 }
 
 
-INLINE(Vqbu,VQBU_DIVL) (Vqbu a, Vqbu b)
+INLINE(Vqbu,VQBU_DIVN) (Vqbu a, Vqbu b)
 {
     return  vcombine_u8(
-        VDBU_DIVL(vget_low_u8(a),  vget_low_u8(b)),
-        VDBU_DIVL(vget_high_u8(a), vget_high_u8(b))
+        VDBU_DIVN(vget_low_u8(a),  vget_low_u8(b)),
+        VDBU_DIVN(vget_high_u8(a), vget_high_u8(b))
     );
 }
 
-INLINE(Vqbi,VQBI_DIVL) (Vqbi a, Vqbi b)
+INLINE(Vqbi,VQBI_DIVN) (Vqbi a, Vqbi b)
 {
     return  vcombine_s8(
-        VDBI_DIVL(vget_low_s8(a),  vget_low_s8(b)),
-        VDBI_DIVL(vget_high_s8(a), vget_high_s8(b))
+        VDBI_DIVN(vget_low_s8(a),  vget_low_s8(b)),
+        VDBI_DIVN(vget_high_s8(a), vget_high_s8(b))
     );
 }
 
-INLINE(Vqbc,VQBC_DIVL) (Vqbc a, Vqbc b)
+INLINE(Vqbc,VQBC_DIVN) (Vqbc a, Vqbc b)
 {
 #if CHAR_MIN
-    return  VQBI_ASBC(VQBI_DIVL(VQBC_ASBI(a), VQBC_ASBI(b)));
+    return  VQBI_ASBC(VQBI_DIVN(VQBC_ASBI(a), VQBC_ASBI(b)));
 #else
-    return  VQBU_ASBC(VQBU_DIVL(VQBC_ASBU(a), VQBC_ASBU(b)));
+    return  VQBU_ASBC(VQBU_DIVN(VQBC_ASBU(a), VQBC_ASBU(b)));
 #endif
 }
 
 
-INLINE(Vqhu,VQHU_DIVL) (Vqhu a, Vqhu b)
+INLINE(Vqhu,VQHU_DIVN) (Vqhu a, Vqhu b)
 {
     return  vcombine_u16(
-        VDHU_DIVL(vget_low_u16(a),  vget_low_u16(b)),
-        VDHU_DIVL(vget_high_u16(a), vget_high_u16(b))
+        VDHU_DIVN(vget_low_u16(a),  vget_low_u16(b)),
+        VDHU_DIVN(vget_high_u16(a), vget_high_u16(b))
     );
 }
 
-INLINE(Vqhi,VQHI_DIVL) (Vqhi a, Vqhi b)
+INLINE(Vqhi,VQHI_DIVN) (Vqhi a, Vqhi b)
 {
     return  vcombine_s16(
-        VDHI_DIVL(vget_low_s16(a),  vget_low_s16(b)),
-        VDHI_DIVL(vget_high_s16(a), vget_high_s16(b))
+        VDHI_DIVN(vget_low_s16(a),  vget_low_s16(b)),
+        VDHI_DIVN(vget_high_s16(a), vget_high_s16(b))
     );
 }
 
 
-INLINE(Vqwu,VQWU_DIVL) (Vqwu a, Vqwu b)
+INLINE(Vqwu,VQWU_DIVN) (Vqwu a, Vqwu b)
 {
     return  vcombine_u32(
-        VDWU_DIVL(vget_low_u32(a),  vget_low_u32(b)),
-        VDWU_DIVL(vget_high_u32(a), vget_high_u32(b))
+        VDWU_DIVN(vget_low_u32(a),  vget_low_u32(b)),
+        VDWU_DIVN(vget_high_u32(a), vget_high_u32(b))
     );
 }
 
-INLINE(Vqwi,VQWI_DIVL) (Vqwi a, Vqwi b)
+INLINE(Vqwi,VQWI_DIVN) (Vqwi a, Vqwi b)
 {
     return  vcombine_s32(
-        VDWI_DIVL(vget_low_s32(a),  vget_low_s32(b)),
-        VDWI_DIVL(vget_high_s32(a), vget_high_s32(b))
+        VDWI_DIVN(vget_low_s32(a),  vget_low_s32(b)),
+        VDWI_DIVN(vget_high_s32(a), vget_high_s32(b))
     );
 }
 
 
-INLINE(Vqdu,VQDU_DIVL) (Vqdu a, Vqdu b)
+INLINE(Vqdu,VQDU_DIVN) (Vqdu a, Vqdu b)
 {
     return  vcombine_u64(
         vdup_n_u64(vgetq_lane_u64(a, 0)/vgetq_lane_u64(b, 0)),
@@ -51271,7 +57088,7 @@ INLINE(Vqdu,VQDU_DIVL) (Vqdu a, Vqdu b)
     );
 }
 
-INLINE(Vqdi,VQDI_DIVL) (Vqdi a, Vqdi b)
+INLINE(Vqdi,VQDI_DIVN) (Vqdi a, Vqdi b)
 {
     return  vcombine_s64(
         vdup_n_s64(vgetq_lane_s64(a, 0)/vgetq_lane_s64(b, 0)),
@@ -51279,39 +57096,12 @@ INLINE(Vqdi,VQDI_DIVL) (Vqdi a, Vqdi b)
     );
 }
 
-#if 0 // _LEAVE_ARM_DIVL
+#if 0 // _LEAVE_ARM_DIVN
 }
 #endif
 
 #if 0 // _ENTER_ARM_DIV2
 {
-#endif
-
-
-#if QUAD_NLLONG == 2
-
-INLINE( uint64_t,div2qu)  (QUAD_UTYPE a,   uint64_t b)
-{
-    return  a/b;
-}
-
-INLINE(  int64_t,div2qi) (QUAD_ITYPE a,    int64_t b)
-{
-    return  a/b;
-}
-
-#else
-
-INLINE(uint64_t,ULLONG_DIV2) (ullong a, uint64_t b)
-{
-    return  a/b;
-}
-
-INLINE( int64_t, LLONG_DIV2)  (llong a,  int64_t b)
-{
-    return  a/b;
-}
-
 #endif
 
 INLINE(Vwbu,VDHU_DIV2) (Vdhu a, Vwbu b)
@@ -52022,28 +57812,14 @@ INLINE(uint16_t,FLT16_DIFU) (flt16_t a, flt16_t b)
 
 INLINE(uint32_t,FLT_DIFU)  (float a,  float b) {return  vabds_f32(a, b);}
 INLINE(uint64_t,DBL_DIFU) (double a, double b) {return  vabdd_f64(a, b);}
-
-
-#if QUAD_NLLONG == 2
-
-INLINE(QUAD_UTYPE,difuqu) (QUAD_UTYPE a, QUAD_UTYPE b) 
-{
-    return  (a <= b) ? (b-a) : (a-b);
-}
-
-INLINE(QUAD_UTYPE,difuqi) (QUAD_ITYPE a, QUAD_ITYPE b) 
-{
-    return  (a <= b)
-    ?   (QUAD_UTYPE) b-(QUAD_UTYPE) a
-    :   (QUAD_UTYPE) a-(QUAD_UTYPE) b;
-}
-
 INLINE(QUAD_UTYPE,difuqf) (QUAD_FTYPE a, QUAD_FTYPE b) 
 {
+#if 0
     return  (a <= b) ? (b-a) : (a-b);
-}
-
+#else
+    return  ((QUAD_UTYPE){0});
 #endif
+}
 
 INLINE(Vwyu,VWYU_DIFU) (Vwyu a, Vwyu b)
 {
@@ -52237,15 +58013,15 @@ INLINE(Vdwi,VDWI_DIFU) (Vdwi a, Vdwi b)
 
 INLINE(Vddu,VDDU_DIFU) (Vddu a, Vddu b) 
 {
-    uint64x1_t l = VDDU_MINL(a, b);
-    uint64x1_t r = VDDU_MAXL(a, b);
+    uint64x1_t l = VDDU_CGTR(a, b);
+    uint64x1_t r = VDDU_CLTR(a, b);
     return  vsub_u64(l, r);
 }
 
 INLINE(Vddu,VDDI_DIFU) (Vddi a, Vddi b)
 {
-    int64x1_t p = VDDI_MINL(a, b);
-    int64x1_t q = VDDI_MAXL(a, b);
+    int64x1_t p = VDDI_CGTR(a, b);
+    int64x1_t q = VDDI_CLTR(a, b);
     return VDDU_DIFU(
         vreinterpret_u64_s64(p),
         vreinterpret_u64_s64(q)
@@ -52298,15 +58074,15 @@ INLINE(Vqwi,VQWI_DIFU) (Vqwi a, Vqwi b)
 
 INLINE(Vqdu,VQDU_DIFU) (Vqdu a, Vqdu b) 
 {
-    uint64x2_t l = VQDU_MINL(a, b);
-    uint64x2_t r = VQDU_MAXL(a, b);
+    uint64x2_t l = VQDU_CGTR(a, b);
+    uint64x2_t r = VQDU_CLTR(a, b);
     return  vsubq_u64(l, r);
 }
 
 INLINE(Vqdu,VQDI_DIFU) (Vqdi a, Vqdi b)
 {
-    int64x2_t p = VQDI_MINL(a, b);
-    int64x2_t q = VQDI_MAXL(a, b);
+    int64x2_t p = VQDI_CGTR(a, b);
+    int64x2_t q = VQDI_CLTR(a, b);
     return  VQDU_DIFU(
         vreinterpretq_u64_s64(p),
         vreinterpretq_u64_s64(q)
@@ -52668,6 +58444,9 @@ INLINE(Vqdi,  LLONG_MVQL)   (llong x)
     return  LLONG_MVQL(x);
 }
 
+INLINE(Vqqu,mvqlqu) (QUAD_UTYPE x) {return astvqu(x);}
+INLINE(Vqqi,mvqlqi) (QUAD_ITYPE x) {return astvqi(x);}
+
 #else
 
 INLINE(Vqqu, ULLONG_MVQL) (ullong x) 
@@ -52702,6 +58481,9 @@ INLINE(Vqdf,  DBL_MVQL)  (double x)
     return  DBL_MVQL(x);
 }
 
+INLINE(Vqqf,mvqlqf) (QUAD_FTYPE x) {return ((Vqqf){x});}
+
+
 INLINE(   _Bool,VQYU_MVQL) (Vqyu x) 
 {
 #define     VQYU_MVQL(X) ((_Bool) (1&vgetq_lane_u64(VQYU_ASDU(X),0)))
@@ -52730,6 +58512,11 @@ INLINE(   float,VQWF_MVQL) (Vqwf x) {return  vgetq_lane_f32(x, 0);}
 INLINE(uint64_t,VQDU_MVQL) (Vqdu x) {return  vgetq_lane_u64(x, 0);}
 INLINE( int64_t,VQDI_MVQL) (Vqdi x) {return  vgetq_lane_s64(x, 0);}
 INLINE(  double,VQDF_MVQL) (Vqdf x) {return  vgetq_lane_f64(x, 0);}
+
+INLINE(QUAD_UTYPE,VQQU_MVQL) (Vqqu x) {return VQQU_ASTV(x);}
+INLINE(QUAD_ITYPE,VQQI_MVQL) (Vqqi x) {return VQQI_ASTV(x);}
+INLINE(QUAD_FTYPE,VQQF_MVQL) (Vqqf x) {return x.V0;}
+
 #if 0 // _LEAVE_ARM_MVQL
 }
 #endif
@@ -52738,3 +58525,4 @@ INLINE(  double,VQDF_MVQL) (Vqdf x) {return  vgetq_lane_f64(x, 0);}
 #if 0 // _LEAVE_ARM__
 }
 #endif
+

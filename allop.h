@@ -19,21 +19,204 @@ HISTORY:
 
 */
 
+#define     MY_BINOP(F, A, B, ...)    ((F)(A,B))
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,neglqu) (QUAD_UTYPE x);
+INLINE(QUAD_UTYPE,unolqu) (Rc(0, 128) n);
+INLINE(QUAD_UTYPE,unorqu) (Rc(0, 128) n);
+
+INLINE(QUAD_ITYPE,unolqi) (Rc(0, 128) n);
+INLINE(QUAD_ITYPE,unorqi) (Rc(0, 128) n);
+#endif
+
+QUAD_UTYPE MY_MODLQU(QUAD_UTYPE l, QUAD_UTYPE r, QUAD_UTYPE *m);
+
+INLINE( uchar, UCHAR_CSZR) (unsigned x);
+INLINE( schar, SCHAR_CSZR)   (signed x); 
+INLINE(  char,  CHAR_CSZR)      (int x); 
+INLINE(ushort, USHRT_CSZR) (unsigned x); 
+INLINE( short,  SHRT_CSZR)   (signed x);
+INLINE(  uint,  UINT_CSZR)     (uint x);
+INLINE(   int,   INT_CSZR)      (int x); 
+INLINE( ulong, ULONG_CSZR)    (ulong x); 
+INLINE(  long,  LONG_CSZR)     (long x); 
+INLINE(ullong,ULLONG_CSZR)   (ullong x); 
+INLINE( llong, LLONG_CSZR)    (llong x);
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,cszrqu) (QUAD_UTYPE x);
+INLINE(QUAD_ITYPE,cszrqi) (QUAD_ITYPE x);
+#endif
+
+#if 0 // _ENTER_ALL_VOID
+{
+#endif
 
 #define       ADDR_VOID ((void *) 0)
-#define       BOOL_VOID ((_Bool) 0)
-#define      UCHAR_VOID ((uchar) 0)
-#define      SCHAR_VOID ((schar) 0)
-#define       CHAR_VOID ((char) 0)
+#define       BOOL_VOID  ((_Bool) 0)
+#define      UCHAR_VOID  ((uchar) 0)
+#define      SCHAR_VOID  ((schar) 0)
+#define       CHAR_VOID   ((char) 0)
 #define      USHRT_VOID ((ushort) 0)
-#define       SHRT_VOID ((short) 0)
-#define       UINT_VOID (0u)
-#define        INT_VOID (0)
-#define      ULONG_VOID (0ul)
-#define     ULLONG_VOID (0ull)
-#define      LLONG_VOID (0ll)
-#define        FLT_VOID (0.0f)
-#define        DBL_VOID (0.0)
+#define       SHRT_VOID  ((short) 0)
+#define       UINT_VOID         (0U)
+#define        INT_VOID          (0)
+#define      ULONG_VOID          (0UL)
+#define       LONG_VOID          (0L)
+#define     ULLONG_VOID          (0ULL)
+#define      LLONG_VOID          (0LL)
+
+#define       BOOL_VOIDA  ((_Bool *) 0)
+#define      UCHAR_VOIDA  ((uchar *) 0)
+#define      SCHAR_VOIDA  ((schar *) 0)
+#define       CHAR_VOIDA   ((char *) 0)
+#define      USHRT_VOIDA ((ushort *) 0)
+#define       SHRT_VOIDA  ((short *) 0)
+#define       UINT_VOIDA   ((uint *) 0)
+#define        INT_VOIDA    ((int *) 0)
+#define      ULONG_VOIDA  ((ulong *) 0)
+#define       LONG_VOIDA   ((long *) 0)
+#define     ULLONG_VOIDA ((ullong *) 0)
+#define      LLONG_VOIDA  ((llong *) 0)
+
+#define       BOOL_VOIDAC  ((_Bool const *) 0)
+#define      UCHAR_VOIDAC  ((uchar const *) 0)
+#define      SCHAR_VOIDAC  ((schar const *) 0)
+#define       CHAR_VOIDAC   ((char const *) 0)
+#define      USHRT_VOIDAC ((ushort const *) 0)
+#define       SHRT_VOIDAC  ((short const *) 0)
+#define       UINT_VOIDAC   ((uint const *) 0)
+#define        INT_VOIDAC    ((int const *) 0)
+#define      ULONG_VOIDAC  ((ulong const *) 0)
+#define       LONG_VOIDAC   ((long const *) 0)
+#define     ULLONG_VOIDAC ((ullong const *) 0)
+#define      LLONG_VOIDAC  ((llong const *) 0)
+
+#if QUAD_NLLONG == 2
+#   define voidqu ((QUAD_UTYPE){0})
+#   define voidaqu ((QUAD_UTYPE *) 0)
+#   define voidacqu ((QUAD_UTYPE const *) 0)
+
+#   define voidqi ((QUAD_ITYPE){0})
+#   define voidaqi ((QUAD_ITYPE *) 0)
+#   define voidacqi ((QUAD_ITYPE const *) 0)
+
+#endif
+
+#if 0 // _LEAVE_ALL_VOID
+}
+#endif
+
+#if 0 // _ENTER_ALL_CKTY
+{
+#endif
+
+#define       BOOL_CKTY(X) _Generic(X,  _Bool:1,default:0)
+#define      UCHAR_CKTY(X) _Generic(X,  uchar:1,default:0)
+#define      SCHAR_CKTY(X) _Generic(X,  schar:1,default:0)
+#define       CHAR_CKTY(X) _Generic(X,   char:1,default:0)
+#define      USHRT_CKTY(X) _Generic(X, ushort:1,default:0)
+#define       SHRT_CKTY(X) _Generic(X,  short:1,default:0)
+#define       UINT_CKTY(X) _Generic(X,   uint:1,default:0)
+#define        INT_CKTY(X) _Generic(X,    int:1,default:0)
+#define      ULONG_CKTY(X) _Generic(X,  ulong:1,default:0)
+#define       LONG_CKTY(X) _Generic(X,   long:1,default:0)
+#define     ULLONG_CKTY(X) _Generic(X, ullong:1,default:0)
+#define      LLONG_CKTY(X) _Generic(X,  llong:1,default:0)
+#define      FLT16_CKTY(X) _Generic(X,flt16_t:1,default:0)
+#define        FLT_CKTY(X) _Generic(X,  float:1,default:0)
+#define        DBL_CKTY(X) _Generic(X, double:1,default:0)
+
+#define       VOID_CKTYA(X) _Generic(X,   void *:1,default:0)
+#define       BOOL_CKTYA(X) _Generic(X,  _Bool *:1,default:0)
+#define      UCHAR_CKTYA(X) _Generic(X,  uchar *:1,default:0)
+#define      SCHAR_CKTYA(X) _Generic(X,  schar *:1,default:0)
+#define       CHAR_CKTYA(X) _Generic(X,   char *:1,default:0)
+#define      USHRT_CKTYA(X) _Generic(X, ushort *:1,default:0)
+#define       SHRT_CKTYA(X) _Generic(X,  short *:1,default:0)
+#define       UINT_CKTYA(X) _Generic(X,   uint *:1,default:0)
+#define        INT_CKTYA(X) _Generic(X,    int *:1,default:0)
+#define      ULONG_CKTYA(X) _Generic(X,  ulong *:1,default:0)
+#define       LONG_CKTYA(X) _Generic(X,   long *:1,default:0)
+#define     ULLONG_CKTYA(X) _Generic(X, ullong *:1,default:0)
+#define      LLONG_CKTYA(X) _Generic(X,  llong *:1,default:0)
+#define      FLT16_CKTYA(X) _Generic(X,flt16_t *:1,default:0)
+#define        FLT_CKTYA(X) _Generic(X,  float *:1,default:0)
+#define        DBL_CKTYA(X) _Generic(X, double *:1,default:0)
+
+#define       VOID_CKTYAC(X) _Generic(X,   void const *:1,default:0)
+#define       BOOL_CKTYAC(X) _Generic(X,  _Bool const *:1,default:0)
+#define      UCHAR_CKTYAC(X) _Generic(X,  uchar const *:1,default:0)
+#define      SCHAR_CKTYAC(X) _Generic(X,  schar const *:1,default:0)
+#define       CHAR_CKTYAC(X) _Generic(X,   char const *:1,default:0)
+#define      USHRT_CKTYAC(X) _Generic(X, ushort const *:1,default:0)
+#define       SHRT_CKTYAC(X) _Generic(X,  short const *:1,default:0)
+#define       UINT_CKTYAC(X) _Generic(X,   uint const *:1,default:0)
+#define        INT_CKTYAC(X) _Generic(X,    int const *:1,default:0)
+#define      ULONG_CKTYAC(X) _Generic(X,  ulong const *:1,default:0)
+#define       LONG_CKTYAC(X) _Generic(X,   long const *:1,default:0)
+#define     ULLONG_CKTYAC(X) _Generic(X, ullong const *:1,default:0)
+#define      LLONG_CKTYAC(X) _Generic(X,  llong const *:1,default:0)
+#define      FLT16_CKTYAC(X) _Generic(X,flt16_t const *:1,default:0)
+#define        FLT_CKTYAC(X) _Generic(X,  float const *:1,default:0)
+#define        DBL_CKTYAC(X) _Generic(X, double const *:1,default:0)
+
+#if QUAD_NLLONG == 2
+#   define  cktyqu(X)   _Generic(X,QUAD_UTYPE        :1,default:0)
+#   define  cktyaqu(X)  _Generic(X,QUAD_UTYPE       *:1,default:0)
+#   define  cktyacqu(X) _Generic(X,QUAD_UTYPE const *:1,default:0)
+
+#   define  cktyqi(X)   _Generic(X,QUAD_ITYPE        :1,default:0)
+#   define  cktyaqi(X)  _Generic(X,QUAD_ITYPE       *:1,default:0)
+#   define  cktyacqi(X) _Generic(X,QUAD_ITYPE const *:1,default:0)
+#endif
+
+#define     cktywyu(X) _Generic(X,Vwyu:1,default:0)
+#define     cktywbu(X) _Generic(X,Vwbu:1,default:0)
+#define     cktywbi(X) _Generic(X,Vwbi:1,default:0)
+#define     cktywbc(X) _Generic(X,Vwbc:1,default:0)
+#define     cktywhu(X) _Generic(X,Vwhu:1,default:0)
+#define     cktywhi(X) _Generic(X,Vwhi:1,default:0)
+#define     cktywhf(X) _Generic(X,Vwhf:1,default:0)
+#define     cktywwu(X) _Generic(X,Vwwu:1,default:0)
+#define     cktywwi(X) _Generic(X,Vwwi:1,default:0)
+#define     cktywwf(X) _Generic(X,Vwwf:1,default:0)
+
+#define     cktydyu(X) _Generic(X,Vdyu:1,default:0)
+#define     cktydbu(X) _Generic(X,Vdbu:1,default:0)
+#define     cktydbi(X) _Generic(X,Vdbi:1,default:0)
+#define     cktydbc(X) _Generic(X,Vdbc:1,default:0)
+#define     cktydhu(X) _Generic(X,Vdhu:1,default:0)
+#define     cktydhi(X) _Generic(X,Vdhi:1,default:0)
+#define     cktydhf(X) _Generic(X,Vdhf:1,default:0)
+#define     cktydwu(X) _Generic(X,Vdwu:1,default:0)
+#define     cktydwi(X) _Generic(X,Vdwi:1,default:0)
+#define     cktydwf(X) _Generic(X,Vdwf:1,default:0)
+#define     cktyddu(X) _Generic(X,Vddu:1,default:0)
+#define     cktyddi(X) _Generic(X,Vddi:1,default:0)
+#define     cktyddf(X) _Generic(X,Vddf:1,default:0)
+
+#define     cktyqyu(X) _Generic(X,Vqyu:1,default:0)
+#define     cktyqbu(X) _Generic(X,Vqbu:1,default:0)
+#define     cktyqbi(X) _Generic(X,Vqbi:1,default:0)
+#define     cktyqbc(X) _Generic(X,Vqbc:1,default:0)
+#define     cktyqhu(X) _Generic(X,Vqhu:1,default:0)
+#define     cktyqhi(X) _Generic(X,Vqhi:1,default:0)
+#define     cktyqhf(X) _Generic(X,Vqhf:1,default:0)
+#define     cktyqwu(X) _Generic(X,Vqwu:1,default:0)
+#define     cktyqwi(X) _Generic(X,Vqwi:1,default:0)
+#define     cktyqwf(X) _Generic(X,Vqwf:1,default:0)
+#define     cktyqdu(X) _Generic(X,Vqdu:1,default:0)
+#define     cktyqdi(X) _Generic(X,Vqdi:1,default:0)
+#define     cktyqdf(X) _Generic(X,Vqdf:1,default:0)
+#define     cktyqqu(X) _Generic(X,Vqqu:1,default:0)
+#define     cktyqqi(X) _Generic(X,Vqqi:1,default:0)
+#define     cktyqqf(X) _Generic(X,Vqqf:1,default:0)
+
+#if 0 // _LEAVE_ALL_CKTY
+}
+#endif
 
 #if 0 // _ENTER_ALL_ASTG
 {
@@ -126,6 +309,9 @@ HISTORY:
 //efine     VQDU_ASTU
 #define     VQDI_ASTU       VQDI_ASDU
 #define     VQDF_ASTU       VQDF_ASDU
+//efine     VQQU_ASTU
+#define     VQQI_ASTU       VQQI_ASQU
+#define     VQQF_ASTU       VQQF_ASQU
 
 #if 0 // _LEAVE_ALL_ASTU
 }
@@ -197,6 +383,9 @@ HISTORY:
 #define     VQDU_ASTI       VQDU_ASDI
 //efine     VQDI_ASTI
 #define     VQDF_ASTI       VQDF_ASDI
+#define     VQQU_ASTI       VQQU_ASQI
+//efine     VQQI_ASTI
+#define     VQQF_ASTI       VQQF_ASQI
 
 #if 0 // _LEAVE_ALL_ASTI
 }
@@ -257,6 +446,9 @@ HISTORY:
 #define     VQDU_ASTF       VQDU_ASDF
 #define     VQDI_ASTF       VQDI_ASDF
 //efine     VQDF_ASTF
+#define     VQQU_ASTF       VQQU_ASQF
+#define     VQQI_ASTF       VQQI_ASQF
+//efine     VQQF_ASTF
 
 #if 0 // _LEAVE_ALL_ASTF
 }
@@ -266,12 +458,10 @@ HISTORY:
 {
 #endif
 
-INLINE(   _Bool,  BOOL_ASYU)   (_Bool x)
-{
-#define     BOOL_ASYU(X)   ((_Bool) X)
-    return  x;
-}
-
+INLINE(_Bool,  BOOL_ASYU)   (_Bool x) {return x;}
+INLINE(Vwyu,VWYU_ASYU) (Vwyu x) {return x;}
+INLINE(Vdyu,VDYU_ASYU) (Vdyu x) {return x;}
+INLINE(Vqyu,VQYU_ASYU) (Vqyu x) {return x;}
 #if 0 // _LEAVE_ALL_ASYU
 }
 #endif
@@ -280,9 +470,13 @@ INLINE(   _Bool,  BOOL_ASYU)   (_Bool x)
 {
 #endif
 
-INLINE(uint8_t,UCHAR_ASBU) (uchar x) {return x;}
-INLINE(uint8_t,SCHAR_ASBU) (schar x) {return x;}
-INLINE(uint8_t, CHAR_ASBU)  (char x) {return x;}
+INLINE(uint8_t,UCHAR_ASBU) (unsigned x) {return x;}
+INLINE(uint8_t,SCHAR_ASBU)   (signed x) {return x;}
+INLINE(uint8_t, CHAR_ASBU)      (int x) {return x;}
+
+INLINE(Vwbu,VWBU_ASBU) (Vwbu x) {return x;}
+INLINE(Vdbu,VDBU_ASBU) (Vdbu x) {return x;}
+INLINE(Vqbu,VQBU_ASBU) (Vqbu x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASBU
 }
@@ -292,9 +486,12 @@ INLINE(uint8_t, CHAR_ASBU)  (char x) {return x;}
 {
 #endif
 
-INLINE(int8_t,UCHAR_ASBI) (uchar x) {return x;}
-INLINE(int8_t,SCHAR_ASBI) (schar x) {return x;}
-INLINE(int8_t, CHAR_ASBI)  (char x) {return x;}
+INLINE(int8_t,UCHAR_ASBI) (unsigned x) {return x;}
+INLINE(int8_t,SCHAR_ASBI) (signed x) {return x;}
+INLINE(int8_t, CHAR_ASBI)  (int x) {return x;}
+INLINE(Vdbi,VDBI_ASBI) (Vdbi v) {return v;}
+INLINE(Vwbi,VWBI_ASBI) (Vwbi v) {return v;}
+INLINE(Vqbi,VQBI_ASBI) (Vqbi v) {return v;}
 
 #if 0 // _LEAVE_ALL_ASBI
 }
@@ -304,10 +501,13 @@ INLINE(int8_t, CHAR_ASBI)  (char x) {return x;}
 {
 #endif
 
-INLINE(char,UCHAR_ASBC) (uchar x) {return x;}
-INLINE(char,SCHAR_ASBC) (schar x) {return x;}
-INLINE(char, CHAR_ASBC)  (char x) {return x;}
+INLINE(char,UCHAR_ASBC) (unsigned x) {return x;}
+INLINE(char,SCHAR_ASBC) (signed x) {return x;}
+INLINE(char, CHAR_ASBC)  (int x) {return x;}
 
+INLINE(Vwbc,VWBC_ASBC) (Vwbc v) {return v;}
+INLINE(Vdbc,VDBC_ASBC) (Vdbc v) {return v;}
+INLINE(Vqbc,VQBC_ASBC) (Vqbc v) {return v;}
 #if 0 // _LEAVE_ALL_ASBC
 }
 #endif
@@ -316,9 +516,13 @@ INLINE(char, CHAR_ASBC)  (char x) {return x;}
 {
 #endif
 
-INLINE(uint16_t,USHRT_ASHU)  (ushort x) {return x;}
-INLINE(uint16_t, SHRT_ASHU)   (short x) {return x;}
+INLINE(uint16_t,USHRT_ASHU)  (unsigned x) {return x;}
+INLINE(uint16_t, SHRT_ASHU)   (signed x) {return x;}
 INLINE(uint16_t,FLT16_ASHU) (flt16_t x) {return FLT16_ASTG(x).U;}
+
+INLINE(Vwhu,VWHU_ASHU) (Vwhu x) {return x;}
+INLINE(Vdhu,VDHU_ASHU) (Vdhu x) {return x;}
+INLINE(Vqhu,VQHU_ASHU) (Vqhu x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASHU
 }
@@ -328,9 +532,13 @@ INLINE(uint16_t,FLT16_ASHU) (flt16_t x) {return FLT16_ASTG(x).U;}
 {
 #endif
 
-INLINE(int16_t,USHRT_ASHI)  (ushort x) {return x;}
-INLINE(int16_t, SHRT_ASHI)   (short x) {return x;}
-INLINE(int16_t,FLT16_ASHI) (flt16_t x) {return FLT16_ASTG(x).I;}
+INLINE(int16_t,USHRT_ASHI) (unsigned x) {return x;}
+INLINE(int16_t, SHRT_ASHI)   (signed x) {return x;}
+INLINE(int16_t,FLT16_ASHI)  (flt16_t x) {return FLT16_ASTG(x).I;}
+
+INLINE(Vwhi,VWHI_ASHI) (Vwhi x) {return x;}
+INLINE(Vdhi,VDHI_ASHI) (Vdhi x) {return x;}
+INLINE(Vqhi,VQHI_ASHI) (Vqhi x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASHI
 }
@@ -340,9 +548,13 @@ INLINE(int16_t,FLT16_ASHI) (flt16_t x) {return FLT16_ASTG(x).I;}
 {
 #endif
 
-INLINE(flt16_t,USHRT_ASHF)  (ushort x) {return USHRT_ASTG(x).F;}
-INLINE(flt16_t, SHRT_ASHF)   (short x) {return  SHRT_ASTG(x).F;}
+INLINE(flt16_t,USHRT_ASHF)  (unsigned x) {return USHRT_ASTG(x).F;}
+INLINE(flt16_t, SHRT_ASHF)   (signed x) {return  SHRT_ASTG(x).F;}
 INLINE(flt16_t,FLT16_ASHF) (flt16_t x) {return x;}
+
+INLINE(Vwhf,VWHF_ASHF) (Vwhf x) {return x;}
+INLINE(Vdhf,VDHF_ASHF) (Vdhf x) {return x;}
+INLINE(Vqhf,VQHF_ASHF) (Vqhf x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASHF
 }
@@ -361,6 +573,9 @@ INLINE(uint32_t, LONG_ASWU)  (long x) {return x;}
 #endif
 
 INLINE(uint32_t,  FLT_ASWU) (float x) {return FLT_ASTG(x).U;}
+INLINE(Vwwu,VWWU_ASWU) (Vwwu x) {return x;}
+INLINE(Vdwu,VDWU_ASWU) (Vdwu x) {return x;}
+INLINE(Vqwu,VQWU_ASWU) (Vqwu x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASWU
 }
@@ -380,6 +595,10 @@ INLINE(int32_t, LONG_ASWI)  (long x) {return x;}
 
 INLINE(int32_t,  FLT_ASWI) (float x) {return FLT_ASTG(x).I;}
 
+INLINE(Vwwi,VWWI_ASWI) (Vwwi x) {return x;}
+INLINE(Vdwi,VDWI_ASWI) (Vdwi x) {return x;}
+INLINE(Vqwi,VQWI_ASWI) (Vqwi x) {return x;}
+
 #if 0 // _LEAVE_ALL_ASWI
 }
 #endif
@@ -398,9 +617,14 @@ INLINE(float, LONG_ASWF)  (long x) {return  LONG_ASTG(x).F;}
 
 INLINE(float,  FLT_ASWF) (float x) {return x;}
 
+INLINE(Vwwf,VWWF_ASWF) (Vwwf x) {return x;}
+INLINE(Vdwf,VDWF_ASWF) (Vdwf x) {return x;}
+INLINE(Vqwf,VQWF_ASWF) (Vqwf x) {return x;}
+
 #if 0 // _LEAVE_ALL_ASWF
 }
 #endif
+
 
 #if 0 // _ENTER_ALL_ASDU
 {
@@ -417,6 +641,8 @@ INLINE(uint64_t, LLONG_ASDU)  (llong x) {return x;}
 #endif
 
 INLINE(uint64_t,   DBL_ASDU) (double x) {return DBL_ASTG(x).U;}
+INLINE(Vddu,VDDU_ASDU) (Vddu x) {return x;}
+INLINE(Vqdu,VQDU_ASDU) (Vqdu x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASDU
 }
@@ -438,6 +664,9 @@ INLINE(int64_t, LLONG_ASDI)  (llong x) {return x;}
 
 INLINE(int64_t, DBL_ASDI) (double x) {return DBL_ASTG(x).I;}
 
+INLINE(Vddi,VDDI_ASDI) (Vddi x) {return x;}
+INLINE(Vqdi,VQDI_ASDI) (Vqdi x) {return x;}
+
 #if 0 // _LEAVE_ALL_ASDI
 }
 #endif
@@ -457,6 +686,8 @@ INLINE(double, LLONG_ASDF)  (llong x) {return  LLONG_ASTG(x).F;}
 #endif
 
 INLINE(double,   DBL_ASDF) (double x) {return x;}
+INLINE(Vddf,VDDF_ASDF) (Vddf x) {return x;}
+INLINE(Vqdf,VQDF_ASDF) (Vqdf x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASDF
 }
@@ -476,6 +707,8 @@ INLINE(QUAD_UTYPE,asquqi) (QUAD_ITYPE x) {return ((QUAD_TYPE){.I=x}).U;}
 INLINE(QUAD_UTYPE,asquqf) (QUAD_FTYPE x) {return ((QUAD_TYPE){.F=x}).U;}
 #endif
 
+INLINE(Vqqu,VQQU_ASQU) (Vqqu x) {return x;}
+
 #if 0 // _LEAVE_ALL_ASQU
 }
 #endif
@@ -494,6 +727,8 @@ INLINE(QUAD_ITYPE,asqiqi) (QUAD_ITYPE x) {return x;}
 INLINE(QUAD_ITYPE,asqiqf) (QUAD_FTYPE x) {return ((QUAD_TYPE){.F=x}).I;}
 #endif
 
+INLINE(Vqqi,VQQI_ASQI) (Vqqi x) {return x;}
+
 #if 0 // _LEAVE_ALL_ASQI
 }
 #endif
@@ -511,6 +746,8 @@ INLINE(QUAD_ITYPE,asqfqu) (QUAD_UTYPE x) {return ((QUAD_TYPE){.U=x}).F;}
 INLINE(QUAD_ITYPE,asqfqi) (QUAD_ITYPE x) {return ((QUAD_TYPE){.I=x}).F;}
 INLINE(QUAD_ITYPE,asqfqf) (QUAD_FTYPE x) {return x;}
 #endif
+
+INLINE(Vqqf,VQQF_ASQF) (Vqqf x) {return x;}
 
 #if 0 // _LEAVE_ALL_ASQF
 }
@@ -730,6 +967,94 @@ INLINE(QUAD_ITYPE, LLONG_CATL)  (llong l,  llong r)
 {
 #endif
 
+INLINE(_Bool, UCHAR_CVYU) (unsigned x) 
+{
+#define     UCHAR_CVYU(X) ((_Bool) ((uchar) X))
+    return  (uchar) x;
+}
+
+INLINE(_Bool, SCHAR_CVYU)   (signed x) 
+{
+#define     SCHAR_CVYU(X) ((_Bool) ((schar) X))
+    return  (schar) x;
+}
+
+INLINE(_Bool,  CHAR_CVYU)      (int x) 
+{
+#define     CHAR_CVYU(X) ((_Bool) ((char) X))
+    return  (char) x;
+}
+
+INLINE(_Bool, USHRT_CVYU) (unsigned x) 
+{
+#define     USHRT_CVYU(X) ((_Bool) ((ushort) X))
+    return  (ushort) x;
+}
+
+INLINE(_Bool,  SHRT_CVYU)   (signed x) 
+{
+#define     SHRT_CVYU(X) ((_Bool) ((short) X))
+    return  (short) x;
+}
+
+INLINE(_Bool,  UINT_CVYU)     (uint x) 
+{
+#define     UINT_CVYU(X) ((_Bool) ((uint) X))
+    return  x;
+}
+
+INLINE(_Bool,   INT_CVYU)      (int x) 
+{
+#define     INT_CVYU(X) ((_Bool) ((int) X))
+    return x;
+}
+
+INLINE(_Bool, ULONG_CVYU)    (ulong x) 
+{
+#define     ULONG_CVYU(X) ((_Bool) ((ulong) X))
+    return  x;
+}
+
+INLINE(_Bool,  LONG_CVYU)     (long x) 
+{
+#define     LONG_CVYU(X) ((_Bool) ((long) X))
+    return  x;
+}
+
+INLINE(_Bool,ULLONG_CVYU)   (ullong x) 
+{
+#define     ULLONG_CVYU(X) ((_Bool) ((ullong) X))
+    return  x;
+}
+
+INLINE(_Bool, LLONG_CVYU)    (llong x) 
+{
+#define     LLONG_CVYU(X) ((_Bool) ((llong) X))
+    return  x;
+}
+
+#if QUAD_NLLONG == 2
+INLINE(_Bool,cvyuqu) (QUAD_UTYPE x)
+{
+    QUAD_TYPE v = {.U=x};
+    return  v.Lo.U|v.Hi.U;
+}
+
+INLINE(_Bool,cvyuqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE v = {.I=x};
+    return  v.Lo.U|v.Hi.U;
+}
+#endif
+
+#if 0 // _LEAVE_ALL_CVYU
+}
+#endif
+
+#if 0 // _ENTER_ALL_CVBU
+{
+#endif
+
 INLINE(uint8_t,   BOOL_CVBU)    (_Bool x) {return x;}
 INLINE(uint8_t,  UCHAR_CVBU) (unsigned x) {return x;}
 INLINE(uint8_t,  SCHAR_CVBU)   (signed x) {return x;}
@@ -746,6 +1071,24 @@ INLINE(uint8_t,   ADDR_CVBU) (void volatile const *x)
 {
     return  (uintptr_t) x;
 }
+
+#if QUAD_NLLONG == 2
+
+INLINE(uint8_t,cvbuqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).B0.U;
+}
+
+INLINE(uint8_t,cvbuqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).B0.U;
+}
+
+#endif
+
+INLINE(Vwbu,VWBU_CVBU) (Vwbu x) {return x;}
+INLINE(Vdbu,VDBU_CVBU) (Vdbu x) {return x;}
+INLINE(Vqbu,VQBU_CVBU) (Vqbu x) {return x;}
 
 #if 0 // _LEAVE_ALL_CVBU
 }
@@ -772,6 +1115,24 @@ INLINE(int8_t,   ADDR_CVBI) (void volatile const *x)
     return  (intptr_t) x;
 }
 
+#if QUAD_NLLONG == 2
+
+INLINE(int8_t,cvbiqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).B0.I;
+}
+
+INLINE(int8_t,cvbiqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).B0.I;
+}
+
+#endif
+
+INLINE(Vwbi,VWBI_CVBI) (Vwbi x) {return x;}
+INLINE(Vdbi,VDBI_CVBI) (Vdbi x) {return x;}
+INLINE(Vqbi,VQBI_CVBI) (Vqbi x) {return x;}
+
 #if 0 // _LEAVE_ALL_CVBI
 }
 #endif
@@ -796,6 +1157,26 @@ INLINE(char,   ADDR_CVBC) (void volatile const *x)
 {
     return  (intptr_t) x;
 }
+
+#if QUAD_NLLONG == 2
+
+INLINE(char,cvbcqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).C0;
+}
+
+INLINE(char,cvbcqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).C0;
+}
+
+#endif
+
+INLINE(Vwbc,VWBC_CVBC) (Vwbc x) {return x;}
+
+INLINE(Vdbc,VDBC_CVBC) (Vdbc x) {return x;}
+
+INLINE(Vqbc,VQBC_CVBC) (Vqbc x) {return x;}
 
 #if 0 // _LEAVE_ALL_CVBC
 }
@@ -822,6 +1203,26 @@ INLINE(uint16_t,   ADDR_CVHU) (void volatile const *x)
     return  (uintptr_t) x;
 }
 
+#if QUAD_NLLONG == 2
+
+INLINE(uint16_t,cvhuqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).H0.U;
+}
+
+INLINE(uint16_t,cvhuqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).H0.U;
+}
+
+#endif
+
+INLINE(Vwhu,VWHU_CVHU) (Vwhu x) {return  x;}
+
+INLINE(Vdhu,VDHU_CVHU) (Vdhu x) {return  x;}
+
+INLINE(Vqhu,VQHU_CVHU) (Vqhu x) {return  x;}
+
 #if 0 // _LEAVE_ALL_CVHU
 }
 #endif
@@ -846,6 +1247,26 @@ INLINE(int16_t,   ADDR_CVHI) (void volatile const *x)
 {
     return  (intptr_t) x;
 }
+
+#if QUAD_NLLONG == 2
+
+INLINE(uint16_t,cvhiqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).H0.I;
+}
+
+INLINE(uint16_t,cvhiqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).H0.I;
+}
+
+#endif
+
+INLINE(Vwhi,VWHI_CVHI) (Vwhi x) {return x;}
+
+INLINE(Vdhi,VDHI_CVHI) (Vdhi x) {return x;}
+
+INLINE(Vqhi,VQHI_CVHI) (Vqhi x) {return x;}
 
 #if 0 // _LEAVE_ALL_CVHI
 }
@@ -872,6 +1293,26 @@ INLINE(uint32_t,   ADDR_CVWU) (void volatile const *x)
     return  (uintptr_t) x;
 }
 
+#if QUAD_NLLONG == 2
+
+INLINE(uint32_t,cvwuqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).W0.U;
+}
+
+INLINE(uint32_t,cvwuqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).W0.U;
+}
+
+#endif
+
+INLINE(Vwwu,VWWU_CVWU) (Vwwu x) {return x;}
+
+INLINE(Vdwu,VDWU_CVWU) (Vdwu x) {return x;}
+
+INLINE(Vqwu,VQWU_CVWU) (Vqwu x) {return x;}
+
 #if 0 // _LEAVE_ALL_CVWU
 }
 #endif
@@ -896,6 +1337,24 @@ INLINE(int32_t,   ADDR_CVWI) (void volatile const *x)
 {
     return  (intptr_t) x;
 }
+
+#if QUAD_NLLONG == 2
+
+INLINE(int32_t,cvwiqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).W0.I;
+}
+
+INLINE(int32_t,cvwiqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).W0.I;
+}
+
+#endif
+
+INLINE(Vwwi,VWWI_CVWI) (Vwwi x) {return x;}
+INLINE(Vdwi,VDWI_CVWI) (Vdwi x) {return x;}
+INLINE(Vqwi,VQWI_CVWI) (Vqwi x) {return x;}
 
 #if 0 // _LEAVE_ALL_CVWI
 }
@@ -922,6 +1381,24 @@ INLINE(uint64_t,   ADDR_CVDU) (void volatile const *x)
     return  (uintptr_t) x;
 }
 
+#if QUAD_NLLONG == 2
+
+INLINE(uint64_t,cvduqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).D0.U;
+}
+
+INLINE(uint32_t,cvduqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).D0.U;
+}
+
+#endif
+
+INLINE(Vddu,VDDU_CVDU) (Vddu x) {return x;}
+
+INLINE(Vqdu,VQDU_CVDU) (Vqdu x) {return x;}
+
 #if 0 // _LEAVE_ALL_CVDU
 }
 #endif
@@ -947,7 +1424,342 @@ INLINE(int64_t,   ADDR_CVDI) (void volatile const *x)
     return  (intptr_t) x;
 }
 
+#if QUAD_NLLONG == 2
+
+INLINE(int64_t,cvdiqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).D0.I;
+}
+
+INLINE(int32_t,cvdiqi) (QUAD_ITYPE x)
+{
+    return  ((QUAD_TYPE){.I=x}).D0.I;
+}
+
+#endif
+
+INLINE(Vddi,VDDI_CVDI) (Vddi x) {return x;}
+INLINE(Vqdi,VQDI_CVDI) (Vqdi x) {return x;}
+
 #if 0 // _LEAVE_ALL_CVDI
+}
+#endif
+
+#if 0 // _ENTER_ALL_CVQU
+{
+#endif
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,  BOOL_CVQU)    (_Bool x) 
+{
+#define     BOOL_CVQU(X) ((QUAD_TYPE){.Y0=X}).U
+    return  BOOL_CVQU(x);
+}
+
+
+INLINE(QUAD_UTYPE, UCHAR_CVQU) (unsigned x) 
+{
+#define     UCHAR_CVQU(X) ((QUAD_TYPE){.B0.U=X}).U
+    return  UCHAR_CVQU(x);
+}
+
+INLINE(QUAD_UTYPE, SCHAR_CVQU)   (signed x) 
+{
+/*  "Funny" story. This is the only possible way to get clang 
+    to not split sign extending the upper 64 bits into two
+    instructions without referencing __int128. Specifically,
+    if "v.Lo.I>>7" is replaced with e.g. "x>>7", the upper
+    extension is split into an "8 to 32" then "32 to 64".
+
+    Hopefully, it actually is true that no architecture would
+    be moronic enough to implement signed right shift any way 
+    other than the obvious one.
+*/
+    QUAD_TYPE   v;
+    v.Lo.I = (schar) x;
+    v.Hi.I = v.Lo.I>>(SCHAR_WIDTH-1);
+    return  v.U;
+}
+
+INLINE(QUAD_UTYPE,  CHAR_CVQU)      (int x) 
+{
+#if CHAR_MIN
+    return SCHAR_CVQU(x);
+#else
+#   define  CHAR_CVQU(X) ((QUAD_TYPE){.C0=X}).U
+    return  CHAR_CVQU(x);
+#endif
+}
+
+
+INLINE(QUAD_UTYPE, USHRT_CVQU) (unsigned x)
+{
+#define     USHRT_CVQU(X) ((QUAD_TYPE){.H0.U=X}).U
+    return  USHRT_CVQU(x);
+}
+
+INLINE(QUAD_UTYPE,  SHRT_CVQU)   (signed x) 
+{
+    QUAD_TYPE   v;
+    v.Lo.I = (short) x;
+    v.Hi.I = v.Lo.I>>(SHRT_WIDTH-1);
+    return  v.U;
+}
+
+INLINE(QUAD_UTYPE,  UINT_CVQU)     (uint x) 
+{
+#define     UINT_CVQU(X) ((QUAD_TYPE){.W0.U=X}).U
+    return  UINT_CVQU(x);
+}
+
+INLINE(QUAD_UTYPE,   INT_CVQU)      (int x) 
+{
+    QUAD_TYPE   v;
+    v.Lo.I = x;
+    v.Hi.I = v.Lo.I>>(INT_WIDTH-1);
+    return  v.U;
+}
+
+INLINE(QUAD_UTYPE, ULONG_CVQU)    (ulong x) 
+{
+#if DWRD_NLONG == 2
+#   define  ULONG_CVQU(X) ((QUAD_TYPE){.W0.U=X}).U
+#else
+#   define  ULONG_CVQU(X) ((QUAD_TYPE){.D0.U=X}).U
+#endif
+    return  ULONG_CVQU(x);
+}
+
+INLINE(QUAD_UTYPE,  LONG_CVQU)     (long x)
+{
+    QUAD_TYPE   v;
+    v.Lo.I  = x;
+    v.Hi.I  = v.Lo.I>>(LONG_WIDTH-1);
+    return  v.U;
+}
+
+INLINE(QUAD_UTYPE,ULLONG_CVQU)   (ullong x) 
+{
+#if QUAD_NLLONG == 2
+#   define  ULLONG_CVQU(X) ((QUAD_TYPE){.D0.U=X}).U
+    return  ULLONG_CVQU(x);
+#else
+#   define  ULLONG_CVQU(X) ((ullong) X)
+    return  x;
+#endif
+}
+
+INLINE(QUAD_UTYPE, LLONG_CVQU)    (llong x) 
+{
+#if QUAD_NLLONG == 2
+    QUAD_TYPE   v;
+    v.Lo.I  = x;
+    v.Hi.I  = v.Lo.I>>(LLONG_WIDTH-1);
+    return  v.U;
+#else
+    return  x;
+#endif
+}
+
+INLINE(QUAD_UTYPE,  ADDR_CVQU) (void volatile const *x)
+{
+#if ADDR_WIDTH == INT_WIDTH
+    return  INT_CVQU(((intptr_t) x));
+#elif ADDR_WIDTH == LONG_WIDTH
+    return  LONG_CVQU(((intptr_t) x));
+#else
+    return  LLONG_CVQU(((intptr_t) x));
+#endif
+}
+
+INLINE(QUAD_UTYPE,cvququ) (QUAD_UTYPE x) {return  x;}
+
+INLINE(QUAD_UTYPE,cvquqi) (QUAD_ITYPE x) {return ((QUAD_TYPE){.I=x}).U;}
+
+#else
+
+INLINE(ullong,  BOOL_CVQU)    (_Bool x) {return x;}
+INLINE(ullong, UCHAR_CVQU) (unsigned x) {return  (uchar) x;}
+INLINE(ullong, SCHAR_CVQU)   (signed x) {return  (schar) x;}
+INLINE(ullong,  CHAR_CVQU)      (int x) {return   (char) x;}
+INLINE(ullong, USHRT_CVQU) (unsigned x) {return (ushort) x;}
+INLINE(ullong,  SHRT_CVQU)   (signed x) {return  (short) x;}
+INLINE(ullong,  UINT_CVQU)     (uint x) {return x;}
+INLINE(ullong,   INT_CVQU)      (int x) {return x;}
+INLINE(ullong, ULONG_CVQU)    (ulong x) {return x;}
+INLINE(ullong,  LONG_CVQU)     (long x) {return x;}
+INLINE(ullong,ULLONG_CVQU)   (ullong x) {return x;}
+INLINE(ullong, LLONG_CVQU)    (llong x) {return x;}
+INLINE(ullong,  ADDR_CVQU) (void volatile const *x) 
+{
+    return  (uintptr_t) x;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CVQU
+}
+#endif
+
+#if 0 // _ENTER_ALL_CVQI
+{
+#endif
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_ITYPE,   BOOL_CVQI)    (_Bool x) 
+{
+#define     BOOL_CVQI(X) ((QUAD_TYPE){.Y0=X}).I
+    return  BOOL_CVQI(x);
+}
+
+
+INLINE(QUAD_ITYPE,  UCHAR_CVQI) (unsigned x) 
+{
+#define     UCHAR_CVQI(X) ((QUAD_TYPE){.B0.U=X}).I
+    return  UCHAR_CVQI(x);
+}
+
+INLINE(QUAD_ITYPE,  SCHAR_CVQI)   (signed x) 
+{
+/*  "Funny" story. This is the only possible way to get clang 
+    to not split sign extending the upper 64 bits into two
+    instructions without referencing __int128. Specifically,
+    if "v.Lo.I>>7" is replaced with e.g. "x>>7", the upper
+    64 bit extension is split into an 8 to 32 bit, 32 to 64
+    bit.
+
+    Hopefully, it actually is true that no architecture would
+    be moronic enough to implement signed right shift any way 
+    other than the obvious one.
+*/
+    QUAD_TYPE   v;
+    v.Lo.I = (schar) x;
+    v.Hi.I = v.Lo.I>>(SCHAR_WIDTH-1);
+    return  v.I;
+}
+
+INLINE(QUAD_ITYPE,   CHAR_CVQI)      (int x) 
+{
+#if CHAR_MIN
+    return  SCHAR_CVQI(x);
+#else
+#   define  CHAR_CVQI(X) ((QUAD_TYPE){.C0=X}).I
+    return  CHAR_CVQI(x);
+#endif
+}
+
+
+INLINE(QUAD_ITYPE,  USHRT_CVQI) (unsigned x)
+{
+#define     USHRT_CVQI(X) ((QUAD_TYPE){.H0.U=X}).I
+    return  USHRT_CVQI(x);
+}
+
+INLINE(QUAD_ITYPE,   SHRT_CVQI)   (signed x) 
+{
+    QUAD_TYPE   v;
+    v.Lo.I = (short) x;
+    v.Hi.I = v.Lo.I>>(SHRT_WIDTH-1);
+    return  v.I;
+}
+
+INLINE(QUAD_ITYPE,   UINT_CVQI)     (uint x) 
+{
+#define     UINT_CVQI(X) ((QUAD_TYPE){.W0.U=X}).I
+    return  UINT_CVQI(x);
+}
+
+INLINE(QUAD_ITYPE,    INT_CVQI)      (int x) 
+{
+    QUAD_TYPE   v;
+    v.Lo.I = (int) x;
+    v.Hi.I = v.Lo.I>>(INT_WIDTH-1);
+    return  v.I;
+}
+
+INLINE(QUAD_ITYPE,  ULONG_CVQI)    (ulong x) 
+{
+#if DWRD_NLONG == 2
+#   define  ULONG_CVQI(X) ((QUAD_TYPE){.W0.U=X}).I
+#else
+#   define  ULONG_CVQI(X) ((QUAD_TYPE){.D0.U=X}).I
+#endif
+    return  ULONG_CVQI(x);
+}
+
+INLINE(QUAD_ITYPE,   LONG_CVQI)     (long x)
+{
+    QUAD_TYPE   v;
+    v.Lo.I  = x;
+    v.Hi.I  = v.Lo.I>>(LONG_WIDTH-1);
+    return  v.I;
+}
+
+INLINE(QUAD_ITYPE, ULLONG_CVQI)   (ullong x) 
+{
+#if QUAD_NLLONG == 2
+#   define  ULLONG_CVQI(X) ((QUAD_TYPE){.D0.U=X}).I
+    return  ULLONG_CVQI(x);
+#else
+    return  x;
+#endif
+}
+
+INLINE(QUAD_ITYPE,  LLONG_CVQI)    (llong x) 
+{
+#if QUAD_NLLONG == 2
+    QUAD_TYPE   v;
+    v.Lo.I  = x;
+    v.Hi.I  = v.Lo.I>>(LLONG_WIDTH-1);
+    return  v.U;
+#else
+    return  x;
+#endif
+}
+
+INLINE(QUAD_ITYPE,   ADDR_CVQI) (void volatile const *x)
+{
+#if ADDR_WIDTH == INT_WIDTH
+    return  INT_CVQI(((intptr_t) x));
+#elif ADDR_WIDTH == LONG_WIDTH
+    return  LONG_CVQI(((intptr_t) x));
+#else
+    return  LLONG_CVQI(((intptr_t) x));
+#endif
+}
+
+INLINE(QUAD_ITYPE,cvqiqu) (QUAD_UTYPE x)
+{
+    return  ((QUAD_TYPE){.U=x}).I;
+}
+
+INLINE(QUAD_ITYPE,cvqiqi) (QUAD_ITYPE x)
+{
+    return  x;
+}
+
+#else
+
+INLINE(llong,  BOOL_CVQI)    (_Bool x) {return x;}
+INLINE(llong, UCHAR_CVQI) (unsigned x) {return  (uchar) x;}
+INLINE(llong, SCHAR_CVQI)   (signed x) {return  (schar) x;}
+INLINE(llong,  CHAR_CVQI)      (int x) {return   (char) x;}
+INLINE(llong, USHRT_CVQI) (unsigned x) {return (ushort) x;}
+INLINE(llong,  SHRT_CVQI)   (signed x) {return  (short) x;}
+INLINE(llong,  UINT_CVQI)     (uint x) {return x;}
+INLINE(llong,   INT_CVQI)      (int x) {return x;}
+INLINE(llong, ULONG_CVQI)    (ulong x) {return x;}
+INLINE(llong,  LONG_CVQI)     (long x) {return x;}
+INLINE(llong,ULLONG_CVQI)   (ullong x) {return x;}
+INLINE(llong, LLONG_CVQI)    (llong x) {return x;}
+INLINE(llong,  ADDR_CVQI) (void volatile const *x) 
+{
+    return  (uintptr_t) x;
+}
+
+#endif
+#if 0 // _LEAVE_ALL_CVQI
 }
 #endif
 
@@ -962,7 +1774,6 @@ All presently supported compilers provide a way to define
 #ifdef SPC_NO_LUNN
 
 INLINE(  _Bool,  BOOL_LUNNAC) (void const *a) {return *(_Bool const *) a;}
-
 INLINE(  uchar, UCHAR_LUNNAC) (void const *a) {return *(uchar const *) a;}
 INLINE(  schar, SCHAR_LUNNAC) (void const *a) {return *(schar const *) a;}
 INLINE(   char,  CHAR_LUNNAC) (void const *a) {return  *(char const *) a;}
@@ -1829,6 +2640,16 @@ INLINE( int32_t, LLONG_GETL)  (llong x)
     return  x;
 }
 
+INLINE(uint64_t,getlqu) (QUAD_UTYPE x)
+{
+    return ((QUAD_TYPE){.U=x}).Lo.U;
+}
+
+INLINE(int64_t,getlqi) (QUAD_ITYPE x)
+{
+    return ((QUAD_TYPE){.I=x}).Lo.I;
+}
+
 #endif
 
 #if 0 // _LEAVE_ALL_GETL
@@ -1920,6 +2741,16 @@ INLINE( int64_t, LLONG_GETR)  (llong x)
 {
 #define     LLONG_GETR(X) (((QUAD_TYPE){.I=X}).Hi.I)
     return  LLONG_GETR(x);
+}
+
+INLINE(uint64_t,getrqu) (QUAD_UTYPE x)
+{
+    return ((QUAD_TYPE){.U=x}).Hi.U;
+}
+
+INLINE(int64_t,getrqi) (QUAD_ITYPE x)
+{
+    return ((QUAD_TYPE){.I=x}).Hi.I;
 }
 
 #endif
@@ -3670,162 +4501,128 @@ INLINE(    llong, LLONG_CNBS)
 {
 #endif
 
-INLINE(ptrdiff_t,  ADDR_CNBY)
-(
-    void volatile const *x,
-    void volatile const *l,
-    void volatile const *r
-)
+INLINE(_Bool,  ADDR_CNBY)(void const *x,void const *l,void const *r)
 {
-
     return  (l > x) || (x > r);
 }
 
 
-INLINE(    uchar, UCHAR_CNBY)   
+INLINE(_Bool, UCHAR_CNBY) 
 (
-    uchar x, 
-    Jc(0, UCHAR_MAX) l,
-    Jc(0, UCHAR_MAX) r
+    unsigned         x, 
+    Jc(0, UCHAR_MAX) l, 
+    Jc(l, UCHAR_MAX) r
 )
 {
-#define     UCHAR_CNBY(X, L, R) \
-((uchar) ((L > ((uchar) X)) || (((uchar) X) > R)))
-
-    return  (l > x) || (x > r);
+    uchar c = x;
+    return  (l > c) || (c > r);
 }
 
-INLINE(    schar, SCHAR_CNBY)   
+INLINE(_Bool, SCHAR_CNBY)   
 (
-    schar x, 
+    signed                   x, 
     Jc(SCHAR_MIN, SCHAR_MAX) l,
-    Jc(SCHAR_MIN, SCHAR_MAX) r
+    Jc(l,         SCHAR_MAX) r
 )
 {
-#define     SCHAR_CNBY(X, L, R) \
-((schar) ((L > ((schar) X)) || (((schar) X) > R)))
-
-    return  (l > x) || (x > r);
+    schar c = x;
+    return  (l > c) || (c > r);
 }
 
-INLINE(     char,  CHAR_CNBY)   
+INLINE(_Bool,  CHAR_CNBY)   
 (
-    char x, 
+    int                    x, 
     Jc(CHAR_MIN, CHAR_MAX) l,
-    Jc(CHAR_MIN, CHAR_MAX) r
+    Jc(l,        CHAR_MAX) r
 )
 {
-#define     CHAR_CNBY(X, L, R) \
-((char) ((L > ((char) X)) || (((char) X) > R)))
-
-    return  (l > x) || (x > r);
+    char c = x;
+    return  (l > c) || (c > r);
 }
 
 
-INLINE(   ushort, USHRT_CNBY)
+INLINE(_Bool, USHRT_CNBY)
 (
-    ushort x, 
+    unsigned         x, 
     Jc(0, USHRT_MAX) l,
-    Jc(0, USHRT_MAX) r
+    Jc(l, USHRT_MAX) r
 )
 {
-#define     USHRT_CNBY(X, L, R) \
-((ushort) ((L > ((ushort) X)) || (((ushort) X) > R)))
-
-    return  (l > x) || (x > r);
+    ushort c = x;
+    return  (l > c) || (c > r);
 }
 
-INLINE(    short,  SHRT_CNBY)
+INLINE(_Bool,  SHRT_CNBY)
 (
-    short x, 
+    signed                 x, 
     Jc(SHRT_MIN, SHRT_MAX) l,
-    Jc(SHRT_MIN, SHRT_MAX) r
+    Jc(l,        SHRT_MAX) r
 )
 {
-#define     SHRT_CNBY(X, L, R) \
-((short) ((L > ((short) X)) || (((short) X) > R)))
-
-    return  (l > x) || (x > r);
+    short c = x;
+    return  (l > c) || (c > r);
 }
 
 
-INLINE(     uint,  UINT_CNBY)
+INLINE(_Bool,  UINT_CNBY)
 (
-    uint x, 
+    uint            x, 
     Jc(0, UINT_MAX) l,
-    Jc(0, UINT_MAX) r
+    Jc(l, UINT_MAX) r
 )
 {
-#define     UINT_CNBY(X, L, R) \
-((uint) ((L > ((uint) X)) || (((uint) X) > R)))
-
     return  (l > x) || (x > r);
 }
 
-INLINE(      int,   INT_CNBY)
+INLINE(_Bool,   INT_CNBY)
 (
-    int x, 
+    int                  x, 
     Jc(INT_MIN, INT_MAX) l,
-    Jc(INT_MIN, INT_MAX) r
+    Jc(l,       INT_MAX) r
 )
 {
-#define     INT_CNBY(X, L, R) \
-((int) ((L > ((int) X)) || (((int) X) > R)))
-
     return  (l > x) || (x > r);
 }
 
 
-INLINE(    ulong, ULONG_CNBY)
+INLINE(_Bool, ULONG_CNBY)
 (
-    ulong x, 
+    ulong                     x, 
     unsigned Jc(0, ULONG_MAX) l,
-    unsigned Jc(0, ULONG_MAX) r
+    unsigned Jc(l, ULONG_MAX) r
 )
 {
-#define     ULONG_CNBY(X, L, R) \
-((ulong) ((L > ((ulong) X)) || (((ulong) X) > R)))
-
     return  (l > x) || (x > r);
 }
 
-INLINE(     long,  LONG_CNBY)
+INLINE(_Bool,  LONG_CNBY)
 (
-    long x, 
+    long                          x, 
     signed Jc(LONG_MIN, LONG_MAX) l,
-    signed Jc(LONG_MIN, LONG_MAX) r
+    signed Jc(l,        LONG_MAX) r
 )
 {
-#define     LONG_CNBY(X, L, R) \
-((long) ((L > ((long) X)) || (((long) X) > R)))
-
     return  (l > x) || (x > r);
 }
 
 
-INLINE(   ullong,ULLONG_CNBY)
+INLINE(_Bool,ULLONG_CNBY)
 (
-    ullong x, 
+    ullong                     x, 
     unsigned Jc(0, ULLONG_MAX) l,
-    unsigned Jc(0, ULLONG_MAX) r
+    unsigned Jc(l, ULLONG_MAX) r
 )
 {
-#define     ULLONG_CNBY(X, L, R) \
-((ullong) ((L > ((ullong) X)) || (((ullong) X) > R)))
-
     return  (l > x) || (x > r);
 }
 
-INLINE(    llong, LLONG_CNBY)
+INLINE(_Bool, LLONG_CNBY)
 (
-    llong x, 
+    llong                           x, 
     signed Jc(LLONG_MIN, LLONG_MAX) l,
-    signed Jc(LLONG_MIN, LLONG_MAX) r
+    signed Jc(l,         LLONG_MAX) r
 )
 {
-#define     LLONG_CNBY(X, L, R) \
-((llong) ((L > ((llong) X)) || (((llong) X) > R)))
-
     return  (l > x) || (x > r);
 }
 
@@ -3834,23 +4631,141 @@ INLINE(    llong, LLONG_CNBY)
 #endif
 
 
+#if 0 // _ENTER_ALL_CEQL
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_CEQL) (void const *a, void const *b)
+{
+    return a==b;
+}
+
+INLINE(uchar,  UCHAR_CEQL) (unsigned a, unsigned b) 
+{
+    return (uchar) a==(uchar) b;
+}
+
+INLINE(schar,  SCHAR_CEQL)   (signed a,   signed b) 
+{
+    return (schar) a==(schar) b;
+}
+
+INLINE(char,    CHAR_CEQL)      (int a,      int b) 
+{
+    return (char) a==(char) b;
+}
+
+
+INLINE(ushort, USHRT_CEQL) (unsigned a, unsigned b) 
+{
+    return  (ushort) a==(ushort) b;
+}
+
+INLINE(short,   SHRT_CEQL)   (signed a,   signed b) 
+{
+    return (short) a==(short) b;
+}
+
+INLINE(uint,    UINT_CEQL)     (uint a,     uint b) {return a==b;}
+INLINE(int,      INT_CEQL)      (int a,      int b) {return a==b;}
+INLINE(ulong,  ULONG_CEQL)    (ulong a,    ulong b) {return a==b;}
+INLINE(long,    LONG_CEQL)     (long a,     long b) {return a==b;}
+INLINE(ullong,ULLONG_CEQL)   (ullong a,   ullong b) {return a==b;}
+INLINE(llong,  LLONG_CEQL)    (llong a,    llong b) {return a==b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,ceqlqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.U = (p.Lo.U==q.Lo.U) && (p.Hi.U==q.Hi.U);
+    c.Hi.U = 0;
+    return  c.U;
+#else
+    return a == b;
+#endif
+}
+
+INLINE(QUAD_ITYPE,ceqlqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.U = (p.Lo.U==q.Lo.U) && (p.Hi.U==q.Hi.U);
+    c.Hi.U = 0;
+    return  c.U;
+#else
+    return a == b;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CEQL
+}
+#endif
+
 #if 0 // _ENTER_ALL_CEQS
 {
 #endif
 
-#ifdef SPC_NO_CEQSZ
+INLINE(ptrdiff_t, ADDR_CEQS) (void const *a, void const *b)
+{
+    return -(a==b);
+}
 
-INLINE( uchar, UCHAR_CEQS)  (uchar a,  uchar b) {return  a==b ? -1 : 0;}
-INLINE( schar, SCHAR_CEQS)  (schar a,  schar b) {return  a==b ? -1 : 0;}
-INLINE(  char,  CHAR_CEQS)   (char a,   char b) {return  a==b ? -1 : 0;}
-INLINE(ushort, USHRT_CEQS) (ushort a, ushort b) {return  a==b ? -1 : 0;}
-INLINE( short,  SHRT_CEQS)  (short a,  short b) {return  a==b ? -1 : 0;}
-INLINE(  uint,  UINT_CEQS)   (uint a,   uint b) {return  a==b ? -1 : 0;}
-INLINE(   int,   INT_CEQS)    (int a,    int b) {return  a==b ? -1 : 0;}
-INLINE( ulong, ULONG_CEQS)  (ulong a,  ulong b) {return  a==b ? -1 : 0;}
-INLINE(  long,  LONG_CEQS)   (long a,   long b) {return  a==b ? -1 : 0;}
-INLINE(ullong,ULLONG_CEQS) (ullong a, ullong b) {return  a==b ? -1 : 0;}
-INLINE( llong, LLONG_CEQS)  (llong a,  llong b) {return  a==b ? -1 : 0;}
+INLINE( uchar, UCHAR_CEQS) (unsigned a, unsigned b) 
+{
+    return -((uchar) a==(uchar) b);
+}
+
+INLINE( schar, SCHAR_CEQS)   (signed a,   signed b) 
+{
+    return -((schar) a==(schar) b);
+}
+
+INLINE(  char,  CHAR_CEQS)      (int a,      int b) 
+{
+    return -((char) a==(char) b);
+}
+
+
+INLINE(ushort, USHRT_CEQS) (unsigned a, unsigned b) 
+{
+    return  -((ushort) a==(ushort) b);
+}
+
+INLINE( short,  SHRT_CEQS)   (signed a,   signed b) 
+{
+    return -((short) a==(short) b);
+}
+
+INLINE(  uint,  UINT_CEQS)     (uint a,     uint b) {return -(a==b);}
+INLINE(   int,   INT_CEQS)      (int a,      int b) {return -(a==b);}
+
+INLINE( ulong, ULONG_CEQS)    (ulong a,    ulong b) {return -(a==b);}
+INLINE(  long,  LONG_CEQS)     (long a,     long b) {return -(a==b);}
+
+INLINE(ullong,ULLONG_CEQS)   (ullong a,   ullong b) {return -(a==b);}
+INLINE( llong, LLONG_CEQS)    (llong a,    llong b) {return -(a==b);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,ceqsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.I = -((p.Lo.I==q.Lo.I) && (p.Hi.I==q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,ceqsqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.I = -((p.Lo.I==q.Lo.I) && (p.Hi.I==q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.I;
+}
 
 #endif
 
@@ -3862,51 +4777,137 @@ INLINE( llong, LLONG_CEQS)  (llong a,  llong b) {return  a==b ? -1 : 0;}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_CEQY) (void volatile const *a, void volatile const *b)
+INLINE(_Bool, ADDR_CEQY) (void const *a, void const *b)
 {
     return  a==b;
 }
 
-INLINE(  _Bool,  BOOL_CEQY)   (_Bool a,   _Bool b) {return a==b;}
-INLINE(  uchar, UCHAR_CEQY)   (uchar a,   uchar b) {return a==b;}
-INLINE(  schar, SCHAR_CEQY)   (schar a,   schar b) {return a==b;}
-INLINE(   char,  CHAR_CEQY)    (char a,    char b) {return a==b;}
-INLINE( ushort, USHRT_CEQY)  (ushort a,  ushort b) {return a==b;}
-INLINE(  short,  SHRT_CEQY)   (short a,   short b) {return a==b;}
-INLINE(   uint,  UINT_CEQY)    (uint a,    uint b) {return a==b;}
-INLINE(    int,   INT_CEQY)     (int a,     int b) {return a==b;}
-INLINE(  ulong, ULONG_CEQY)   (ulong a,   ulong b) {return a==b;}
-INLINE(   long,  LONG_CEQY)    (long a,    long b) {return a==b;}
-INLINE( ullong,ULLONG_CEQY)  (ullong a,  ullong b) {return a==b;}
-INLINE(  llong, LLONG_CEQY)   (llong a,   llong b) {return a==b;}
+INLINE(_Bool, BOOL_CEQY)    (_Bool a,    _Bool b) {return  a==b;}
+
+INLINE(_Bool, UCHAR_CEQY) (unsigned a, unsigned b) 
+{
+    return (uchar) a==(uchar) b;
+}
+
+INLINE(_Bool, SCHAR_CEQY)   (signed a,   signed b) 
+{
+    return (schar) a==(schar) b;
+}
+
+INLINE(_Bool,  CHAR_CEQY)      (int a,      int b) 
+{
+    return (char) a==(char) b;
+}
+
+
+INLINE(_Bool, USHRT_CEQY) (unsigned a, unsigned b) 
+{
+    return  (ushort) a==(ushort) b;
+}
+
+INLINE(_Bool,  SHRT_CEQY)   (signed a,   signed b) 
+{
+    return (short) a==(short) b;
+}
+
+INLINE(_Bool,  UINT_CEQY)     (uint a,     uint b) {return a==b;}
+INLINE(_Bool,   INT_CEQY)      (int a,      int b) {return a==b;}
+INLINE(_Bool, ULONG_CEQY)    (ulong a,    ulong b) {return a==b;}
+INLINE(_Bool,  LONG_CEQY)     (long a,     long b) {return a==b;}
+INLINE(_Bool,ULLONG_CEQY)   (ullong a,   ullong b) {return a==b;}
+INLINE(_Bool, LLONG_CEQY)    (llong a,    llong b) {return a==b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,ceqyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return a==b;
+#else
+    QUAD_TYPE   p={.U=a}, q={.U=b};
+    return  (p.Lo.U==q.Lo.U) && (p.Hi.U==q.Hi.U);
+#endif
+}
+
+INLINE(_Bool,ceqyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   p={.I=a}, q={.I=b};
+    return  ceqyqu(p.U, q.U);
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_CEQY
 }
 #endif
 
-#if 0 // _ENTER_ALL_CNEY
+
+#if 0 // _ENTER_ALL_CNEL
 {
 #endif
 
-INLINE(ptrdiff_t,ADDR_CNEY) (void volatile const *a, void volatile const *b)
+INLINE(ptrdiff_t,ADDR_CNEL) (void const *a, void const *b)
 {
-    return  a!=b;
+    return a!=b;
 }
 
-INLINE(  _Bool,  BOOL_CNEY)   (_Bool a,   _Bool b) {return a!=b;}
-INLINE(  uchar, UCHAR_CNEY)   (uchar a,   uchar b) {return a!=b;}
-INLINE(  schar, SCHAR_CNEY)   (schar a,   schar b) {return a!=b;}
-INLINE(   char,  CHAR_CNEY)    (char a,    char b) {return a!=b;}
-INLINE( ushort, USHRT_CNEY)  (ushort a,  ushort b) {return a!=b;}
-INLINE(  short,  SHRT_CNEY)   (short a,   short b) {return a!=b;}
-INLINE(   uint,  UINT_CNEY)    (uint a,    uint b) {return a!=b;}
-INLINE(    int,   INT_CNEY)     (int a,     int b) {return a!=b;}
-INLINE(  ulong, ULONG_CNEY)   (ulong a,   ulong b) {return a!=b;}
-INLINE(   long,  LONG_CNEY)    (long a,    long b) {return a!=b;}
-INLINE( ullong,ULLONG_CNEY)  (ullong a,  ullong b) {return a!=b;}
-INLINE(  llong, LLONG_CNEY)   (llong a,   llong b) {return a!=b;}
+INLINE( uchar, UCHAR_CNEL) (unsigned a, unsigned b) 
+{
+    return (uchar) a!=(uchar) b;
+}
 
-#if 0 // _LEAVE_ALL_CNEY
+INLINE( schar, SCHAR_CNEL)   (signed a,   signed b) 
+{
+    return (schar) a!=(schar) b;
+}
+
+INLINE(  char,  CHAR_CNEL)      (int a,      int b) 
+{
+    return (char) a!=(char) b;
+}
+
+
+INLINE(ushort, USHRT_CNEL) (unsigned a, unsigned b) 
+{
+    return  (ushort) a!=(ushort) b;
+}
+
+INLINE( short,  SHRT_CNEL)   (signed a,   signed b) 
+{
+    return (short) a!=(short) b;
+}
+
+INLINE(  uint,  UINT_CNEL)     (uint a,     uint b) {return a!=b;}
+INLINE(   int,   INT_CNEL)      (int a,      int b) {return a!=b;}
+INLINE( ulong, ULONG_CNEL)    (ulong a,    ulong b) {return a!=b;}
+INLINE(  long,  LONG_CNEL)     (long a,     long b) {return a!=b;}
+INLINE(ullong,ULLONG_CNEL)   (ullong a,   ullong b) {return a!=b;}
+INLINE( llong, LLONG_CNEL)    (llong a,    llong b) {return a!=b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,cnelqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return  a!=b;
+#else
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.U = ((p.Lo.U!=q.Lo.U) || (p.Hi.U!=q.Hi.U));
+    c.Hi.U = 0;
+    return  c.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,cnelqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   p={.I=a}, q={.I=b};
+    p.U = cnelqu(p.U, q.U);
+    return  p.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CNEL
 }
 #endif
 
@@ -3914,19 +4915,71 @@ INLINE(  llong, LLONG_CNEY)   (llong a,   llong b) {return a!=b;}
 {
 #endif
 
-#ifdef SPC_NO_CNESZ
+INLINE(ptrdiff_t, ADDR_CNES) (void const *a, void const *b)
+{
+    return -(a!=b);
+}
 
-INLINE( uchar, UCHAR_CNES)  (uchar a,  uchar b) {return  a!=b ? -1 : 0;}
-INLINE( schar, SCHAR_CNES)  (schar a,  schar b) {return  a!=b ? -1 : 0;}
-INLINE(  char,  CHAR_CNES)   (char a,   char b) {return  a!=b ? -1 : 0;}
-INLINE(ushort, USHRT_CNES) (ushort a, ushort b) {return  a!=b ? -1 : 0;}
-INLINE( short,  SHRT_CNES)  (short a,  short b) {return  a!=b ? -1 : 0;}
-INLINE(  uint,  UINT_CNES)   (uint a,   uint b) {return  a!=b ? -1 : 0;}
-INLINE(   int,   INT_CNES)    (int a,    int b) {return  a!=b ? -1 : 0;}
-INLINE( ulong, ULONG_CNES)  (ulong a,  ulong b) {return  a!=b ? -1 : 0;}
-INLINE(  long,  LONG_CNES)   (long a,   long b) {return  a!=b ? -1 : 0;}
-INLINE(ullong,ULLONG_CNES) (ullong a, ullong b) {return  a!=b ? -1 : 0;}
-INLINE( llong, LLONG_CNES)  (llong a,  llong b) {return  a!=b ? -1 : 0;}
+INLINE( uchar, UCHAR_CNES) (unsigned a, unsigned b) 
+{
+    return -((uchar) a!=(uchar) b);
+}
+
+INLINE( schar, SCHAR_CNES)   (signed a,   signed b) 
+{
+    return -((schar) a!=(schar) b);
+}
+
+INLINE(  char,  CHAR_CNES)      (int a,      int b) 
+{
+    return -((char) a!=(char) b);
+}
+
+
+INLINE(ushort, USHRT_CNES) (unsigned a, unsigned b) 
+{
+    return  -((ushort) a!=(ushort) b);
+}
+
+INLINE( short,  SHRT_CNES)   (signed a,   signed b) 
+{
+    return -((short) a!=(short) b);
+}
+
+INLINE(  uint,  UINT_CNES)     (uint a,     uint b) {return -(a!=b);}
+INLINE(   int,   INT_CNES)      (int a,      int b) {return -(a!=b);}
+
+INLINE( ulong, ULONG_CNES)    (ulong a,    ulong b) {return -(a!=b);}
+INLINE(  long,  LONG_CNES)     (long a,     long b) {return -(a!=b);}
+
+INLINE(ullong,ULLONG_CNES)   (ullong a,   ullong b) {return -(a!=b);}
+INLINE( llong, LLONG_CNES)    (llong a,    llong b) {return -(a!=b);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,cnesqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return  -(a!=b);
+#else
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.I = -((p.Lo.I^q.Lo.I) || (p.Hi.I^q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,cnesqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return  -(a!=b);
+#else
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.I = -((p.Lo.I^q.Lo.I) || (p.Hi.I^q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.I;
+#endif
+}
 
 #endif
 
@@ -3934,23 +4987,210 @@ INLINE( llong, LLONG_CNES)  (llong a,  llong b) {return  a!=b ? -1 : 0;}
 }
 #endif
 
+#if 0 // _ENTER_ALL_CNEY
+{
+#endif
+
+INLINE(_Bool, ADDR_CNEY) (void const *a, void const *b)
+{
+    return a!=b;
+}
+
+INLINE(_Bool,  BOOL_CNEY)    (_Bool a,    _Bool b) {return a!=b;}
+INLINE(_Bool, UCHAR_CNEY) (unsigned a, unsigned b) 
+{
+    return (uchar) a!=(uchar) b;
+}
+
+INLINE(_Bool, SCHAR_CNEY)   (signed a,   signed b) 
+{
+    return (schar) a!=(schar) b;
+}
+
+INLINE(_Bool,  CHAR_CNEY)      (int a,      int b) 
+{
+    return (char) a!=(char) b;
+}
+
+
+INLINE(_Bool, USHRT_CNEY) (unsigned a, unsigned b) 
+{
+    return  (ushort) a!=(ushort) b;
+}
+
+INLINE(_Bool,  SHRT_CNEY)   (signed a,   signed b) 
+{
+    return (short) a!=(short) b;
+}
+
+INLINE(_Bool,  UINT_CNEY)     (uint a,     uint b) {return a!=b;}
+INLINE(_Bool,   INT_CNEY)      (int a,      int b) {return a!=b;}
+INLINE(_Bool, ULONG_CNEY)    (ulong a,    ulong b) {return a!=b;}
+INLINE(_Bool,  LONG_CNEY)     (long a,     long b) {return a!=b;}
+INLINE(_Bool,ULLONG_CNEY)   (ullong a,   ullong b) {return a!=b;}
+INLINE(_Bool, LLONG_CNEY)    (llong a,    llong b) {return a!=b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,cneyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return  a != b;
+#else
+    QUAD_TYPE   p={.U=a}, q={.U=b};
+    return  ((p.Lo.U!=q.Lo.U) || (p.Hi.U!=q.Hi.U));
+#endif
+}
+
+INLINE(_Bool,cneyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   x={.I=a}, y={.I=b};
+    return  cneyqu(x.U, y.U);
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CNEY
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_CLTL
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_CLTL) (void const *a, void const *b)
+{
+    return a<b;
+}
+
+INLINE(uchar, UCHAR_CLTL) (unsigned a, unsigned b) 
+{
+    return (uchar) a<(uchar) b;
+}
+
+INLINE(schar, SCHAR_CLTL)   (signed a,   signed b) 
+{
+    return (schar) a<(schar) b;
+}
+
+INLINE(char,  CHAR_CLTL)      (int a,      int b) 
+{
+    return (char) a<(char) b;
+}
+
+
+INLINE(ushort, USHRT_CLTL) (unsigned a, unsigned b) 
+{
+    return  (ushort) a<(ushort) b;
+}
+
+INLINE(short,  SHRT_CLTL)   (signed a,   signed b) 
+{
+    return (short) a<(short) b;
+}
+
+INLINE(uint,  UINT_CLTL)     (uint a,     uint b) {return a<b;}
+INLINE(int,   INT_CLTL)      (int a,      int b) {return a<b;}
+INLINE(ulong, ULONG_CLTL)    (ulong a,    ulong b) {return a<b;}
+INLINE(long,  LONG_CLTL)     (long a,     long b) {return a<b;}
+INLINE(ullong,ULLONG_CLTL)   (ullong a,   ullong b) {return a<b;}
+INLINE(llong, LLONG_CLTL)    (llong a,    llong b) {return a<b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,cltlqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.U = (p.Hi.U==q.Hi.U)?(p.Lo.U<q.Lo.U):(p.Hi.U<q.Hi.U);
+    c.Hi.U = 0;
+    return  c.U;
+#else
+    return a < b;
+#endif
+}
+
+INLINE(QUAD_ITYPE,cltlqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.U = (p.Hi.U==q.Hi.U)?(p.Lo.U<q.Lo.U):(p.Hi.I<q.Hi.I);
+    c.Hi.U = 0;
+    return  c.I;
+#else
+    return a < b;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CLTL
+}
+#endif
+
 #if 0 // _ENTER_ALL_CLTS
 {
 #endif
 
-#ifdef SPC_NO_CLTSZ
+INLINE(ptrdiff_t, ADDR_CLTS) (void const *a, void const *b)
+{
+    return -(a<b);
+}
 
-INLINE( uchar, UCHAR_CLTS)  (uchar a,  uchar b) {return  a<b ? -1 : 0;}
-INLINE( schar, SCHAR_CLTS)  (schar a,  schar b) {return  a<b ? -1 : 0;}
-INLINE(  char,  CHAR_CLTS)   (char a,   char b) {return  a<b ? -1 : 0;}
-INLINE(ushort, USHRT_CLTS) (ushort a, ushort b) {return  a<b ? -1 : 0;}
-INLINE( short,  SHRT_CLTS)  (short a,  short b) {return  a<b ? -1 : 0;}
-INLINE(  uint,  UINT_CLTS)   (uint a,   uint b) {return  a<b ? -1 : 0;}
-INLINE(   int,   INT_CLTS)    (int a,    int b) {return  a<b ? -1 : 0;}
-INLINE( ulong, ULONG_CLTS)  (ulong a,  ulong b) {return  a<b ? -1 : 0;}
-INLINE(  long,  LONG_CLTS)   (long a,   long b) {return  a<b ? -1 : 0;}
-INLINE(ullong,ULLONG_CLTS) (ullong a, ullong b) {return  a<b ? -1 : 0;}
-INLINE( llong, LLONG_CLTS)  (llong a,  llong b) {return  a<b ? -1 : 0;}
+INLINE( uchar, UCHAR_CLTS) (unsigned a, unsigned b) 
+{
+    return -((uchar) a<(uchar) b);
+}
+
+INLINE( schar, SCHAR_CLTS)   (signed a,   signed b) 
+{
+    return -((schar) a<(schar) b);
+}
+
+INLINE(  char,  CHAR_CLTS)      (int a,      int b) 
+{
+    return -((char) a<(char) b);
+}
+
+
+INLINE(ushort, USHRT_CLTS) (unsigned a, unsigned b) 
+{
+    return  -((ushort) a<(ushort) b);
+}
+
+INLINE( short,  SHRT_CLTS)   (signed a,   signed b) 
+{
+    return -((short) a<(short) b);
+}
+
+INLINE(  uint,  UINT_CLTS)     (uint a,     uint b) {return -(a<b);}
+INLINE(   int,   INT_CLTS)      (int a,      int b) {return -(a<b);}
+
+INLINE( ulong, ULONG_CLTS)    (ulong a,    ulong b) {return -(a<b);}
+INLINE(  long,  LONG_CLTS)     (long a,     long b) {return -(a<b);}
+
+INLINE(ullong,ULLONG_CLTS)   (ullong a,   ullong b) {return -(a<b);}
+INLINE( llong, LLONG_CLTS)    (llong a,    llong b) {return -(a<b);}
+
+#if QUAD_NLLONG < 2
+
+
+INLINE(QUAD_UTYPE,cltsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U<q.Lo.U):(p.Hi.U<q.Hi.U));
+    c.Hi.I = c.Lo.I;
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,cltsqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U<q.Lo.U):(p.Hi.I<q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.U;
+}
 
 #endif
 
@@ -3962,24 +5202,149 @@ INLINE( llong, LLONG_CLTS)  (llong a,  llong b) {return  a<b ? -1 : 0;}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_CLTY) (void volatile const *a, void volatile const *b)
+INLINE(_Bool, ADDR_CLTY) (void const *a, void const *b)
 {
-    return  a<b;
+    return a<b;
 }
-INLINE( _Bool,   BOOL_CLTY)   (_Bool a,   _Bool b) {return a<b;}
-INLINE(  uchar, UCHAR_CLTY)   (uchar a,   uchar b) {return a<b;}
-INLINE(  schar, SCHAR_CLTY)   (schar a,   schar b) {return a<b;}
-INLINE(   char,  CHAR_CLTY)    (char a,    char b) {return a<b;}
-INLINE( ushort, USHRT_CLTY)  (ushort a,  ushort b) {return a<b;}
-INLINE(  short,  SHRT_CLTY)   (short a,   short b) {return a<b;}
-INLINE(   uint,  UINT_CLTY)    (uint a,    uint b) {return a<b;}
-INLINE(    int,   INT_CLTY)     (int a,     int b) {return a<b;}
-INLINE(  ulong, ULONG_CLTY)   (ulong a,   ulong b) {return a<b;}
-INLINE(   long,  LONG_CLTY)    (long a,    long b) {return a<b;}
-INLINE( ullong,ULLONG_CLTY)  (ullong a,  ullong b) {return a<b;}
-INLINE(  llong, LLONG_CLTY)   (llong a,   llong b) {return a<b;}
+
+INLINE(_Bool, BOOL_CLTY)     (_Bool a,    _Bool b) {return a<b;}
+INLINE(_Bool, UCHAR_CLTY) (unsigned a, unsigned b) 
+{
+    return (uchar) a<(uchar) b;
+}
+
+INLINE(_Bool, SCHAR_CLTY)   (signed a,   signed b) 
+{
+    return (schar) a<(schar) b;
+}
+
+INLINE(_Bool,  CHAR_CLTY)      (int a,      int b) 
+{
+    return (char) a<(char) b;
+}
+
+
+INLINE(_Bool, USHRT_CLTY) (unsigned a, unsigned b) 
+{
+    return  (ushort) a<(ushort) b;
+}
+
+INLINE(_Bool,  SHRT_CLTY)   (signed a,   signed b) 
+{
+    return (short) a<(short) b;
+}
+
+INLINE(_Bool,  UINT_CLTY)     (uint a,     uint b) {return a<b;}
+INLINE(_Bool,   INT_CLTY)      (int a,      int b) {return a<b;}
+INLINE(_Bool, ULONG_CLTY)    (ulong a,    ulong b) {return a<b;}
+INLINE(_Bool,  LONG_CLTY)     (long a,     long b) {return a<b;}
+INLINE(_Bool,ULLONG_CLTY)   (ullong a,   ullong b) {return a<b;}
+INLINE(_Bool, LLONG_CLTY)    (llong a,    llong b) {return a<b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,cltyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.U = (p.Hi.U==q.Hi.U)?(p.Lo.U<q.Lo.U):(p.Hi.U<q.Hi.U);
+    c.Hi.U = 0;
+    return  c.U;
+#else
+    return a < b;
+#endif
+}
+
+INLINE(_Bool,cltyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.U = (p.Hi.U==q.Hi.U)?(p.Lo.U<q.Lo.U):(p.Hi.I<q.Hi.I);
+    c.Hi.U = 0;
+    return  c.I;
+#else
+    return a < b;
+#endif
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_CLTY
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_CLEL
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_CLEL) (void const *a, void const *b)
+{
+    return a<=b;
+}
+
+INLINE(uchar, UCHAR_CLEL) (unsigned a, unsigned b) 
+{
+    return (uchar) a<=(uchar) b;
+}
+
+INLINE(schar, SCHAR_CLEL)   (signed a,   signed b) 
+{
+    return (schar) a<=(schar) b;
+}
+
+INLINE(char,  CHAR_CLEL)      (int a,      int b) 
+{
+    return (char) a<=(char) b;
+}
+
+
+INLINE(ushort, USHRT_CLEL) (unsigned a, unsigned b) 
+{
+    return  (ushort) a<=(ushort) b;
+}
+
+INLINE(short,  SHRT_CLEL)   (signed a,   signed b) 
+{
+    return (short) a<=(short) b;
+}
+
+INLINE(uint,  UINT_CLEL)     (uint a,     uint b) {return a<=b;}
+INLINE(int,   INT_CLEL)      (int a,      int b) {return a<=b;}
+INLINE(ulong, ULONG_CLEL)    (ulong a,    ulong b) {return a<=b;}
+INLINE(long,  LONG_CLEL)     (long a,     long b) {return a<=b;}
+INLINE(ullong,ULLONG_CLEL)   (ullong a,   ullong b) {return a<=b;}
+INLINE(llong, LLONG_CLEL)    (llong a,    llong b) {return a<=b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,clelqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.U = (p.Hi.U==q.Lo.U)?(p.Lo.U<=q.Lo.U):(p.Hi.U<q.Hi.U);
+    c.Hi.U = 0;
+    return c.U;
+#else
+    return a <= b;
+#endif
+}
+
+INLINE(_Bool,clelqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.U = (p.Hi.U==q.Lo.U)?(p.Lo.U<=q.Lo.U):(p.Hi.I<q.Hi.I);
+    c.Hi.U = 0;
+    return  c.I;
+#else
+    return a <= b;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CLEL
 }
 #endif
 
@@ -3987,19 +5352,64 @@ INLINE(  llong, LLONG_CLTY)   (llong a,   llong b) {return a<b;}
 {
 #endif
 
-#ifdef SPC_NO_CLESZ
+INLINE(ptrdiff_t, ADDR_CLES) (void const *a, void const *b)
+{
+    return -(a<=b);
+}
 
-INLINE( uchar, UCHAR_CLES)  (uchar a,  uchar b) {return  a<=b ? -1 : 0;}
-INLINE( schar, SCHAR_CLES)  (schar a,  schar b) {return  a<=b ? -1 : 0;}
-INLINE(  char,  CHAR_CLES)   (char a,   char b) {return  a<=b ? -1 : 0;}
-INLINE(ushort, USHRT_CLES) (ushort a, ushort b) {return  a<=b ? -1 : 0;}
-INLINE( short,  SHRT_CLES)  (short a,  short b) {return  a<=b ? -1 : 0;}
-INLINE(  uint,  UINT_CLES)   (uint a,   uint b) {return  a<=b ? -1 : 0;}
-INLINE(   int,   INT_CLES)    (int a,    int b) {return  a<=b ? -1 : 0;}
-INLINE( ulong, ULONG_CLES)  (ulong a,  ulong b) {return  a<=b ? -1 : 0;}
-INLINE(  long,  LONG_CLES)   (long a,   long b) {return  a<=b ? -1 : 0;}
-INLINE(ullong,ULLONG_CLES) (ullong a, ullong b) {return  a<=b ? -1 : 0;}
-INLINE( llong, LLONG_CLES)  (llong a,  llong b) {return  a<=b ? -1 : 0;}
+INLINE( uchar, UCHAR_CLES) (unsigned a, unsigned b) 
+{
+    return -((uchar) a<=(uchar) b);
+}
+
+INLINE( schar, SCHAR_CLES)   (signed a,   signed b) 
+{
+    return -((schar) a<=(schar) b);
+}
+
+INLINE(  char,  CHAR_CLES)      (int a,      int b) 
+{
+    return -((char) a<=(char) b);
+}
+
+
+INLINE(ushort, USHRT_CLES) (unsigned a, unsigned b) 
+{
+    return  -((ushort) a<=(ushort) b);
+}
+
+INLINE( short,  SHRT_CLES)   (signed a,   signed b) 
+{
+    return -((short) a<=(short) b);
+}
+
+INLINE(  uint,  UINT_CLES)     (uint a,     uint b) {return -(a<=b);}
+INLINE(   int,   INT_CLES)      (int a,      int b) {return -(a<=b);}
+
+INLINE( ulong, ULONG_CLES)    (ulong a,    ulong b) {return -(a<=b);}
+INLINE(  long,  LONG_CLES)     (long a,     long b) {return -(a<=b);}
+
+INLINE(ullong,ULLONG_CLES)   (ullong a,   ullong b) {return -(a<=b);}
+INLINE( llong, LLONG_CLES)    (llong a,    llong b) {return -(a<=b);}
+
+#if QUAD_NLLONG <= 2
+
+
+INLINE(QUAD_UTYPE,clesqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U<=q.Lo.U):(p.Hi.U<q.Hi.U));
+    c.Hi.I = c.Lo.I;
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,clesqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U<=q.Lo.U):(p.Hi.I<q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.I;
+}
 
 #endif
 
@@ -4011,24 +5421,144 @@ INLINE( llong, LLONG_CLES)  (llong a,  llong b) {return  a<=b ? -1 : 0;}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_CLEY) (void volatile const *a, void volatile const *b)
+INLINE(_Bool, ADDR_CLEY) (void const *a, void const *b)
 {
     return  a<=b;
 }
 
-INLINE(  uchar, UCHAR_CLEY)   (uchar a,   uchar b) {return a<=b;}
-INLINE(  schar, SCHAR_CLEY)   (schar a,   schar b) {return a<=b;}
-INLINE(   char,  CHAR_CLEY)    (char a,    char b) {return a<=b;}
-INLINE( ushort, USHRT_CLEY)  (ushort a,  ushort b) {return a<=b;}
-INLINE(  short,  SHRT_CLEY)   (short a,   short b) {return a<=b;}
-INLINE(   uint,  UINT_CLEY)    (uint a,    uint b) {return a<=b;}
-INLINE(    int,   INT_CLEY)     (int a,     int b) {return a<=b;}
-INLINE(  ulong, ULONG_CLEY)   (ulong a,   ulong b) {return a<=b;}
-INLINE(   long,  LONG_CLEY)    (long a,    long b) {return a<=b;}
-INLINE( ullong,ULLONG_CLEY)  (ullong a,  ullong b) {return a<=b;}
-INLINE(  llong, LLONG_CLEY)   (llong a,   llong b) {return a<=b;}
+INLINE(_Bool, UCHAR_CLEY) (unsigned a, unsigned b) 
+{
+    return  (uchar) a<=(uchar) b;
+}
+
+INLINE(_Bool, SCHAR_CLEY)   (signed a,   signed b) 
+{
+    return  (schar) a<=(schar) b;
+}
+
+INLINE(_Bool,  CHAR_CLEY)      (int a,      int b) 
+{
+    return  (char) a<=(char) b;
+}
+
+
+INLINE(_Bool, USHRT_CLEY) (unsigned a, unsigned b) 
+{
+    return  (ushort) a<=(ushort) b;
+}
+
+INLINE(_Bool,  SHRT_CLEY)   (signed a,   signed b) 
+{
+    return  (short) a<=(short) b;
+}
+
+INLINE(_Bool,  UINT_CLEY)     (uint a,     uint b) {return a<=b;}
+INLINE(_Bool,   INT_CLEY)      (int a,      int b) {return a<=b;}
+INLINE(_Bool, ULONG_CLEY)    (ulong a,    ulong b) {return a<=b;}
+INLINE(_Bool,  LONG_CLEY)     (long a,     long b) {return a<=b;}
+INLINE(_Bool,ULLONG_CLEY)   (ullong a,   ullong b) {return a<=b;}
+INLINE(_Bool, LLONG_CLEY)    (llong a,    llong b) {return a<=b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,cleyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.U=a}, q={.U=b};
+    return  (p.Hi.U==q.Lo.U) ? (p.Lo.U<=q.Lo.U) : (p.Hi.U<q.Hi.U);
+#else
+    return  a<=b;
+#endif
+}
+
+INLINE(_Bool,cleyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.I=a}, q={.I=b};
+    return  (p.Hi.U==q.Lo.U) ? (p.Lo.U<=q.Lo.U) : (p.Hi.I<q.Hi.I);
+#else
+    return  a<=b;
+#endif
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_CLEY
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_CGTL
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_CGTL) (void const *a, void const *b)
+{
+    return a>b;
+}
+
+INLINE( uchar, UCHAR_CGTL) (unsigned a, unsigned b) 
+{
+    return (uchar) a>(uchar) b;
+}
+
+INLINE( schar, SCHAR_CGTL)   (signed a,   signed b) 
+{
+    return (schar) a>(schar) b;
+}
+
+INLINE(  char,  CHAR_CGTL)      (int a,      int b) 
+{
+    return (char) a>(char) b;
+}
+
+
+INLINE(ushort, USHRT_CGTL) (unsigned a, unsigned b) 
+{
+    return  (ushort) a>(ushort) b;
+}
+
+INLINE( short,  SHRT_CGTL)   (signed a,   signed b) 
+{
+    return (short) a>(short) b;
+}
+
+INLINE(  uint,  UINT_CGTL)     (uint a,     uint b) {return a>b;}
+INLINE(   int,   INT_CGTL)      (int a,      int b) {return a>b;}
+INLINE( ulong, ULONG_CGTL)    (ulong a,    ulong b) {return a>b;}
+INLINE(  long,  LONG_CGTL)     (long a,     long b) {return a>b;}
+INLINE(ullong,ULLONG_CGTL)   (ullong a,   ullong b) {return a>b;}
+INLINE( llong, LLONG_CGTL)    (llong a,    llong b) {return a>b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,cgtlqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return a > b;
+#else
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.U = (p.Hi.U==q.Hi.U) ? (p.Lo.U>q.Lo.U) : (p.Hi.U>q.Hi.U);
+    c.Hi.U = 0;
+    return  c.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,cgtlqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return a > b;
+#else
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.U = (p.Hi.U==q.Hi.U) ? (p.Lo.U>q.Lo.U) : (p.Hi.I>q.Hi.I);
+    c.Hi.U = 0;
+    return  c.I;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CGTL
 }
 #endif
 
@@ -4036,19 +5566,63 @@ INLINE(  llong, LLONG_CLEY)   (llong a,   llong b) {return a<=b;}
 {
 #endif
 
-#ifdef SPC_NO_CGTSZ
+INLINE(ptrdiff_t, ADDR_CGTS) (void const *a, void const *b)
+{
+    return -(a>b);
+}
 
-INLINE( uchar, UCHAR_CGTS)  (uchar a,  uchar b) {return  a>b ? -1 : 0;}
-INLINE( schar, SCHAR_CGTS)  (schar a,  schar b) {return  a>b ? -1 : 0;}
-INLINE(  char,  CHAR_CGTS)   (char a,   char b) {return  a>b ? -1 : 0;}
-INLINE(ushort, USHRT_CGTS) (ushort a, ushort b) {return  a>b ? -1 : 0;}
-INLINE( short,  SHRT_CGTS)  (short a,  short b) {return  a>b ? -1 : 0;}
-INLINE(  uint,  UINT_CGTS)   (uint a,   uint b) {return  a>b ? -1 : 0;}
-INLINE(   int,   INT_CGTS)    (int a,    int b) {return  a>b ? -1 : 0;}
-INLINE( ulong, ULONG_CGTS)  (ulong a,  ulong b) {return  a>b ? -1 : 0;}
-INLINE(  long,  LONG_CGTS)   (long a,   long b) {return  a>b ? -1 : 0;}
-INLINE(ullong,ULLONG_CGTS) (ullong a, ullong b) {return  a>b ? -1 : 0;}
-INLINE( llong, LLONG_CGTS)  (llong a,  llong b) {return  a>b ? -1 : 0;}
+INLINE( uchar, UCHAR_CGTS) (unsigned a, unsigned b) 
+{
+    return -((uchar) a>(uchar) b);
+}
+
+INLINE( schar, SCHAR_CGTS)   (signed a,   signed b) 
+{
+    return -((schar) a>(schar) b);
+}
+
+INLINE(  char,  CHAR_CGTS)      (int a,      int b) 
+{
+    return -((char) a>(char) b);
+}
+
+
+INLINE(ushort, USHRT_CGTS) (unsigned a, unsigned b) 
+{
+    return  -((ushort) a>(ushort) b);
+}
+
+INLINE( short,  SHRT_CGTS)   (signed a,   signed b) 
+{
+    return -((short) a>(short) b);
+}
+
+INLINE(  uint,  UINT_CGTS)     (uint a,     uint b) {return -(a>b);}
+INLINE(   int,   INT_CGTS)      (int a,      int b) {return -(a>b);}
+
+INLINE( ulong, ULONG_CGTS)    (ulong a,    ulong b) {return -(a>b);}
+INLINE(  long,  LONG_CGTS)     (long a,     long b) {return -(a>b);}
+
+INLINE(ullong,ULLONG_CGTS)   (ullong a,   ullong b) {return -(a>b);}
+INLINE( llong, LLONG_CGTS)    (llong a,    llong b) {return -(a>b);}
+
+#if QUAD_NLLONG > 2
+
+INLINE(QUAD_UTYPE,cgtsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U>q.Lo.U):(p.Hi.U>q.Hi.U));
+    c.Hi.I = c.Lo.I;
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,cgtsqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U>q.Lo.U):(p.Hi.I>q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.I;
+}
 
 #endif
 
@@ -4060,24 +5634,145 @@ INLINE( llong, LLONG_CGTS)  (llong a,  llong b) {return  a>b ? -1 : 0;}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_CGTY) (void volatile const *a, void volatile const *b)
+INLINE(_Bool, ADDR_CGTY) (void const *a, void const *b)
 {
-    return  a>b;
+    return a>b;
 }
-INLINE( _Bool,   BOOL_CGTY)   (_Bool a,   _Bool b) {return a>b;}
-INLINE(  uchar, UCHAR_CGTY)   (uchar a,   uchar b) {return a>b;}
-INLINE(  schar, SCHAR_CGTY)   (schar a,   schar b) {return a>b;}
-INLINE(   char,  CHAR_CGTY)    (char a,    char b) {return a>b;}
-INLINE( ushort, USHRT_CGTY)  (ushort a,  ushort b) {return a>b;}
-INLINE(  short,  SHRT_CGTY)   (short a,   short b) {return a>b;}
-INLINE(   uint,  UINT_CGTY)    (uint a,    uint b) {return a>b;}
-INLINE(    int,   INT_CGTY)     (int a,     int b) {return a>b;}
-INLINE(  ulong, ULONG_CGTY)   (ulong a,   ulong b) {return a>b;}
-INLINE(   long,  LONG_CGTY)    (long a,    long b) {return a>b;}
-INLINE( ullong,ULLONG_CGTY)  (ullong a,  ullong b) {return a>b;}
-INLINE(  llong, LLONG_CGTY)   (llong a,   llong b) {return a>b;}
+
+INLINE(_Bool, BOOL_CGTY)     (_Bool a,    _Bool b) {return a>b;}
+INLINE(_Bool, UCHAR_CGTY) (unsigned a, unsigned b) 
+{
+    return (uchar) a>(uchar) b;
+}
+
+INLINE(_Bool, SCHAR_CGTY)   (signed a,   signed b) 
+{
+    return (schar) a>(schar) b;
+}
+
+INLINE(_Bool,  CHAR_CGTY)      (int a,      int b) 
+{
+    return (char) a>(char) b;
+}
+
+
+INLINE(_Bool, USHRT_CGTY) (unsigned a, unsigned b) 
+{
+    return  (ushort) a>(ushort) b;
+}
+
+INLINE(_Bool,  SHRT_CGTY)   (signed a,   signed b) 
+{
+    return (short) a>(short) b;
+}
+
+INLINE(_Bool,  UINT_CGTY)     (uint a,     uint b) {return a>b;}
+INLINE(_Bool,   INT_CGTY)      (int a,      int b) {return a>b;}
+INLINE(_Bool, ULONG_CGTY)    (ulong a,    ulong b) {return a>b;}
+INLINE(_Bool,  LONG_CGTY)     (long a,     long b) {return a>b;}
+INLINE(_Bool,ULLONG_CGTY)   (ullong a,   ullong b) {return a>b;}
+INLINE(_Bool, LLONG_CGTY)    (llong a,    llong b) {return a>b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,cgtyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return a>b;
+#else
+    QUAD_TYPE   p={.U=a}, q={.U=b};
+    return  (p.Hi.U==q.Hi.U) ? (p.Lo.U>q.Lo.U) : (p.Hi.U>q.Hi.U);
+#endif
+}
+
+INLINE(_Bool,cgtyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return a>b;
+#else
+    QUAD_TYPE   p={.I=a}, q={.I=b};
+    return  (p.Hi.U == q.Hi.U) ? (p.Lo.U>q.Lo.U) : (p.Hi.I>q.Hi.I);
+#endif
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_CGTY
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_CGEL
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_CGEL) (void const *a, void const *b)
+{
+    return a>=b;
+}
+
+INLINE(uchar, UCHAR_CGEL) (unsigned a, unsigned b) 
+{
+    return (uchar) a>=(uchar) b;
+}
+
+INLINE(schar, SCHAR_CGEL)   (signed a,   signed b) 
+{
+    return (schar) a>=(schar) b;
+}
+
+INLINE(char,  CHAR_CGEL)      (int a,      int b) 
+{
+    return (char) a>=(char) b;
+}
+
+
+INLINE(ushort, USHRT_CGEL) (unsigned a, unsigned b) 
+{
+    return  (ushort) a>=(ushort) b;
+}
+
+INLINE(short,  SHRT_CGEL)   (signed a,   signed b) 
+{
+    return (short) a>=(short) b;
+}
+
+INLINE(uint,  UINT_CGEL)     (uint a,     uint b) {return a>=b;}
+INLINE(int,   INT_CGEL)      (int a,      int b) {return a>=b;}
+INLINE(ulong, ULONG_CGEL)    (ulong a,    ulong b) {return a>=b;}
+INLINE(long,  LONG_CGEL)     (long a,     long b) {return a>=b;}
+INLINE(ullong,ULLONG_CGEL)   (ullong a,   ullong b) {return a>=b;}
+INLINE(llong, LLONG_CGEL)    (llong a,    llong b) {return a>=b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,cgelqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.U = (p.Hi.U==q.Lo.U)?(p.Lo.U>=q.Lo.U):(p.Hi.U>q.Hi.U);
+    c.Hi.U = 0;
+    return  c.U;
+#else
+    return a >= b;
+#endif
+}
+
+INLINE(QUAD_ITYPE,cgelqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.U = (p.Hi.U==q.Lo.U)?(p.Lo.U>=q.Lo.U):(p.Hi.I>q.Hi.I);
+    c.Hi.U = 0;
+    return  c.U;
+#else
+    return  a >= b;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CGEL
 }
 #endif
 
@@ -4085,19 +5780,64 @@ INLINE(  llong, LLONG_CGTY)   (llong a,   llong b) {return a>b;}
 {
 #endif
 
-#ifdef SPC_NO_CGESZ
+INLINE(ptrdiff_t, ADDR_CGES) (void const *a, void const *b)
+{
+    return -(a>=b);
+}
 
-INLINE( uchar, UCHAR_CGES)  (uchar a,  uchar b) {return  a>=b ? -1 : 0;}
-INLINE( schar, SCHAR_CGES)  (schar a,  schar b) {return  a>=b ? -1 : 0;}
-INLINE(  char,  CHAR_CGES)   (char a,   char b) {return  a>=b ? -1 : 0;}
-INLINE(ushort, USHRT_CGES) (ushort a, ushort b) {return  a>=b ? -1 : 0;}
-INLINE( short,  SHRT_CGES)  (short a,  short b) {return  a>=b ? -1 : 0;}
-INLINE(  uint,  UINT_CGES)   (uint a,   uint b) {return  a>=b ? -1 : 0;}
-INLINE(   int,   INT_CGES)    (int a,    int b) {return  a>=b ? -1 : 0;}
-INLINE( ulong, ULONG_CGES)  (ulong a,  ulong b) {return  a>=b ? -1 : 0;}
-INLINE(  long,  LONG_CGES)   (long a,   long b) {return  a>=b ? -1 : 0;}
-INLINE(ullong,ULLONG_CGES) (ullong a, ullong b) {return  a>=b ? -1 : 0;}
-INLINE( llong, LLONG_CGES)  (llong a,  llong b) {return  a>=b ? -1 : 0;}
+INLINE( uchar, UCHAR_CGES) (unsigned a, unsigned b) 
+{
+    return -((uchar) a>=(uchar) b);
+}
+
+INLINE( schar, SCHAR_CGES)   (signed a,   signed b) 
+{
+    return -((schar) a>=(schar) b);
+}
+
+INLINE(  char,  CHAR_CGES)      (int a,      int b) 
+{
+    return -((char) a>=(char) b);
+}
+
+
+INLINE(ushort, USHRT_CGES) (unsigned a, unsigned b) 
+{
+    return  -((ushort) a>=(ushort) b);
+}
+
+INLINE( short,  SHRT_CGES)   (signed a,   signed b) 
+{
+    return -((short) a>=(short) b);
+}
+
+INLINE(  uint,  UINT_CGES)     (uint a,     uint b) {return -(a>=b);}
+INLINE(   int,   INT_CGES)      (int a,      int b) {return -(a>=b);}
+
+INLINE( ulong, ULONG_CGES)    (ulong a,    ulong b) {return -(a>=b);}
+INLINE(  long,  LONG_CGES)     (long a,     long b) {return -(a>=b);}
+
+INLINE(ullong,ULLONG_CGES)   (ullong a,   ullong b) {return -(a>=b);}
+INLINE( llong, LLONG_CGES)    (llong a,    llong b) {return -(a>=b);}
+
+#if QUAD_NLLONG >= 2
+
+
+INLINE(QUAD_UTYPE,cgesqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE   p={.U=a}, q={.U=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U>=q.Lo.U):(p.Hi.U>q.Hi.U));
+    c.Hi.I = c.Lo.I;
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,cgesqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE   p={.I=a}, q={.I=b}, c;
+    c.Lo.I = -((p.Hi.U==q.Hi.U)?(p.Lo.U>=q.Lo.U):(p.Hi.I>q.Hi.I));
+    c.Hi.I = c.Lo.I;
+    return  c.I;
+}
 
 #endif
 
@@ -4109,58 +5849,595 @@ INLINE( llong, LLONG_CGES)  (llong a,  llong b) {return  a>=b ? -1 : 0;}
 {
 #endif
 
-INLINE(ptrdiff_t, ADDR_CGEY) (void volatile const *a, void volatile const *b)
+INLINE(_Bool, ADDR_CGEY) (void const *a, void const *b)
 {
-    return  a>=b;
+    return a>=b;
 }
 
-INLINE(  uchar, UCHAR_CGEY)   (uchar a,   uchar b) {return a>=b;}
-INLINE(  schar, SCHAR_CGEY)   (schar a,   schar b) {return a>=b;}
-INLINE(   char,  CHAR_CGEY)    (char a,    char b) {return a>=b;}
-INLINE( ushort, USHRT_CGEY)  (ushort a,  ushort b) {return a>=b;}
-INLINE(  short,  SHRT_CGEY)   (short a,   short b) {return a>=b;}
-INLINE(   uint,  UINT_CGEY)    (uint a,    uint b) {return a>=b;}
-INLINE(    int,   INT_CGEY)     (int a,     int b) {return a>=b;}
-INLINE(  ulong, ULONG_CGEY)   (ulong a,   ulong b) {return a>=b;}
-INLINE(   long,  LONG_CGEY)    (long a,    long b) {return a>=b;}
-INLINE( ullong,ULLONG_CGEY)  (ullong a,  ullong b) {return a>=b;}
-INLINE(  llong, LLONG_CGEY)   (llong a,   llong b) {return a>=b;}
+INLINE(_Bool, UCHAR_CGEY) (unsigned a, unsigned b) 
+{
+    return (uchar) a>=(uchar) b;
+}
+
+INLINE(_Bool, SCHAR_CGEY)   (signed a,   signed b) 
+{
+    return (schar) a>=(schar) b;
+}
+
+INLINE(_Bool,  CHAR_CGEY)      (int a,      int b) 
+{
+    return (char) a>=(char) b;
+}
+
+
+INLINE(_Bool, USHRT_CGEY) (unsigned a, unsigned b) 
+{
+    return  (ushort) a>=(ushort) b;
+}
+
+INLINE(_Bool,  SHRT_CGEY)   (signed a,   signed b) 
+{
+    return (short) a>=(short) b;
+}
+
+INLINE(_Bool,  UINT_CGEY)     (uint a,     uint b) {return a>=b;}
+INLINE(_Bool,   INT_CGEY)      (int a,      int b) {return a>=b;}
+INLINE(_Bool, ULONG_CGEY)    (ulong a,    ulong b) {return a>=b;}
+INLINE(_Bool,  LONG_CGEY)     (long a,     long b) {return a>=b;}
+INLINE(_Bool,ULLONG_CGEY)   (ullong a,   ullong b) {return a>=b;}
+INLINE(_Bool, LLONG_CGEY)    (llong a,    llong b) {return a>=b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,cgeyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.U=a}, q={.U=b};
+    return  (p.Hi.U==q.Lo.U)?(p.Lo.U>=q.Lo.U):(p.Hi.U>q.Hi.U);
+#else
+    return a >= b;
+#endif
+}
+
+INLINE(_Bool,cgeyqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#if 1
+    QUAD_TYPE   p={.I=a}, q={.I=b};
+    return  (p.Hi.U==q.Lo.U)?(p.Lo.U>=q.Lo.U):(p.Hi.I>q.Hi.I);
+#else
+    return  a >= b;
+#endif
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_CGEY
 }
 #endif
 
 
+#if 0 // _ENTER_ALL_ZEQY
+{
+#endif
+
+INLINE(ptrdiff_t,ADDR_ZEQY) (void volatile const *a)
+{
+    return  (NULL==a);
+}
+
+INLINE(_Bool,  BOOL_ZEQY)    (_Bool a) {return !a;}
+INLINE(_Bool, UCHAR_ZEQY) (unsigned a) {return !((uchar) a);}
+INLINE(_Bool, SCHAR_ZEQY)   (signed a) {return !((schar) a);}
+INLINE(_Bool,  CHAR_ZEQY)      (int a) {return !((char) a);}
+INLINE(_Bool, USHRT_ZEQY) (unsigned a) {return !((ushort) a);}
+INLINE(_Bool,  SHRT_ZEQY)   (signed a) {return !((short) a);}
+INLINE(_Bool,  UINT_ZEQY)     (uint a) {return !a;}
+INLINE(_Bool,   INT_ZEQY)      (int a) {return !a;}
+INLINE(_Bool, ULONG_ZEQY)    (ulong a) {return !a;}
+INLINE(_Bool,  LONG_ZEQY)     (long a) {return !a;}
+INLINE(_Bool,ULLONG_ZEQY)   (ullong a) {return !a;}
+INLINE(_Bool, LLONG_ZEQY)    (llong a) {return !a;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,zeqyqu) (QUAD_UTYPE x)
+{
+#if 0
+    QUAD_TYPE c = {.U=x};
+    return !(c.Lo.U|c.Hi.U);
+#else
+    return 0 == x;
+#endif
+}
+
+INLINE(_Bool,zeqyqi) (QUAD_ITYPE x)
+{
+#if 0
+    QUAD_TYPE c = {.I=x};
+    return !(c.Lo.I|c.Hi.I);
+#else
+    return 0 == x;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZEQY
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZEQS
+{
+#endif
+
+INLINE(ptrdiff_t,ADDR_ZEQS) (void volatile const *a)
+{
+    return  a ? 0 : -1;
+}
+
+INLINE(  uchar, UCHAR_ZEQS) (unsigned a) {return -!((uchar) a);}
+INLINE(  schar, SCHAR_ZEQS)   (signed a) {return -!((schar) a);}
+INLINE(   char,  CHAR_ZEQS)      (int a) {return -!((char) a);}
+INLINE( ushort, USHRT_ZEQS) (unsigned a) {return -!((ushort) a);}
+INLINE(  short,  SHRT_ZEQS)   (signed a) {return -!((short) a);}
+INLINE(   uint,  UINT_ZEQS)     (uint a) {return -!a;}
+INLINE(    int,   INT_ZEQS)      (int a) {return -!a;}
+INLINE(  ulong, ULONG_ZEQS)    (ulong a) {return -!a;}
+INLINE(   long,  LONG_ZEQS)     (long a) {return -!a;}
+INLINE( ullong,ULLONG_ZEQS)   (ullong a) {return -!a;}
+INLINE(  llong, LLONG_ZEQS)    (llong a) {return -!a;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,zeqsqu) (QUAD_UTYPE x)
+{
+    QUAD_TYPE   c = {.U=x};
+    int64_t     z = -!(c.Lo.U|c.Hi.U);
+    return ((QUAD_TYPE){.Lo.I=z, .Hi.I=z}).U;
+}
+
+INLINE(QUAD_ITYPE,zeqsqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE   c = {.I=x};
+    int64_t     z = -!(c.Lo.U|c.Hi.U);
+    return ((QUAD_TYPE){.Lo.I=z, .Hi.I=z}).I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZEQS
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZNEY
+{
+#endif
+
+INLINE(_Bool, ADDR_ZNEY) (void const *x)
+{
+    return x!=NULL;
+}
+
+INLINE(_Bool,  BOOL_ZNEY)    (_Bool x) {return x;}
+INLINE(_Bool, UCHAR_ZNEY) (unsigned x) {return  (uchar) x;}
+INLINE(_Bool, SCHAR_ZNEY)   (signed x) {return  (schar) x;}
+INLINE(_Bool,  CHAR_ZNEY)      (int x) {return   (char) x;}
+INLINE(_Bool, USHRT_ZNEY) (unsigned x) {return (ushort) x;}
+INLINE(_Bool,  SHRT_ZNEY)   (signed x) {return  (short) x;}
+INLINE(_Bool,  UINT_ZNEY)     (uint x) {return x;}
+INLINE(_Bool,   INT_ZNEY)      (int x) {return x;}
+INLINE(_Bool, ULONG_ZNEY)    (ulong x) {return x;}
+INLINE(_Bool,  LONG_ZNEY)     (long x) {return x;}
+INLINE(_Bool,ULLONG_ZNEY)   (ullong x) {return x;}
+INLINE(_Bool, LLONG_ZNEY)    (llong x) {return x;}
+
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,zneyqu) (QUAD_UTYPE x)
+{
+#if 1
+    QUAD_TYPE c = {.U=x};
+    return  c.Lo.U||c.Hi.U;
+#else
+    return 0 != x;
+#endif
+}
+
+INLINE(_Bool,zneyqi) (QUAD_ITYPE x)
+{
+#if 1
+    QUAD_TYPE c = {.I=x};
+    return  c.Lo.U||c.Hi.U;
+#else
+    return 0 != x;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZNEY
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZNES
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_ZNES) (void volatile const *a)
+{
+    return a!=NULL;
+}
+
+INLINE( uchar, UCHAR_ZNES) (unsigned a) {return  (uchar) a?-1:0;}
+INLINE( schar, SCHAR_ZNES)   (signed a) {return  (schar) a?-1:0;}
+INLINE(  char,  CHAR_ZNES)      (int a) {return   (char) a?-1:0;}
+INLINE(ushort, USHRT_ZNES) (unsigned a) {return (ushort) a?-1:0;}
+INLINE( short,  SHRT_ZNES)   (signed a) {return  (short) a?-1:0;}
+INLINE(  uint,  UINT_ZNES)     (uint a) {return          a?-1:0;}
+INLINE(   int,   INT_ZNES)      (int a) {return          a?-1:0;}
+INLINE( ulong, ULONG_ZNES)    (ulong a) {return          a?-1:0;}
+INLINE(  long,  LONG_ZNES)     (long a) {return          a?-1:0;}
+INLINE(ullong,ULLONG_ZNES)   (ullong a) {return          a?-1:0;}
+INLINE( llong, LLONG_ZNES)    (llong a) {return          a?-1:0;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,znesqu) (QUAD_UTYPE x)
+{
+    QUAD_TYPE   c = {.U=x};
+    int64_t     z = -(c.Lo.U||c.Hi.U);
+    return ((QUAD_TYPE){.Lo.I=z, .Hi.I=z}).U;
+}
+
+INLINE(QUAD_ITYPE,znesqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE   c = {.I=x};
+    int64_t     z = -(c.Lo.U||c.Hi.U);
+    return ((QUAD_TYPE){.Lo.I=z, .Hi.I=z}).I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZNES
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZLTY
+{
+#endif
+
+INLINE(_Bool, ADDR_ZLTY) (void volatile const *a)
+{
+    return NULL<a;
+}
+
+INLINE(_Bool, UCHAR_ZLTY) (unsigned a) {return  0 <  (uchar) a;}
+INLINE(_Bool, SCHAR_ZLTY)   (signed a) {return  0 <  (schar) a;}
+INLINE(_Bool,  CHAR_ZLTY)      (int a) {return  0 <   (char) a;}
+INLINE(_Bool, USHRT_ZLTY) (unsigned a) {return  0 < (ushort) a;}
+INLINE(_Bool,  SHRT_ZLTY)   (signed a) {return  0 <  (short) a;}
+INLINE(_Bool,  UINT_ZLTY)     (uint a) {return  0 < a;}
+INLINE(_Bool,   INT_ZLTY)      (int a) {return  0 < a;}
+INLINE(_Bool, ULONG_ZLTY)    (ulong a) {return  0 < a;}
+INLINE(_Bool,  LONG_ZLTY)     (long a) {return  0 < a;}
+INLINE(_Bool,ULLONG_ZLTY)   (ullong a) {return  0 < a;}
+INLINE(_Bool, LLONG_ZLTY)    (llong a) {return  0 < a;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,zltyqu) (QUAD_UTYPE x)
+{
+#if 1
+    QUAD_TYPE   c = {.U=x};
+    return  c.Lo.U||c.Hi.U;
+#else
+    return 0 < x;
+#endif
+}
+
+INLINE(_Bool,zltyqi) (QUAD_ITYPE x)
+{
+#if 1
+    QUAD_TYPE   c = {.I=x};
+    return (c.Hi.I >= 0) && (c.Hi.U||c.Lo.U);
+#else
+    return 0 < x;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZLTY
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZLTS
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_ZLTS) (void volatile const *a)
+{
+    return -(NULL<a);
+}
+
+INLINE( uchar, UCHAR_ZLTS) (unsigned a) {return  -(0 <  (uchar) a);}
+INLINE( schar, SCHAR_ZLTS)   (signed a) {return  -(0 <  (schar) a);}
+INLINE(  char,  CHAR_ZLTS)      (int a) {return  -(0 <   (char) a);}
+INLINE(ushort, USHRT_ZLTS) (unsigned a) {return  -(0 < (ushort) a);}
+INLINE( short,  SHRT_ZLTS)   (signed a) {return  -(0 <  (short) a);}
+INLINE(  uint,  UINT_ZLTS)     (uint a) {return  -(0 < a);}
+INLINE(   int,   INT_ZLTS)      (int a) {return  -(0 < a);}
+INLINE( ulong, ULONG_ZLTS)    (ulong a) {return  -(0 < a);}
+INLINE(  long,  LONG_ZLTS)     (long a) {return  -(0 < a);}
+INLINE(ullong,ULLONG_ZLTS)   (ullong a) {return  -(0 < a);}
+INLINE( llong, LLONG_ZLTS)    (llong a) {return  -(0 < a);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,zltsqu) (QUAD_UTYPE x)
+{
+    QUAD_TYPE   c = {.U=x};
+    int64_t     z = -(c.Lo.U||c.Hi.U);
+    return  ((QUAD_TYPE){.Lo.I=z, .Hi.I=z}).U;
+}
+
+INLINE(QUAD_ITYPE,zltsqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE   c = {.I=x};
+    int64_t     z = (c.Hi.U>>63) ? 0 : -(c.Hi.U||c.Lo.U);
+    return  ((QUAD_TYPE){.Lo.I=z, .Hi.I=z}).I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZLTS
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZLEY
+{
+#endif
+
+INLINE(_Bool, ADDR_ZLEY) (void const *x)
+{
+    return  NULL<=x;
+}
+
+INLINE(_Bool,SCHAR_ZLEY) (signed x) {return 0 <= (schar) x;}
+INLINE(_Bool, CHAR_ZLEY)    (int x) 
+{
+#if CHAR_MIN
+    return  0 <= (char) x;
+#else
+    return  1;
+#endif
+}
+
+INLINE(_Bool, SHRT_ZLEY) (signed x) {return 0 <= (short) x;}
+INLINE(_Bool,  INT_ZLEY)    (int x) {return 0 <= x;}
+INLINE(_Bool, LONG_ZLEY)   (long x) {return 0 <= x;}
+INLINE(_Bool,LLONG_ZLEY)  (llong x) {return 0 <= x;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,zleyqi) (QUAD_ITYPE x)
+{
+#if 1
+    QUAD_TYPE   c = {.I=x};
+    return (c.Hi.I >= 0);
+    //return (c.Hi.I < 0) || (0 == (c.Hi.U|c.Lo.U));
+#else
+    return 0 <= x;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZLEY
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZLES
+{
+#endif
+
+INLINE(ptrdiff_t, ADDR_ZLES) (void volatile const *x) {return -(NULL<=x);}
+INLINE( schar, SCHAR_ZLES) (signed x) {return -(0<=(schar) x);}
+
+INLINE(  char,  CHAR_ZLES)    (int x) 
+{
+#if CHAR_MIN
+    return  -(0<=(char) x);
+#else
+    return  -1;
+#endif
+}
+
+INLINE( short,  SHRT_ZLES) (signed x) {return -(0<=(short) x);}
+
+INLINE(   int,   INT_ZLES)    (int x) {return -(0<=x);}
+
+INLINE(  long,  LONG_ZLES)   (long x) {return -(0<=x);}
+
+INLINE( llong, LLONG_ZLES)  (llong x) {return -(0<=x);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_ITYPE,zlesqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE   c = {.I=x};
+    QUAD_TYPE   r;
+    r.Lo.U = (c.Hi.U>>63) ? 0 : -1;
+    r.Hi.U = r.Lo.U;
+    return  r.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZLES
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZGTY
+{
+#endif
+
+INLINE(_Bool,SCHAR_ZGTY) (signed x) {return 0 > (schar) x;}
+INLINE(_Bool, CHAR_ZGTY)    (int x) 
+{
+#if CHAR_MIN
+    return  0 > (char) x;
+#else
+    return  0;
+#endif
+}
+
+INLINE(_Bool, SHRT_ZGTY) (signed x) {return 0 > (short) x;}
+INLINE(_Bool,  INT_ZGTY)    (int x) {return 0 > x;}
+INLINE(_Bool, LONG_ZGTY)   (long x) {return 0 > x;}
+INLINE(_Bool,LLONG_ZGTY)  (llong x) {return 0 > x;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,zgtyqi) (QUAD_ITYPE x)
+{
+#if defined(__SIZEOF_INT128__)
+    return  0 > x;
+#else
+    QUAD_TYPE   c = {.I=x};
+    return  0 > c.Hi.I;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZGTY
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZGTS
+{
+#endif
+
+INLINE(schar,SCHAR_ZGTS) (signed x) {return -(0 > (schar) x);}
+INLINE( char, CHAR_ZGTS)    (int x) 
+{
+#if CHAR_MIN
+    return  0 >   (char) x;
+#else
+    return  0;
+#endif
+}
+
+INLINE(short, SHRT_ZGTS) (signed x) {return -(0 > (short) x);}
+INLINE(  int,  INT_ZGTS)    (int x) {return -(0 > x);}
+INLINE( long, LONG_ZGTS)   (long x) {return -(0 > x);}
+INLINE(llong,LLONG_ZGTS)  (llong x) {return -(0 > x);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_ITYPE,zgtsqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE   c = {.I=x};
+    c.Hi.I >>= 63;
+    c.Lo.I = c.Hi.I;
+    return  c.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZGTS
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZGEY
+{
+#endif
+
+INLINE(_Bool,SCHAR_ZGEY) (signed x) {return 0 >= (schar) x;}
+INLINE(_Bool, CHAR_ZGEY)    (int x) {return 0 >=  (char) x;}
+INLINE(_Bool, SHRT_ZGEY) (signed x) {return 0 >= (short) x;}
+INLINE(_Bool,  INT_ZGEY)    (int x) {return 0 >= x;}
+INLINE(_Bool, LONG_ZGEY)   (long x) {return 0 >= x;}
+INLINE(_Bool,LLONG_ZGEY)  (llong x) {return 0 >= x;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(_Bool,zgeyqi) (QUAD_ITYPE x)
+{
+#if 1
+    QUAD_TYPE   c={.I=x};
+    return (c.Hi.I < 0) || (!(c.Lo.U|c.Hi.U));
+#else
+    return 0 >= x;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZGEY
+}
+#endif
+
+#if 0 // _ENTER_ALL_ZGES
+{
+#endif
+
+INLINE(schar,SCHAR_ZGES) (signed x) {return -(0 >= (schar) x);}
+INLINE( char, CHAR_ZGES)    (int x) {return -(0 >=  (char) x);}
+INLINE(short, SHRT_ZGES) (signed x) {return -(0 >= (short) x);}
+INLINE(  int,  INT_ZGES)    (int x) {return -(0 >= x);}
+INLINE( long, LONG_ZGES)   (long x) {return -(0 >= x);}
+INLINE(llong,LLONG_ZGES)  (llong x) {return -(0 >= x);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_ITYPE,zgesqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE   c={.I=x};
+    if (c.Lo.U || c.Hi.U)
+        c.Lo.I >>= 63;
+    else 
+        c.Lo.I = -1;
+    c.Hi.I = c.Lo.I;
+    return  c.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ZGES
+}
+#endif
+
 #if 0 // _ENTER_ALL_TSTS
 {
 #endif
 
-#ifdef SPC_NO_TSTSZ
-
 INLINE( uchar, UCHAR_TSTS) (unsigned a, unsigned b) 
 {
-    return  (UCHAR_MAXa&b) ? -1 : 0;
+    return  ((uchar) (a&b)) ? -1 : 0;
 }
 
 INLINE( schar, SCHAR_TSTS)   (signed a, unsigned b) 
 {
-    return  (UCHAR_MAX&a&b) ? -1 : 0;
+    return  ((uchar) (a&b)) ? -1 : 0;
 }
 
 INLINE(  char,  CHAR_TSTS)      (int a, unsigned b) 
 {
-    return  (UCHAR_MAX&a&b) ? -1 : 0;
+    return  ((uchar) (a&b)) ? -1 : 0;
 }
 
 
 INLINE(ushort, USHRT_TSTS) (unsigned a, unsigned b) 
 {
-    return  (USHRT_MAX&a&b) ? -1 : 0;
+    return  ((ushort) (a&b)) ? -1 : 0;
 }
 
 INLINE( short,  SHRT_TSTS)   (signed a, unsigned b) 
 {
-    return  (USHRT_MAX&a&b) ? -1 : 0;
+    return  ((ushort) (a&b)) ? -1 : 0;
 }
 
 
@@ -4196,6 +6473,24 @@ INLINE( llong, LLONG_TSTS)    (llong a,   ullong b)
     return  (a&b) ? -1 : 0;
 }
 
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,tstsqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE p={.U=a}, q={.U=b};
+    p.Lo.I = -((p.Lo.U&q.Lo.U) || (p.Hi.U&q.Hi.U));
+    p.Hi.I = p.Lo.I;
+    return  p.U;
+}
+
+INLINE(QUAD_ITYPE,tstsqi) (QUAD_ITYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE p={.I=a}, q={.U=b};
+    p.Lo.I = -((p.Lo.U&q.Lo.U) || (p.Hi.U&q.Hi.U));
+    p.Hi.I = p.Lo.I;
+    return  p.I;
+}
+
 #endif
 
 #if 0 // _LEAVE_ALL_TSTS
@@ -4206,70 +6501,145 @@ INLINE( llong, LLONG_TSTS)    (llong a,   ullong b)
 {
 #endif
 
-#ifdef SPC_NO_TSTYZ
-
-INLINE( uchar, UCHAR_TSTY) (unsigned a, unsigned b) 
+INLINE(_Bool, ADDR_TSTY) (void const *a, uintptr_t b)
 {
-    return  (UCHAR_MAXa&b) ? 1 : 0;
+    return b&(uintptr_t) a;
+}
+INLINE(_Bool, UCHAR_TSTY) (unsigned a, unsigned b) {return (uchar) a&b;}
+INLINE(_Bool, SCHAR_TSTY)   (signed a, unsigned b) {return (uchar) a&b;}
+INLINE(_Bool,  CHAR_TSTY)      (int a, unsigned b) {return (uchar) a&b;}
+INLINE(_Bool, USHRT_TSTY) (unsigned a, unsigned b) {return (ushort) a&b;}
+INLINE(_Bool,  SHRT_TSTY)   (signed a, unsigned b) {return (ushort) a&b;}
+INLINE(_Bool,  UINT_TSTY)     (uint a,     uint b) {return a&b;}
+INLINE(_Bool,   INT_TSTY)      (int a,     uint b) {return a&b;}
+INLINE(_Bool, ULONG_TSTY)    (ulong a,    ulong b) {return a&b;}
+INLINE(_Bool,  LONG_TSTY)     (long a,    ulong b) {return a&b;}
+INLINE(_Bool,ULLONG_TSTY)   (ullong a,   ullong b) {return a&b;}
+INLINE(_Bool, LLONG_TSTY)    (llong a,   ullong b) {return a&b;}
+
+#if QUAD_NLLONG == 2
+INLINE(_Bool,tstyqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE p={.U=a}, q={.U=b};
+    return (p.Lo.U&q.Lo.U)|(p.Hi.U|q.Hi.U);
 }
 
-INLINE( schar, SCHAR_TSTY)   (signed a, unsigned b) 
+INLINE(_Bool,tstyqi) (QUAD_ITYPE a, QUAD_UTYPE b)
 {
-    return  (UCHAR_MAX&a&b) ? 1 : 0;
-}
-
-INLINE(  char,  CHAR_TSTY)      (int a, unsigned b) 
-{
-    return  (UCHAR_MAX&a&b) ? 1 : 0;
-}
-
-
-INLINE(ushort, USHRT_TSTY) (unsigned a, unsigned b) 
-{
-    return  (USHRT_MAX&a&b) ? 1 : 0;
-}
-
-INLINE( short,  SHRT_TSTY)   (signed a, unsigned b) 
-{
-    return  (USHRT_MAX&a&b) ? 1 : 0;
-}
-
-
-INLINE(  uint,  UINT_TSTY)     (uint a,     uint b) 
-{
-    return  (a&b) ? 1 : 0;
-}
-
-INLINE(   int,   INT_TSTY)      (int a,     uint b) 
-{
-    return  (a&b) ? 1 : 0;
-}
-
-
-INLINE( ulong, ULONG_TSTY)    (ulong a,    ulong b) 
-{
-    return  (a&b) ? 1 : 0;
-}
-
-INLINE(  long,  LONG_TSTY)     (long a,    ulong b) 
-{
-    return  (a&b) ? 1 : 0;
-}
-
-
-INLINE(ullong,ULLONG_TSTY)   (ullong a,   ullong b) 
-{
-    return  (a&b) ? 1 : 0;
-}
-
-INLINE( llong, LLONG_TSTY)    (llong a,   ullong b) 
-{
-    return  (a&b) ? 1 : 0;
+    QUAD_TYPE p={.I=a}, q={.U=b};
+    return ((p.Lo.U&q.Lo.U) || (p.Hi.U&q.Hi.U));
 }
 
 #endif
 
 #if 0 // _LEAVE_ALL_TSTY
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_SUNN
+{
+#endif
+
+INLINE(  _Bool,  BOOL_SUNNA) (void *dst,    _Bool src)
+{
+    return  (((_Bool *) dst)[0]=src);
+}
+
+
+INLINE(  uchar, UCHAR_SUNNA) (void *dst, unsigned src)
+{
+    return  (((uchar *) dst)[0]=src);
+}
+
+INLINE(  schar, SCHAR_SUNNA) (void *dst,   signed src)
+{
+    return  (((schar *) dst)[0]=src);
+}
+
+INLINE(   char,  CHAR_SUNNA) (void *dst,      int src)
+{
+    return  (((char *) dst)[0]=src);
+}
+
+
+INLINE( ushort, USHRT_SUNNA) (void *dst, unsigned src)
+{
+    return  (((HALF_TYPE *) dst)->M.U=src);
+}
+
+INLINE(  short,  SHRT_SUNNA) (void *dst,   signed src)
+{
+    return  (((HALF_TYPE *) dst)->M.I=src);
+}
+
+
+INLINE(   uint,  UINT_SUNNA) (void *dst,     uint src)
+{
+    return  (((WORD_TYPE *) dst)->M.U=src);
+}
+
+INLINE(    int,   INT_SUNNA) (void *dst,      int src)
+{
+    return  (((WORD_TYPE *) dst)->M.I=src);
+}
+
+
+INLINE(  ulong, ULONG_SUNNA) (void *dst,    ulong src)
+{
+#if DWRD_NLONG == 2
+    return  (((WORD_TYPE *) dst)->M.U=src);
+#else
+    return  (((DWRD_TYPE *) dst)->M.U=src);
+#endif
+}
+
+INLINE(   long,  LONG_SUNNA) (void *dst,     long src)
+{
+#if DWRD_NLONG == 2
+    return  (((WORD_TYPE *) dst)->M.I=src);
+#else
+    return  (((DWRD_TYPE *) dst)->M.I=src);
+#endif
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE( ullong,ULLONG_SUNNA) (void *dst,   ullong src)
+{
+    return  (((DWRD_TYPE *) dst)->M.U=src);
+}
+
+INLINE(  llong, LLONG_SUNNA) (void *dst,    llong src)
+{
+    return  (((DWRD_TYPE *) dst)->M.I=src);
+}
+
+INLINE(QUAD_UTYPE,sunnaqu) (void *dst, QUAD_UTYPE src)
+{
+    return  (((QUAD_TYPE *) dst)->M.U=src);
+}
+
+INLINE(QUAD_ITYPE,sunnaqi) (void *dst, QUAD_ITYPE src)
+{
+    return  (((QUAD_TYPE *) dst)->M.U=src);
+}
+
+#else
+
+INLINE( ullong,ULLONG_SUNNA) (void *dst,   ullong src)
+{
+    return  (((QUAD_TYPE *) dst)->M.U=src);
+}
+
+INLINE(  llong, LLONG_SUNNA) (void *dst,    llong src)
+{
+    return  (((QUAD_TYPE *) dst)->M.I=src);
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_SUNN
 }
 #endif
 
@@ -4290,29 +6660,23 @@ INLINE(  long,  LONG_INVS)     (long a) {return ~a;}
 INLINE(ullong,ULLONG_INVS)   (ullong a) {return ~a;}
 INLINE( llong, LLONG_INVS)    (llong a) {return ~a;}
 
-INLINE(flt16_t, FLT16_INVS) (flt16_t a)
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,invsqu) (QUAD_UTYPE a)
 {
-#define     FLT16_INVS(A) ((HALF_TYPE){.U=((HALF_TYPE){.F=A}).U}).F
-    HALF_TYPE z = {.F=a};
-    z.U = ~z.U;
-    return  z.F;
+    QUAD_TYPE z = {.U=a};
+    z.Lo.U = ~z.Lo.U;
+    z.Hi.U = ~z.Hi.U;
+    return  z.U;
 }
 
-INLINE(  float,   FLT_INVS)   (float a)
+INLINE(QUAD_ITYPE,invsqi) (QUAD_ITYPE a)
 {
-#define     FLT_INVS(A) ((WORD_TYPE){.U=((WORD_TYPE){.F=A}).U}).F
-    WORD_TYPE z = {.F=a};
-    z.U = ~z.U;
-    return  z.F;
+    QUAD_TYPE z = {.I=a};
+    z.Lo.U = ~z.Lo.U;
+    z.Hi.U = ~z.Hi.U;
+    return  z.I;
 }
-
-INLINE( double,   DBL_INVS)  (double a)
-{
-#define     DBL_INVS(A) ((DWRD_TYPE){.U=((DWRD_TYPE){.F=A}).U}).F
-    DWRD_TYPE z = {.F=a};
-    z.U = ~z.U;
-    return  z.F;
-}
+#endif
 
 #if 0 // _LEAVE_ALL_INVS
 }
@@ -4323,50 +6687,81 @@ INLINE( double,   DBL_INVS)  (double a)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_ANDS)   (_Bool a,   _Bool b) {return a&b;}
-INLINE(  uchar, UCHAR_ANDS)   (uchar a,   uchar b) {return a&b;}
-INLINE(  schar, SCHAR_ANDS)   (schar a,   schar b) {return a&b;}
-INLINE(   char,  CHAR_ANDS)    (char a,    char b) {return a&b;}
-INLINE( ushort, USHRT_ANDS)  (ushort a,  ushort b) {return a&b;}
-INLINE(  short,  SHRT_ANDS)   (short a,   short b) {return a&b;}
-INLINE(   uint,  UINT_ANDS)    (uint a,    uint b) {return a&b;}
-INLINE(    int,   INT_ANDS)     (int a,     int b) {return a&b;}
-INLINE(  ulong, ULONG_ANDS)   (ulong a,   ulong b) {return a&b;}
-INLINE(   long,  LONG_ANDS)    (long a,    long b) {return a&b;}
-INLINE( ullong,ULLONG_ANDS)  (ullong a,  ullong b) {return a&b;}
-INLINE(  llong, LLONG_ANDS)   (llong a,   llong b) {return a&b;}
+INLINE(  _Bool,  BOOL_ANDS)    (_Bool a,    _Bool b) {return a&b;}
+INLINE(  uchar, UCHAR_ANDS) (unsigned a, unsigned b) {return a&b;}
+INLINE(  schar, SCHAR_ANDS)   (signed a,   signed b) {return a&b;}
+INLINE(   char,  CHAR_ANDS)      (int a,      int b) {return a&b;}
+INLINE( ushort, USHRT_ANDS) (unsigned a, unsigned b) {return a&b;}
+INLINE(  short,  SHRT_ANDS)   (signed a,   signed b) {return a&b;}
+INLINE(   uint,  UINT_ANDS)     (uint a,     uint b) {return a&b;}
+INLINE(    int,   INT_ANDS)      (int a,      int b) {return a&b;}
+INLINE(  ulong, ULONG_ANDS)    (ulong a,    ulong b) {return a&b;}
+INLINE(   long,  LONG_ANDS)     (long a,     long b) {return a&b;}
+INLINE( ullong,ULLONG_ANDS)   (ullong a,   ullong b) {return a&b;}
+INLINE(  llong, LLONG_ANDS)    (llong a,    llong b) {return a&b;}
 
-INLINE(flt16_t, FLT16_ANDS) (flt16_t a, flt16_t b)
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,andsqu) (QUAD_UTYPE a,QUAD_UTYPE b) 
 {
-#define     FLT16_ANDS(A, B) \
-(((HALF_TYPE){.U=((HALF_TYPE){.F=A}).U&((HALF_TYPE){.F=B}).U}).F)
-
-    HALF_TYPE l={.F=a}, r={.F=b};
-    l.U &=  r.U;
-    return  l.F;
+    QUAD_TYPE l={.U=a}, r={.U=b};
+    l.Lo.U &= r.Lo.U;
+    l.Hi.U &= r.Hi.U;
+    return  l.U;
 }
 
-INLINE(  float,   FLT_ANDS)   (float a,   float b)
+INLINE(QUAD_ITYPE,andsqi) (QUAD_ITYPE a,QUAD_ITYPE b) 
 {
-#define     FLT_ANDS(A, B) \
-(((WORD_TYPE){.U=((WORD_TYPE){.F=A}).U&((WORD_TYPE){.F=B}).U}).F)
-
-    WORD_TYPE l={.F=a}, r={.F=b};
-    l.U &=  r.U;
-    return  l.F;
+    QUAD_TYPE l={.I=a}, r={.I=b};
+    l.Lo.U &= r.Lo.U;
+    l.Hi.U &= r.Hi.U;
+    return  l.I;
 }
 
-INLINE( double,   DBL_ANDS)  (double a,  double b)
-{
-#define     DBL_ANDS(A, B) \
-(((DWRD_TYPE){.U=((DWRD_TYPE){.F=A}).U&((DWRD_TYPE){.F=B}).U}).F)
-
-    DWRD_TYPE l={.F=a}, r={.F=b};
-    l.U &=  r.U;
-    return  l.F;
-}
+#endif
 
 #if 0 // _LEAVE_ALL_ANDS
+}
+#endif
+
+#if 0 // _ENTER_ALL_ANDY
+{
+#endif
+
+INLINE(  _Bool,  BOOL_ANDY)    (_Bool a, _Bool b) {return a&b;}
+INLINE(  uchar, UCHAR_ANDY) (unsigned a, _Bool b) {return a&b;}
+INLINE(  schar, SCHAR_ANDY)   (signed a, _Bool b) {return a&b;}
+INLINE(   char,  CHAR_ANDY)      (int a, _Bool b) {return a&b;}
+INLINE( ushort, USHRT_ANDY) (unsigned a, _Bool b) {return a&b;}
+INLINE(  short,  SHRT_ANDY)   (signed a, _Bool b) {return a&b;}
+INLINE(   uint,  UINT_ANDY)     (uint a, _Bool b) {return a&b;}
+INLINE(    int,   INT_ANDY)      (int a, _Bool b) {return a&b;}
+INLINE(  ulong, ULONG_ANDY)    (ulong a, _Bool b) {return a&b;}
+INLINE(   long,  LONG_ANDY)     (long a, _Bool b) {return a&b;}
+INLINE( ullong,ULLONG_ANDY)   (ullong a, _Bool b) {return a&b;}
+INLINE(  llong, LLONG_ANDY)    (llong a, _Bool b) {return a&b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,andyqu) (QUAD_UTYPE a,_Bool b) 
+{
+    QUAD_TYPE c={.U=a};
+    c.Lo.U &= b;
+    c.Hi.U = 0;
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,andyqi) (QUAD_ITYPE a,_Bool b) 
+{
+    QUAD_TYPE c={.U=a};
+    c.Lo.U &= b;
+    c.Hi.U = 0;
+    return  c.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ANDY
 }
 #endif
 
@@ -4374,76 +6769,108 @@ INLINE( double,   DBL_ANDS)  (double a,  double b)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_ANDN)   (_Bool a,   _Bool b) {return a&~b;}
-INLINE(  uchar, UCHAR_ANDN)   (uchar a,   uchar b) {return a&~b;}
-INLINE(  schar, SCHAR_ANDN)   (schar a,   schar b) {return a&~b;}
-INLINE(   char,  CHAR_ANDN)    (char a,    char b) {return a&~b;}
-INLINE( ushort, USHRT_ANDN)  (ushort a,  ushort b) {return a&~b;}
-INLINE(  short,  SHRT_ANDN)   (short a,   short b) {return a&~b;}
-INLINE(   uint,  UINT_ANDN)    (uint a,    uint b) {return a&~b;}
-INLINE(    int,   INT_ANDN)     (int a,     int b) {return a&~b;}
-INLINE(  ulong, ULONG_ANDN)   (ulong a,   ulong b) {return a&~b;}
-INLINE(   long,  LONG_ANDN)    (long a,    long b) {return a&~b;}
-INLINE( ullong,ULLONG_ANDN)  (ullong a,  ullong b) {return a&~b;}
-INLINE(  llong, LLONG_ANDN)   (llong a,   llong b) {return a&~b;}
+INLINE(  _Bool,  BOOL_ANDN)    (_Bool a,    _Bool b) {return a&~b;}
+INLINE(  uchar, UCHAR_ANDN) (unsigned a, unsigned b) {return a&~b;}
+INLINE(  schar, SCHAR_ANDN)   (signed a,   signed b) {return a&~b;}
+INLINE(   char,  CHAR_ANDN)      (int a,      int b) {return a&~b;}
+INLINE( ushort, USHRT_ANDN) (unsigned a, unsigned b) {return a&~b;}
+INLINE(  short,  SHRT_ANDN)   (signed a,   signed b) {return a&~b;}
+INLINE(   uint,  UINT_ANDN)     (uint a,     uint b) {return a&~b;}
+INLINE(    int,   INT_ANDN)      (int a,      int b) {return a&~b;}
+INLINE(  ulong, ULONG_ANDN)    (ulong a,    ulong b) {return a&~b;}
+INLINE(   long,  LONG_ANDN)     (long a,     long b) {return a&~b;}
+INLINE( ullong,ULLONG_ANDN)   (ullong a,   ullong b) {return a&~b;}
+INLINE(  llong, LLONG_ANDN)    (llong a,    llong b) {return a&~b;}
 
-INLINE(flt16_t, FLT16_ANDN) (flt16_t a, flt16_t b)
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,andnqu) (QUAD_UTYPE a,QUAD_UTYPE b) 
 {
-#define     FLT16_ANDN(A, B) \
-(((HALF_TYPE){.U=((HALF_TYPE){.F=A}).U&~((HALF_TYPE){.F=B}).U}).F)
+    QUAD_TYPE l={.U=a}, r={.U=b};
+    l.Lo.U &= ~r.Lo.U;
+    l.Hi.U &= ~r.Hi.U;
+    return  l.U;
+}
 
+INLINE(QUAD_ITYPE,andnqi) (QUAD_ITYPE a,QUAD_ITYPE b) 
+{
+    QUAD_TYPE l={.I=a}, r={.I=b};
+    l.Lo.U &= ~r.Lo.U;
+    l.Hi.U &= ~r.Hi.U;
+    return  l.I;
+}
+
+#endif
+#if 0
+INLINE(flt16_t, FLT16_ANDN)  (flt16_t a,  flt16_t b)
+{
+#define     FLT16_ANDN(A, B) (((HALF_TYPE){.U=FLT16_ASHU(A)|FLT16_ASHU(B)}).F)
     HALF_TYPE l={.F=a}, r={.F=b};
-    l.U &= ~r.U;
+    l.U &=  ~r.U;
     return  l.F;
 }
 
 INLINE(  float,   FLT_ANDN)   (float a,   float b)
 {
-#define     FLT_ANDN(A, B) \
-(((WORD_TYPE){.U=((WORD_TYPE){.F=A}).U&~((WORD_TYPE){.F=B}).U}).F)
-
+#define     FLT_ANDN(A, B) (((WORD_TYPE){.U=FLT_ASWU(A)|FLT_ASWU(B)}).F)
     WORD_TYPE l={.F=a}, r={.F=b};
-    l.U &= ~r.U;
+    l.U &=  ~r.U;
     return  l.F;
 }
 
 INLINE( double,   DBL_ANDN)  (double a,  double b)
 {
-#define     DBL_ANDN(A, B) \
-(((DWRD_TYPE){.U=((DWRD_TYPE){.F=A}).U&~((DWRD_TYPE){.F=B}).U}).F)
-
+#define     DBL_ANDN(A, B) (((DWRD_TYPE){.U=DBL_ASDU(A)|DBL_ASDU(B)}).F)
     DWRD_TYPE l={.F=a}, r={.F=b};
-    l.U &= ~r.U;
+    l.U &=  ~r.U;
     return  l.F;
 }
+#endif
 
 #if 0 // _LEAVE_ALL_ANDN
 }
 #endif
 
-
 #if 0 // _ENTER_ALL_ORRS
 {
 #endif
 
-INLINE(  _Bool,  BOOL_ORRS)   (_Bool a,   _Bool b) {return a|b;}
-INLINE(  uchar, UCHAR_ORRS)   (uchar a,   uchar b) {return a|b;}
-INLINE(  schar, SCHAR_ORRS)   (schar a,   schar b) {return a|b;}
-INLINE(   char,  CHAR_ORRS)    (char a,    char b) {return a|b;}
-INLINE( ushort, USHRT_ORRS)  (ushort a,  ushort b) {return a|b;}
-INLINE(  short,  SHRT_ORRS)   (short a,   short b) {return a|b;}
-INLINE(   uint,  UINT_ORRS)    (uint a,    uint b) {return a|b;}
-INLINE(    int,   INT_ORRS)     (int a,     int b) {return a|b;}
-INLINE(  ulong, ULONG_ORRS)   (ulong a,   ulong b) {return a|b;}
-INLINE(   long,  LONG_ORRS)    (long a,    long b) {return a|b;}
-INLINE( ullong,ULLONG_ORRS)  (ullong a,  ullong b) {return a|b;}
-INLINE(  llong, LLONG_ORRS)   (llong a,   llong b) {return a|b;}
+INLINE(  _Bool,  BOOL_ORRS)    (_Bool a,      _Bool b) {return a|b;}
+INLINE(  uchar, UCHAR_ORRS) (unsigned a,   unsigned b) {return a|b;}
+INLINE(  schar, SCHAR_ORRS)   (signed a,     signed b) {return a|b;}
+INLINE(   char,  CHAR_ORRS)      (int a,        int b) {return a|b;}
+INLINE( ushort, USHRT_ORRS) (unsigned a,   unsigned b) {return a|b;}
+INLINE(  short,  SHRT_ORRS)   (signed a,     signed b) {return a|b;}
+INLINE(   uint,  UINT_ORRS)     (uint a,       uint b) {return a|b;}
+INLINE(    int,   INT_ORRS)      (int a,        int b) {return a|b;}
+INLINE(  ulong, ULONG_ORRS)    (ulong a,      ulong b) {return a|b;}
+INLINE(   long,  LONG_ORRS)     (long a,       long b) {return a|b;}
+INLINE( ullong,ULLONG_ORRS)   (ullong a,     ullong b) {return a|b;}
+INLINE(  llong, LLONG_ORRS)    (llong a,      llong b) {return a|b;}
 
-INLINE(flt16_t, FLT16_ORRS) (flt16_t a, flt16_t b)
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,orrsqu) (QUAD_UTYPE a, QUAD_UTYPE b) 
 {
-#define     FLT16_ORRS(A, B) \
-(((HALF_TYPE){.U=((HALF_TYPE){.F=A}).U|((HALF_TYPE){.F=B}).U}).F)
+    QUAD_TYPE p={.U=a}, q={.U=b};
+    p.Lo.U |= q.Lo.U;
+    p.Hi.U |= q.Hi.U;
+    return  p.U;
+}
 
+INLINE(QUAD_ITYPE,orrsqi) (QUAD_ITYPE a, QUAD_ITYPE b) 
+{
+    QUAD_TYPE p={.I=a}, q={.I=b};
+    p.Lo.U |= q.Lo.U;
+    p.Hi.U |= q.Hi.U;
+    return  p.U;
+}
+
+#endif
+#if 0
+INLINE(flt16_t, FLT16_ORRS)  (flt16_t a,  flt16_t b)
+{
+#define     FLT16_ORRS(A, B) (((HALF_TYPE){.U=FLT16_ASHU(A)|FLT16_ASHU(B)}).F)
     HALF_TYPE l={.F=a}, r={.F=b};
     l.U |=  r.U;
     return  l.F;
@@ -4451,9 +6878,7 @@ INLINE(flt16_t, FLT16_ORRS) (flt16_t a, flt16_t b)
 
 INLINE(  float,   FLT_ORRS)   (float a,   float b)
 {
-#define     FLT_ORRS(A, B) \
-(((WORD_TYPE){.U=((WORD_TYPE){.F=A}).U|((WORD_TYPE){.F=B}).U}).F)
-
+#define     FLT_ORRS(A, B) (((WORD_TYPE){.U=FLT_ASWU(A)|FLT_ASWU(B)}).F)
     WORD_TYPE l={.F=a}, r={.F=b};
     l.U |=  r.U;
     return  l.F;
@@ -4461,13 +6886,12 @@ INLINE(  float,   FLT_ORRS)   (float a,   float b)
 
 INLINE( double,   DBL_ORRS)  (double a,  double b)
 {
-#define     DBL_ORRS(A, B) \
-(((DWRD_TYPE){.U=((DWRD_TYPE){.F=A}).U|((DWRD_TYPE){.F=B}).U}).F)
-
+#define     DBL_ORRS(A, B) (((DWRD_TYPE){.U=DBL_ASDU(A)|DBL_ASDU(B)}).F)
     DWRD_TYPE l={.F=a}, r={.F=b};
     l.U |=  r.U;
     return  l.F;
 }
+#endif
 
 #if 0 // _LEAVE_ALL_ORRS
 }
@@ -4477,48 +6901,63 @@ INLINE( double,   DBL_ORRS)  (double a,  double b)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_ORRN)   (_Bool a,   _Bool b) {return a|~b;}
-INLINE(  uchar, UCHAR_ORRN)   (uchar a,   uchar b) {return a|~b;}
-INLINE(  schar, SCHAR_ORRN)   (schar a,   schar b) {return a|~b;}
-INLINE(   char,  CHAR_ORRN)    (char a,    char b) {return a|~b;}
-INLINE( ushort, USHRT_ORRN)  (ushort a,  ushort b) {return a|~b;}
-INLINE(  short,  SHRT_ORRN)   (short a,   short b) {return a|~b;}
-INLINE(   uint,  UINT_ORRN)    (uint a,    uint b) {return a|~b;}
-INLINE(    int,   INT_ORRN)     (int a,     int b) {return a|~b;}
-INLINE(  ulong, ULONG_ORRN)   (ulong a,   ulong b) {return a|~b;}
-INLINE(   long,  LONG_ORRN)    (long a,    long b) {return a|~b;}
-INLINE( ullong,ULLONG_ORRN)  (ullong a,  ullong b) {return a|~b;}
-INLINE(  llong, LLONG_ORRN)   (llong a,   llong b) {return a|~b;}
+INLINE(  _Bool,  BOOL_ORRN)    (_Bool a,    _Bool b) {return a|~b;}
+INLINE(  uchar, UCHAR_ORRN) (unsigned a, unsigned b) {return a|~b;}
+INLINE(  schar, SCHAR_ORRN)   (signed a,   signed b) {return a|~b;}
+INLINE(   char,  CHAR_ORRN)      (int a,      int b) {return a|~b;}
+INLINE( ushort, USHRT_ORRN) (unsigned a, unsigned b) {return a|~b;}
+INLINE(  short,  SHRT_ORRN)   (signed a,   signed b) {return a|~b;}
+INLINE(   uint,  UINT_ORRN)     (uint a,     uint b) {return a|~b;}
+INLINE(    int,   INT_ORRN)      (int a,      int b) {return a|~b;}
+INLINE(  ulong, ULONG_ORRN)    (ulong a,    ulong b) {return a|~b;}
+INLINE(   long,  LONG_ORRN)     (long a,     long b) {return a|~b;}
+INLINE( ullong,ULLONG_ORRN)   (ullong a,   ullong b) {return a|~b;}
+INLINE(  llong, LLONG_ORRN)    (llong a,    llong b) {return a|~b;}
 
-INLINE(flt16_t, FLT16_ORRN) (flt16_t a, flt16_t b)
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,orrnqu) (QUAD_UTYPE a,QUAD_UTYPE b) 
 {
-#define     FLT16_ORRN(A, B) \
-(((HALF_TYPE){.U=((HALF_TYPE){.F=A}).U|~((HALF_TYPE){.F=B}).U}).F)
+    QUAD_TYPE l={.U=a}, r={.U=b};
+    l.Lo.U |= ~r.Lo.U;
+    l.Hi.U |= ~r.Hi.U;
+    return  l.U;
+}
 
+INLINE(QUAD_ITYPE,orrnqi) (QUAD_ITYPE a,QUAD_ITYPE b) 
+{
+    QUAD_TYPE l={.I=a}, r={.I=b};
+    l.Lo.U |= ~r.Lo.U;
+    l.Hi.U |= ~r.Hi.U;
+    return  l.I;
+}
+
+#endif
+#if 0
+INLINE(flt16_t, FLT16_ORRN)  (flt16_t a,  flt16_t b)
+{
+#define     FLT16_ORRN(A, B) (((HALF_TYPE){.U=FLT16_ASHU(A)|FLT16_ASHU(B)}).F)
     HALF_TYPE l={.F=a}, r={.F=b};
-    l.U |= ~r.U;
+    l.U |=  ~r.U;
     return  l.F;
 }
 
 INLINE(  float,   FLT_ORRN)   (float a,   float b)
 {
-#define     FLT_ORRN(A, B) \
-(((WORD_TYPE){.U=((WORD_TYPE){.F=A}).U|~((WORD_TYPE){.F=B}).U}).F)
-
+#define     FLT_ORRN(A, B) (((WORD_TYPE){.U=FLT_ASWU(A)|FLT_ASWU(B)}).F)
     WORD_TYPE l={.F=a}, r={.F=b};
-    l.U |= ~r.U;
+    l.U |=  ~r.U;
     return  l.F;
 }
 
 INLINE( double,   DBL_ORRN)  (double a,  double b)
 {
-#define     DBL_ORRN(A, B) \
-(((DWRD_TYPE){.U=((DWRD_TYPE){.F=A}).U|~((DWRD_TYPE){.F=B}).U}).F)
-
+#define     DBL_ORRN(A, B) (((DWRD_TYPE){.U=DBL_ASDU(A)|DBL_ASDU(B)}).F)
     DWRD_TYPE l={.F=a}, r={.F=b};
-    l.U |= ~r.U;
+    l.U |=  ~r.U;
     return  l.F;
 }
+#endif
 
 #if 0 // _LEAVE_ALL_ORRN
 }
@@ -4529,24 +6968,42 @@ INLINE( double,   DBL_ORRN)  (double a,  double b)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_XORS)   (_Bool a,   _Bool b) {return a^b;}
-INLINE(  uchar, UCHAR_XORS)   (uchar a,   uchar b) {return a^b;}
-INLINE(  schar, SCHAR_XORS)   (schar a,   schar b) {return a^b;}
-INLINE(   char,  CHAR_XORS)    (char a,    char b) {return a^b;}
-INLINE( ushort, USHRT_XORS)  (ushort a,  ushort b) {return a^b;}
-INLINE(  short,  SHRT_XORS)   (short a,   short b) {return a^b;}
-INLINE(   uint,  UINT_XORS)    (uint a,    uint b) {return a^b;}
-INLINE(    int,   INT_XORS)     (int a,     int b) {return a^b;}
-INLINE(  ulong, ULONG_XORS)   (ulong a,   ulong b) {return a^b;}
-INLINE(   long,  LONG_XORS)    (long a,    long b) {return a^b;}
-INLINE( ullong,ULLONG_XORS)  (ullong a,  ullong b) {return a^b;}
-INLINE(  llong, LLONG_XORS)   (llong a,   llong b) {return a^b;}
+INLINE(  _Bool,  BOOL_XORS)    (_Bool a,    _Bool b) {return a^b;}
+INLINE(  uchar, UCHAR_XORS) (unsigned a, unsigned b) {return a^b;}
+INLINE(  schar, SCHAR_XORS)   (signed a,   signed b) {return a^b;}
+INLINE(   char,  CHAR_XORS)      (int a,      int b) {return a^b;}
+INLINE( ushort, USHRT_XORS) (unsigned a, unsigned b) {return a^b;}
+INLINE(  short,  SHRT_XORS)   (signed a,   signed b) {return a^b;}
+INLINE(   uint,  UINT_XORS)     (uint a,     uint b) {return a^b;}
+INLINE(    int,   INT_XORS)      (int a,      int b) {return a^b;}
+INLINE(  ulong, ULONG_XORS)    (ulong a,    ulong b) {return a^b;}
+INLINE(   long,  LONG_XORS)     (long a,     long b) {return a^b;}
+INLINE( ullong,ULLONG_XORS)   (ullong a,   ullong b) {return a^b;}
+INLINE(  llong, LLONG_XORS)    (llong a,    llong b) {return a^b;}
 
-INLINE(flt16_t, FLT16_XORS) (flt16_t a, flt16_t b)
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,xorsqu) (QUAD_UTYPE a,QUAD_UTYPE b) 
 {
-#define     FLT16_XORS(A, B) \
-(((HALF_TYPE){.U=((HALF_TYPE){.F=A}).U^((HALF_TYPE){.F=B}).U}).F)
+    QUAD_TYPE l={.U=a}, r={.U=b};
+    l.Lo.U ^= r.Lo.U;
+    l.Hi.U ^= r.Hi.U;
+    return  l.U;
+}
 
+INLINE(QUAD_ITYPE,xorsqi) (QUAD_ITYPE a,QUAD_ITYPE b) 
+{
+    QUAD_TYPE l={.I=a}, r={.I=b};
+    l.Lo.U ^= r.Lo.U;
+    l.Hi.U ^= r.Hi.U;
+    return  l.I;
+}
+
+#endif
+#if 0
+INLINE(flt16_t, FLT16_XORS)  (flt16_t a,  flt16_t b)
+{
+#define     FLT16_XORS(A, B) (((HALF_TYPE){.U=FLT16_ASHU(A)|FLT16_ASHU(B)}).F)
     HALF_TYPE l={.F=a}, r={.F=b};
     l.U ^=  r.U;
     return  l.F;
@@ -4554,9 +7011,7 @@ INLINE(flt16_t, FLT16_XORS) (flt16_t a, flt16_t b)
 
 INLINE(  float,   FLT_XORS)   (float a,   float b)
 {
-#define     FLT_XORS(A, B) \
-(((WORD_TYPE){.U=((WORD_TYPE){.F=A}).U^((WORD_TYPE){.F=B}).U}).F)
-
+#define     FLT_XORS(A, B) (((WORD_TYPE){.U=FLT_ASWU(A)|FLT_ASWU(B)}).F)
     WORD_TYPE l={.F=a}, r={.F=b};
     l.U ^=  r.U;
     return  l.F;
@@ -4564,14 +7019,12 @@ INLINE(  float,   FLT_XORS)   (float a,   float b)
 
 INLINE( double,   DBL_XORS)  (double a,  double b)
 {
-#define     DBL_XORS(A, B) \
-(((DWRD_TYPE){.U=((DWRD_TYPE){.F=A}).U^((DWRD_TYPE){.F=B}).U}).F)
-
+#define     DBL_XORS(A, B) (((DWRD_TYPE){.U=DBL_ASDU(A)|DBL_ASDU(B)}).F)
     DWRD_TYPE l={.F=a}, r={.F=b};
     l.U ^=  r.U;
     return  l.F;
 }
-
+#endif
 #if 0 // _LEAVE_ALL_XORS
 }
 #endif
@@ -4580,49 +7033,63 @@ INLINE( double,   DBL_XORS)  (double a,  double b)
 {
 #endif
 
-INLINE(  _Bool,  BOOL_XORN)   (_Bool a,   _Bool b) {return a^~b;}
-INLINE(  uchar, UCHAR_XORN)   (uchar a,   uchar b) {return a^~b;}
-INLINE(  schar, SCHAR_XORN)   (schar a,   schar b) {return a^~b;}
-INLINE(   char,  CHAR_XORN)    (char a,    char b) {return a^~b;}
-INLINE( ushort, USHRT_XORN)  (ushort a,  ushort b) {return a^~b;}
-INLINE(  short,  SHRT_XORN)   (short a,   short b) {return a^~b;}
-INLINE(   uint,  UINT_XORN)    (uint a,    uint b) {return a^~b;}
-INLINE(    int,   INT_XORN)     (int a,     int b) {return a^~b;}
-INLINE(  ulong, ULONG_XORN)   (ulong a,   ulong b) {return a^~b;}
-INLINE(   long,  LONG_XORN)    (long a,    long b) {return a^~b;}
-INLINE( ullong,ULLONG_XORN)  (ullong a,  ullong b) {return a^~b;}
-INLINE(  llong, LLONG_XORN)   (llong a,   llong b) {return a^~b;}
+INLINE(  _Bool,  BOOL_XORN)    (_Bool a,    _Bool b) {return a^~b;}
+INLINE(  uchar, UCHAR_XORN) (unsigned a, unsigned b) {return a^~b;}
+INLINE(  schar, SCHAR_XORN)   (signed a,   signed b) {return a^~b;}
+INLINE(   char,  CHAR_XORN)      (int a,      int b) {return a^~b;}
+INLINE( ushort, USHRT_XORN) (unsigned a, unsigned b) {return a^~b;}
+INLINE(  short,  SHRT_XORN)   (signed a,   signed b) {return a^~b;}
+INLINE(   uint,  UINT_XORN)     (uint a,     uint b) {return a^~b;}
+INLINE(    int,   INT_XORN)      (int a,      int b) {return a^~b;}
+INLINE(  ulong, ULONG_XORN)    (ulong a,    ulong b) {return a^~b;}
+INLINE(   long,  LONG_XORN)     (long a,     long b) {return a^~b;}
+INLINE( ullong,ULLONG_XORN)   (ullong a,   ullong b) {return a^~b;}
+INLINE(  llong, LLONG_XORN)    (llong a,    llong b) {return a^~b;}
 
-INLINE(flt16_t, FLT16_XORN) (flt16_t a, flt16_t b)
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,xornqu) (QUAD_UTYPE a,QUAD_UTYPE b) 
 {
-#define     FLT16_XORN(A, B) \
-(((HALF_TYPE){.U=((HALF_TYPE){.F=A}).U^~((HALF_TYPE){.F=B}).U}).F)
+    QUAD_TYPE l={.U=a}, r={.U=b};
+    l.Lo.U ^= ~r.Lo.U;
+    l.Hi.U ^= ~r.Hi.U;
+    return  l.U;
+}
 
+INLINE(QUAD_ITYPE,xornqi) (QUAD_ITYPE a,QUAD_ITYPE b) 
+{
+    QUAD_TYPE l={.I=a}, r={.I=b};
+    l.Lo.U ^= ~r.Lo.U;
+    l.Hi.U ^= ~r.Hi.U;
+    return  l.I;
+}
+
+#endif
+#if 0
+INLINE(flt16_t, FLT16_XORN)  (flt16_t a,  flt16_t b)
+{
+#define     FLT16_XORN(A, B) (((HALF_TYPE){.U=FLT16_ASHU(A)|FLT16_ASHU(B)}).F)
     HALF_TYPE l={.F=a}, r={.F=b};
-    l.U ^= ~r.U;
+    l.U ^=  ~r.U;
     return  l.F;
 }
 
 INLINE(  float,   FLT_XORN)   (float a,   float b)
 {
-#define     FLT_XORN(A, B) \
-(((WORD_TYPE){.U=((WORD_TYPE){.F=A}).U^~((WORD_TYPE){.F=B}).U}).F)
-
+#define     FLT_XORN(A, B) (((WORD_TYPE){.U=FLT_ASWU(A)|FLT_ASWU(B)}).F)
     WORD_TYPE l={.F=a}, r={.F=b};
-    l.U ^= ~r.U;
+    l.U ^=  ~r.U;
     return  l.F;
 }
 
 INLINE( double,   DBL_XORN)  (double a,  double b)
 {
-#define     DBL_XORN(A, B) \
-(((DWRD_TYPE){.U=((DWRD_TYPE){.F=A}).U^~((DWRD_TYPE){.F=B}).U}).F)
-
+#define     DBL_XORN(A, B) (((DWRD_TYPE){.U=DBL_ASDU(A)|DBL_ASDU(B)}).F)
     DWRD_TYPE l={.F=a}, r={.F=b};
-    l.U ^= ~r.U;
+    l.U ^=  ~r.U;
     return  l.F;
 }
-
+#endif
 #if 0 // _LEAVE_ALL_XORN
 }
 #endif
@@ -4635,82 +7102,96 @@ INLINE( double,   DBL_XORN)  (double a,  double b)
 #define     shllwz(A, B) (((unsigned) A)<<B)
 #define     shlldz(A, B) (((uint64_t) A)<<B)
 
-INLINE( _Bool,  BOOL_SHLL)  (_Bool a, Rc(0,  1) b)
+INLINE( _Bool,  BOOL_SHLL)    (_Bool a, Rc(0, BOOL_WIDTH) b)
 {
-#define     BOOL_SHLL(A, B) ((_Bool) (A&&!B))
+#define  MY_BOOL_SHLL(A, B, ...) ((_Bool) (A&&!B))
+#define     BOOL_SHLL(...) MY_BOOL_SHLL(__VA_ARGS__,1)
     return  a && !b;
 }
 
 
-INLINE( uchar, UCHAR_SHLL)  (uchar a, Rc(0, UCHAR_WIDTH) b) 
+INLINE( uchar, UCHAR_SHLL) (unsigned a, Rc(0, UCHAR_WIDTH) b) 
 {
-#define     UCHAR_SHLL(A, B) ((uchar) shllwz(A,B))
-    return  shllwz(a, b);
+#define  MY_UCHAR_SHLL(A, B, ...) ((uchar) ((unsigned) A<<B))
+#define     UCHAR_SHLL(...) MY_UCHAR_SHLL(__VA_ARGS__,1)
+    return  a<<b;
 }
 
-INLINE( schar, SCHAR_SHLL)  (schar a, Rc(0, SCHAR_WIDTH) b) 
+INLINE( schar, SCHAR_SHLL)   (signed a, Rc(0, SCHAR_WIDTH) b) 
 {
-#define     SCHAR_SHLL(A, B) ((schar) ((SCHAR_MIN&A)|(SCHAR_MAX&shllwz(A,B))))
+#define  MY_SCHAR_SHLL(A, B, ...) \
+((schar) ((SCHAR_MIN&A)|(SCHAR_MAX&((unsigned) A<<B))))
+
+#define     SCHAR_SHLL(...) MY_SCHAR_SHLL(__VA_ARGS__,1)
     unsigned q = SCHAR_MIN&a;
-    unsigned p = SCHAR_MAX&shllwz(a, b);
+    unsigned p = SCHAR_MAX&((unsigned) a<<b);
     return  p|q;
 }
 
-INLINE(  char,  CHAR_SHLL)   (char a, Rc(0,  CHAR_WIDTH) b) 
+INLINE(  char,  CHAR_SHLL)      (int a, Rc(0,  CHAR_WIDTH) b) 
 {
+#define     CHAR_SHLL(...) MY_CHAR_SHLL(__VA_ARGS__,1)
 #if CHAR_MIN
-#   define     CHAR_SHLL(A, B) ((char) ((CHAR_MIN&A)|(CHAR_MAX&shllwz(A,B))))
-    unsigned q = CHAR_MIN&a;
-    unsigned p = CHAR_MAX&shllwz(a, b);
+#   define  MY_CHAR_SHLL(A, B, ...) \
+((char) ((CHAR_MIN&A)|(CHAR_MAX&((unsigned) A<<B))))
+    unsigned c = a;
+    unsigned q = CHAR_MIN&c;
+    unsigned p = CHAR_MAX&(c<<b);
     return  p|q;
 #else
-#   define  CHAR_SHLL(A, B) ((char) shllwz(A,B))
-    return  shllwz(a, b);
+#   define  MY_CHAR_SHLL(A, B, ...) ((char) ((unsigned) A<<B))
+    return  (unsigned) a<<b;
 #endif
 }
 
 
-INLINE(ushort, USHRT_SHLL) (ushort a, Rc(0, USHRT_WIDTH) b)
+INLINE(ushort, USHRT_SHLL) (unsigned a, Rc(0, USHRT_WIDTH) b)
 {
-#define     USHRT_SHLL(A, B) ((ushort) shllwz(A,B))
-    return  shllwz(a, b);
+#define  MY_USHRT_SHLL(A, B, ...) ((ushort) ((unsigned) A<<B))
+#define     USHRT_SHLL(...) MY_USHRT_SHLL(__VA_ARGS__,1)
+    return  a<<b;
 }
 
-INLINE( short,  SHRT_SHLL)  (short a, Rc(0,  SHRT_WIDTH) b)
+INLINE( short,  SHRT_SHLL)   (signed a, Rc(0,  SHRT_WIDTH) b)
 {
-#define     SHRT_SHLL(A, B) ((short) ((SHRT_MIN&A)|(SHRT_MAX&shllwz(A,B))))
+#define  MY_SHRT_SHLL(A, B, ...) ((short) ((SHRT_MIN&A)|(SHRT_MAX&shllwz(A,B))))
+#define     SHRT_SHLL(...) MY_SHRT_SHLL(__VA_ARGS__,1)
     unsigned q = SHRT_MIN&a;
-    unsigned p = SHRT_MAX&shllwz(a, b);
+    unsigned p = SHRT_MAX&((unsigned) a<<b);
     return  p|q;
 }
 
 
-INLINE(  uint,  UINT_SHLL)   (uint a, Rc(0,  UINT_WIDTH) b)
+INLINE(  uint,  UINT_SHLL)     (uint a, Rc(0,  UINT_WIDTH) b)
 {
-#define     UINT_SHLL shllwz
-    return  shllwz(a, b);
+#define  MY_UINT_SHLL(A, B, ...) ((uint) A<<B)
+#define     UINT_SHLL(...) MY_UINT_SHLL(__VA_ARGS__,1)
+    return  a<<b;
 }
 
-INLINE(   int,   INT_SHLL)    (int a, Rc(0,   INT_WIDTH) b)
+INLINE(   int,   INT_SHLL)      (int a, Rc(0,   INT_WIDTH) b)
 {
-#define     INT_SHLL(A, B) ((int) ((INT_MIN&A)|(INT_MAX&shllwz(A,B))))
+#define  MY_INT_SHLL(A, B, ...) ((int) ((INT_MIN&A)|(INT_MAX&shllwz(A,B))))
+#define     INT_SHLL(...) MY_INT_SHLL(__VA_ARGS__,1)
     unsigned q = INT_MIN&a;
     unsigned p = INT_MAX&shllwz(a, b);
     return  p|q;
 }
 
 
-INLINE( ulong, ULONG_SHLL)  (ulong a, Rc(0, ULONG_WIDTH) b) 
+INLINE( ulong, ULONG_SHLL)    (ulong a, Rc(0, ULONG_WIDTH) b) 
 {
-#define  ULONG_SHLL(A, B) (((ulong) A)<<B)
+#define  MY_ULONG_SHLL(A, B, ...) (((ulong) A)<<B)
+#define     ULONG_SHLL(...) MY_ULONG_SHLL(__VA_ARGS__,1)
     return  a<<b;
 }
 
-INLINE(  long,  LONG_SHLL)   (long a, Rc(0,  LONG_WIDTH) b) 
+INLINE(  long,  LONG_SHLL)     (long a, Rc(0,  LONG_WIDTH) b) 
 {
-#define     LONG_SHLL(A, B) \
+#define  MY_LONG_SHLL(A, B, ...) \
 ((long) ((LONG_MIN&A)|(LONG_MAX&ULONG_SHLL(A,B))))
 
+#define     LONG_SHLL(...) MY_LONG_SHLL(__VA_ARGS__,1)
     ulong q = LONG_MIN&a;
     ulong p = LONG_MAX&ULONG_SHLL(a, b);
     return  p|q;
@@ -4719,15 +7200,16 @@ INLINE(  long,  LONG_SHLL)   (long a, Rc(0,  LONG_WIDTH) b)
 
 INLINE(ullong,ULLONG_SHLL) (ullong a, Rc(0,ULLONG_WIDTH) b) 
 {
-#define  ULLONG_SHLL(A, B) (((ullong) A)<<B)
+#define MY_ULLONG_SHLL(A, B, ...) (((ullong) A)<<B)
+#define    ULLONG_SHLL(...) MY_ULLONG_SHLL(__VA_ARGS__,1)
     return  a<<b;
 }
 
 INLINE( llong, LLONG_SHLL)  (llong a, Rc(0, LLONG_WIDTH) b)
 {
-#define     LLONG_SHLL(A, B) \
+#define  MY_LLONG_SHLL(A, B, ...) \
 ((llong) ((LLONG_MIN&A)|(LLONG_MAX&ULLONG_SHLL(A,B))))
-
+#define     LLONG_SHLL(...) MY_LLONG_SHLL(__VA_ARGS__,1)
     ullong q = LLONG_MIN&a;
     ullong p = LLONG_MAX&ULLONG_SHLL(a, b);
     return  p|q;
@@ -4735,32 +7217,56 @@ INLINE( llong, LLONG_SHLL)  (llong a, Rc(0, LLONG_WIDTH) b)
 
 #if QUAD_NLLONG == 2
 
-INLINE(QUAD_UTYPE,shllqu) (QUAD_UTYPE a, Rc(0, 128) b)
+INLINE(QUAD_UTYPE,shllqu) (QUAD_UTYPE a, Rc(0, +128) b)
 {
+#if defined(__SIZEOF_INT128)
+#   define  MY_SHLLQU(A, B, ...) ((QUAD_UTYPE) A<<B)
+#else
+#   define  MY_SHLLQU(A, B, ...) ((shllqu)(A,B))
+#endif
+
+#define  shllqu(...) MY_SHLLQU(__VA_ARGS__,1)
     QUAD_TYPE   c = {.U=a};
-    QUAD_TYPE   z;
-    if (b > 64)
+    uint64_t    l = c.Lo.U;
+    uint64_t    r = c.Hi.U;
+    if (b < 64)
     {
-        z.Lo.U = 0;
-        z.Hi.U = (c.Lo.U<<(b-64));
+        c.Lo.U = (l<<b);
+        c.Hi.U = (r<<b)|(l>>(64-b));
     }
-    else 
+    else
     {
-        z.Lo.U = (c.Lo.U<<b);
-        z.Hi.U = (c.Lo.U>>(64-b));
-        z.Hi.U = (c.Hi.U<<b)|z.Hi.U;
+        c.Lo.U = 0;
+        c.Hi.U = (l<<(b-64));
     }
-    return  z.U;
+    return  c.U;
 }
 
 INLINE(QUAD_ITYPE,shllqi) (QUAD_ITYPE a, Rc(0, 128) b)
 {
-    QUAD_TYPE z = {.I=a};
-    uint64_t  r = z.Hi.U&INT64_MIN;
-    z.U = shllqu(z.U, b);
-    z.Hi.U &= INT64_MAX;
-    z.Hi.U |= r;
-    return  z.I;
+#if defined(__SIZEOF_INT128__)
+#   define  MY_SHLLQI(A, B, ...) ((QUAD_ITYPE) A<<B)
+#else
+#   define  MY_SHLLQI(A, B, ...) ((shllqi)(A,B))
+#endif
+#define  shllqi(...) MY_SHLLQI(__VA_ARGS__,1)
+    QUAD_TYPE   c = {.I=a};
+    uint64_t    l = c.Lo.U;
+    uint64_t    r = c.Hi.U;
+    uint64_t    s = r&INT64_MIN;
+    if (b < 64)
+    {
+        c.Lo.U = (l<<b);
+        c.Hi.U = (r<<b)|(l>>(64-b));
+    }
+    else
+    {
+        c.Lo.U = 0;
+        c.Hi.U = (l<<(b-64));
+    }
+    c.Hi.U &= INT64_MAX;
+    c.Hi.U |= s;
+    return  c.I;
 }
 
 #endif
@@ -4770,6 +7276,184 @@ INLINE(QUAD_ITYPE,shllqi) (QUAD_ITYPE a, Rc(0, 128) b)
 #endif
 
 
+#if 0 // _ENTER_ALL_SHRS
+{
+#endif
+
+#ifndef     SPC_SHRS
+#define     SPC_SHRS 0
+#endif
+
+INLINE( schar, SCHAR_SHRS)  (signed a, Rc(0,  SCHAR_WIDTH) b);
+INLINE(  char,  CHAR_SHRS)     (int a, Rc(0,   CHAR_WIDTH) b);
+INLINE( short,  SHRT_SHRS)  (signed a, Rc(0,   SHRT_WIDTH) b);
+INLINE(   int,   INT_SHRS)     (int a, Rc(0,    INT_WIDTH) b);
+INLINE(  long,  LONG_SHRS)    (long a, Rc(0,   LONG_WIDTH) b);
+INLINE( llong, LLONG_SHRS)   (llong a, Rc(0,  LLONG_WIDTH) b);
+
+INLINE( _Bool,  BOOL_SHRS)  (_Bool a, Rc(0,  1) b)
+{
+#define  MY_BOOL_SHRS(A, B, ...) ((_Bool) (A&&!B))
+#define     BOOL_SHRS(...) MY_BOOL_SHRS(__VA_ARGS__,1)
+    return  a && !b;
+}
+
+INLINE( uchar, UCHAR_SHRS)  (unsigned a, Rc(0,  UCHAR_WIDTH) b)
+{
+#define  MY_UCHAR_SHRS(A, B, ...)    ((uchar) ((unsigned) A>>B))
+#define     UCHAR_SHRS(...) MY_UCHAR_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+
+
+#if (SCHAR_SPC&SPC_SHRS)
+INLINE( schar, SCHAR_SHRS)  (signed a, Rc(0, SCHAR_WIDTH) b)
+{
+#define  MY_SCHAR_SHRS(A, B, ...)    ((schar) ((signed) A>>B))
+#define     SCHAR_SHRS(...) MY_SCHAR_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+
+#endif
+
+#if CHAR_MIN && (CHAR_SPC&SPC_SHRS)
+INLINE(  char,  CHAR_SHRS)   (int a, Rc(0,   CHAR_WIDTH) b)
+{
+#   define  MY_CHAR_SHRS(A, B, ...) ((char) ((int) A>>B))
+    return  (SCHAR_SHRS)(a, b);
+}
+#elif !CHAR_MIN
+INLINE(  char,  CHAR_SHRS)   (int a, Rc(0,   CHAR_WIDTH) b)
+{
+#   define  MY_CHAR_SHRS(A, B, ...) ((char) ((uint) A>>B))
+    return  (UCHAR_SHRS)(a, b);
+}
+#endif
+
+#if defined(MY_CHAR_SHRS)
+#   define     CHAR_SHRS(...) MY_CHAR_SHRS(__VA_ARGS__,1)
+#endif
+
+INLINE(ushort, USHRT_SHRS) (unsigned a, Rc(0,  USHRT_WIDTH) b)
+{
+#define  MY_USHRT_SHRS(A, B, ...) ((ushort) ((unsigned) A>>B))
+#define     USHRT_SHRS(...) MY_USHRT_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+
+#if (SHRT_SPC&SPC_SHRS)
+INLINE( short,  SHRT_SHRS)  (signed a, Rc(0,   SHRT_WIDTH) b)
+{
+#   define  MY_SHRT_SHRS(A, B, ...) ((short) ((signed) A>>B))
+#   define     SHRT_SHRS(...) MY_SHRT_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+#endif
+
+INLINE(  uint,  UINT_SHRS)   (uint a, Rc(0,   UINT_WIDTH) b)
+{
+#define  MY_UINT_SHRS(A, B, ...) (((uint) A)>>B)
+#define     UINT_SHRS(...) MY_UINT_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+
+#if (INT_SPC&SPC_SHRS)
+INLINE(   int,   INT_SHRS)    (int a, Rc(0,   INT_WIDTH) b)
+{
+#   define  MY_INT_SHRS(A, B, ...) ((int) A>>B)
+#   define     INT_SHRS(...) MY_INT_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+#endif
+
+INLINE( ulong, ULONG_SHRS)  (ulong a, Rc(0, ULONG_WIDTH) b)
+{
+#define  MY_ULONG_SHRS(A, B, ...) (((ulong) A)>>B)
+#define     ULONG_SHRS(...) MY_ULONG_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+
+#if ((DWRD_NLONG == 2) && (LONG_SPC&SPC_SHRS))
+INLINE(  long,  LONG_SHRS)   (long a, Rc(0, LONG_WIDTH) b)
+{
+#   define  MY_LONG_SHRS(A, B, ...)  ((long) A>>B)
+#   define     LONG_SHRS(...) MY_LONG_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+#endif
+
+INLINE(ullong,ULLONG_SHRS) (ullong a, Rc(0, ULLONG_WIDTH) b)
+{
+#define  MY_ULLONG_SHRS(A, B, ...) (((ullong) A)>>B)
+#define     ULLONG_SHRS(...) MY_ULLONG_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+
+#if ((QUAD_NLLONG == 2) && (LLONG_SPC&SPC_SHRS))
+INLINE( llong, LLONG_SHRS)  (llong a, Rc(0, LONG_WIDTH) b)
+{
+#   define  MY_LLONG_SHRS(A, B, ...)  ((llong) A>>B)
+#   define     LLONG_SHRS(...) MY_LLONG_SHRS(__VA_ARGS__,1)
+    return  a>>b;
+}
+#endif
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,shrsqu) (QUAD_UTYPE a, Rc(0, 128) b)
+{
+#define MY_SHRSQU(A, B, ...) ((shrsqu)(A,B))
+#define shrsqu(...) MY_SHRSQU(__VA_ARGS__,1)
+#if 0
+    return a>>b;
+#else
+    QUAD_TYPE   c = {.U=a};
+    uint64_t    l = c.Lo.U;
+    uint64_t    r = c.Hi.U;
+    if (b < 64)
+    {
+        c.Hi.U = (r>>b);
+        c.Lo.U = (l>>b)|(r<<(64-b));
+    }
+    else
+    {
+        c.Hi.U = 0;
+        c.Lo.U = (r>>(b-64));
+    }
+    return c.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,shrsqi) (QUAD_ITYPE a, Rc(0, 128) b)
+{
+#define     MY_SHRSQI(A, B, ...) ((shrsqi)(A,B))
+#define     shrsqi(...) MY_SHRSQI(__VA_ARGS__,1)
+#if 0
+    return  a>>b;
+#else
+    QUAD_TYPE   c = {.U=a};
+    int64_t     l = c.Lo.I;
+    int64_t     r = c.Hi.I;
+    if (b < 64)
+    {
+        c.Hi.I = (r>>b);
+        c.Lo.I = (l>>b)|((uint64_t) r<<(64-b));
+    }
+    else
+    {
+        c.Hi.I = (r>>63);
+        c.Lo.I = (r>>(b-64));
+    }
+    return c.I;
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_SHRS
+}
+#endif
+
 #if 0 // _ENTER_ALL_UNOL
 {
 #endif
@@ -4777,12 +7461,14 @@ INLINE(QUAD_ITYPE,shllqi) (QUAD_ITYPE a, Rc(0, 128) b)
 
 INLINE(void *, ADDR_UNOL) (Rc(0, ADDR_WIDTH) n)
 {
-    return (void *) (UINTPTR_MAX>>(ADDR_WIDTH-n));
+#define     ADDR_UNOL(N) ((void *) (UINTPTR_MAX>>(ADDR_WIDTH-N)))
+    return  ADDR_UNOL(n);
 }
 
 INLINE( _Bool,  BOOL_UNOL) (Rc(0, 1) n)
 {
-    return n;
+#define     BOOL_UNOL(N) ((_Bool) (1==N))
+    return  1==n;
 }
 
 
@@ -4855,6 +7541,50 @@ INLINE( llong, LLONG_UNOL) (Rc(0,  LLONG_WIDTH) n)
 #define     LLONG_UNOL(N)   ((llong)(ULLONG_MAX>>(LLONG_WIDTH-N)))
     return  LLONG_UNOL(n);
 }
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,unolqu) (Rc(0, 128) n) 
+{
+#if defined(__SIZEOF_INT128__)
+#   define  unolqu(N) ((QUAD_UTYPE) -1>>(128-N))
+#endif
+
+    QUAD_TYPE   z;
+    if (n > 64)
+    {
+        z.Lo.U = (UINT64_MAX);
+        z.Hi.U = (UINT64_MAX>>(128-n));
+    }
+    else
+    {
+        z.Lo.U = (UINT64_MAX>>(64-n));
+        z.Hi.U = 0;
+    }
+    return z.U;
+}
+
+INLINE(QUAD_ITYPE,unolqi) (Rc(0, 128) n)
+{
+#if defined(__SIZEOF_INT128__)
+#   define  unolqi(N) ((QUAD_ITYPE) ((QUAD_UTYPE) -1>>(128-N)))
+#endif
+
+    QUAD_TYPE   z;
+    if (n > 64)
+    {
+        z.Lo.U = UINT64_MAX;
+        z.Hi.U = (UINT64_MAX>>(128-n));
+    }
+    else
+    {
+        z.Lo.U = (UINT64_MAX>>(64-n));
+        z.Hi.U = 0;
+    }
+    return z.I;
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_UNOL
 }
@@ -4942,7 +7672,90 @@ INLINE( llong, LLONG_UNOR) (Rc(0,  LLONG_WIDTH) n)
     return  LLONG_UNOR(n);
 }
 
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,unorqu) (Rc(0, 128) n) 
+{
+    QUAD_TYPE   z;
+    if (n > 64)
+    {
+        z.Hi.U = UINT64_MAX;
+        z.Lo.U = (UINT64_MAX<<(128-n));
+    }
+    else
+    {
+        z.Hi.U = (UINT64_MAX<<(64-n));
+        z.Lo.U = 0;
+    }
+    return z.U;
+}
+
+INLINE(QUAD_ITYPE,unorqi) (Rc(0, 128) n)
+{
+    QUAD_TYPE   z;
+    if (n > 64)
+    {
+        z.Hi.U = UINT64_MAX;
+        z.Lo.U = (UINT64_MAX<<(128-n));
+    }
+    else
+    {
+        z.Hi.U = (UINT64_MAX<<(64-n));
+        z.Lo.U = 0;
+    }
+    return z.I;
+}
+
+#endif
+
 #if 0 // _LEAVE_ALL_UNOR
+}
+#endif
+
+#if 0 // _ENTER_ALL_NEGL
+{
+#endif
+
+INLINE( uchar, UCHAR_NEGL) (unsigned x) {return 0U-(uchar) x;}
+INLINE( schar, SCHAR_NEGL)   (signed x) {return 0U-(schar) x;}
+
+INLINE(  char,  CHAR_NEGL)      (int x) {return 0U-(char) x;}
+INLINE(ushort, USHRT_NEGL) (unsigned x) {return 0U-(ushort) x;}
+INLINE( short,  SHRT_NEGL)   (signed x) {return 0U-(short) x;}
+INLINE(  uint,  UINT_NEGL)     (uint x) {return -x;}
+INLINE(   int,   INT_NEGL)      (int x) {return 0U-x;}
+INLINE( ulong, ULONG_NEGL)    (ulong x) {return -x;}
+INLINE(  long,  LONG_NEGL)     (long x) {return 0UL-x;}
+INLINE(ullong,ULLONG_NEGL)   (ullong x) {return -x;}
+INLINE( llong, LLONG_NEGL)    (llong x) {return 0ULL-x;}
+
+#if QUAD_NLONG == 2
+
+INLINE(QUAD_UTYPE,neglqu) (QUAD_UTYPE x)
+{
+#if  defined(__SIZEOF_INT128__)
+    return -x;
+#else
+    QUAD_TYPE   c = {.U=x};
+    uint64_t    r, l=~c.Lo.U;
+    r = 1+l;
+    if (r < l)
+        c.Hi.U--;
+    c.Hi.U = ~c.Hi.U;
+    c.Lo.U = r;
+    return c.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,neglqi) (QUAD_ITYPE x) 
+{
+    QUAD_TYPE q = {.I=x};
+    q.U = neglqu(q.U);
+    return  q.I;
+}
+#endif
+
+#if 0 // _LEAVE_ALL_NEGL
 }
 #endif
 
@@ -4950,14 +7763,14 @@ INLINE( llong, LLONG_UNOR) (Rc(0,  LLONG_WIDTH) n)
 {
 #endif
 
-INLINE(uchar, SCHAR_ABSU)   (signed x)
+INLINE(uchar, SCHAR_ABSU) (signed x)
 {
-    unsigned a = x;
-    unsigned b = a>>(SCHAR_WIDTH-1);
-    return  (a+b)^b;
+    x = (schar) x;
+    int y = -((uint) x>>(INT_WIDTH-1));
+    return  (x+y)^y;
 }
 
-INLINE(uchar, CHAR_ABSU)   (int x)
+INLINE(uchar,  CHAR_ABSU)    (int x)
 {
 #if CHAR_MIN
     return  SCHAR_ABSU(x);
@@ -4966,33 +7779,53 @@ INLINE(uchar, CHAR_ABSU)   (int x)
 #endif
 }
 
-INLINE(ushort,SHRT_ABSU)  (signed x)
+INLINE(ushort, SHRT_ABSU) (signed x)
 {
-    unsigned a = x;
-    unsigned b = a>>(SHRT_WIDTH-1);
-    return  (a+b)^b;
+    x = (short) x;
+    int y = -((uint) x>>(INT_WIDTH-1));
+    return  (x+y)^y;
 }
 
-INLINE(  uint, INT_ABSU)    (int x)
+INLINE(  uint,  INT_ABSU)    (int x)
 {
-    uint a = x;
-    uint b = a>>(INT_WIDTH-1);
-    return  (a+b)^b;
+    int y = -((uint) x>>(INT_WIDTH-1));
+    return  (x+y)^y;
 }
 
-INLINE( ulong, LONG_ABSU)  (long x)
+INLINE( ulong, LONG_ABSU)   (long x)
 {
-    ulong a = x;
-    ulong b = a>>(LONG_WIDTH-1);
-    return  (a+b)^b;
+    long y = -((ulong) x>>(LONG_WIDTH-1));
+    return  (x+y)^y;
 }
 
-INLINE(ullong,LLONG_ABSU) (llong x)
+INLINE(ullong,LLONG_ABSU)  (llong x)
 {
-    ullong a = x;
-    ullong b = a>>(LLONG_WIDTH-1);
-    return  (a+b)^b;
+    llong y = -((ullong) x>>(LLONG_WIDTH-1));
+    return  (x+y)^y;
 }
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,absuqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE   y, z={.I=x};
+#if 0 && defined(__SIZEOF_INT128__)
+    y.U = -(z.U>>127);
+    return  (x+y.I)^y.I;
+#else
+    QUAD_TYPE  c, p={.I=x}, q;
+    y.Lo.I = z.Hi.I>>63;
+    y.Hi.I = y.Lo.I;
+    q = y;
+    c.Lo.U = (p.Lo.U+q.Lo.U);
+    c.Hi.U = (p.Hi.U+q.Hi.U)+(c.Lo.U<p.Lo.U);
+    c.Lo.U ^= y.Lo.U;
+    c.Hi.U ^= y.Hi.U;
+    return  c.U;
+#endif
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_ABSU
 }
@@ -5002,34 +7835,37 @@ INLINE(ullong,LLONG_ABSU) (llong x)
 {
 #endif
 
-INLINE(schar,SCHAR_ABSL) (signed x) {return (x<0) ? (0U  -x) : x;}
-INLINE( char, CHAR_ABSL)    (int x) {return (x<0) ? (0U  -x) : x;}
-INLINE(short, SHRT_ABSL) (signed x) {return (x<0) ? (0U  -x) : x;}
-INLINE(  int,  INT_ABSL)    (int x) {return (x<0) ? (0U  -x) : x;}
-INLINE( long, LONG_ABSL)   (long x) {return (x<0) ? (0UL -x) : x;}
-INLINE(llong,LLONG_ABSL)  (llong x) {return (x<0) ? (0ULL-x) : x;}
+INLINE(schar,SCHAR_ABSL) (signed x) 
+{
+    x = (schar) x;
+    return  (x < 0) ? (0U-x) : (0U+x);
+}
 
-#if 0 // _LEAVE_ALL_ABSL
+INLINE(schar, CHAR_ABSL)    (int x) 
+{
+    x = (char) x;
+    return  (x < 0) ? (0U-x) : (0U+x);
+}
+
+INLINE(short, SHRT_ABSL) (signed x) 
+{
+    x = (short) x;
+    return  (x < 0) ? (0U-x) : (0U+x);
+}
+
+INLINE(  int,  INT_ABSL)    (int x) {return (x<0) ? (0U  -x) : (0U+x);}
+INLINE( long, LONG_ABSL)   (long x) {return (x<0) ? (0UL -x) : (0UL+x);}
+INLINE(llong,LLONG_ABSL)  (llong x) {return (x<0) ? (0ULL-x) : (0ULL+x);}
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_ITYPE,abslqi) (QUAD_ITYPE x)
+{
+    QUAD_TYPE a = {.I=x};
+    return  (x < 0) ? neglqu(a.U) : a.U;
 }
 #endif
 
-#if 0 // _ENTER_ALL_NEGL
-{
-#endif
-
-INLINE( uchar, UCHAR_NEGL) (unsigned x) {return -x;}
-INLINE( schar, SCHAR_NEGL)   (signed x) {return -x;}
-INLINE(  char,  CHAR_NEGL)      (int x) {return -x;}
-INLINE(ushort, USHRT_NEGL) (unsigned x) {return -x;}
-INLINE( short,  SHRT_NEGL)   (signed x) {return -x;}
-INLINE(  uint,  UINT_NEGL)     (uint x) {return -x;}
-INLINE(   int,   INT_NEGL)      (int x) {return -x;}
-INLINE( ulong, ULONG_NEGL)    (ulong x) {return -x;}
-INLINE(  long,  LONG_NEGL)     (long x) {return -x;}
-INLINE(ullong,ULLONG_NEGL)   (ullong x) {return -x;}
-INLINE( llong, LLONG_NEGL)    (llong x) {return -x;}
-
-#if 0 // _LEAVE_ALL_NEGL
+#if 0 // _LEAVE_ALL_ABSL
 }
 #endif
 
@@ -5039,7 +7875,7 @@ INLINE( llong, LLONG_NEGL)    (llong x) {return -x;}
 
 INLINE(uint16_t, UCHAR_SHL2)  (unsigned a, Rc(0, UCHAR_WIDTH) b)
 {
-#define     UCHAR_SHL2(A, B) ((uint16_t) ((0xffULL&A)<<B))
+#define     UCHAR_SHL2(A, B) ((uint16_t) ((uchar) A<<B))
     return  (0xffU&a)<<b;
 }
 
@@ -5069,12 +7905,13 @@ INLINE(uint16_t,  CHAR_SHL2)   (int a, Rc(0,   CHAR_WIDTH) b)
 
 INLINE(uint32_t, USHRT_SHL2) (unsigned a, Rc(0,  USHRT_WIDTH) b)
 {
-#define     USHRT_SHL2(A, B) ((uint32_t) ((0xffffULL&A)<<B))
-    return  (0xffff&a)<<b;
+#define     USHRT_SHL2(A, B) ((uint32_t) ((ushort) A<<B))
+    return  (ushort) a<<b;
 }
 
 INLINE( int32_t,  SHRT_SHL2)  (signed a, Rc(0,   SHRT_WIDTH) b)
 {
+#define     SHRT_SHL2(A, B) ((int32_t) ((UINT32_MAX&((short) A))<<B))
     unsigned q = INT32_MIN&a;
     unsigned p = a;
     return  q|(p<<b);
@@ -5098,13 +7935,72 @@ INLINE( int64_t,   INT_SHL2)    (int a, Rc(0,    INT_WIDTH) b)
 
 INLINE(uint64_t, ULONG_SHL2)   (ulong a, Rc(0, ULONG_WIDTH) b)
 {
-#define     ULONG_SHL2 UINT_SHL2
+#define     ULONG_SHL2(...) UINT_SHL2(__VA_ARGS__)
     return  (UINT_SHL2)(a, b);
 }
 
 INLINE( int64_t,  LONG_SHL2)    (long a, Rc(0,  LONG_WIDTH) b)
 {
-    return (INT_SHL2)(a, b);
+#define     LONG_SHL2(...) INT_SHL2(__VA_ARGS__)
+    return  (INT_SHL2)(a, b);
+}
+
+#else
+
+INLINE(QUAD_UTYPE, ULONG_SHL2) (ulong a, Rc(0, ULONG_WIDTH) b)
+{
+    QUAD_TYPE   c;
+    c.Lo.U = a<<b;
+    c.Hi.U = a>>(ULONG_WIDTH-b);
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE, LONG_SHL2) (long a, Rc(0, LONG_WIDTH) b)
+{
+    QUAD_TYPE   c = {.Lo.I=a, .Hi.I=a>>(LONG_WIDTH-1)};
+    ulong       l = c.Lo.U;
+    ulong       r = c.Hi.U;
+    if (b < LONG_WIDTH)
+    {
+        c.Lo.U = (l<<b);
+        c.Hi.U = (r<<b)|(l>>(LONG_WIDTH-b));
+    }
+    else
+    {
+        c.Lo.U = 0;
+        c.Hi.U = (l<<(b-LONG_WIDTH));
+    }
+    return  c.I;
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE, ULLONG_SHL2) (ullong a, Rc(0, ULLONG_WIDTH) b)
+{
+    QUAD_TYPE c;
+    c.Lo.U = a<<b;
+    c.Hi.U = a>>(ULLONG_WIDTH-b);
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE, LLONG_SHL2) (llong a, Rc(0, LLONG_WIDTH) b)
+{
+    QUAD_TYPE   c = {.Lo.I=a, .Hi.I=a>>(LLONG_WIDTH-1)};
+    ullong      l = c.Lo.U;
+    ullong      r = c.Hi.U;
+    if (b < LLONG_WIDTH)
+    {
+        c.Lo.U = (l<<b);
+        c.Hi.U = (r<<b)|(l>>(LLONG_WIDTH-b));
+    }
+    else
+    {
+        c.Lo.U = 0;
+        c.Hi.U = (l<<(b-LLONG_WIDTH));
+    }
+    return  c.I;
 }
 
 #endif
@@ -5119,89 +8015,136 @@ INLINE( int64_t,  LONG_SHL2)    (long a, Rc(0,  LONG_WIDTH) b)
 
 INLINE( _Bool,  BOOL_SHLR)    (_Bool a, Rc(0,  1) b)
 {
-#define     BOOL_SHLR(A, B) ((_Bool) ((A==1) && (B==1)))
+#define  MY_BOOL_SHLR(A, B, ...) ((_Bool) ((A==1) && (B==1)))
+#define     BOOL_SHLR(...) MY_BOOL_SHLR(__VA_ARGS__,1)
     return  a && b;
 }
 
-
 INLINE( uchar, UCHAR_SHLR) (unsigned a, Rc(0,  UCHAR_WIDTH) b)
 {
-#define     UCHAR_SHLR(A, B) ((uchar) (((unsigned) A)>>(UCHAR_WIDTH-B)))
+#define  MY_UCHAR_SHLR(A, B, ...) ((uchar) (((unsigned) A)>>(UCHAR_WIDTH-B)))
+#define     UCHAR_SHLR(...) MY_UCHAR_SHLR(__VA_ARGS__,1)
     return  a>>(UCHAR_WIDTH-b);
 }
 
 INLINE( schar, SCHAR_SHLR)   (signed a, Rc(0,  SCHAR_WIDTH) b)
 {
-#define     SCHAR_SHLR(A, B) ((schar) (((unsigned) A)>>(SCHAR_WIDTH-B)))
+#define  MY_SCHAR_SHLR(A, B, ...) ((schar) (((unsigned) A)>>(SCHAR_WIDTH-B)))
+#define     SCHAR_SHLR(...) MY_SCHAR_SHLR(__VA_ARGS__,1)
     return  (unsigned) a>>(SCHAR_WIDTH-b);
 }
 
 INLINE(  char,  CHAR_SHLR)      (int a, Rc(0,   CHAR_WIDTH) b)
 {
-#define     CHAR_SHLR(A, B) ((char) (((unsigned) A)>>(CHAR_WIDTH-B)))
+#define  MY_CHAR_SHLR(A, B, ...) ((char) (((unsigned) A)>>(CHAR_WIDTH-B)))
+#define     CHAR_SHLR(...) MY_CHAR_SHLR(__VA_ARGS__,1)
     return  (unsigned) a>>(CHAR_WIDTH-b);
 }
 
 
 INLINE(ushort, USHRT_SHLR) (unsigned a, Rc(0,  USHRT_WIDTH) b)
 {
-#define     USHRT_SHLR(A, B) ((ushort) (((unsigned) A)>>(USHRT_WIDTH-B)))
+#define  MY_USHRT_SHLR(A, B, ...) ((ushort) (((unsigned) A)>>(USHRT_WIDTH-B)))
+#define     USHRT_SHLR(...) MY_USHRT_SHLR(__VA_ARGS__,1)
     return  a>>(USHRT_WIDTH-b);
 }
 
 INLINE( short,  SHRT_SHLR)   (signed a, Rc(0,   SHRT_WIDTH) b)
 {
-#define     SHRT_SHLR(A, B) ((short) (((unsigned) A)>>(SHRT_WIDTH-B)))
+#define  MY_SHRT_SHLR(A, B, ...) ((short) (((unsigned) A)>>(SHRT_WIDTH-B)))
+#define     SHRT_SHLR(...) MY_SHRT_SHLR(__VA_ARGS__,1)
     return  (unsigned) a>>(SHRT_WIDTH-b);
 }
 
 
 INLINE(  uint,  UINT_SHLR)     (uint a, Rc(0,   UINT_WIDTH) b)
 {
-#define     UINT_SHLR(A, B) ((uint) A>>(UINT_WIDTH-B))
+#define  MY_UINT_SHLR(A, B, ...) ((uint) A>>(UINT_WIDTH-B))
+#define     UINT_SHLR(...) MY_UINT_SHLR(__VA_ARGS__,1)
     return  a>>(UINT_WIDTH-b);
 }
 
 INLINE(   int,   INT_SHLR)      (int a, Rc(0,    INT_WIDTH) b)
 {
-#define     INT_SHLR(A, B) ((int) (((uint64_t) A)>>(INT_WIDTH-B)))
+#define  MY_INT_SHLR(A, B, ...) ((int) (((uint64_t) A)>>(INT_WIDTH-B)))
+#define     INT_SHLR(...) MY_INT_SHLR(__VA_ARGS__,1)
     return  (uint64_t) a>>(INT_WIDTH-b);
 }
 
 
 INLINE( ulong, ULONG_SHLR)    (ulong a, Rc(0,  ULONG_WIDTH) b)
 {
-#define     ULONG_SHLR(A, B) ((ulong) A>>(ULONG_WIDTH-B))
+#define  MY_ULONG_SHLR(A, B, ...) ((ulong) A>>(ULONG_WIDTH-B))
+#define     ULONG_SHLR(...) MY_ULONG_SHLR(__VA_ARGS__,1)
     return  a>>(ULONG_WIDTH-b);
 }
 
 INLINE(  long,  LONG_SHLR)     (long a, Rc(0,   LONG_WIDTH) b)
 {
 #if DWRD_NLONG == 2
-#   define  LONG_SHLR(A, B) ((long) (((uint64_t) A)>>(LONG_WIDTH-B)))
+#   define  MY_LONG_SHLR(A, B, ...) ((long) (((uint64_t) A)>>(LONG_WIDTH-B)))
     return  (uint64_t) a>>(64-b);
 #else
+#   define  MY_LONG_SHLR(A, B, ...) ((LONG_SHLR)(A,B))
     uint32_t c = 64-b;
     uint64_t z = a;
     uint64_t s = (0-(z>>63))<<c;
     return s|(z>>c);
 #endif
+#define     LONG_SHLR(...) MY_LONG_SHLR(__VA_ARGS__,1)
 }
 
 
 INLINE(ullong,ULLONG_SHLR)   (ullong a, Rc(0, ULLONG_WIDTH) b)
 {
-#define     ULLONG_SHLR(A, B) ((ullong) A>>(ULLONG_WIDTH-B))
+#define  MY_ULLONG_SHLR(A, B, ...) ((ullong) A>>(ULLONG_WIDTH-B))
+#define     ULLONG_SHLR(...) MY_ULLONG_SHLR(__VA_ARGS__,1)
     return  a>>(ULLONG_WIDTH-b);
 }
 
 INLINE( llong, LLONG_SHLR)    (llong a, Rc(0,  LLONG_WIDTH) b)
 {
+#define  MY_LLONG_SHLR(A, B, ...) ((LLONG_SHLR)(A,B))
+#define     LLONG_SHLR(...) MY_LLONG_SHLR(__VA_ARGS__,1)
     unsigned c = LLONG_WIDTH-b;
     ullong   z = a;
     ullong   s = (0-(z>>(LLONG_WIDTH-1)))<<c;
     return  s|(z>>c);
 }
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,shlrqu) (QUAD_UTYPE a, Rc(0, 128) b) 
+{
+#if defined(__SIZEOF_INT128__)
+#   define  shlrqu(A, B) ((QUAD_UTYPE) A>>(128-B))
+    return  a>>(128-b);
+#else
+    unsigned n = 128-b;
+    QUAD_TYPE   c = {.U=a};
+    uint64_t    l = c.Lo.U;
+    uint64_t    r = c.Hi.U;
+    if (n < 64)
+    {
+        c.Lo.U = (l<<n);
+        c.Hi.U = (r<<n)|(l>>(64-n));
+    }
+    else
+    {
+        c.Lo.U = 0;
+        c.Hi.U = (l<<(n-64));
+    }
+    return  c.U;
+#endif
+
+}
+
+INLINE(QUAD_ITYPE,shlrqi) (QUAD_ITYPE a, Rc(0, 128) b) 
+{
+    return  a>>(128-b);
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_SHLR
 }
@@ -5603,19 +8546,36 @@ INLINE(ullong,ULLONG_SIRR)
 {
 #endif
 
+INLINE(void *,ADDR_ADDL) (void const *a, ptrdiff_t b) 
+{
+    return (void *)(a+b);
+}
+
 INLINE( _Bool,  BOOL_ADDL)    (_Bool a,    _Bool b) {return a^b;}
 INLINE( uchar, UCHAR_ADDL) (unsigned a, unsigned b) 
 {
     return (uchar) a+(uchar) b;
 }
 
-INLINE( schar, SCHAR_ADDL)   (signed a,   signed b) {return UCHAR_ADDL(a,b);}
-INLINE(  char,  CHAR_ADDL)      (int a,      int b) {return UCHAR_ADDL(a,b);}
+INLINE( schar, SCHAR_ADDL)   (signed a,   signed b) 
+{
+    return (schar) a+(schar) b;
+}
+
+INLINE(  char,  CHAR_ADDL)      (int a,      int b) 
+{
+    return  (char) a+(char) b;
+}
+
 INLINE(ushort, USHRT_ADDL) (unsigned a, unsigned b) 
 {
     return (ushort) a+(ushort) b;
 }
-INLINE( short,  SHRT_ADDL)   (signed a,   signed b) {return USHRT_ADDL(a,b);}
+
+INLINE( short,  SHRT_ADDL)   (signed a,   signed b) 
+{
+    return  (short) a+(short) b;
+}
 
 INLINE(  uint,  UINT_ADDL)     (uint a,     uint b) {return a+b;}
 INLINE(   int,   INT_ADDL)      (int a,      int b) {return UINT_ADDL(a,b);}
@@ -5623,6 +8583,33 @@ INLINE( ulong, ULONG_ADDL)    (ulong a,    ulong b) {return a+b;}
 INLINE(  long,  LONG_ADDL)     (long a,     long b) {return ULONG_ADDL(a,b);}
 INLINE(ullong,ULLONG_ADDL)   (ullong a,   ullong b) {return a+b;}
 INLINE( llong, LLONG_ADDL)    (llong a,    llong b) {return ULLONG_ADDL(a,b);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,addlqu) (QUAD_UTYPE a, QUAD_UTYPE b) 
+{
+#if defined(__SIZEOF_INT128__)
+    return  a+b;
+#else
+    QUAD_TYPE c, p={.U=a}, q={.U=b};
+    c.Lo.U = (p.Lo.U+q.Lo.U);
+    c.Hi.U = (p.Hi.U+q.Hi.U)+(c.Lo.U<p.Lo.U);
+    return  c.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,addlqi) (QUAD_ITYPE a, QUAD_ITYPE b) 
+{
+    QUAD_TYPE c, p={.I=a}, q={.I=b};
+#if defined(__SIZEOF_INT128__)
+    c.U = p.U+q.U;
+#else
+    c.Lo.U = (p.Lo.U+q.Lo.U);
+    c.Hi.U = (p.Hi.U+q.Hi.U)+(c.Lo.U<p.Lo.U);
+#endif
+    return  c.I;
+}
+#endif
 
 #if 0 // _LEAVE_ALL_ADDL
 }
@@ -5632,72 +8619,112 @@ INLINE( llong, LLONG_ADDL)    (llong a,    llong b) {return ULLONG_ADDL(a,b);}
 {
 #endif
 
-INLINE(uint16_t, UCHAR_ADD2) (unsigned a, unsigned b) 
+INLINE(uint16_t,UCHAR_ADD2) (unsigned a, unsigned b) 
 {
-#define     UCHAR_ADD2(A, B) ((uint16_t) ((UCHAR_MAX&A)+(UCHAR_MAX&B)))
-    return  UCHAR_ADD2(a, b);
+    return  (uchar) a+(uint8_t) b;
 }
 
-INLINE( int16_t, SCHAR_ADD2)   (signed a,   signed b) 
+INLINE( int16_t,SCHAR_ADD2)   (signed a,   signed b) 
 {
-#define     SCHAR_ADD2(A, B) ((int16_t) ((unsigned) A+(unsigned) B))
-    return  SCHAR_ADD2(a, b);
+    return  (schar) a+(int8_t) b;
 }
 
 #if CHAR_MIN
 
-INLINE( int16_t,  CHAR_ADD2)      (int a,      int b) 
+INLINE( int16_t, CHAR_ADD2)      (int a,      int b) 
 {
-#define     CHAR_ADD2(A, B) ((int16_t) ((unsigned) A+(unsigned) B))
-    return  CHAR_ADD2(a, b);
+    return  (char) a+(char) b;
 }
 
 #else
 
-INLINE(uint16_t,  CHAR_ADD2)      (int a,      int b) 
+INLINE(uint16_t,CHAR_ADD2)       (int a,      int b) 
 {
-#define     CHAR_ADD2(A, B) ((uint16_t) ((UCHAR_MAX&A)+(UCHAR_MAX&B)))
-    return  CHAR_ADD2(a, b);
+    return  (char) a+(char) b;
 }
 
 #endif
 
-INLINE(uint32_t, USHRT_ADD2) (unsigned a, unsigned b) 
+INLINE(uint32_t,USHRT_ADD2)  (unsigned a,  unsigned b) 
 {
-#define     USHRT_ADD2(A, B) ((uint32_t) ((USHRT_MAX&A)+(USHRT_MAX&B)))
-    return  USHRT_ADD2(a, b);
+    return (ushort) a+(ushort) b;
 }
 
-INLINE( int32_t,  SHRT_ADD2)  (signed a,  signed b) 
+INLINE( int32_t, SHRT_ADD2)    (signed a,    signed b) 
 {
-#define     SHRT_ADD2(A, B) ((int32_t) ((unsigned) A+(unsigned) B))
-    return  SHRT_ADD2(a, b);
+    return (short) a+(short) b;
 }
 
-INLINE(uint64_t,  UINT_ADD2)   (uint a,   uint b) 
+INLINE(uint64_t,  UINT_ADD2)     (uint a,      uint b) 
 {
-#define     UINT_ADD2(A, B) ((uint64_t) ((UINT_MAX&A)+(UINT_MAX&B)))
-    return  UINT_ADD2(a, b);
+    return (uint64_t) a+b;
 }
 
-INLINE( int64_t,   INT_ADD2)    (int a,    int b) 
+INLINE( int64_t,   INT_ADD2)      (int a,       int b) 
 {
-#define     INT_ADD2(A, B) ((int64_t) ((uint64_t) A+(uint64_t) B))
-    return  INT_ADD2(a, b);
+    return (int64_t) a+b;
 }
 
 #if DWRD_NLONG == 2
 
-INLINE(uint64_t, ULONG_ADD2)  (ulong a, ulong b) 
+INLINE(uint64_t, ULONG_ADD2)    (ulong a,     ulong b) 
 {
-#define     ULONG_ADD2(A, B) ((uint64_t) ((ULONG_MAX&A)+(ULONG_MAX&B)))
-    return  ULONG_ADD2(a, b);
+    return (uint64_t) a+b;
 }
 
 INLINE( int64_t,  LONG_ADD2)   (long a,  long b) 
 {
-#define     LONG_ADD2(A, B) ((int64_t) ((uint64_t) A+(uint64_t) B))
-    return  LONG_ADD2(a, b);
+    return (int64_t) a+b;
+}
+
+#else
+
+INLINE(QUAD_UTYPE,ULONG_ADD2)  (ulong a, ulong b) 
+{
+    QUAD_TYPE   p={.Lo.U=a}, q={.Lo.U=b}, r;
+    r.Lo.U = p.Lo.U+q.Lo.U;
+    r.Hi.U = r.Lo.U < p.Lo.U;
+    return  r.U;
+}
+
+INLINE(QUAD_ITYPE,LONG_ADD2)  (long a, long b) 
+{
+    QUAD_TYPE   p={.Lo.I=a}, q={.Lo.I=b}, r;
+    r.Lo.U = p.Lo.U+q.Lo.U;
+    r.Hi.U = r.Lo.U < p.Lo.U;
+    return  r.I;
+}
+
+#endif
+
+#if QUAD_NLLONG == 1
+
+INLINE(ullong, ULONG_ADD2)  (ulong a, ulong b) 
+{
+    return (ullong) a+b;
+}
+
+INLINE( llong, LONG_ADD2)  (long a, long b) 
+{
+    return (llong) a+b;
+}
+
+#else
+
+INLINE(QUAD_UTYPE,ULLONG_ADD2)  (ullong a, ullong b) 
+{
+    QUAD_TYPE   p={.Lo.U=a}, q={.Lo.U=b}, r;
+    r.Lo.U = p.Lo.U+q.Lo.U;
+    r.Hi.U = r.Lo.U < p.Lo.U;
+    return  r.U;
+}
+
+INLINE(QUAD_ITYPE,LLONG_ADD2)  (llong a, llong b) 
+{
+    QUAD_TYPE   p={.Lo.I=a}, q={.Lo.I=b}, r;
+    r.Lo.U = p.Lo.U+q.Lo.U;
+    r.Hi.U = r.Lo.U < p.Lo.U;
+    return  r.I;
 }
 
 #endif
@@ -5706,23 +8733,459 @@ INLINE( int64_t,  LONG_ADD2)   (long a,  long b)
 }
 #endif
 
+#if 0 // _ENTER_ALL_ADD3
+{
+#endif
+
+INLINE(uint,UINT_ADD3) (uint a, unsigned b) 
+{
+    return  a+(uint8_t) b;
+}
+
+INLINE(int, INT_ADD3) (int a, signed b) 
+{
+    return  (uint32_t) a+(uint8_t) b;
+}
+
+
+#if DWRD_NLONG == 2
+
+INLINE(ulong, ULONG_ADD3)  (ulong a, unsigned b) 
+{
+    return a+(uint8_t) b;
+}
+
+INLINE( long,  LONG_ADD3)   (long a,  signed b) 
+{
+    return (uint32_t) a+(uint8_t) b;
+}
+
+#else
+
+INLINE(ulong, ULONG_ADD3)  (ulong a, unsigned b) 
+{
+    return a+(uint16_t) b;
+}
+
+INLINE( long,  LONG_ADD3)   (long a,  signed b) 
+{
+    return (uint64_t) a+(uint16_t) b;
+}
+
+#endif
+
+
+#if QUAD_NLLONG == 2
+
+INLINE(ullong,ULLONG_ADD3)  (ullong a, unsigned b) 
+{
+    return a+(uint16_t) b;
+}
+
+INLINE( llong, LLONG_ADD3)   (llong a,  signed b) 
+{
+    return (uint64_t) a+(uint16_t) b;
+}
+
+INLINE(QUAD_UTYPE,add3qu)  (QUAD_UTYPE a, uint32_t b) 
+{
+    QUAD_TYPE   v = {.U=a};
+    uint64_t    c = v.Lo.U;
+    v.Lo.U += b;
+    v.Hi.U += (v.Lo.U < c);
+    return  v.U;
+}
+
+INLINE(QUAD_ITYPE,add3qi)  (QUAD_ITYPE a, int32_t b) 
+{
+    QUAD_TYPE   v = {.I=a};
+    uint64_t    c = v.Lo.U;
+    v.Lo.U += b;
+    v.Hi.U += (v.Lo.U < c);
+    return  v.I;
+}
+
+#else
+
+INLINE(ullong,ULLONG_ADD3)  (ullong a, uint32_t b) 
+{
+    return a+b;
+}
+
+INLINE( llong, LLONG_ADD3)   (llong a,  int32_t b) 
+{
+    return (ullong) a+(uint32_t) b;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_ADD3
+}
+#endif
+
+#if 0 // _ENTER_ALL_MUL2
+{
+#endif
+
+INLINE(uint16_t, UCHAR_MUL2)   (unsigned a, unsigned b)
+{
+    return  (uchar) a*(uchar) b;
+}
+
+INLINE( int16_t, SCHAR_MUL2)     (signed a,   signed b)
+{
+    return  UCHAR_MUL2(a, b);
+}
+
+#if CHAR_MIN
+
+INLINE( int16_t,  CHAR_MUL2)        (int a,      int b)
+{
+    return  SCHAR_MUL2(a, b);
+}
+
+#else
+
+INLINE(uint16_t,  CHAR_MUL2)        (int a,      int b)
+{
+    return  UCHAR_MUL2(a, b);
+}
+
+#endif
+
+INLINE(uint32_t, USHRT_MUL2)   (unsigned a, unsigned b)
+{
+/*  Wouldn't (ushort) a*(ushort) b be undefined if a×b is 
+    greater than INT_MAX, like would be the case for 
+    USHRT_MUL2(65535, 65535), since ushort is implicitly
+    converted to int? 
+*/
+    return  (0xffffU&a)*(ushort) b;
+}
+
+INLINE( int32_t,  SHRT_MUL2)     (signed a,   signed b)
+{
+    return  (short) a*(short) b;
+}
+
+
+INLINE(uint64_t,  UINT_MUL2)       (uint a,     uint b)
+{
+    return  (uint64_t) a*b;
+}
+
+INLINE( int64_t,   INT_MUL2)        (int a,      int b)
+{
+    return  UINT_MUL2(a, b);
+}
+
+#if DWRD_NLONG == 2
+
+INLINE(   uint64_t, ULONG_MUL2)   (ulong a,    ulong b)
+{
+    return  (uint64_t) a*b;
+}
+
+INLINE(    int64_t,  LONG_MUL2)    (long a,     long b)
+{
+    return  ULONG_MUL2(a, b);
+}
+
+#else
+
+INLINE(QUAD_UTYPE,  ULONG_MUL2)   (ulong a,    ulong b)
+{
+    QUAD_TYPE   q;
+#if defined(__SIZEOF_INT128__)
+    q.U = (QUAD_UTYPE) a*b;
+#elif defined(_MSC_VER)
+    q.Lo.I = _mul128(a, b, ((void *) &q.Hi.I));
+#else
+    uint64_t p;
+    uint64_t x = (uint32_t) a;
+    uint64_t y = (uint32_t) b;
+    uint64_t c = x*y;
+    uint64_t l = (uint32_t) c;
+    uint64_t r = c>>32;
+    a >>= 32;
+    c = (a * y) + r;
+    r = (uint32_t) c;
+    p = c>>32;
+    b >>= 32;
+    c = (x * b) + r;
+    r = (c >> 32);
+    q.Hi.U = (p+r)+a*b;
+    q.Lo.U = l+(c<<32);
+#endif
+    return  q.U;
+}
+
+INLINE(QUAD_ITYPE,   LONG_MUL2)    (long a,     long b)
+{
+    QUAD_TYPE c = {.U=ULONG_MUL2(a, b)};
+    return  c.I;
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE, ULLONG_MUL2)  (ullong a,  ullong b)
+{
+    QUAD_TYPE   q;
+#if defined(__SIZEOF_INT128__)
+    q.U = (QUAD_UTYPE) a*b;
+#elif defined(_MSC_VER)
+    q.Lo.I = _umul128(a, b, ((void *) &q.Hi.U));
+#else
+    uint64_t p;
+    uint64_t x = (uint32_t) a;
+    uint64_t y = (uint32_t) b;
+    uint64_t c = x*y;
+    uint64_t l = (uint32_t) c;
+    uint64_t r = c>>32;
+    a >>= 32;
+    c = (a * y) + r;
+    r = (uint32_t) c;
+    p = c>>32;
+    b >>= 32;
+    c = (x * b) + r;
+    r = (c >> 32);
+    q.Hi.U = (p+r)+a*b;
+    q.Lo.U = l+(c<<32);
+#endif
+    return  q.U;
+}
+
+INLINE(QUAD_ITYPE,  LLONG_MUL2)   (llong a,   llong b)
+{
+    QUAD_TYPE c = {.U=ULLONG_MUL2(a, b)};
+    return  c.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_MUL2
+}
+#endif
+
+#if 0 // _ENTER_ALL_MULL
+{
+#endif
+
+INLINE( _Bool,  BOOL_MULL)    (_Bool a,    _Bool b) {return a&b;}
+INLINE( uchar, UCHAR_MULL) (unsigned a, unsigned b) 
+{
+    return (uchar) a*(uchar) b;
+}
+
+INLINE( schar, SCHAR_MULL)   (signed a,   signed b) 
+{
+    return  (schar) a*(schar) b;
+}
+
+INLINE(  char,  CHAR_MULL)      (int a,      int b) 
+{
+    return  (char) a*(char) b;
+}
+
+INLINE(ushort, USHRT_MULL) (unsigned a, unsigned b) 
+{
+    return  (a&USHRT_MAX)*(ushort) b;
+}
+INLINE( short,  SHRT_MULL)   (signed a,   signed b) 
+{
+    a = (short) a;
+    return (unsigned) a*(short) b;
+}
+
+INLINE(  uint,  UINT_MULL)     (uint a,     uint b) {return a*b;}
+INLINE(   int,   INT_MULL)      (int a,      int b) {return UINT_MULL(a,b);}
+INLINE( ulong, ULONG_MULL)    (ulong a,    ulong b) {return a*b;}
+INLINE(  long,  LONG_MULL)     (long a,     long b) {return ULONG_MULL(a,b);}
+INLINE(ullong,ULLONG_MULL)   (ullong a,   ullong b) {return a*b;}
+INLINE( llong, LLONG_MULL)    (llong a,    llong b) {return ULLONG_MULL(a,b);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,mullqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{    
+#if 0 && defined(__SIZEOF_INT128__)
+    return  a*b;
+#else
+    QUAD_TYPE x={.U=a}, y={.U=b}, z;
+    z.U = UINT64_MUL2(x.Lo.U, y.Lo.U);
+    z.Hi.U += x.Lo.U*y.Hi.U+x.Hi.U*y.Lo.U;
+    return z.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,mullqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    return  asqiqu(mullqu(asquqi(a), asquqi(b)));
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_MULL
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_MULR
+{
+#endif
+
+INLINE( uchar, UCHAR_MULR) (unsigned a, unsigned b)
+{
+    return  ((uchar) a*(uchar) b)>>UCHAR_WIDTH;
+}
+
+INLINE( schar, SCHAR_MULR)   (signed a,   signed b)
+{
+    return  ((schar) a*(schar) b)>>SCHAR_WIDTH;
+}
+
+INLINE( char,   CHAR_MULR)      (int a,      int b)
+{
+    return  ((char) a*(char) b)>>CHAR_WIDTH;
+}
+
+INLINE(ushort, USHRT_MULR) (unsigned a, unsigned b)
+{
+    return  ((ushort) a*(ushort) b)>>USHRT_WIDTH;
+}
+
+INLINE( short,  SHRT_MULR)   (signed a,   signed b)
+{
+    return  ((short) a*(short) b)>>SHRT_WIDTH;
+}
+
+INLINE(  uint,  UINT_MULR)     (uint a,     uint b)
+{
+    return  ((uint64_t) a*b)>>UINT_WIDTH;
+}
+
+INLINE(   int,   INT_MULR)      (int a,      int b)
+{
+    return  ((int64_t) a*b)>>INT_WIDTH;
+}
+
+INLINE( ulong, ULONG_MULR)    (ulong a,    ulong b)
+{
+#if ULONG_WIDTH == UINT_WIDTH
+    return  UINT_MULR(a, b);
+
+#elif defined(__SIZEOF_INT128__)
+    return  ((unsigned __int128) a*b)>>64;
+
+#elif defined(_MSC_VER)
+    return  _umulh(a, b);
+
+#else
+    QUAD_TYPE c = {.U=ULONG_MUL2(a, b)};
+    return  c.Hi.U;
+#endif
+}
+
+INLINE(  long,  LONG_MULR)     (long a,     long b)
+{
+#if LONG_WIDTH == INT_WIDTH
+
+#elif defined(__SIZEOF_INT128__)
+    return  ((signed __int128) a*b)>>64;
+#elif defined(_MSC_VER)
+    return  _mulh(a, b);
+#else
+    QUAD_TYPE c = {.I=LONG_MUL2(a, b)};
+    return  c.Hi.I;
+#endif
+
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(ullong,ULLONG_MULR)   (ullong a,   ullong b)
+{
+#if ULLONG_WIDTH == ULONG_WIDTH
+    return  ULONG_MULR(a, b);
+    
+#elif defined(__SIZEOF_INT128__)
+    return  ((unsigned __int128) a*b)>>64;
+
+#elif defined(_MSC_VER)
+    return  _umulh(a, b);
+
+#else
+    QUAD_TYPE c = {.U=ULONG_MUL2(a, b)};
+    return  c.Hi.U;
+
+#endif
+}
+
+INLINE( llong, LLONG_MULR)    (llong a,    llong b)
+{
+#if LLONG_WIDTH == LONG_WIDTH
+    return  LONG_MULR(a, b);
+    
+#elif defined(__SIZEOF_INT128__)
+    return  ((signed __int128) a*b)>>64;
+
+#elif defined(_MSC_VER)
+    return  _mulh(a, b);
+
+#else
+    QUAD_TYPE c = {.I=LONG_MUL2(a, b)};
+    return  c.Hi.I;
+
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_MULR
+}
+#endif
+
+
 #if 0 // _ENTER_ALL_ICRL
 {
 #endif
 
-INLINE(void *,  ADDR_ICRL) (void const *a) {return (void *)(1+a);}
-INLINE( _Bool,  BOOL_ICRL)       (_Bool a) {return a+1;}
-INLINE( uchar, UCHAR_ICRL)    (unsigned a) {return a+1;}
-INLINE( schar, SCHAR_ICRL)      (signed a) {return (schar) a+1;}
-INLINE(  char,  CHAR_ICRL)         (int a) {return (char) a+1;}
-INLINE(ushort, USHRT_ICRL)    (unsigned a) {return a+1;}
-INLINE( short,  SHRT_ICRL)      (signed a) {return (short) a+1;}
-INLINE(  uint,  UINT_ICRL)        (uint a) {return a+1u;}
-INLINE(   int,   INT_ICRL)         (int a) {return a+1u;}
-INLINE( ulong, ULONG_ICRL)       (ulong a) {return a+1ul;}
-INLINE(  long,  LONG_ICRL)        (long a) {return a+1ul;}
-INLINE(ullong,ULLONG_ICRL)      (ullong a) {return a+1ull;}
-INLINE( llong, LLONG_ICRL)       (llong a) {return a+1ull;}
+INLINE(void *,  ADDR_ICRL) (void const *a) {return ADDR_ADDL(a, 1);}
+INLINE( _Bool,  BOOL_ICRL)    (_Bool a) {return   BOOL_ADDL(a, 1);}
+INLINE( uchar, UCHAR_ICRL) (unsigned a) {return  UCHAR_ADDL(a, 1);}
+INLINE( schar, SCHAR_ICRL)   (signed a) {return  SCHAR_ADDL(a, 1);}
+INLINE(  char,  CHAR_ICRL)      (int a) {return   CHAR_ADDL(a, 1);}
+INLINE(ushort, USHRT_ICRL) (unsigned a) {return  USHRT_ADDL(a, 1);}
+INLINE( short,  SHRT_ICRL)   (signed a) {return   SHRT_ADDL(a, 1);}
+INLINE(  uint,  UINT_ICRL)     (uint a) {return   UINT_ADDL(a, 1);}
+INLINE(   int,   INT_ICRL)      (int a) {return    INT_ADDL(a, 1);}
+INLINE( ulong, ULONG_ICRL)    (ulong a) {return  ULONG_ADDL(a, 1);}
+INLINE(  long,  LONG_ICRL)     (long a) {return   LONG_ADDL(a, 1);}
+INLINE(ullong,ULLONG_ICRL)   (ullong a) {return ULLONG_ADDL(a, 1);}
+INLINE( llong, LLONG_ICRL)    (llong a) {return  LLONG_ADDL(a, 1);}
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,icrlqu) (QUAD_UTYPE a) 
+{
+#if defined(__SIZEOF_INT128__)
+    return  addlqu(a, 1);
+#else
+    return  addlqu(a, cvquwu(1));
+#endif
+}
+
+INLINE(QUAD_ITYPE,icrlqi) (QUAD_ITYPE a) 
+{
+#if defined(__SIZEOF_INT128__)
+    return  addlqi(a, 1);
+#else
+    return  addlqi(a, cvqiwu(1));
+#endif
+}
+
+#endif
 
 INLINE(void *,  ADDR_ICRLAC) (void const *const *a)    
 {
@@ -5767,6 +9230,24 @@ INLINE(  long,  LONG_DCRL)        (long a) {return a-1ul;}
 INLINE(ullong,ULLONG_DCRL)      (ullong a) {return a-1ull;}
 INLINE( llong, LLONG_DCRL)       (llong a) {return a-1ull;}
 
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,dcrlqu) (QUAD_UTYPE a) 
+{
+    QUAD_TYPE b={.U=a}, c;
+    c.Lo.U = b.Lo.U-1;
+    c.Hi.U = b.Hi.U-(c.Lo.U > b.Lo.U);
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,dcrlqi) (QUAD_ITYPE a) 
+{
+    QUAD_TYPE b={.I=a}, c;
+    c.Lo.U = b.Lo.U-1;
+    c.Hi.U = b.Hi.U-(b.Lo.U < c.Lo.U);
+    return  c.I;
+}
+#endif
+
 INLINE(void *,  ADDR_DCRLAC) (void const *const *a)    
 {
     return (void *)(a-1);
@@ -5792,100 +9273,40 @@ INLINE(void *,   DBL_DCRLAC)  (double const *a) {return (void *)(a-1);}
 }
 #endif
 
-#if 0 // _ENTER_ALL_AVGL
-{
-#endif
-
-INLINE( _Bool,  BOOL_AVGL)    (_Bool a,    _Bool b) {return (a+b)/2;}
-
-INLINE( uchar, UCHAR_AVGL) (unsigned a, unsigned b) 
-{
-    return  ((uchar) a+(uchar) b)>>1;
-}
-
-INLINE( schar, SCHAR_AVGL)   (signed a,   signed b) 
-{
-    return  ((schar) a+(schar) b)/2;
-}
-
-INLINE(  char,  CHAR_AVGL)      (int a,      int b) 
-{
-    return  ((char) a+(char) b)/2;
-}
-
-INLINE(ushort, USHRT_AVGL) (unsigned a, unsigned b) 
-{
-    return  ((ushort) a+(ushort) b)>>1;
-}
-
-INLINE( short,  SHRT_AVGL)   (signed a,   signed b) 
-{
-    return  ((short) a+(short) b)/2;
-}
-
-
-INLINE(  uint,  UINT_AVGL)     (uint a,     uint b) 
-{
-    return  ((uint64_t) a+b)>>1;
-}
-
-INLINE(   int,   INT_AVGL)      (int a,      int b) 
-{
-    return ((int64_t) a+b)/2;
-}
-
-
-INLINE( ulong, ULONG_AVGL)    (ulong a,    ulong b) 
-{
-#if DWRD_NLONG == 2
-    return ((uint64_t) a+b)>>1;
-#else
-    return ((a>>1)+(b>>1))+(a&b&1);
-#endif
-}
-
-INLINE(  long,  LONG_AVGL)     (long a,     long b) 
-{
-#if DWRD_NLONG == 2
-    return ((int64_t) a+b)/2;
-#else
-    return ((a/2)+(b/2))+(a&b&1);
-#endif
-
-}
-
-INLINE(ullong,ULLONG_AVGL)   (ullong a,   ullong b) 
-{
-    return ((a>>1)+(b>>1))+(a&b&1);
-}
-
-INLINE( llong, LLONG_AVGL)    (llong a,    llong b) 
-{
-    return ((a/2)+(b/2))+(a&b&1);
-}
-
-
-#if 0 // _LEAVE_ALL_AVGL
-}
-#endif
-
 #if 0 // _ENTER_ALL_SUBL
 {
 #endif
 
+INLINE(ptrdiff_t,ADDR_SUBL) (void const *a, void const *b)
+{
+    return a-b;
+}
+
 INLINE( _Bool,  BOOL_SUBL)    (_Bool a,    _Bool b) {return a^b;}
 INLINE( uchar, UCHAR_SUBL) (unsigned a, unsigned b) 
 {
-    return (uchar) a-(uchar) b;
+    return  (uchar) a-(uchar) b;
 }
 
-INLINE( schar, SCHAR_SUBL)   (signed a,   signed b) {return UCHAR_SUBL(a,b);}
-INLINE(  char,  CHAR_SUBL)      (int a,      int b) {return UCHAR_SUBL(a,b);}
+INLINE( schar, SCHAR_SUBL)   (signed a,   signed b) 
+{
+    return  (schar) a-(schar) b;
+}
+
+INLINE(  char,  CHAR_SUBL)      (int a,      int b) 
+{
+    return  (char) a-(char) b;
+}
+
 INLINE(ushort, USHRT_SUBL) (unsigned a, unsigned b) 
 {
-    return (ushort) a-(ushort) b;
+    return  (ushort) a-(ushort) b;
 }
-INLINE( short,  SHRT_SUBL)   (signed a,   signed b) {return USHRT_SUBL(a,b);}
+
+INLINE( short,  SHRT_SUBL)   (signed a,   signed b) 
+{
+    return  (short) a-(short) b;
+}
 
 INLINE(  uint,  UINT_SUBL)     (uint a,     uint b) {return a-b;}
 INLINE(   int,   INT_SUBL)      (int a,      int b) {return UINT_SUBL(a,b);}
@@ -5893,6 +9314,30 @@ INLINE( ulong, ULONG_SUBL)    (ulong a,    ulong b) {return a-b;}
 INLINE(  long,  LONG_SUBL)     (long a,     long b) {return ULONG_SUBL(a,b);}
 INLINE(ullong,ULLONG_SUBL)   (ullong a,   ullong b) {return a-b;}
 INLINE( llong, LLONG_SUBL)    (llong a,    llong b) {return ULLONG_SUBL(a,b);}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,sublqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE c;
+#if defined(__SIZEOF_INT128__)
+    c.U = a-b;
+#else
+    QUAD_TYPE p={.U=a}, q={.U=b};
+    c.Lo.U = (p.Lo.U-q.Lo.U);
+    c.Hi.U = (p.Hi.U-q.Hi.U)-(c.Lo.U>p.Lo.U);
+#endif
+    return  c.U;
+}
+
+INLINE(QUAD_ITYPE,sublqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE x={.I=a}, y={.I=b};
+    x.U = sublqu(x.U, y.U);
+    return x.I;
+}
+
+#endif
 
 #if 0 // _LEAVE_ALL_SUBL
 }
@@ -5990,155 +9435,797 @@ INLINE(ptrdiff_t,ADDR_DIFU)
 }
 
 INLINE( _Bool,  BOOL_DIFU)    (_Bool a,    _Bool b) {return (a&b)?  0 : a|b;}
-INLINE( uchar, UCHAR_DIFU) (unsigned a, unsigned b) {return a<b ? b-a : a-b;}
-INLINE( schar, SCHAR_DIFU)   (signed a,   signed b) {return a<b ? b-a : a-b;}
-INLINE(  char,  CHAR_DIFU)      (int a,      int b) {return a<b ? b-a : a-b;}
-INLINE(ushort, USHRT_DIFU) (unsigned a, unsigned b) {return a<b ? b-a : a-b;}
-INLINE( short,  SHRT_DIFU)   (signed a,   signed b) {return a<b ? b-a : a-b;}
+INLINE( uchar, UCHAR_DIFU) (unsigned a, unsigned b) 
+{
+    uchar l=a, r=b;
+    return  (l < r) ? r-l : l-r;
+}
+
+INLINE( uchar, SCHAR_DIFU)   (signed a,   signed b) 
+{
+    schar l=a, r=b;
+    return  (l < r) ? r-l : l-r;
+}
+
+INLINE( uchar,  CHAR_DIFU)      (int a,      int b) 
+{
+    char l=a, r=b;
+    return  (l < r) ? r-l : l-r;
+}
+
+INLINE(ushort, USHRT_DIFU) (unsigned a, unsigned b) 
+{
+    ushort l=a, r=b;
+    return  (l < r) ? r-l : l-r;
+}
+
+INLINE(ushort,  SHRT_DIFU)   (signed a,   signed b) 
+{
+    short l=a, r=b;
+    return  (l < r) ? r-l : l-r;
+}
+
 INLINE(  uint,  UINT_DIFU)     (uint a,     uint b) {return a<b ? b-a : a-b;}
-INLINE(   int,   INT_DIFU)      (int a,      int b) {return a<b ? b-a : a-b;}
+INLINE(  uint,   INT_DIFU)      (int a,      int b) {return a<b ? b-a : a-b;}
 INLINE( ulong, ULONG_DIFU)    (ulong a,    ulong b) {return a<b ? b-a : a-b;}
-INLINE(  long,  LONG_DIFU)     (long a,     long b) {return a<b ? b-a : a-b;}
+INLINE( ulong,  LONG_DIFU)     (long a,     long b) {return a<b ? b-a : a-b;}
 INLINE(ullong,ULLONG_DIFU)   (ullong a,   ullong b) {return a<b ? b-a : a-b;}
-INLINE( llong, LLONG_DIFU)    (llong a,    llong b) {return a<b ? b-a : a-b;}
+INLINE(ullong, LLONG_DIFU)    (llong a,    llong b) {return a<b ? b-a : a-b;}
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,difuqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    return (cltlqu(a, b)) ? sublqu(a, b) : sublqu(b, a);
+}
+
+INLINE(QUAD_UTYPE,difuqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    a = (cltlqi(a, b)) ? sublqi(a, b) : sublqi(b, a);
+    return  cvquqi(a);
+}
+#endif
 
 #if 0 // _LEAVE_ALL_DIFU
 }
 #endif
 
-#if 0 // _ENTER_ALL_MULL
+#if 0 // _ENTER_ALL_FAML
 {
 #endif
 
-INLINE( _Bool,  BOOL_MULL)    (_Bool a,    _Bool b) {return a&b;}
-INLINE( uchar, UCHAR_MULL) (unsigned a, unsigned b) 
+INLINE( void *,  ADDR_FAML) (void const *a, ptrdiff_t b, ptrdiff_t c)
 {
-    return (uchar) a*(uchar) b;
+    return  (void *) (a+(size_t) b*(size_t) c);
 }
 
-INLINE( schar, SCHAR_MULL)   (signed a,   signed b) {return UCHAR_MULL(a,b);}
-INLINE(  char,  CHAR_MULL)      (int a,      int b) {return UCHAR_MULL(a,b);}
-INLINE(ushort, USHRT_MULL) (unsigned a, unsigned b) 
+INLINE(  _Bool,  BOOL_FAML)       (_Bool a,     _Bool b,     _Bool c) 
 {
-    return (ushort) a*(ushort) b;
-}
-INLINE( short,  SHRT_MULL)   (signed a,   signed b) {return USHRT_MULL(a,b);}
-
-INLINE(  uint,  UINT_MULL)     (uint a,     uint b) {return a*b;}
-INLINE(   int,   INT_MULL)      (int a,      int b) {return UINT_MULL(a,b);}
-INLINE( ulong, ULONG_MULL)    (ulong a,    ulong b) {return a*b;}
-INLINE(  long,  LONG_MULL)     (long a,     long b) {return ULONG_MULL(a,b);}
-INLINE(ullong,ULLONG_MULL)   (ullong a,   ullong b) {return a*b;}
-INLINE( llong, LLONG_MULL)    (llong a,    llong b) {return ULLONG_MULL(a,b);}
-
-#if 0 // _LEAVE_ALL_MULL
-}
-#endif
-
-#if 0 // _ENTER_ALL_MUL2
-{
-#endif
-
-INLINE(uint16_t, UCHAR_MUL2)   (unsigned a, unsigned b)
-{
-    return  (uchar) a*(uchar) b;
+    return a+b*c;
 }
 
-INLINE( int16_t, SCHAR_MUL2)     (signed a,   signed b)
+INLINE(  uchar, UCHAR_FAML)    (unsigned a,  unsigned b,  unsigned c) 
 {
-    return  UCHAR_MUL2(a, b);
+    return  (uchar) a+(uchar) b*(uchar) c;
 }
 
+INLINE(  schar, SCHAR_FAML)      (signed a,    signed b,    signed c) 
+{
+    return  (schar) a+(schar) b*(schar) c;
+}
+
+INLINE(   char,  CHAR_FAML)         (int a,       int b,       int c) 
+{
 #if CHAR_MIN
-
-INLINE( int16_t,  CHAR_MUL2)        (int a,      int b)
-{
-    return  SCHAR_MUL2(a, b);
+    return  SCHAR_FAML(a, b, c);
+#else
+    return  UCHAR_FAML(a, b, c);
+#endif
 }
 
-#else
-
-INLINE(uint16_t,  CHAR_MUL2)        (int a,      int b)
+INLINE( ushort, USHRT_FAML)    (unsigned a,  unsigned b,  unsigned c) 
 {
-    return  UCHAR_MUL2(a, b);
+    return  (ushort) a+(ushort) b*(ushort) c;
+}
+
+INLINE(  short,  SHRT_FAML)      (signed a,    signed b,    signed c) 
+{
+    return (short) a+(short) b*(short) c;
+}
+
+INLINE(   uint,  UINT_FAML)        (uint a,      uint b,      uint c) 
+{
+    return  a+b*c;
+}
+
+INLINE(    int,   INT_FAML)         (int a,       int b,       int c) 
+{
+    return  UINT_FAML(a, b, c);
+}
+
+INLINE(  ulong, ULONG_FAML)       (ulong a,     ulong b,     ulong c) 
+{
+    return  a+b*c;
+}
+
+INLINE(   long,  LONG_FAML)        (long a,      long b,      long c) 
+{
+    return  ULONG_FAML(a, b, c);
+}
+
+INLINE( ullong,ULLONG_FAML)      (ullong a,    ullong b,    ullong c) 
+{
+    return  a+b*c;
+}
+
+INLINE(  llong, LLONG_FAML)       (llong a,     llong b,     llong c) 
+{
+    return  ULLONG_FAML(a, b, c);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,famlqu) (QUAD_UTYPE a, QUAD_UTYPE b, QUAD_UTYPE c)
+{
+    return  addlqu(a, mullqu(b, c));
+}
+
+INLINE(QUAD_ITYPE,famlqi) (QUAD_ITYPE a, QUAD_ITYPE b, QUAD_ITYPE c)
+{
+    return  addlqi(a, mullqi(b, c));
 }
 
 #endif
 
-INLINE(uint32_t, USHRT_MUL2)   (unsigned a, unsigned b)
+#if 0 // _LEAVE_ALL_FAML
+}
+#endif
+
+#if 0 // _ENTER_ALL_FAM2
 {
-    return  (ushort) a*(ushort) b;
+#endif
+
+INLINE(ushort, USHRT_FAM2) (unsigned a,  unsigned b,  unsigned c)
+{
+    return  (ushort) a+(uint8_t) b*(uint8_t) c;
 }
 
-INLINE( int32_t,  SHRT_MUL2)     (signed a,   signed b)
+INLINE(short, SHRT_FAM2) (signed a,  signed b,  signed c)
 {
-    return  USHRT_MUL2(a, b);
+    return  (short) a+(int8_t) b*(int8_t) c;
 }
 
-
-INLINE(uint64_t,  UINT_MUL2)       (uint a,     uint b)
+INLINE(  uint,  UINT_FAM2)   (uint a,  unsigned b,  unsigned c)
 {
-    return  (uint64_t) a*b;
+    return a+(uint16_t) b*(uint16_t) c;
 }
 
-INLINE( int64_t,   INT_MUL2)        (int a,      int b)
+INLINE(   int,   INT_FAM2)    (int a,  signed b,  signed c)
 {
-    return  UINT_MUL2(a, b);
+    return  (int64_t) a+((int16_t) a*(int16_t) b);
 }
 
 #if DWRD_NLONG == 2
 
-INLINE(   uint64_t, ULONG_MUL2)   (ulong a,   ulong b)
+INLINE( ulong, ULONG_FAM2)  (ulong a, unsigned b, unsigned c)
 {
-    return  (uint64_t) a*b;
+    return  UINT_FAM2(a, b, c);
 }
 
-INLINE(    int64_t,  LONG_MUL2)    (long a,    long b)
+INLINE(  long,  LONG_FAM2)   (long a,  signed b,  signed c)
 {
-    return  ULONG_MUL2(a, b);
+    return  INT_FAM2(a, b, c);
+}
+
+#else
+
+INLINE( ulong, ULONG_FAM2)  (ulong a, uint32_t b, uint32_t c)
+{
+    return  a+((ulong) b*c);
+}
+
+INLINE(  long,  LONG_FAM2)   (long a,  int32_t b,  int32_t c)
+{
+    return  (ulong) a+((int64_t) b*c);
 }
 
 #endif
 
-#if 0 // _LEAVE_ALL_MUL2
+#if QUAD_NLLONG == 2
+
+INLINE(ullong,ULLONG_FAM2) (ullong a, uint32_t b, uint32_t c)
+{
+    return  a+(ullong) b*c;
+}
+
+INLINE( llong, LLONG_FAM2)  (llong a,  int32_t b,  int32_t c)
+{
+    return  (ullong) a+((llong) b*c);
+}
+
+INLINE(QUAD_UTYPE,fam2qu) (QUAD_UTYPE a, uint64_t b, uint64_t c)
+{
+#if defined(__SIZEOF_INT128__)
+    return  a+((unsigned __int128) b*c);
+#else
+    return  addlqu(a, mul2qu(b, c));
+#endif
+}
+
+INLINE(QUAD_ITYPE,fam2qi) (QUAD_ITYPE a,  int64_t b,  int64_t c)
+{
+#if defined(__SIZEOF_INT128__)
+    return  (unsigned __int128) a+((unsigned __int128) b*c);
+#else
+    return  addlqu(a, mul2qu(b, c));
+#endif
+}
+
+#else
+
+INLINE(ullong,ULLONG_FAM2) (ullong a, uint64_t b, uint64_t c)
+{
+    return a+(ullong) b*c;
+}
+
+INLINE( llong, LLONG_FAM2)  (llong a,  int64_t b,  int64_t c)
+{
+    return (ullong) a+((llong) b*c);
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_FAM2
 }
 #endif
+
+#if 0 // _ENTER_ALL_FSML
+{
+#endif
+
+INLINE( void *,  ADDR_FSML) (void const *a, ptrdiff_t b, ptrdiff_t c)
+{
+    return  (void *) (a-(size_t) b*(size_t) c);
+}
+
+INLINE(  _Bool,  BOOL_FSML)       (_Bool a,     _Bool b,     _Bool c) 
+{
+    return a-b*c;
+}
+
+INLINE(  uchar, UCHAR_FSML)    (unsigned a,  unsigned b,  unsigned c) 
+{
+    return  (uchar) a-(uchar) b*(uchar) c;
+}
+
+INLINE(  schar, SCHAR_FSML)      (signed a,    signed b,    signed c) 
+{
+    return  (schar) a-(schar) b*(schar) c;
+}
+
+INLINE(   char,  CHAR_FSML)         (int a,       int b,       int c) 
+{
+#if CHAR_MIN
+    return  SCHAR_FSML(a, b, c);
+#else
+    return  UCHAR_FSML(a, b, c);
+#endif
+}
+
+INLINE( ushort, USHRT_FSML)    (unsigned a,  unsigned b,  unsigned c) 
+{
+    return  (ushort) a-(ushort) b*(ushort) c;
+}
+
+INLINE(  short,  SHRT_FSML)      (signed a,    signed b,    signed c) 
+{
+    return (short) a-(short) b*(short) c;
+}
+
+INLINE(   uint,  UINT_FSML)        (uint a,      uint b,      uint c) 
+{
+    return  a-b*c;
+}
+
+INLINE(    int,   INT_FSML)         (int a,       int b,       int c) 
+{
+    return  UINT_FSML(a, b, c);
+}
+
+INLINE(  ulong, ULONG_FSML)       (ulong a,     ulong b,     ulong c) 
+{
+    return  a-b*c;
+}
+
+INLINE(   long,  LONG_FSML)        (long a,      long b,      long c) 
+{
+    return  ULONG_FSML(a, b, c);
+}
+
+INLINE( ullong,ULLONG_FSML)      (ullong a,    ullong b,    ullong c) 
+{
+    return  a-b*c;
+}
+
+INLINE(  llong, LLONG_FSML)       (llong a,     llong b,     llong c) 
+{
+    return  ULLONG_FSML(a, b, c);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,fsmlqu)    (QUAD_UTYPE a, QUAD_UTYPE b, QUAD_UTYPE c)
+{
+#if defined(__SIZEOF_INT128__)
+    return  a-b*c;
+#else
+    return  sublqu(a, mullqu(b, c));
+#endif
+}
+
+INLINE(QUAD_ITYPE,fsmlqi) (QUAD_ITYPE a, QUAD_ITYPE b, QUAD_ITYPE c)
+{
+    QUAD_TYPE x={.I=a}, y={.I=b}, z={.I=c};
+    x.U = fsmlqu(x.U, y.U, z.U);
+    return  x.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_FSML
+}
+#endif
+
 
 #if 0 // _ENTER_ALL_DIVL
 {
 #endif
 
-INLINE( uchar, UCHAR_DIVL) (unsigned a, unsigned b) 
+INLINE( uchar, UCHAR_DIVL) (unsigned a, unsigned b) {return (uchar) a/b;}
+INLINE( schar, SCHAR_DIVL)   (signed a,   signed b) {return (schar) a/b;}
+INLINE(  char,  CHAR_DIVL)      (int a,      int b) {return (char) a/b;}
+INLINE(ushort, USHRT_DIVL) (unsigned a, unsigned b) {return (ushort) a/b;}
+INLINE( short,  SHRT_DIVL)   (signed a,   signed b) {return (short) a/b;}
+INLINE(  uint,  UINT_DIVL)     (uint a,     uint b) {return a/b;}
+INLINE(   int,   INT_DIVL)      (int a,      int b) {return a/b;}
+INLINE( ulong, ULONG_DIVL)    (ulong a,    ulong b) {return a/b;}
+INLINE(  long,  LONG_DIVL)     (long a,     long b) {return a/b;}
+INLINE(ullong,ULLONG_DIVL)   (ullong a,   ullong b) {return a/b;}
+INLINE( llong, LLONG_DIVL)    (llong a,    llong b) {return a/b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,divlqu) (QUAD_UTYPE a, QUAD_UTYPE b)
 {
-    return (uchar) a/(uchar) b;
+    QUAD_TYPE oria={.U=a}, orib={.U=b};
+    if (ceqyqu(a, b)) 
+        cvquwu(1U);
+    if (cltyqu(a, b)) 
+        return  ((QUAD_UTYPE){0});
+    QUAD_TYPE   x, m, n, p, q={.U=a};
+    if (q.Hi.U == 0)
+    {
+        p.U = b;
+        q.Lo.U = UINT64_DIVL(q.Lo.U, p.Lo.U);
+        return  q.U;
+    }
+    int y, z;
+    p.U = cszrqu(a); 
+    q.U = cszrqu(b);
+    y = (128-cvwiqu(p.U));
+    z = (128-cvwiqu(q.U));
+    y = y-z;
+    if ((y < 0) || (y > 128))
+    {
+        printf("(128-cszr(a))-(128-cszr(b)) = %d\n",y);
+        return  cvquwi(-1);
+    }
+    if (1 == y)
+    {
+        n.U = shllqu(b, 1);
+        if (ceqyqu(a, n.U))
+            return  UINT32_CVQU(2);
+        if (cltyqu(a, n.U))
+            return  UINT32_CVQU(1);
+        n.U = sublqu(a, n.U);
+        if (cgtyqu(b, n.U))
+            return  UINT32_CVQU(2);
+        else
+            return  UINT32_CVQU(3);
+    }
+    for (y++;; y--)
+    {
+        p.U = ((shllqu)(b, y));
+        if (!cltyqu(a, p.U))
+            break;
+    }
+    n.U = ((sublqu)(a, p.U));
+    q.U = ((shllqu)(cvquwu(1), y));
+    if (cltyqu(n.U, b))
+        return q.U;
+    do {
+        y--;
+        x.U = ((shllqu)(b, y));
+        n.U = ((addlqu)(p.U, x.U));
+        if (cltyqu(a, n.U))
+        {
+            m.U = sublqu(n.U, a);
+            if (cltyqu(m.U, b))
+            {
+                x.U = cvquwu(1);
+                x.U = (shllqu)(x.U, y);
+                q.U = orrsqu(q.U, x.U);
+                return  dcrlqu(q.U);
+            }
+        }
+        else
+        {
+            x.U = ((shllqu)(cvquwu(1), y));
+            q.U = orrsqu(q.U, x.U);
+            m.U = sublqu(a, n.U);
+            if (cltyqu(m.U, b))
+                return  q.U;
+            p = n;
+        }
+
+    } while (y > 0);
+    char stra[256], strb[256], *enda, *endb;
+    printf(
+        "infinite loop in divlqu(%s, %s)", 
+        safe_toadqu(oria.U, stra, &enda),
+        safe_toadqu(orib.U, strb, &endb)
+    );
+    return  INT32_CVQU(-1);
 }
 
-INLINE( schar, SCHAR_DIVL)   (signed a,   signed b) 
+#if 0
 {
-    return (schar) a/(schar) b;
+/*  unsigned 128 bit/64 bit division. Technically, divisors
+    wider than 64 bits result in undefined behavior. However,
+    as long as the dividend is greater than or equal to the
+    divisor, all 128 bit inputs should return the correct
+    quotient.
+*/
+#if defined(__SIZEOF_INT128__)
+    return  a/b;
+#else
+//  if (a <= b), the quotient can only be 0 or 1
+    QUAD_TYPE   x, m, n, p, q={.U=a};
+    n.U = ceqlqu(a, b);
+    if (n.Lo.U || cltyqu(a, b))
+        return  n.U;
+
+//  if (a.len <= 64), use 64 bit fast path
+    if (q.Hi.U == 0)
+    {
+        q.Lo.U = UINT64_DIVL(q.Lo.U, ((QUAD_TYPE){.U=b}).Lo.U);
+        return  q.U;
+    }
+
+    int y, z;
+    p.U = cszrqu(a); 
+    q.U = cszrqu(b);
+    y = (128-cvwiqu(p.U));
+    z = (128-cvwiqu(q.U));
+    y = y-z;
+
+    if (1 == y)
+    {
+/*
+    When the difference in repr length is 1, the quotient 
+    will be 1, 2, or 3. TODO: check if this branch can be 
+    removed and if so, what the performance implications are
+    for the cases it covers. The only possible time this 
+    branch is taken without invoking undefined behavior is 
+    with a 65 bit dividend and 64 bit divisor, which seems an
+    extremely unlikely scenario. 
+*/
+        n.U = shllqu(b, 1);
+        if (ceqyqu(a, n.U))
+            return UINT32_CVQU(2);
+
+        if (cltyqu(a, n.U))
+            return UINT32_CVQU(1);
+
+        n.U = sublqu(a, n.U);
+
+        if (cgtyqu(b, n.U))
+            return  UINT32_CVQU(2);
+        else
+            return  UINT32_CVQU(3);
+    }
+    for (y++;; y--)
+    {
+        p.U = ((shllqu)(b, y));
+        if (!cltyqu(a, p.U))
+            break;
+    }
+    n.U = ((sublqu)(a, p.U));
+    q.U = ((shllqu)(cvquwu(1), y));
+    if (cltyqu(n.U, b))
+        return q.U;
+    do {
+        y--;
+        x.U = ((shllqu)(b, y));
+        n.U = ((addlqu)(p.U, x.U));
+        if (cltyqu(a, n.U))
+        {
+            m.U = sublqu(n.U, a);
+            if (cltyqu(m.U, b))
+            {
+                x.U = cvquwu(1);
+                x.U = (shllqu)(x.U, y);
+                q.U = orrsqu(q.U, x.U);
+                return  dcrlqu(q.U);
+            }
+        }
+        else
+        {
+            x.U = ((shllqu)(cvquwu(1), y));
+            q.U = orrsqu(q.U, x.U);
+            m.U = sublqu(a, n.U);
+            if (cltyqu(m.U, b))
+                return q.U;
+            p = n;
+        }
+    } while (y > 0);
+    printf("infinite loop %s:%d\n", __func__,__LINE__);
+    return  INT32_CVQU(-1);
+#endif
+}
+#endif
+
+INLINE(QUAD_ITYPE,divlqi) (QUAD_ITYPE a, QUAD_ITYPE b) 
+{
+#if defined(__SIZEOF_INT128__) && 0
+    return  a/b;
+#else
+    QUAD_TYPE   x={.I=a}, y={.I=b}, q, r;
+    if (x.Hi.I < 0)
+    {
+        x.U = absuqi(x.I);
+        if (y.Hi.I < 0)
+        {
+            y.U = absuqi(y.I);
+            q.U = divlqu(x.U, y.U);
+            return q.I;
+        }
+        else 
+        {
+            q.U = divlqu(x.U, y.U);
+            return  neglqi(q.I);
+        }
+    }
+    else
+    {
+        if (y.Hi.I < 0)
+        {
+            y.U = absuqi(y.I);
+            q.U = divlqu(x.U, y.U);
+            return  neglqi(q.I);
+        }
+        q.U = divlqu(x.U, y.U);
+        return q.I;
+    }
+#endif
 }
 
-INLINE(  char,  CHAR_DIVL)      (int a,      int b) 
-{
-    return (char) a/(char) b;
-}
+#endif
 
-INLINE(ushort, USHRT_DIVL) (unsigned a, unsigned b) 
-{
-    return  (ushort) a/(ushort) b;
-}
-
-INLINE( short,  SHRT_DIVL)   (signed a,   signed b) 
-{
-    return (short) a/(short) b;
-}
-INLINE(  uint,  UINT_DIVL)   (uint a,   uint b) {return a/b;}
-INLINE(   int,   INT_DIVL)    (int a,    int b) {return a/b;}
-INLINE( ulong, ULONG_DIVL)  (ulong a,  ulong b) {return a/b;}
-INLINE(  long,  LONG_DIVL)   (long a,   long b) {return a/b;}
-INLINE(ullong,ULLONG_DIVL) (ullong a, ullong b) {return a/b;}
-INLINE( llong, LLONG_DIVL)  (llong a,  llong b) {return a/b;}
 #if 0 // _LEAVE_ALL_DIVL
+}
+#endif
+
+#if 0 // _ENTER_ALL_DIVN
+{
+#endif
+
+INLINE(schar, UCHAR_DIVN) (unsigned a, signed b)
+{
+    a = SCHAR_MAX&a;
+    int q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE(schar, SCHAR_DIVN)   (signed a, signed b)
+{
+    signed q;
+    a = (schar) a;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    }
+    else
+    {
+        unsigned n = SCHAR_ABSU(a);
+        q = (b < 0) ? (n/(0U-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE( char,  CHAR_DIVN)      (int a, signed b) 
+{
+#if CHAR_MIN
+    return  SCHAR_DIVN(a, b);
+#else
+    return  UCHAR_DIVN(a, b);
+#endif
+}
+
+INLINE(short, USHRT_DIVN) (unsigned a, signed b)
+{
+    a = SHRT_MAX&a;
+    int q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE(short,  SHRT_DIVN)   (signed a, signed b)
+{
+    signed q;
+    a = (short) a;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    }
+    else
+    {
+        unsigned n = SHRT_ABSU(a);
+        q = (b < 0) ? (n/(0U-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE(  int,  UINT_DIVN)     (uint a,    int b)
+{
+    int q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE(  int,   INT_DIVN)      (int a,    int b)
+{
+    int q;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((uint) a/b);
+    }
+    else
+    {
+        uint n = INT_ABSU(a);
+        q = (b < 0) ? (n/INT_ABSU(b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE( long, ULONG_DIVN)    (ulong a,   long b)
+{
+    long q = (b < 0L) ? ~(a/(0UL-b)) : ((ulong) a/b);
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE( long,  LONG_DIVN)     (long a,   long b)
+{
+    long q;
+    if (a >= 0L)
+    {
+        q = (b < 0L) ? ~(a/(0UL-b)) : ((ulong) a/b);
+    }
+    else
+    {
+        ulong n = LONG_ABSU(a);
+        q = (b < 0L) ? (n/(0UL-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE(llong,ULLONG_DIVN)   (ullong a,  llong b)
+{
+    llong q = (b < 0LL) ? ~(a/(0ULL-b)) : ((ullong) a/b);
+    a -= q*b;
+    return  q+(a==b);
+}
+
+INLINE(llong, LLONG_DIVN)    (llong a,  llong b)
+{
+    llong q;
+    if (a >= 0LL)
+    {
+        q = (b < 0LL) ? ~(a/(0ULL-b)) : ((ullong) a/b);
+    }
+    else
+    {
+        ullong n = LLONG_ABSU(a);
+        q = (b < 0LL) ? (n/(0ULL-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  q+(a==b);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_ITYPE, divnqu) (QUAD_UTYPE a, QUAD_ITYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    QUAD_ITYPE q = (b < 0) ? ~((QUAD_ITYPE) a/b) : (a/b);
+    a -= q*b;
+    return  q+(a==b);
+#endif
+}
+
+INLINE(QUAD_ITYPE, divnqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#ifdef _MSC_VER
+    QUAD_TYPE m;
+#endif
+
+    QUAD_TYPE q, n={.I=a}, d={.I=b};
+
+    if (n.Hi.I < 0)
+    {
+        n.U = absuqi(n.I);
+
+        if (d.Hi.I < 0)
+        {
+            d.U = absuqi(d.I);
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Lo.U = 0;
+#elif 1
+            q.U = n.U/d.U;
+#endif
+        }
+
+        else
+        {
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Lo.U = ~q.Lo.U;
+            q.Hi.U = -1;
+#elif 1
+            q.U = ~(n.U/d.U);
+#endif
+
+        }
+    }
+
+    else
+    {
+        if (d.Hi.I < 0)
+        {
+            d.U = absuqi(d.I);
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Lo.U = ~q.Lo.U;
+            q.Hi.U = -1;
+#elif 1
+            q.U = ~(n.U/d.U);
+#endif
+
+        }
+
+        else
+        {
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Hi.U = 0;
+#elif 1
+            q.U = n.U/d.U;
+#endif
+
+        }
+    }
+    a = fsmlqi(a, b, q.I);
+    return ceqyqi(a, b) ? icrlqi(q.I) : q.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_DIVN
 }
 #endif
 
@@ -6148,127 +10235,941 @@ INLINE( llong, LLONG_DIVL)  (llong a,  llong b) {return a/b;}
 
 INLINE( uint8_t, USHRT_DIV2) (unsigned a, unsigned b) 
 {
-    return  (ushort) a/(uint8_t) b;
+    return  (ushort) a/(ushort) b;
 }
 
 INLINE(  int8_t,  SHRT_DIV2)   (signed a,   signed b) 
 {
-    return  (short) a/(int8_t) b;
+    return  (short) a/(short) b;
 }
 
-INLINE(uint16_t,  UINT_DIV2)     (uint a, unsigned b) 
-{
-    return  a/(uint16_t) b;
-}
-
-INLINE( int16_t,   INT_DIV2)      (int a,   signed b) 
-{
-    return  a/(int16_t) b;
-}
+INLINE(uint16_t,  UINT_DIV2)     (uint a,     uint b) {return a/b;}
+INLINE( int16_t,   INT_DIV2)      (int a,      int b) {return a/b;}
 
 
 #if DWRD_NLONG == 2
-
-INLINE(uint16_t, ULONG_DIV2)    (ulong a, unsigned b) 
-{
-    return  a/(uint16_t) b;
-}
-
-INLINE( int16_t,  LONG_DIV2)     (long a,   signed b) 
-{
-    return  a/(int16_t) b;
-}
-
+INLINE(uint16_t, ULONG_DIV2)    (ulong a,    ulong b) {return a/b;}
+INLINE( int16_t,  LONG_DIV2)     (long a,     long b) {return a/b;}
 #else
-
-INLINE(uint32_t, ULONG_DIV2)    (ulong a, uint32_t b) 
-{
-    return  a/b;
-}
-
-INLINE( int32_t,  LONG_DIV2)     (long a,  int32_t b) 
-{
-    return  a/b;
-}
-
+INLINE(uint32_t, ULONG_DIV2)    (ulong a,    ulong b) {return a/b;}
+INLINE( int32_t,  LONG_DIV2)     (long a,     long b) {return a/b;}
 #endif
 
 #if QUAD_NLLONG == 2
+INLINE(uint32_t,ULLONG_DIV2)   (ullong a,   ullong b) {return a/b;}
+INLINE( int32_t, LLONG_DIV2)    (llong a,    llong b) {return a/b;}
 
-INLINE(uint32_t,ULLONG_DIV2)   (ullong a, uint32_t b) 
+INLINE(uint64_t,div2qu)    (QUAD_UTYPE a, QUAD_UTYPE b) 
 {
-    return a/b;
+    a = divlqu(a, b);
+    return  cvduqu(a);
 }
 
-INLINE( int32_t, LLONG_DIV2)    (llong a,  int32_t b) 
+INLINE( int64_t,div2qi) (QUAD_ITYPE a,  QUAD_ITYPE b) 
 {
-    return a/b;
+    a = divlqi(a, b);
+    return  cvdiqi(a);
 }
-
+#else
+INLINE(uint64_t,ULLONG_DIV2)   (ullong a,   ullong b) {return a/b;}
+INLINE( int64_t, LLONG_DIV2)    (llong a,    llong b) {return a/b;}
 #endif
 
 #if 0 // _LEAVE_ALL_DIV2
 }
 #endif
 
+
 #if 0 // _ENTER_ALL_MODL
 {
 #endif
 
-INLINE( uchar, UCHAR_MODL) (unsigned a, unsigned b) 
+INLINE( uchar, UCHAR_MODL) (unsigned a, unsigned b,  uchar r[1]) 
 {
-    return (uchar) a%(uchar) b;
+    a = (uchar) a;
+    return  ((*r=a%b), (a/b));
 }
 
-INLINE( schar, SCHAR_MODL)   (signed a,   signed b) 
+INLINE( schar, SCHAR_MODL)   (signed a,   signed b,  schar r[1])
 {
-    return (schar) a%(schar) b;
+    a = (schar) a;
+    div_t x = div(a, b);
+    return  ((*r=x.rem), x.quot);
 }
 
-INLINE(  char,  CHAR_MODL)      (int a,      int b) 
+INLINE(  char,  CHAR_MODL)      (int a,      int b,   char r[1]) 
 {
-    return (char) a%(char) b;
+#if CHAR_MIN
+    return  SCHAR_MODL(a, b, ((schar *) r));
+#else
+    return  UCHAR_MODL(a, b, ((uchar *) r));
+#endif
 }
 
-INLINE(ushort, USHRT_MODL) (unsigned a, unsigned b) 
+INLINE(ushort, USHRT_MODL) (unsigned a, unsigned b, ushort r[1]) 
 {
-    return  (ushort) a%(ushort) b;
+    a = (ushort) a;
+    return  ((*r=a%b), (a/b));
 }
 
-INLINE( short,  SHRT_MODL)   (signed a,   signed b) 
+INLINE( short,  SHRT_MODL)   (signed a,   signed b,  short r[1])
 {
-    return (short) a%(short) b;
+    a = (short) a;
+    div_t x = div(a, b);
+    return  ((*r=x.rem), x.quot);
 }
-INLINE(  uint,  UINT_MODL)   (uint a,   uint b) {return a%b;}
-INLINE(   int,   INT_MODL)    (int a,    int b) {return a%b;}
-INLINE( ulong, ULONG_MODL)  (ulong a,  ulong b) {return a%b;}
-INLINE(  long,  LONG_MODL)   (long a,   long b) {return a%b;}
-INLINE(ullong,ULLONG_MODL) (ullong a, ullong b) {return a%b;}
-INLINE( llong, LLONG_MODL)  (llong a,  llong b) {return a%b;}
+
+INLINE(  uint,  UINT_MODL)     (uint a,     uint b,   uint r[1])
+{
+    return  ((*r=a%b), (a/b));
+}
+
+INLINE(   int,   INT_MODL)      (int a,      int b,    int r[1])
+{
+    div_t x = div(a, b);
+    return  ((*r=x.rem), x.quot);
+}
+
+INLINE( ulong, ULONG_MODL)    (ulong a,    ulong b,  ulong r[1]) 
+{
+    return  ((*r=a%b), (a/b));
+}
+
+INLINE(  long,  LONG_MODL)     (long a,     long b,   long r[1])
+{
+    ldiv_t   x = ldiv(a, b);
+    return  ((*r=x.rem), x.quot);
+}
+
+INLINE(ullong,ULLONG_MODL)   (ullong a,   ullong b, ullong r[1]) 
+{
+    return  ((*r=a%b), (a/b));
+}
+
+INLINE( llong, LLONG_MODL)    (llong a,    llong b,  llong r[1])
+{
+    lldiv_t   x = lldiv(a, b);
+    return  ((*r=x.rem), x.quot);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,modlqu) (QUAD_UTYPE a, QUAD_UTYPE b, QUAD_UTYPE c[1])
+{
+    QUAD_TYPE oria={.U=a}, orib={.U=b};
+//  if (a <= b), the quotient can only be 0 or 1
+    if (ceqyqu(a, b))
+        return  ((*c=((QUAD_UTYPE){0})), cvquwu(1U));
+    if (cltyqu(a, b)) 
+        return  ((*c=a), ((QUAD_UTYPE){0}));
+    QUAD_TYPE   x, m, n, p, q={.U=a};
+
+//  if (a.len <= 64), use 64 bit fast path
+    if (q.Hi.U == 0)
+    {
+        QUAD_TYPE *r = (QUAD_TYPE *) c;
+        p.U = b;
+        q.Lo.U = UINT64_MODL(q.Lo.U, p.Lo.U, &r->Lo.U);
+        r->Hi.U = 0;
+        return  q.U;
+    }
+
+    int y, z;
+    p.U = cszrqu(a); 
+    q.U = cszrqu(b);
+//  y = a.len-b.len
+    y = (128-cvwiqu(p.U));
+    z = (128-cvwiqu(q.U));
+    y = y-z;
+    //int y = (128-cvwiqu(p.U))-(128-cvwiqu(q.U));
+    if ((y < 0) || (y > 128))
+    {
+        printf("(128-cszr(a))-(128-cszr(b)) = %d\n",y);
+        return  cvquwi(-1);
+    }
+
+    //printf("y = %i\n", y);
+    /*
+    */
+    if (1 == y)
+    {
+/*
+        return (
+            (2,   0) if (a == (n:=b<<1)) else 
+            (1, a-b) if (a  < (n)) else
+            (2,   p) if (b  > (n:=a-n)) else 
+            (3, p-b)
+        )
+*/
+        n.U = shllqu(b, 1);
+        if (ceqyqu(a, n.U))
+        {
+            return  ((*c=((QUAD_UTYPE){0})), UINT32_CVQU(2));
+        }
+
+        if (cltyqu(a, n.U))
+        {
+            return ((*c = sublqu(a, b)), UINT32_CVQU(1));
+        }
+
+        n.U = sublqu(a, n.U);
+
+        if (cgtyqu(b, n.U))
+        {
+            return  ((*c=n.U), UINT32_CVQU(2));
+        }
+        else
+        {
+            return  ((*c=sublqu(n.U, b)), UINT32_CVQU(3));
+        }
+
+    }
+
+    for (y++;; y--)
+    {
+        p.U = ((shllqu)(b, y));
+        if (!cltyqu(a, p.U)) //(a < p.U)
+            break;
+    }
+
+    n.U = ((sublqu)(a, p.U)); //n.U = a-p.U;
+    q.U = ((shllqu)(cvquwu(1), y));
+
+    if (cltyqu(n.U, b))
+    {
+        return ((*c=n.U), q.U);
+    }
+/*
+    while 1:
+        y = y-1
+        n = p+(r<<y)
+        if l < n:
+            m = n-l
+            if m < r:
+                return ((q|(1<<y))-1, r-m)
+        else:
+            q |= 1<<y
+            m = l-n
+            if m < r:
+                return (q, m)
+            p = n
+        assert y >= 0
+*/  
+
+    do {
+        y--;
+        // n.U = p.U+(b<<y);
+        x.U = ((shllqu)(b, y));
+        n.U = ((addlqu)(p.U, x.U));
+        if (cltyqu(a, n.U)) // (a < n.U)
+        {
+            m.U = sublqu(n.U, a); // m.U = n.U-a;
+            if (cltyqu(m.U, b)) // (m.U < b)
+            {
+                // return  (q.U|((shllqu)(cvquwu(1),y)))-1;
+                x.U = cvquwu(1);
+                x.U = (shllqu)(x.U, y);
+                q.U = orrsqu(q.U, x.U);
+                *c = sublqu(b, m.U);
+                return  dcrlqu(q.U);
+            }
+        }
+        else
+        {
+            // q.U |= ((shllqu)(cvquwu(1),y));
+            x.U = ((shllqu)(cvquwu(1), y));
+            q.U = orrsqu(q.U, x.U);
+            m.U = sublqu(a, n.U); //m.U = a-n.U;
+            if (cltyqu(m.U, b)) // (m.U < b)
+                return ((*c=m.U), q.U);
+            p = n;
+        }
+
+    } while (y > 0);
+    
+/*
+    y = y+1
+    while a < (p:=b<<y):
+        y -= 1
+    n = a-p
+    if n < b:
+        return (1<<y, n)
+    q = 1<<y
+    while 1:
+        y = y-1
+        n = p+(b<<y)
+        if a < n:
+            m = n-a
+            if m < b:
+                return ((q|(1<<y))-1, b-m)
+        else:
+            q |= 1<<y
+            m = a-n
+            if m < b:
+                return (q, m)
+            p = n
+        assert y >= 0
+*/
+
+/*
+    b = b+1
+    while l < (p:=r<<b):
+        b -= 1
+    n = l-p
+    if n < r:
+        return (1<<b, n)
+    q = 1<<b
+    while 1:
+        b = b-1
+        n = p+(r<<b)
+        if l < n:
+            m = n-l
+            if m < r:
+                return ((q|(1<<b))-1, r-m)
+        else:
+            q |= 1<<b
+            m = l-n
+            if m < r:
+                return (q, m)
+            p = n
+        assert b >= 0
+*/
+    char stra[256], strb[256], *enda, *endb;
+    printf(
+        "infinite loop in %s:%d(%s, %s)", 
+        __func__,__LINE__,
+        safe_toadqu(oria.U, stra, &enda),
+        safe_toadqu(orib.U, strb, &endb)
+    );
+    //printf("infinite loop %s/%i\n", __func__,__LINE__);
+    return  INT32_CVQU(-1);
+#if 0
+    {
+    QUAD_TYPE a, b, n, p, q;
+
+    if (cleyqu(l, r)) 
+    {
+//  if l <= r, the quotient is (1 if l == r else 0)
+        p.Lo.U = 0, p.Hi.U = 0; // p = 0
+        q.Lo.U = 1, q.Hi.U = 0; // q = 1
+        return (ceqyqu(l, r)) ? ((*m=p.U), q.U) :((*m=q.U), p.U);
+    }
+
+    p.U = cszrqu(l);
+    q.U = cszrqu(r);
+//  b = l.bit_length()-r.bit_length()
+    b.U = cvquwu( ((128-p.W0.U)-(128-q.W0.U)) );
+
+//  if b == 1:
+    if ((b.Lo.U == 1) && (b.Hi.U == 0))
+    {
+        n.U = shllqu(r, 1);
+        if (ceqyqu(l, n.U))
+            return  ((*m=cvquwi(0)), cvquwi(2));
+
+        if (cltyqu(l, n.U))
+            return  ((*m=sublqu(l, r)), cvquwi(1));
+
+        p.U = sublqu(l, n.U);
+        if (cltyqu(p.U, r))
+            return ((*m=p.U), cvquwi(2));
+
+        return ((*m=sublqu(p.U, r)), cvquwi(3));
+    }
+
+    for (b.U=icrlqu(b.U);  ; b.U=dcrlqu(b.U))
+    {
+        p.U = (shllqu)(r, cvwiqu(b.U));
+        if (!cltyqu(l, p.U)) 
+            break;
+    }
+
+    n.U = sublqu(l, p.U);
+    q.U = ((shllqu)(cvquwi(1), cvwiqu(b.U)));
+
+    if (cltyqu(n.U, r))
+        return ((*m=n.U), q.U);
+
+    while (1) 
+    {
+        b.U =  dcrlqu(b.U);
+        n.U = (shllqu)(r, cvwiqu(b.U));
+        n.U =  addlqu(p.U, n.U);
+        if (cltlqu(l, n.U))
+        {
+            *m = sublqu(n.U, l);
+            if (cltlqu(*m, r))
+            {
+                *m = sublqu(r, *m);
+                p.U = (shllqu)(cvquwi(1), cvwiqu(b.U));
+                p.U = orrsqu(p.U, q.U);
+                return  dcrlqu(p.U);
+            }
+        }
+        else
+        {
+            q.U = orrsqu(q.U, ((shllqu)(cvquwi(1), cvwiqu(b.U))));
+            *m = sublqu(l, n.U);
+            if (cltyqu(*m, r))
+                return q.U;
+            p = n;
+        }
+        if (!zleyqi(b.I))
+            break;
+    }
+    printf("infinite loop %s:%n\n", __func__,__LINE__);
+    return  cvquwi(-1);
+    }
+#endif
+}
+
+INLINE(QUAD_ITYPE,modlqi) (QUAD_ITYPE a, QUAD_ITYPE b, QUAD_ITYPE c[1])
+{
+/*
+
++N/+D = +Q,+R
++N/-D = -Q,+R
+-N/+D = -Q,-R
+-N/-D = +Q,-R
+*/
+    QUAD_TYPE   x={.I=a}, y={.I=b}, q, r;
+    if (x.Hi.I < 0)
+    {
+        x.U = absuqi(x.I);
+        if (y.Hi.I < 0)
+        {
+            y.U = absuqi(y.I);
+            q.U = modlqu(x.U, y.U, &r.U);
+            return  ((*c=neglqi(r.I)), q.I);
+        }
+        else 
+        {
+            q.U = modlqu(x.U, y.U, &r.U);
+            return  ((*c=neglqi(r.I)), neglqi(q.I));
+        }
+    }
+    else
+    {
+        if (y.Hi.I < 0)
+        {
+            y.U = absuqi(y.I);
+            q.U = modlqu(x.U, y.U, ((QUAD_UTYPE *) c));
+            return  neglqi(q.I);
+        }
+        q.U = modlqu(x.U, y.U, ((QUAD_UTYPE *) c));
+        return q.I;
+    }
+}
+
+#endif
+
+INLINE(int, mydiv)(int a, int b, int *c)
+{
+/*  emulate C 'div' ish */
+    int n, d, q, r;
+    b = (int16_t) b;
+    if (a < 0)
+    {
+        n = -a;
+        if (b < 1)
+        {
+            d = 0-b;
+            return ((*c=0-(n%d)), (n/d));
+        }
+        q = 0-(n/b);
+    }
+    else {
+        if (b < 1)
+        {
+            d = 0-b;
+            q = 0-(a/d);
+        }
+        else
+        {
+            q = a/b;
+        }
+    }
+    r = b*q;
+    return ((*c=a-r), q);
+}
+
 #if 0 // _LEAVE_ALL_MODL
 }
 #endif
 
-#if 0 // _ENTER_ALL_MOD2
+#if 0 // _ENTER_ALL_MODN
 {
 #endif
 
-INLINE( uint8_t, USHRT_MOD2) (unsigned a, unsigned b) 
+INLINE(schar, UCHAR_MODN) (unsigned a, signed b, void *c)
+{
+    a = SCHAR_MAX&a;
+    int q = (b < 0) ? ~(a/(0U-b)) : (a/b);
+    a -= q*b;
+    return  (a == b) ? ((*(schar *) c=0), q+1) : ((*(schar *) c=a), q);
+}
+
+INLINE(schar, SCHAR_MODN)   (signed a, signed b, void *c)
+{
+    signed q;
+    a = (schar) a;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    }
+    else
+    {
+        unsigned n = SCHAR_ABSU(a);
+        q = (b < 0) ? (n/(0U-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a == b) ? ((*(schar *) c=0), q+1) : ((*(schar *) c=a), q);
+}
+
+INLINE(schar,  CHAR_MODN)      (int a,    int b, void *c) 
+{
+#if CHAR_MIN
+    return  SCHAR_MODN(a, b, c);
+#else
+    return  UCHAR_MODN(a, b, c);
+#endif
+}
+
+INLINE(short, USHRT_MODN) (unsigned a, signed b, short c[1])
+{
+    a = SHRT_MAX&a;
+    int q = (b < 0) ? ~(a/(0U-b)) : (a/b);
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+INLINE(short,  SHRT_MODN)   (signed a, signed b, short c[1])
+{
+    signed q;
+    a = (short) a;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    }
+    else
+    {
+        unsigned n = SHRT_ABSU(a);
+        q = (b < 0) ? (n/(0U-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+INLINE(  int,  UINT_MODN)     (uint a,    int b,   int c[1])
+{
+    int q = (b < 0) ? ~(a/(0U-b)) : (a/b);
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+INLINE(  int,   INT_MODN)      (int a,    int b,   int c[1])
+{
+    int q;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    }
+    else
+    {
+        uint n = INT_ABSU(a);
+        q = (b < 0) ? (n/(0U-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+INLINE( long, ULONG_MODN)    (ulong a,   long b,  long c[1])
+{
+    long q = (b < 0) ? ~(a/(0UL-b)) : (a/b);
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+INLINE( long,  LONG_MODN)     (long a,   long b,  long c[1])
+{
+    long q;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0UL-b)) : ((ulong) a/b);
+    }
+    else
+    {
+        ulong n = LONG_ABSU(a);
+        q = (b < 0) ? (n/(0UL-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+INLINE(llong,ULLONG_MODN)   (ullong a,  llong b,  llong c[1])
+{
+    long q = (b < 0) ? ~(a/(0UL-b)) : (a/b);
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+INLINE(llong, LLONG_MODN)    (llong a,  llong b,  llong c[1])
+{
+    long q;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0UL-b)) : ((ulong) a/b);
+    }
+    else
+    {
+        ulong n = LONG_ABSU(a);
+        q = (b < 0) ? (n/(0UL-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a == b) ? ((*c=0), q+1) : ((*c=a), q);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_ITYPE, modnqi) (QUAD_ITYPE a, QUAD_ITYPE b, QUAD_ITYPE c[1])
+{
+#if defined(__SIZEOF_INT128__)
+    QUAD_TYPE  q;
+    if (zltyqi(a))
+    {
+        q.U = (zgtyqi(b))
+        //?   ~((QUAD_UTYPE) a/((QUAD_UTYPE) 0-b)) 
+        ?   invsqu( divlqu(asquqi(a), absuqi(b)) )
+        //:   (((QUAD_UTYPE) a/((QUAD_UTYPE)   b)))
+        :   divlqu(asquqi(a), asquqi(b))
+        ;
+    }
+    else
+    {
+        QUAD_UTYPE  n = absuqi(a);
+        q.U = (zgtyqi(b))
+        //?   ((n/((QUAD_UTYPE) 0-b)))
+        ?   divlqu(n, absuqi(b))
+        //:   ~(n/(QUAD_UTYPE)   b)
+        :   invsqu(divlqu(n, asquqi(b)))
+        ;
+    }
+    //a -= q.I*b;
+    a = fsmlqi(a, q.I, b);
+    if (a == b)
+        return  ((*c=0), (q.I+1));
+    else
+        return  ((*c=a), q.I);
+
+#else
+    QUAD_TYPE x={.U=absuqi(a)}, y={.U=absuqi(b)}, q, r;
+    q.U = modlqu(x.U, y.U, &r.U);
+    if (zgtyqi(a))
+    {
+        if (zgtyqi(b))
+            q.U = invsqu(q.U);
+    }
+    else
+    {
+        if (!zgtyqi(b))
+            q.U = invsqu(q.U);
+    }
+    a = fsmlqi(a, q.I, b);
+    if (ceqyqi(a, b))
+    {
+        return  ((*c=cvqiwu(0)), icrlqi(q.I));
+    }
+    else
+    {
+        return  ((*c=a), q.I);
+    }
+#endif
+
+}
+
+INLINE(QUAD_ITYPE, modnqu) (QUAD_UTYPE a, QUAD_ITYPE b, QUAD_ITYPE c[1])
+{
+    return  modnqi(asqiqu(a), b, c);
+}
+#endif
+
+#if 0 // _LEAVE_ALL_MODN
+}
+#endif
+
+#if 0 // _ENTER_ALL_REML
+{
+#endif
+
+INLINE( uchar, UCHAR_REML) (unsigned a, unsigned b) {return (uchar) a%b;}
+INLINE( schar, SCHAR_REML)   (signed a,   signed b) {return (schar) a%b;}
+INLINE(  char,  CHAR_REML)      (int a,      int b) {return (char) a%b;}
+INLINE(ushort, USHRT_REML) (unsigned a, unsigned b) {return (ushort) a%b;}
+INLINE( short,  SHRT_REML)   (signed a,   signed b) {return (short) a%b;}
+INLINE(  uint,  UINT_REML)     (uint a,     uint b) {return a%b;}
+INLINE(   int,   INT_REML)      (int a,      int b) {return a%b;}
+INLINE( ulong, ULONG_REML)    (ulong a,    ulong b) {return a%b;}
+INLINE(  long,  LONG_REML)     (long a,     long b) {return a%b;}
+INLINE(ullong,ULLONG_REML)   (ullong a,   ullong b) {return a%b;}
+INLINE( llong, LLONG_REML)    (llong a,    llong b) {return a%b;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,remlqu) (QUAD_UTYPE a, QUAD_UTYPE b) 
+{
+    QUAD_UTYPE c;
+    (void) modlqu(a, b, &c);
+    return c;
+}
+
+INLINE(QUAD_ITYPE,remlqi) (QUAD_ITYPE a, QUAD_ITYPE b) 
+{
+    QUAD_ITYPE c;
+    (void) modlqi(a, b, &c);
+    return c;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_REML
+}
+#endif
+
+#if 0 // _ENTER_ALL_REMN
+{
+#endif
+
+INLINE(schar, UCHAR_REMN) (unsigned a, signed b)
+{
+    a = (uchar) a;
+    int q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE(schar, SCHAR_REMN)   (signed a, signed b)
+{
+    signed q;
+    a = (schar) a;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    }
+    else
+    {
+        unsigned n = SCHAR_ABSU(a);
+        q = (b < 0) ? (n/(0U-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE( char,  CHAR_REMN)      (int a, signed b) 
+{
+#if CHAR_MIN
+    return  SCHAR_REMN(a, b);
+#else
+    return  UCHAR_REMN(a, b);
+#endif
+}
+
+INLINE(short, USHRT_REMN) (unsigned a, signed b)
+{
+    a = (ushort) a;
+    int q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE(short,  SHRT_REMN)   (signed a, signed b)
+{
+    signed q;
+    a = (short) a;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    }
+    else
+    {
+        unsigned n = SHRT_ABSU(a);
+        q = (b < 0) ? (n/(0U-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return (a==b) ? 0 : a;
+}
+
+INLINE(  int,  UINT_REMN)     (uint a,    int b)
+{
+    int q = (b < 0) ? ~(a/(0U-b)) : ((unsigned) a/b);
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE(  int,   INT_REMN)      (int a,    int b)
+{
+    int q;
+    if (a >= 0)
+    {
+        q = (b < 0) ? ~(a/(0U-b)) : ((uint) a/b);
+    }
+    else
+    {
+        uint n = INT_ABSU(a);
+        q = (b < 0) ? (n/INT_ABSU(b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE( long, ULONG_REMN)    (ulong a,   long b)
+{
+    long q = (b < 0L) ? ~(a/(0UL-b)) : ((ulong) a/b);
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE( long,  LONG_REMN)     (long a,   long b)
+{
+    long q;
+    if (a >= 0L)
+    {
+        q = (b < 0L) ? ~(a/(0UL-b)) : ((ulong) a/b);
+    }
+    else
+    {
+        ulong n = LONG_ABSU(a);
+        q = (b < 0L) ? (n/(0UL-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE(llong,ULLONG_REMN)   (ullong a,  llong b)
+{
+    llong q = (b < 0LL) ? ~(a/(0ULL-b)) : ((ullong) a/b);
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+INLINE(llong, LLONG_REMN)    (llong a,  llong b)
+{
+    llong q;
+    if (a >= 0LL)
+    {
+        q = (b < 0LL) ? ~(a/(0ULL-b)) : ((ullong) a/b);
+    }
+    else
+    {
+        ullong n = LLONG_ABSU(a);
+        q = (b < 0LL) ? (n/(0ULL-b)) : ~(n/b);
+    }
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_ITYPE, remnqu) (QUAD_UTYPE a, QUAD_ITYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    QUAD_ITYPE q = (b < 0) ? ~((QUAD_ITYPE) a/b) : (a/b);
+    a -= q*b;
+    return  (a==b) ? 0 : a;
+#endif
+}
+
+INLINE(QUAD_ITYPE, remnqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+#ifdef _MSC_VER
+    QUAD_TYPE m;
+#endif
+
+    QUAD_TYPE q, n={.I=a}, d={.I=b};
+
+    if (n.Hi.I < 0)
+    {
+        n.U = absuqi(n.I);
+
+        if (d.Hi.I < 0)
+        {
+            d.U = absuqi(d.I);
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Lo.U = 0;
+#elif 1
+            q.U = n.U/d.U;
+#endif
+        }
+
+        else
+        {
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Lo.U = ~q.Lo.U;
+            q.Hi.U = -1;
+#elif 1
+            q.U = ~(n.U/d.U);
+#endif
+
+        }
+    }
+
+    else
+    {
+        if (d.Hi.I < 0)
+        {
+            d.U = absuqi(d.I);
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Lo.U = ~q.Lo.U;
+            q.Hi.U = -1;
+#elif 1
+            q.U = ~(n.U/d.U);
+#endif
+
+        }
+
+        else
+        {
+#if defined(_MSC_VER)
+            q.Lo.U = _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &m.Lo.U);
+            q.Hi.U = 0;
+#elif 1
+            q.U = n.U/d.U;
+#endif
+
+        }
+    }
+    a = fsmlqi(a, b, q.I);
+    return ceqyqi(a, b) ? icrlqi(q.I) : q.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_REMN
+}
+#endif
+
+#if 0 // _ENTER_ALL_REM2
+{
+#endif
+
+INLINE( uint8_t, USHRT_REM2) (unsigned a, unsigned b) 
 {
     return  (ushort) a%(uint8_t) b;
 }
 
-INLINE(  int8_t,  SHRT_MOD2)   (signed a,   signed b) 
+INLINE(  int8_t,  SHRT_REM2)   (signed a,   signed b) 
 {
     return  (short) a%(int8_t) b;
 }
 
-INLINE(uint16_t,  UINT_MOD2)     (uint a, unsigned b) 
+INLINE(uint16_t,  UINT_REM2)     (uint a, unsigned b) 
 {
     return  a%(uint16_t) b;
 }
 
-INLINE( int16_t,   INT_MOD2)      (int a,   signed b) 
+INLINE( int16_t,   INT_REM2)      (int a,     int b) 
 {
     return  a%(int16_t) b;
 }
@@ -6276,83 +11177,173 @@ INLINE( int16_t,   INT_MOD2)      (int a,   signed b)
 
 #if DWRD_NLONG == 2
 
-INLINE(uint16_t, ULONG_MOD2)    (ulong a, unsigned b) 
+INLINE(uint16_t, ULONG_REM2)    (ulong a, ulong b) 
 {
-    return  a%(uint16_t) b;
+    return  UINT_REM2(a, b);
 }
 
-INLINE( int16_t,  LONG_MOD2)     (long a,   signed b) 
+INLINE( int16_t,  LONG_REM2)     (long a,   long b) 
 {
-    return  a%(int16_t) b;
+    return  INT_REM2(a, b);
 }
 
 #else
 
-INLINE(uint32_t, ULONG_MOD2)    (ulong a, uint32_t b) 
+INLINE(uint32_t, ULONG_REM2)    (ulong a, ulong b) 
 {
-    return  a%b;
+    return  a%(uint32_t) b;
 }
 
-INLINE( int32_t,  LONG_MOD2)     (long a,  int32_t b) 
+INLINE( int32_t,  LONG_REM2)     (long a,  long b) 
 {
-    return  a%b;
+    return  a%(int32_t) b;
 }
 
 #endif
 
 #if QUAD_NLLONG == 2
 
-INLINE(uint32_t,ULLONG_MOD2)   (ullong a, uint32_t b) 
+INLINE(uint32_t,ULLONG_REM2)   (ullong a, ullong b) 
 {
-    return a%b;
+    return  a%(uint32_t) b;
 }
 
-INLINE( int32_t, LLONG_MOD2)    (llong a,  int32_t b) 
+INLINE( int32_t, LLONG_REM2)    (llong a,  llong b) 
 {
-    return a%b;
+    return a%(int32_t) b;
+}
+
+INLINE(uint64_t,rem2qu) (QUAD_UTYPE a, QUAD_UTYPE b) 
+{
+    QUAD_TYPE   n={.U=a}, d={.U=b}, r;
+#if defined(_MSC_VER)
+    (void) _udiv128(n.Hi.U, n.Lo.U, d.Lo.U, &r.Lo.U);
+#else
+    (void) modlqu(a, b, &r.U);
+#endif
+    return  r.Lo.U;
+}
+
+INLINE( int64_t,rem2qi) (QUAD_ITYPE a,  QUAD_ITYPE b) 
+{
+    QUAD_TYPE   n={.I=a}, d={.I=b}, r;
+#if defined(_MSC_VER)
+    (void) _div128(n.Hi.I, n.Lo.I, d.Lo.I, &r.Lo.I);
+#else
+    (void) modlqi(a, b, &r.I);
+#endif
+    return  r.Lo.I;
+}
+
+#else
+
+INLINE(uint64_t,ULLONG_REM2)   (ullong a, ullong b) 
+{
+    return  a%(uint64_t) b;
+}
+
+INLINE( int64_t, LLONG_REM2)    (llong a,  ullong b) 
+{
+    return  a%(int64_t) b;
 }
 
 #endif
 
-#if 0 // _LEAVE_ALL_MOD2
+#if 0 // _LEAVE_ALL_REM2
 }
 #endif
 
-#if 0 // _ENTER_ALL_MAXL
+#if 0 // _ENTER_ALL_CLTR
 {
 #endif
 
-INLINE(void *,  ADDR_MAXL) 
-(
-    void const *a,
-    void const *b
-)
+INLINE(void *,  ADDR_CLTR) (void const *a, void const *b)
 {
-    return  (void *)(a < b ? b : a);
+    return  (void *)((a < b) ? b : a);
 }
 
-INLINE( _Bool,  BOOL_MAXL)    (_Bool a,    _Bool b) {return a|b;}
-INLINE( uchar, UCHAR_MAXL) (unsigned a, unsigned b) {return a < b ? b : a;}
-INLINE( schar, SCHAR_MAXL)   (signed a,   signed b) {return a < b ? b : a;}
-INLINE(  char,  CHAR_MAXL)      (int a,      int b) {return a < b ? b : a;}
-INLINE(ushort, USHRT_MAXL) (unsigned a, unsigned b) {return a < b ? b : a;}
-INLINE( short,  SHRT_MAXL)   (signed a,   signed b) {return a < b ? b : a;}
-INLINE(  uint,  UINT_MAXL)     (uint a,     uint b) {return a < b ? b : a;}
-INLINE(   int,   INT_MAXL)      (int a,      int b) {return a < b ? b : a;}
-INLINE( ulong, ULONG_MAXL)    (ulong a,    ulong b) {return a < b ? b : a;}
-INLINE(  long,  LONG_MAXL)     (long a,     long b) {return a < b ? b : a;}
-INLINE(ullong,ULLONG_MAXL)   (ullong a,   ullong b) {return a < b ? b : a;}
-INLINE( llong, LLONG_MAXL)    (llong a,    llong b) {return a < b ? b : a;}
+INLINE( _Bool,  BOOL_CLTR)    (_Bool a,    _Bool b) {return a|b;}
+INLINE( uchar, UCHAR_CLTR) (unsigned a, unsigned b) 
+{
+    a=(uchar) a, b=(uchar) b;
+    return  (a < b) ? b : a;
+}
 
-#if 0 // _LEAVE_ALL_MAXL
+INLINE( schar, SCHAR_CLTR)   (signed a,   signed b) 
+{
+    a=(schar) a, b=(schar) b;
+    return  (a < b) ? b : a;
+}
+
+INLINE(  char,  CHAR_CLTR)      (int a,      int b) 
+{
+    a=(char) a, b=(char) b;
+    return  (a < b) ? b : a;
+}
+
+INLINE(ushort, USHRT_CLTR) (unsigned a, unsigned b) 
+{
+    a=(ushort) a, b=(ushort) b;
+    return  (a < b) ? b : a;
+}
+
+INLINE( short,  SHRT_CLTR)   (signed a,   signed b) 
+{
+    a=(short) a, b=(short) b;
+    return  (a < b) ? b : a;
+}
+
+INLINE(  uint,  UINT_CLTR)     (uint a,     uint b) {return a < b ? b : a;}
+INLINE(   int,   INT_CLTR)      (int a,      int b) {return a < b ? b : a;}
+INLINE( ulong, ULONG_CLTR)    (ulong a,    ulong b) {return a < b ? b : a;}
+INLINE(  long,  LONG_CLTR)     (long a,     long b) {return a < b ? b : a;}
+INLINE(ullong,ULLONG_CLTR)   (ullong a,   ullong b) {return a < b ? b : a;}
+INLINE( llong, LLONG_CLTR)    (llong a,    llong b) {return a < b ? b : a;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,cltrqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE x={.U=a}, y={.U=b};
+    if (x.Hi.U < y.Hi.U)
+        return  b;
+    if (x.Hi.U > y.Hi.U)
+        return  a;
+    if (x.Lo.U < y.Lo.U)
+        return  b;
+    return  a;
+}
+
+INLINE(QUAD_ITYPE,cltrqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE x={.I=a}, y={.I=b};
+    if (x.Hi.I < y.Hi.I)
+        return  b;
+    if (x.Hi.I > y.Hi.I)
+        return  a;
+    if (x.Lo.I < y.Lo.I)
+        return  a;
+    return  b;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CLTR
 }
 #endif
 
-#if 0 // _ENTER_ALL_MINL
+#if 0 // _ENTER_ALL_CGTR
 {
 #endif
 
-INLINE(void *,  ADDR_MINL) 
+/*  cgtr(8, 9)  (8, 9)[8 > 9] => 8
+    cgtr(9, 8)  (9, 8)[9 > 8] => 8
+    
+    
+    !(1 > 0) ? 0
+    
+*/
+INLINE(void *,  ADDR_CGTR) 
 (
     void const *a,
     void const *b
@@ -6361,19 +11352,851 @@ INLINE(void *,  ADDR_MINL)
     return  (void *)(a > b ? b : a);
 }
 
-INLINE( _Bool,  BOOL_MINL)    (_Bool a,    _Bool b) {return a&b;}
-INLINE( uchar, UCHAR_MINL) (unsigned a, unsigned b) {return a > b ? b : a;}
-INLINE( schar, SCHAR_MINL)   (signed a,   signed b) {return a > b ? b : a;}
-INLINE(  char,  CHAR_MINL)      (int a,      int b) {return a > b ? b : a;}
-INLINE(ushort, USHRT_MINL) (unsigned a, unsigned b) {return a > b ? b : a;}
-INLINE( short,  SHRT_MINL)   (signed a,   signed b) {return a > b ? b : a;}
-INLINE(  uint,  UINT_MINL)     (uint a,     uint b) {return a > b ? b : a;}
-INLINE(   int,   INT_MINL)      (int a,      int b) {return a > b ? b : a;}
-INLINE( ulong, ULONG_MINL)    (ulong a,    ulong b) {return a > b ? b : a;}
-INLINE(  long,  LONG_MINL)     (long a,     long b) {return a > b ? b : a;}
-INLINE(ullong,ULLONG_MINL)   (ullong a,   ullong b) {return a > b ? b : a;}
-INLINE( llong, LLONG_MINL)    (llong a,    llong b) {return a > b ? b : a;}
+INLINE( _Bool,  BOOL_CGTR)    (_Bool a,    _Bool b) {return a&b;}
+INLINE( uchar, UCHAR_CGTR) (unsigned a, unsigned b) 
+{
+    a = (uchar) a;
+    b = (uchar) b;
+    return  (a>b) ? b : a;
+}
 
-#if 0 // _LEAVE_ALL_MINL
+INLINE( schar, SCHAR_CGTR)   (signed a,   signed b) 
+{
+    a = (schar) a;
+    b = (schar) b;
+    return  (a>b) ? b : a;
+}
+
+INLINE(  char,  CHAR_CGTR)      (int a,      int b) 
+{
+    a = (char) a;
+    b = (char) b;
+    return  (a>b) ? b : a;
+}
+
+INLINE(ushort, USHRT_CGTR) (unsigned a, unsigned b) 
+{
+    a = (ushort) a;
+    b = (ushort) b;
+    return  (a>b) ? b : a;
+}
+
+INLINE( short,  SHRT_CGTR)   (signed a,   signed b) 
+{
+    a = (short) a;
+    b = (short) b;
+    return  (a>b) ? b : a;
+}
+
+INLINE(  uint,  UINT_CGTR)     (uint a,     uint b) {return (a>b) ? b : a;}
+INLINE(   int,   INT_CGTR)      (int a,      int b) {return (a>b) ? b : a;}
+INLINE( ulong, ULONG_CGTR)    (ulong a,    ulong b) {return (a>b) ? b : a;}
+INLINE(  long,  LONG_CGTR)     (long a,     long b) {return (a>b) ? b : a;}
+INLINE(ullong,ULLONG_CGTR)   (ullong a,   ullong b) {return (a>b) ? b : a;}
+INLINE( llong, LLONG_CGTR)    (llong a,    llong b) {return (a>b) ? b : a;}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,cgtrqu) (QUAD_UTYPE a, QUAD_UTYPE b)
+{
+    QUAD_TYPE x={.U=a}, y={.U=b};
+    if (x.Hi.U > y.Hi.U)
+        return  b;
+    if (x.Hi.U < y.Hi.U)
+        return  a;
+    if (x.Lo.U > y.Lo.U)
+        return  b;
+    return  a;
+}
+
+INLINE(QUAD_ITYPE,cgtrqi) (QUAD_ITYPE a, QUAD_ITYPE b)
+{
+    QUAD_TYPE x={.I=a}, y={.I=b};
+    if (x.Hi.I > y.Hi.I)
+        return  b;
+    if (x.Hi.I < y.Hi.I)
+        return  a;
+    if (x.Lo.I > y.Lo.I)
+        return  a;
+    return  b;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_CGTR
 }
 #endif
+
+#if 0 // _ENTER_ALL_ZIPP
+{
+#endif
+
+INLINE(uint16_t, UCHAR_ZIPP) (unsigned a, unsigned b)
+{
+    a = (uchar) a;
+    a = 0x0f0f&(a|(a<<4));
+    a = 0x3333&(a|(a<<2));
+    a = 0x5555&(a|(a<<1));
+
+    b = (uchar) b;
+    b = 0x0f0f&(b|(b<<4));
+    b = 0x3333&(b|(b<<2));
+    b = 0x5555&(b|(b<<1));
+
+    return a|(b<<1);
+}
+
+INLINE(uint16_t, CHAR_ZIPP) (int a, int b)
+{
+    return  UCHAR_ZIPP(a, b);
+}
+
+INLINE(uint32_t, USHRT_ZIPP) (unsigned a, unsigned b)
+{
+    a = (ushort) a;
+    a = UINT32_C(0x00ff00ff)&(a|(a<<8));
+    a = UINT32_C(0x0f0f0f0f)&(a|(a<<4));
+    a = UINT32_C(0x33333333)&(a|(a<<2));
+    a = UINT32_C(0x55555555)&(a|(a<<1));
+
+    b = (ushort) b;
+    b = UINT32_C(0x00ff00ff)&(b|(b<<8));
+    b = UINT32_C(0x0f0f0f0f)&(b|(b<<4));
+    b = UINT32_C(0x33333333)&(b|(b<<2));
+    b = UINT32_C(0x55555555)&(b|(b<<1));
+
+    return a|(b<<1);
+}
+
+INLINE(uint64_t, UINT_ZIPP) (uint a, uint b)
+{
+    uint64_t x = a;
+    x = UINT64_C(0x0000ffff0000ffff)&(x|(x<<16));
+    x = UINT64_C(0x00ff00ff00ff00ff)&(x|(x<<8));
+    x = UINT64_C(0x0f0f0f0f0f0f0f0f)&(x|(x<<4));
+    x = UINT64_C(0x3333333333333333)&(x|(x<<2));
+    x = UINT64_C(0x5555555555555555)&(x|(x<<1));
+
+    uint64_t y = b;
+    y = UINT64_C(0x0000ffff0000ffff)&(y|(y<<16));
+    y = UINT64_C(0x00ff00ff00ff00ff)&(y|(y<<8));
+    y = UINT64_C(0x0f0f0f0f0f0f0f0f)&(y|(y<<4));
+    y = UINT64_C(0x3333333333333333)&(y|(y<<2));
+    y = UINT64_C(0x5555555555555555)&(y|(y<<1));
+
+    return  x|(y<<1);
+}
+
+#if DWRD_NLONG == 2
+
+INLINE(uint64_t, ULONG_ZIPP) (ulong a, ulong b)
+{
+    return  UINT_ZIPP(a, b);
+}
+
+#else
+
+INLINE(QUAD_UTYPE, ULONG_ZIPP) (ulong a, ulong b)
+{
+    QUAD_TYPE   q;
+    q.Lo.U = UINT_ZIPP(a, b);
+    q.Hi.U = UINT_ZIPP((a>>32), (b>>32));
+    return  q.U;
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE, ULLONG_ZIPP) (ullong a, ullong b)
+{
+    QUAD_TYPE   q;
+    q.Lo.U = UINT_ZIPP(a, b);
+    q.Hi.U = UINT_ZIPP((a>>32), (b>>32));
+    return  q.U;
+}
+#endif
+
+#if 0 // _LEAVE_ALL_ZIPP
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_XRDZ
+{
+#endif
+
+INLINE(  uint16_t, UCHAR_XRDZ) (unsigned x) {return (uchar) x;}
+INLINE(   int16_t, SCHAR_XRDZ)   (signed x) {return (uchar) x;}
+#if CHAR_MIN
+INLINE(   int16_t,  CHAR_XRDZ)      (int x) {return (uchar) x;}
+#else
+INLINE(  uint16_t,  CHAR_XRDZ)      (int x) {return (uchar) x;}
+#endif
+
+INLINE(  uint32_t, USHRT_XRDZ) (unsigned x) {return (ushort) x;}
+INLINE(   int32_t,  SHRT_XRDZ)   (signed x) {return (ushort) x;}
+INLINE(  uint64_t,  UINT_XRDZ)     (uint x) {return x;}
+INLINE(   int64_t,   INT_XRDZ)      (int x) {return  (uint) x;}
+
+#if DWRD_NLONG == 2
+INLINE(  uint64_t, ULONG_XRDZ)    (ulong x) {return x;}
+INLINE(   int64_t,  LONG_XRDZ)     (long x) {return (uint64_t) x;}
+#else
+
+INLINE(QUAD_UTYPE, ULONG_XRDZ)    (ulong x) 
+{
+    QUAD_TYPE z={.Lo.U=x};
+    return  z.U;
+}
+INLINE(QUAD_ITYPE,  LONG_XRDZ)     (long x) 
+{
+    QUAD_TYPE z={.Lo.U=x};
+    return  z.I;
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,ULLONG_XRDZ)   (ullong x) 
+{
+    QUAD_TYPE z={.Lo.U=x};
+    return  z.U;
+}
+
+INLINE(QUAD_ITYPE, LLONG_XRDZ)    (llong x) 
+{
+    QUAD_TYPE z={.Lo.U=x};
+    return  z.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_XRDZ
+}
+#endif
+
+#if 0 // _ENTER_ALL_XRDS
+{
+#endif
+
+INLINE(  uint16_t, UCHAR_XRDS) (unsigned x) {return (schar) x;}
+INLINE(   int16_t, SCHAR_XRDS)   (signed x) {return (schar) x;}
+#if CHAR_MIN
+INLINE(   int16_t,  CHAR_XRDS)      (int x) {return (schar) x;}
+#else
+INLINE(  uint16_t,  CHAR_XRDS)      (int x) {return (schar) x;}
+#endif
+
+INLINE(  uint32_t, USHRT_XRDS) (unsigned x) {return (short) x;}
+INLINE(   int32_t,  SHRT_XRDS)   (signed x) {return (short) x;}
+INLINE(  uint64_t,  UINT_XRDS)     (uint x) {return   (int) x;}
+INLINE(   int64_t,   INT_XRDS)      (int x) {return x;}
+
+#if DWRD_NLONG == 2
+INLINE(  uint64_t, ULONG_XRDS)    (ulong x) {return (int32_t) x;}
+INLINE(   int64_t,  LONG_XRDS)     (long x) {return x;}
+#else
+
+INLINE(QUAD_UTYPE, ULONG_XRDS)    (ulong x) 
+{
+    QUAD_TYPE z={.Lo.I=x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.U;
+}
+INLINE(QUAD_ITYPE,  LONG_XRDS)     (long x) 
+{
+    QUAD_TYPE z={.Lo.I=x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.I;
+}
+
+#endif
+
+#if QUAD_NLLONG == 2
+INLINE(QUAD_UTYPE,ULLONG_XRDS)   (ullong x) 
+{
+    QUAD_TYPE z={.Lo.I=x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.U;
+}
+INLINE(QUAD_ITYPE, LLONG_XRDS)    (llong x) 
+{
+    QUAD_TYPE z={.Lo.I=x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.I;
+}
+#endif
+
+#if 0 // _LEAVE_ALL_XRDS
+}
+#endif
+
+#if 0 // _ENTER_ALL_XRQZ
+{
+#endif
+
+INLINE(  uint32_t, UCHAR_XRQZ) (unsigned x) {return (uchar) x;}
+INLINE(   int32_t, SCHAR_XRQZ)   (signed x) {return (uchar) x;}
+#if CHAR_MIN
+INLINE(   int32_t,  CHAR_XRQZ)      (int x) {return (uchar) x;}
+#else
+INLINE(  uint32_t,  CHAR_XRQZ)      (int x) {return (uchar) x;}
+#endif
+
+INLINE(  uint64_t, USHRT_XRQZ) (unsigned x) {return (ushort) x;}
+INLINE(   int64_t,  SHRT_XRQZ)   (signed x) {return (ushort) x;}
+
+INLINE(QUAD_UTYPE,  UINT_XRQZ)     (uint x) 
+{
+    QUAD_TYPE z = {.W0.U=x};
+    return  z.U;
+}
+
+INLINE(QUAD_ITYPE,   INT_XRQZ)      (int x) 
+{
+    QUAD_TYPE z = {.W0.U=x};
+    return  z.I;
+}
+
+#if DWRD_NLONG == 2
+INLINE(QUAD_UTYPE,  ULONG_XRQZ)     (ulong x) 
+{
+    QUAD_TYPE z = {.W0.U=x};
+    return  z.U;
+}
+
+INLINE(QUAD_ITYPE,   LONG_XRQZ)      (long x) 
+{
+    QUAD_TYPE z = {.W0.U=x};
+    return  z.I;
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_XRQZ
+}
+#endif
+
+#if 0 // _ENTER_ALL_XRQS
+{
+#endif
+
+INLINE(  uint32_t, UCHAR_XRQS) (unsigned x) {return (schar) x;}
+INLINE(   int32_t, SCHAR_XRQS)   (signed x) {return (schar) x;}
+#if CHAR_MIN
+INLINE(   int32_t,  CHAR_XRQS)      (int x) {return (schar) x;}
+#else
+INLINE(  uint32_t,  CHAR_XRQS)      (int x) {return (schar) x;}
+#endif
+
+INLINE(  uint64_t, USHRT_XRQS) (unsigned x) {return (short) x;}
+INLINE(   int64_t,  SHRT_XRQS)   (signed x) {return (short) x;}
+INLINE(QUAD_UTYPE,  UINT_XRQS)     (uint x) 
+{
+    QUAD_TYPE z = {.Lo.I=(int) x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.U;
+}
+
+INLINE(QUAD_ITYPE,   INT_XRQS)      (int x) 
+{
+    QUAD_TYPE z = {.Lo.I=x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.I;
+}
+
+#if DWRD_NLONG == 2
+INLINE(QUAD_UTYPE, ULONG_XRQS)    (ulong x) {return UINT_XRQS(x);}
+INLINE(QUAD_ITYPE,  LONG_XRQS)     (long x) {return  INT_XRQS(x);}
+#endif
+
+#if 0 // _LEAVE_ALL_XRQS
+}
+#endif
+
+
+#if 0 // _ENTER_ALL_XROZ
+{
+#endif
+INLINE(   uint8_t, BOOL_XROZ)    (_Bool x) {return x;}
+INLINE(  uint64_t,UCHAR_XROZ) (unsigned x) {return (uchar) x;}
+INLINE(   int64_t,SCHAR_XROZ)   (signed x) {return (uchar) x;}
+#if CHAR_MIN
+INLINE(   int64_t, CHAR_XROZ)      (int x) {return (uchar) x;}
+#else
+INLINE(  uint64_t, CHAR_XROZ)      (int x) {return (uchar) x;}
+#endif
+
+INLINE(QUAD_UTYPE,USHRT_XROZ) (unsigned x) 
+{
+    QUAD_TYPE z = {.H0.U=x};
+    return  z.U;
+}
+
+INLINE(QUAD_ITYPE, SHRT_XROZ)   (signed x) 
+{
+    QUAD_TYPE z = {.H0.U=x};
+    return  z.I;
+}
+
+#if 0 // _LEAVE_ALL_XROZ
+}
+#endif
+
+#if 0 // _ENTER_ALL_XROS
+{
+#endif
+
+INLINE(   uint8_t, BOOL_XROS)    (_Bool x) {return 0-x;}
+INLINE(  uint64_t,UCHAR_XROS) (unsigned x) {return (schar) x;}
+INLINE(   int64_t,SCHAR_XROS)   (signed x) {return (schar) x;}
+#if CHAR_MIN
+INLINE(   int64_t, CHAR_XROS)      (int x) {return (schar) x;}
+#else
+INLINE(  uint64_t, CHAR_XROS)      (int x) {return (schar) x;}
+#endif
+
+INLINE(QUAD_UTYPE,USHRT_XROS) (unsigned x) 
+{
+    QUAD_TYPE z = {.Lo.I=(short) x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.U;
+}
+
+INLINE(QUAD_ITYPE, SHRT_XROS)  (signed x) 
+{
+    QUAD_TYPE z = {.Lo.I=(short) x};
+    z.Hi.I = z.Lo.I>>63;
+    return  z.I;
+}
+
+#if 0 // _LEAVE_ALL_XROS
+}
+#endif
+
+#if 0 // _ENTER_ALL_AVGL
+{
+#endif
+/*  average (round by truncation)
+
+    -1.5 => -1
+    -0.5 => -0
+    +0.5 => +0
+    +1.5 => +1
+*/
+
+INLINE( uchar, UCHAR_AVGL) (unsigned a, unsigned b) 
+{
+#define     UCHAR_AVGL(...) MY_BINOP(UCHAR_AVGL,__VA_ARGS__,0)
+    return  ((uchar) a+(uchar) b)>>1;
+}
+
+INLINE( schar, SCHAR_AVGL)   (signed a,   signed b) 
+{
+#define     SCHAR_AVGL(...) MY_BINOP(SCHAR_AVGL,__VA_ARGS__,0)
+    return  ((schar) a+(schar) b)/2;
+}
+
+INLINE(  char,  CHAR_AVGL)      (int a,      int b) 
+{
+#define     CHAR_AVGL(...) MY_BINOP(CHAR_AVGL,__VA_ARGS__,0)
+#if CHAR_MIN
+    return  SCHAR_AVGL(a, b);
+#else
+    return  UCHAR_AVGL(a, b);
+#endif
+}
+
+INLINE(ushort, USHRT_AVGL) (unsigned a, unsigned b) 
+{
+#define     USHRT_AVGL(...) MY_BINOP(USHRT_AVGL,__VA_ARGS__,0)
+    return  ((ushort) a+(ushort) b)>>1;
+}
+
+INLINE( short,  SHRT_AVGL)   (signed a,   signed b) 
+{
+#define     SHRT_AVGL(...) MY_BINOP(UCHAR_AVGL,__VA_ARGS__,0)
+    return  ((short) a+(short) b)/2;
+}
+
+
+INLINE(  uint,  UINT_AVGL)     (uint a,     uint b) 
+{
+#define     UINT_AVGL(...) MY_BINOP(UINT_AVGL,__VA_ARGS__,0)
+    return  ((uint64_t) a+b)>>1;
+}
+
+INLINE(   int,   INT_AVGL)      (int a,      int b) 
+{
+#define     INT_AVGL(...) MY_BINOP(INT_AVGL,__VA_ARGS__,0)
+    return  ((int64_t) a+b)/2;
+}
+
+
+INLINE( ulong, ULONG_AVGL)    (ulong a,    ulong b) 
+{
+#define     ULONG_AVGL(...) MY_BINOP(ULONG_AVGL,__VA_ARGS__,0)
+#if DWRD_NLONG == 2
+    return UINT_AVGL(a, b);
+#else
+    return (a>>1)+(b>>1)+(a&b&1);
+#endif
+}
+
+INLINE(  long,  LONG_AVGL)     (long a,     long b) 
+{
+#define     LONG_AVGL(...) MY_BINOP(LONG_AVGL,__VA_ARGS__,0)
+#if DWRD_NLONG == 2
+    return  INT_AVGL(a, b);
+#else
+    return (a/2)+(b/2)+(1&a&b);
+#endif
+}
+
+
+INLINE(ullong,ULLONG_AVGL)   (ullong a,   ullong b) 
+{
+#define     ULLONG_AVGL(...) MY_BINOP(ULLONG_AVGL,__VA_ARGS__,0)
+    return (a>>1)+(b>>1)+(1&a&b);
+}
+
+INLINE( llong, LLONG_AVGL)    (llong a,    llong b) 
+{
+#define     LLONG_AVGL(...) MY_BINOP(LLONG_AVGL,__VA_ARGS__,0)
+    return (a/2)+(b/2)+(1&a&b);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,MY_AVGLQU) (QUAD_UTYPE a, int UNUSED(b))
+{   
+#define MY_AVGLQU(A, B, ...) \
+(_Generic(B,int:(MY_AVGLQU),default:(avglqu))(A,B))
+
+    (void) b;
+    QUAD_TYPE x = {.U=a};
+    x.Lo.U >>= 1;
+    x.Lo.U |= (1&x.Hi.U)<<63;
+    x.Hi.U >>= 1;
+    return  x.U;
+}
+
+INLINE(QUAD_ITYPE,MY_AVGLQI) (QUAD_ITYPE a, int UNUSED(b))
+{
+#define MY_AVGLQI(A, B, ...) \
+(_Generic(B,int:(MY_AVGLQI),default:(avglqi))(A,B))
+
+#if defined(__SIZEOF_INT128__)
+    return  a/2;
+#endif
+}
+
+INLINE(QUAD_UTYPE,avglqu)    (QUAD_UTYPE a, QUAD_UTYPE b) 
+{
+#define     avglqu(...) MY_BINOP(MY_AVGLQU,__VA_ARGS__,0)
+#if defined(__SIZEOF_INT128__)
+    return (a>>1)+(b>>1)+(1&a&b);
+#else
+    QUAD_TYPE x={.U=a}, y={.U=b}, z;
+    z.Lo.U = 1&x.Lo.U&y.Lo.U;
+    z.Hi.U = 0;
+    x.U = shrsqu(x.U, 1);
+    y.U = shrsqu(y.U, 1);
+    x.U = addlqu(x.U, y.U);
+    x.U = addlqu(x.U, z.U);
+    return  x.U;
+#endif
+}
+
+INLINE(QUAD_ITYPE,avglqi)    (QUAD_ITYPE a, QUAD_ITYPE b) 
+{
+#define     avglqi(...) MY_BINOP(MY_AVGLQI,__VA_ARGS__,0)
+#if defined(__SIZEOF_INT128__)
+    return (a/2)+(b/2)+(1&a&b);
+#else
+    QUAD_ITYPE z = andsqi(a, b);
+    z = andyqi(z, 1);
+    a = divlqi(a, INT_CVQI(2));
+    b = divlqi(a, INT_CVQI(2));
+    a = addlqi(a, b);
+    return addlqi(a, z);
+#endif
+
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_AVGL
+}
+#endif
+
+#if 0 // _ENTER_ALL_AVGP
+{
+#endif
+
+/*  average (round to +inf, i.e. ceil)
+
+    -1.5 => -1
+    -0.5 => -0
+    +0.5 => +1
+    +1.5 => +2
+*/
+INLINE( uchar, UCHAR_AVGP) (unsigned a, unsigned b)
+{
+    return  (1+(uchar) a+(uchar) b)>>1;
+}
+
+INLINE( schar, SCHAR_AVGP)   (signed a,   signed b)
+{
+    return  (1+(schar) a+(schar) b)>>1;
+}
+
+INLINE(  char,  CHAR_AVGP)      (int a,      int b)
+{      
+#if CHAR_MIN
+    return  SCHAR_AVGP(a, b);
+#else
+    return  UCHAR_AVGP(a, b);
+#endif
+}
+
+INLINE(ushort, USHRT_AVGP) (unsigned a, unsigned b)
+{
+    return  (1+(ushort) a+(ushort) b)>>1;
+}
+
+INLINE( short,  SHRT_AVGP)   (signed a,   signed b)
+{
+    return  (1+(short) a+(short) b)>>1;
+}
+
+INLINE(  uint,  UINT_AVGP)     (uint a,     uint b)
+{
+    return  (UINT64_C(1)+a+b)>>1;
+}
+
+INLINE(   int,   INT_AVGP)      (int a,      int b)
+{
+    return  (INT64_C(1)+a+b)>>1;
+}
+
+INLINE( ulong, ULONG_AVGP)    (ulong a,    ulong b)
+{
+#if DWRD_NLONG == 2
+    return  UINT_AVGP(a, b);
+#else
+    return  (a>>1)+(b>>1)+(1&(a|b));
+#endif
+}
+
+INLINE(  long,  LONG_AVGP)     (long a,     long b)
+{
+#if DWRD_NLONG == 2
+    return  INT_AVGP(a, b);
+#else
+    return  (a>>1)+(b>>1)+(1&(a|b));
+#endif
+}
+
+INLINE(ullong,ULLONG_AVGP)   (ullong a,   ullong b)
+{
+    return  (a>>1)+(b>>1)+(1&(a|b));
+}
+
+INLINE( llong, LLONG_AVGP)    (llong a,    llong b)
+{
+    return  (a>>1)+(b>>1)+(1&(a|b));
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,avgpqu)  (QUAD_UTYPE a,  QUAD_UTYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return  (a>>1)+(b>>1)+(1&(a|b));
+#else
+    QUAD_UTYPE c = orrsqu(a, b);
+    c = andyqu(c, 1);
+    a = shrsqu(a);
+    b = shrsqu(b);
+    a = addlqu(a, b);
+    return  addlqu(a, c);
+#endif
+}
+
+INLINE(QUAD_ITYPE,avgpqi)  (QUAD_ITYPE a,  QUAD_ITYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return  (a>>1)+(b>>1)+(1&(a|b));
+#else
+    QUAD_ITYPE c = orrsqi(a, b);
+    c = andyqi(c, 1);
+    a = shrsqi(a);
+    b = shrsqi(b);
+    a = addlqi(a, b);
+    return  addlqi(a, c);
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_AVGP
+}
+#endif
+
+#if 0 // _ENTER_ALL_AVGN
+{
+#endif
+/*  average (round to -inf, i.e. floor)
+    -1.5 => -2
+    -0.5 => -1
+    +0.5 => +0
+    +1.5 => +1
+*/
+
+INLINE( uchar, UCHAR_AVGN) (unsigned a, unsigned b)
+{
+    return  UCHAR_AVGL(a, b);
+}
+
+INLINE( schar, SCHAR_AVGN)   (signed a,   signed b)
+{
+    return  ((schar) a+(schar) b)>>1;
+}
+
+INLINE(  char,  CHAR_AVGN)      (int a,      int b)
+{      
+#if CHAR_MIN
+    return  SCHAR_AVGN(a, b);
+#else
+    return  UCHAR_AVGN(a, b);
+#endif
+}
+
+INLINE(ushort, USHRT_AVGN) (unsigned a, unsigned b)
+{
+    return  USHRT_AVGL(a, b);
+}
+
+INLINE( short,  SHRT_AVGN)   (signed a,   signed b)
+{
+    return  ((short) a+(short) b)>>1;
+}
+
+INLINE(  uint,  UINT_AVGN)     (uint a,     uint b)
+{
+    return  UINT_AVGL(a, b);
+}
+
+INLINE(   int,   INT_AVGN)      (int a,      int b)
+{
+    return  ((int64_t) a+b)>>1;
+}
+
+INLINE( ulong, ULONG_AVGN)    (ulong a,    ulong b)
+{
+    return  ULONG_AVGL(a, b);
+}
+
+INLINE(  long,  LONG_AVGN)     (long a,     long b)
+{
+#if DWRD_NLONG == 2
+    return  INT_AVGN(a, b);
+#else
+/*  (+1>>1=+0)+(+1>>1=+0) = 0
+    (-1>>1=-1)+(-1>>1=-1) = -2
+    
+*/
+    return  (a>>1)+(b>>1)+(1&a&b);
+#endif
+}
+
+INLINE(ullong,ULLONG_AVGN)   (ullong a,   ullong b)
+{
+    return  ULLONG_AVGL(a, b);
+}
+
+INLINE( llong, LLONG_AVGN)    (llong a,    llong b)
+{
+    return  (a>>1)+(b>>1)+(1&a&b);
+}
+
+#if QUAD_NLLONG == 2
+
+INLINE(QUAD_UTYPE,avgnqu)  (QUAD_UTYPE a,  QUAD_UTYPE b)
+{
+    return  avglqu(a, b);
+}
+
+INLINE(QUAD_ITYPE,avgnqi)  (QUAD_ITYPE a,  QUAD_ITYPE b)
+{
+#if defined(__SIZEOF_INT128__)
+    return  (a>>1)+(b>>1)+(1&a&b);
+#else
+    QUAD_ITYPE c = orrsqi(a, b);
+    a = shrsqi(a);
+    b = shrsqi(b);
+    return  addlqi(a, b);
+#endif
+}
+
+#endif
+
+#if 0 // _LEAVE_ALL_AVGN
+}
+#endif
+
+/*
+
+SCHAR_AVGN(-4) => -2
+SCHAR_AVGP(-3) => -1
+SCHAR_AVGP(-2) => -1 
+SCHAR_AVGP(-1) => +0 
+SCHAR_AVGP(+0) => +0 
+SCHAR_AVGP(+1) => +1 
+SCHAR_AVGP(+2) => +1 
+SCHAR_AVGP(+3) => +2 
+SCHAR_AVGP(+4) => +2
+
+LLONG_AVGP(-4) => -2     
+LLONG_AVGP(-3) => -1    
+LLONG_AVGP(-2) => -1   
+LLONG_AVGP(-1) => +0     
+LLONG_AVGP(+0) => +0    
+LLONG_AVGP(+1) => +1    
+LLONG_AVGP(+2) => +1    
+LLONG_AVGP(+3) => +2   
+LLONG_AVGP(+4) => +2
+
+
+hadd( {+4,+3,+2,+1}) => {+2,+1,+1,+0}
+hadd( {-1,-2,-3,-4}) => {-1,-1,-2,-2}
+
+        -4  -3  -2  -1  +1  +2  +3  +4
+hadd    -2  -2  -1  -1  +0  +1  +1  +2
+
+        -4  -3  -2  -1  +1  +2  +3  +4
+rhadd   -2  -1  -1  +0  +1  +1  +2  +2
+
+
+rhadd({+4,+3,+2,+1}) => {+2,+2,+1,+1}    
+rhadd({-1,-2,-3,-4}) => {+0,-1,-1,-2}
+    hadd            rhadd
+    avgl(-1) => +0  avgp(-1) => -1
+    avgl(-2) => -1  avgp(-2) => -1
+    avgl(-3) => -1  avgp(-3) => 
+    avgl(-4) => -2  avgp(-4)
+
+vhaddq_s32( {0,0,0,0},{-1,-2,-3,-4}) => {-1,-1,-2,-2}
+
+vrhaddq_s32({0,0,0,0},{-1,-2,-3,-4}) => {+0,-1,-1,-2}
+
+vrhaddq_s32({0,0,0,0},{+1,+2,+3,+4}) => {+1,+1,+2,+2} 
+0  
+>>> posix.system('clang -o single -march=armv8.2-A -ferror-limit=5 -std=c11 /sdcard/C/ungop.c -I/sdcard/C -fsigned-char')  
+
+0                                                     >>> posix.system("./single")                       
+vhaddq_s32({0,0,0,0},{+1,+2,+3,+4}) => {+0,+1,+1,+2}  0
+
+*/
